@@ -647,11 +647,26 @@ export function mergeIngredients(
         unit = src.unit;
         changed = true;
       } else if (qty !== null && src.qty !== null) {
-        const converted = convert(tx, src.qty, src.unit, unit, target.id);
-        if (converted !== null) {
-          qty = qty + converted;
-          changed = true;
+        // The source's own conversion rows are still in scope here (they move to the
+        // target later), so a conversion defined only on the source is still usable.
+        const converted =
+          convert(tx, src.qty, src.unit, unit, target.id) ??
+          convert(tx, src.qty, src.unit, unit, source.id);
+        if (converted === null) {
+          throw new AppError(
+            "unprocessable",
+            `Cannot merge ${source.name} into ${target.name}: ${src.qty} ${src.unit ?? "unit"} at ${src.location} is not convertible to ${unit ?? "unit"}`,
+            {
+              ingredient: target.id,
+              source: source.id,
+              location: src.location,
+              fromUnit: src.unit,
+              toUnit: unit,
+            },
+          );
         }
+        qty = qty + converted;
+        changed = true;
       }
       const status = changed ? statusFor(tx, target, qty, unit) : dst.status;
       tx.db

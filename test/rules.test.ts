@@ -218,6 +218,103 @@ describe("checkRecipe", () => {
     });
   });
 
+  it("does not flag chili made with a hamburger meat alias as pork", () => {
+    const { ctx } = makeTestCtx();
+    const beef = resolveIngredient(ctx, "Ground beef", { create: true });
+    ctx.db
+      .insert(ingredientAliases)
+      .values({
+        id: newId("ali"),
+        householdId: ctx.householdId,
+        ingredientId: beef.id,
+        alias: "hamburger meat",
+      })
+      .run();
+
+    const chili = createRecipe(ctx, {
+      title: "Weeknight Chili",
+      ingredients: [{ ingredient: "Ground beef", qty: 500, unit: "g" }],
+    });
+    createRule(ctx, {
+      scope: "keyword",
+      targetText: "ham",
+      severity: "forbidden",
+      reason: "pork",
+    });
+
+    const check = checkRecipe(ctx, chili.id);
+    expect(check.violations).toEqual([]);
+    expect(check.ok).toBe(true);
+  });
+
+  it("does not match keyword text inside longer words", () => {
+    const { ctx } = makeTestCtx();
+    createRule(ctx, { scope: "keyword", targetText: "ham", severity: "forbidden" });
+
+    const result = checkIngredients(ctx, [
+      "Hamburger meat",
+      "Graham crackers",
+      "Shallots",
+      "Ground beef",
+    ]);
+
+    expect(result.ok).toBe(true);
+    expect(result.items.map((item) => item.violations)).toEqual([[], [], [], []]);
+  });
+
+  it("matches keywords on word boundaries with plural tolerance", () => {
+    const { ctx } = makeTestCtx();
+    createRule(ctx, { scope: "keyword", targetText: "ham", severity: "forbidden" });
+
+    const result = checkIngredients(ctx, ["Ham", "hams", "diced ham", "Ham steak"]);
+
+    expect(result.items.map((item) => item.ok)).toEqual([false, false, false, false]);
+    for (const item of result.items) {
+      expect(item.violations[0]).toMatchObject({ scope: "keyword" });
+    }
+  });
+
+  it("matches plural keyword forms on a word boundary", () => {
+    const { ctx } = makeTestCtx();
+    createRule(ctx, { scope: "keyword", targetText: "mushroom", severity: "forbidden" });
+
+    const result = checkIngredients(ctx, ["Cremini mushrooms", "Mushrooms"]);
+
+    expect(result.items.map((item) => item.ok)).toEqual([false, false]);
+  });
+
+  it("matches multi-word keywords across punctuation and allows a plural tail", () => {
+    const { ctx } = makeTestCtx();
+    createRule(ctx, { scope: "keyword", targetText: "pot roast", severity: "forbidden" });
+
+    const result = checkIngredients(ctx, [
+      "Sunday pot roast",
+      "pot-roast",
+      "potato roast",
+      "pot roasts",
+    ]);
+
+    expect(result.items.map((item) => item.ok)).toEqual([false, false, true, false]);
+  });
+
+  it("treats hyphens and punctuation as word separators", () => {
+    const { ctx } = makeTestCtx();
+    createRule(ctx, { scope: "keyword", targetText: "pork", severity: "forbidden" });
+
+    const result = checkIngredients(ctx, ["Pork-free stock", "popork"]);
+
+    expect(result.items.map((item) => item.ok)).toEqual([false, true]);
+  });
+
+  it("escapes regex metacharacters in keyword rules", () => {
+    const { ctx } = makeTestCtx();
+    createRule(ctx, { scope: "keyword", targetText: "a.b", severity: "forbidden" });
+
+    const result = checkIngredients(ctx, ["a.b marinade", "axb marinade"]);
+
+    expect(result.items.map((item) => item.ok)).toEqual([false, true]);
+  });
+
   it("matches tag and recipe rules", () => {
     const { ctx } = makeTestCtx();
 

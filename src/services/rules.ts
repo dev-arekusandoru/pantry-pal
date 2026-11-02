@@ -310,9 +310,42 @@ function aliasesByIngredient(ctx: Ctx, ingredientIds: string[]): Map<string, str
   return result;
 }
 
+/** Escape every regex metacharacter so keyword text matches literally. */
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Whole-word pattern for a keyword.
+ *
+ * The keyword (possibly multi-word, e.g. "pot roast") must sit on word
+ * boundaries: it never matches inside a longer word ("ham" ≠ "hamburger",
+ * "graham"). Words of a multi-word keyword may be separated by any run of
+ * non-alphanumeric characters (space, hyphen, comma…), which also makes
+ * hyphen/punctuation act as a boundary ("pork-free" matches "pork"). The last
+ * word tolerates a trailing "s"/"es" unless it already ends in "s", so
+ * "mushroom" matches "mushrooms" and "Cremini mushrooms".
+ */
+function keywordPattern(needle: string): RegExp | null {
+  const words = needle
+    .trim()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((word) => word !== "");
+  const lastWord = words[words.length - 1];
+  if (lastWord === undefined) return null;
+  const body = [...words.slice(0, -1).map(escapeRegex), escapeRegex(lastWord)].join(
+    "[^\\p{L}\\p{N}]+",
+  );
+  const tail = /s$/i.test(lastWord) ? "" : "(?:es|s)?";
+  return new RegExp(`(?<![\\p{L}\\p{N}])${body}${tail}(?![\\p{L}\\p{N}])`, "iu");
+}
+
+/** First haystack containing the keyword as a whole word (case-insensitive). */
 function keywordMatch(needle: string, haystacks: Array<string | null>): string | null {
+  const pattern = keywordPattern(needle);
+  if (pattern === null) return null;
   for (const haystack of haystacks) {
-    if (haystack !== null && haystack.toLowerCase().includes(needle)) return haystack;
+    if (haystack !== null && pattern.test(haystack)) return haystack;
   }
   return null;
 }

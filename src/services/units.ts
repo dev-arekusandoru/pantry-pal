@@ -188,8 +188,14 @@ type Edge = { unit: string; factor: number };
 
 function addEdge(map: Map<string, Edge[]>, from: string, edge: Edge): void {
   const list = map.get(from);
-  if (list === undefined) map.set(from, [edge]);
-  else list.push(edge);
+  if (list === undefined) {
+    map.set(from, [edge]);
+    return;
+  }
+  // Rows arrive sorted, so the first edge for a unit pair wins deterministically
+  // even when legacy data stores the same pair twice in different directions.
+  if (list.some((existing) => existing.unit === edge.unit)) return;
+  list.push(edge);
 }
 
 /** Bidirectional conversion edges: stored rows plus same-family built-in conversions. */
@@ -261,6 +267,7 @@ function loadConversionRows(ctx: Ctx, ingredientId: string | null): ConversionRo
           : eq(unitConversions.ingredientId, ingredientId),
       ),
     )
+    .orderBy(unitConversions.fromUnit, unitConversions.toUnit, unitConversions.id)
     .all();
 }
 
@@ -370,8 +377,15 @@ export function createConversion(ctx: Ctx, input: CreateConversionInput): UnitCo
   }
 
   // SQLite unique indexes treat NULLs as distinct, so the global row is checked here.
-  const existing = ctx.db
-    .select({ id: unitConversions.id })
+  // Units are compared after normalization (`lbs` and `lb` are the same pair) and the
+  // reverse pair is rejected too: storing both directions with different factors would
+  // make `convert` contradict itself depending on direction.
+  const scopeRows = ctx.db
+    .select({
+      id: unitConversions.id,
+      fromUnit: unitConversions.fromUnit,
+      toUnit: unitConversions.toUnit,
+    })
     .from(unitConversions)
     .where(
       and(
@@ -379,13 +393,22 @@ export function createConversion(ctx: Ctx, input: CreateConversionInput): UnitCo
         ingredientId === null
           ? isNull(unitConversions.ingredientId)
           : eq(unitConversions.ingredientId, ingredientId),
-        eq(unitConversions.fromUnit, fromUnit),
-        eq(unitConversions.toUnit, toUnit),
       ),
     )
-    .get();
-  if (existing) {
-    throw new AppError("conflict", `Conversion already exists: ${fromUnit} -> ${toUnit}`);
+    .all();
+  for (const row of scopeRows) {
+    const storedFrom = normalizeUnit(row.fromUnit);
+    const storedTo = normalizeUnit(row.toUnit);
+    if (storedFrom === fromUnit && storedTo === toUnit) {
+      throw new AppError("conflict", `Conversion already exists: ${fromUnit} -> ${toUnit}`);
+    }
+    if (storedFrom === toUnit && storedTo === fromUnit) {
+      throw new AppError(
+        "conflict",
+        `Reverse conversion already exists: ${toUnit} -> ${fromUnit}; ${fromUnit} -> ${toUnit} would contradict it`,
+        { existing: { fromUnit: row.fromUnit, toUnit: row.toUnit }, fromUnit, toUnit },
+      );
+    }
   }
 
   return ctx.db

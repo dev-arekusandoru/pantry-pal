@@ -15,7 +15,7 @@ Usage:
   pantrypal token create --name <name>
   pantrypal token list
   pantrypal token revoke <token-id>
-  pantrypal seed <file.json>
+  pantrypal seed <file.json> [--force]
 
 Global options:
   --db <path>   SQLite file (default: $PANTRYPAL_DB_PATH or ./data/pantrypal.db)
@@ -30,6 +30,7 @@ interface ParsedArgs {
 }
 
 const VALUE_FLAGS: Record<string, true> = { db: true, name: true, timezone: true };
+const BOOLEAN_FLAGS: Record<string, true> = { force: true };
 
 function parseArgs(argv: string[]): ParsedArgs {
   const positionals: string[] = [];
@@ -48,6 +49,10 @@ function parseArgs(argv: string[]): ParsedArgs {
       const key = eq === -1 ? withoutPrefix : withoutPrefix.slice(0, eq);
       if (eq !== -1) {
         flags[key] = withoutPrefix.slice(eq + 1);
+        continue;
+      }
+      if (BOOLEAN_FLAGS[key]) {
+        flags[key] = "true";
         continue;
       }
       if (VALUE_FLAGS[key]) {
@@ -133,11 +138,14 @@ function runTokenRevoke(db: Db, id: string | undefined): void {
   print(revoked);
 }
 
-async function runSeed(db: Db, file: string | undefined): Promise<void> {
+async function runSeed(
+  db: Db,
+  file: string | undefined,
+  flags: Record<string, string>,
+): Promise<void> {
   if (file === undefined) {
     throw new AppError("validation", "Missing seed file: pantrypal seed <file.json>");
   }
-  const household = getSingleHousehold(db);
   const raw = await readFile(file, "utf8");
   let data: unknown;
   try {
@@ -148,11 +156,27 @@ async function runSeed(db: Db, file: string | undefined): Promise<void> {
     });
   }
 
-  // Lazy by requirement: the seed loader is a large, optional module that the
-  // other CLI commands (and `migrate` in particular) must not pull in.
+  // Lazy by requirement: the seed schema and loader are a large, optional
+  // stack that the other CLI commands (and `migrate` in particular) must not
+  // pull in. Validate before creating anything, so a malformed seed cannot
+  // leave a stray household behind.
+  const { parseSeed } = await import("./schemas/seed.js");
+  const seed = parseSeed(data);
+
+  let household: Household;
+  try {
+    household = getSingleHousehold(db);
+  } catch (error) {
+    if (!(isAppError(error) && error.code === "not_found")) throw error;
+    household = createHousehold(db, {
+      name: seed.household.name,
+      timezone: seed.household.timezone,
+    });
+  }
+
   const { loadSeed } = await import("./seed/load.js");
   const ctx = makeCtx(db, household.id);
-  const result = loadSeed(ctx, data);
+  const result = loadSeed(ctx, data, { force: flags.force === "true" });
   console.log("Seed loaded.");
   print(result);
 }
@@ -184,7 +208,7 @@ async function main(argv: string[]): Promise<void> {
         if (second === "revoke") return runTokenRevoke(db, rest[0]);
         throw new AppError("validation", `Unknown token command: ${second ?? "(none)"}`);
       case "seed":
-        return await runSeed(db, second);
+        return await runSeed(db, second, flags);
       default:
         throw new AppError("validation", `Unknown command: ${first}`, { usage: USAGE });
     }

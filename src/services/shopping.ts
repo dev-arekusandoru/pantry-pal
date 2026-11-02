@@ -128,6 +128,15 @@ function txCtx(ctx: Ctx, tx: unknown): Ctx {
   return { db: tx as Ctx["db"], householdId: ctx.householdId, now: ctx.now };
 }
 
+/** An explicit ISO-8601 timestamp from the caller, else the current clock. */
+function timestampOrNow(ctx: Ctx, value: string | undefined): string {
+  if (value === undefined) return nowIso(ctx);
+  if (Number.isNaN(Date.parse(value))) {
+    throw new AppError("validation", `Expected an ISO-8601 timestamp, got "${value}"`, { value });
+  }
+  return value;
+}
+
 function loadPlan(ctx: Ctx, mealPlanId: string): typeof mealPlans.$inferSelect {
   const plan = ctx.db
     .select()
@@ -594,6 +603,8 @@ export function deleteItem(
 export interface CheckItemInput {
   itemId: string;
   checked: boolean;
+  /** When the item was checked (ISO-8601; defaults to now). Ignored when unchecking. */
+  checkedAt?: string;
   /** What was actually put in the cart (defaults to the planned qty when checked). */
   actualQty?: number | null;
   actualUnit?: string | null;
@@ -619,7 +630,11 @@ export function checkItems(
       const patch: Partial<typeof shoppingListItems.$inferInsert> = {};
 
       if (change.checked) {
-        patch.checkedAt = item.checkedAt ?? timestamp;
+        // Re-checking keeps the original moment unless the caller says otherwise.
+        patch.checkedAt =
+          change.checkedAt === undefined
+            ? (item.checkedAt ?? timestamp)
+            : timestampOrNow(scoped, change.checkedAt);
 
         const actualQty =
           change.actualQty !== undefined
@@ -674,6 +689,14 @@ export interface CompleteShoppingListInput {
   received?: ReceivedItemInput[];
   /** Default true: only checked items become stock. */
   onlyChecked?: boolean;
+  /**
+   * Default true: checked items write purchase movements. `false` marks the list
+   * done without touching stock or item quantities — for lists whose purchases
+   * the pantry already reflects (e.g. imported history).
+   */
+  recordPurchases?: boolean;
+  /** Completion time (ISO-8601; defaults to now). */
+  completedAt?: string;
 }
 
 export interface SkippedShoppingItem {
@@ -686,12 +709,17 @@ export interface CompleteShoppingListResult {
   list: ShoppingList;
   movements: StockMovement[];
   skipped: SkippedShoppingItem[];
+  /** `applyMovement` warnings (e.g. incomparable units), prefixed with the item name. */
+  warnings: string[];
 }
 
 /**
  * Convert a shopping trip into stock: checked items write `delta` purchase
  * movements (actual qty, received override, or planned qty). Unknown amounts
  * (null qty) mark the pantry item as present with an unknown quantity.
+ *
+ * `recordPurchases: false` completes the list without touching stock or item
+ * quantities — for trips the pantry already reflects (e.g. imported history).
  */
 export function completeShoppingList(
   ctx: Ctx,
@@ -705,82 +733,89 @@ export function completeShoppingList(
       throw new AppError("conflict", "Shopping list is already completed", { listId });
     }
 
+    const recordPurchases = input.recordPurchases ?? true;
     const onlyChecked = input.onlyChecked ?? true;
-    const items = listItems(scoped, listId);
-    const knownIds = new Set(items.map((item) => item.id));
-    const receivedById = new Map<string, ReceivedItemInput>();
-    for (const received of input.received ?? []) {
-      if (!knownIds.has(received.itemId)) {
-        throw new AppError("not_found", `Shopping item not found: ${received.itemId}`, {
-          itemId: received.itemId,
-        });
-      }
-      receivedById.set(received.itemId, received);
-    }
-
-    const timestamp = nowIso(scoped);
+    const timestamp = timestampOrNow(scoped, input.completedAt);
     const movements: StockMovement[] = [];
     const skipped: SkippedShoppingItem[] = [];
+    const warnings: string[] = [];
 
-    for (const item of items) {
-      if (onlyChecked && item.checkedAt === null) continue;
-
-      const targetIngredientId = item.substituteIngredientId ?? item.ingredientId;
-      if (targetIngredientId === null) {
-        skipped.push({ itemId: item.id, name: item.name, reason: "free_text" });
-        continue;
-      }
-
-      const received = receivedById.get(item.id);
-      const qty =
-        received !== undefined && received.qty !== undefined
-          ? received.qty
-          : (item.actualQty ?? item.qty);
-      const unit =
-        received !== undefined && received.unit !== undefined
-          ? normalizeUnitLoose(received.unit)
-          : (item.actualUnit ?? item.unit);
-      const location = received?.location;
-
-      const movement =
-        qty === null || qty === undefined
-          ? applyMovement(scoped, {
-              ingredientId: targetIngredientId,
-              ...(location === undefined ? {} : { location }),
-              kind: "set",
-              qty: null,
-              unit: unit ?? null,
-              status: "on_hand",
-              reason: "purchase",
-              refType: "shopping_list",
-              refId: listId,
-            })
-          : applyMovement(scoped, {
-              ingredientId: targetIngredientId,
-              ...(location === undefined ? {} : { location }),
-              kind: "delta",
-              qty,
-              unit: unit ?? null,
-              reason: "purchase",
-              refType: "shopping_list",
-              refId: listId,
-            });
-      movements.push(movement.movement);
-
-      const patch: Partial<typeof shoppingListItems.$inferInsert> = {
-        checkedAt: item.checkedAt ?? timestamp,
-      };
-      if (received !== undefined) {
-        if (received.qty !== undefined) patch.actualQty = received.qty;
-        if (received.unit !== undefined) {
-          patch.actualUnit = normalizeUnitLoose(received.unit);
+    if (recordPurchases) {
+      const items = listItems(scoped, listId);
+      const knownIds = new Set(items.map((item) => item.id));
+      const receivedById = new Map<string, ReceivedItemInput>();
+      for (const received of input.received ?? []) {
+        if (!knownIds.has(received.itemId)) {
+          throw new AppError("not_found", `Shopping item not found: ${received.itemId}`, {
+            itemId: received.itemId,
+          });
         }
+        receivedById.set(received.itemId, received);
       }
-      scoped.db
-        .update(shoppingListItems)
-        .set(patch)
-        .where(eq(shoppingListItems.id, item.id))
-        .run();
+
+      for (const item of items) {
+        if (onlyChecked && item.checkedAt === null) continue;
+
+        const targetIngredientId = item.substituteIngredientId ?? item.ingredientId;
+        if (targetIngredientId === null) {
+          skipped.push({ itemId: item.id, name: item.name, reason: "free_text" });
+          continue;
+        }
+
+        const received = receivedById.get(item.id);
+        const qty =
+          received !== undefined && received.qty !== undefined
+            ? received.qty
+            : (item.actualQty ?? item.qty);
+        const unit =
+          received !== undefined && received.unit !== undefined
+            ? normalizeUnitLoose(received.unit)
+            : (item.actualUnit ?? item.unit);
+        const location = received?.location;
+
+        const movement =
+          qty === null || qty === undefined
+            ? applyMovement(scoped, {
+                ingredientId: targetIngredientId,
+                ...(location === undefined ? {} : { location }),
+                kind: "set",
+                qty: null,
+                unit: unit ?? null,
+                status: "on_hand",
+                reason: "purchase",
+                refType: "shopping_list",
+                refId: listId,
+              })
+            : applyMovement(scoped, {
+                ingredientId: targetIngredientId,
+                ...(location === undefined ? {} : { location }),
+                kind: "delta",
+                qty,
+                unit: unit ?? null,
+                reason: "purchase",
+                refType: "shopping_list",
+                refId: listId,
+              });
+        movements.push(movement.movement);
+        if (movement.warning !== undefined) {
+          warnings.push(`${item.name}: ${movement.warning}`);
+        }
+
+        const patch: Partial<typeof shoppingListItems.$inferInsert> = {
+          checkedAt: item.checkedAt ?? timestamp,
+        };
+        if (received !== undefined) {
+          if (received.qty !== undefined) patch.actualQty = received.qty;
+          if (received.unit !== undefined) {
+            patch.actualUnit = normalizeUnitLoose(received.unit);
+          }
+        }
+        scoped.db
+          .update(shoppingListItems)
+          .set(patch)
+          .where(eq(shoppingListItems.id, item.id))
+          .run();
+      }
     }
 
     const updated = scoped.db
@@ -790,7 +825,7 @@ export function completeShoppingList(
       .returning()
       .get();
 
-    return { list: updated, movements, skipped };
+    return { list: updated, movements, skipped, warnings };
   });
 }
 

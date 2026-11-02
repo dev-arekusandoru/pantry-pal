@@ -77,14 +77,15 @@ export interface CreateRecipeInput {
   storageNotes?: string | null;
   leftoverDays?: number | null;
   status?: RecipeStatus;
+  statusNote?: string;
   rating?: number | null;
   notes?: string | null;
   ingredients?: RecipeIngredientInput[];
   steps?: RecipeStepInput[];
 }
 
-/** Patch: only provided fields change; `ingredients`/`steps` replace the full lists. */
-export type UpdateRecipeInput = Partial<CreateRecipeInput>;
+/** Patch: only provided fields change; `ingredients`/`steps` replace the full lists. `statusNote` is create-only. */
+export type UpdateRecipeInput = Partial<Omit<CreateRecipeInput, "statusNote">>;
 
 export interface SearchRecipesInput {
   query?: string;
@@ -476,7 +477,7 @@ export function createRecipe(ctx: Ctx, input: CreateRecipeInput): RecipeView {
         recipeId: recipe.id,
         status: recipe.status,
         rating: recipe.rating,
-        note: null,
+        note: input.statusNote ?? null,
         createdAt: timestamp,
       })
       .run();

@@ -20,16 +20,16 @@ import {
   updateIngredient,
 } from "../src/services/ingredients.js";
 import { listMovements, listPantry, setStock } from "../src/services/pantry.js";
-import { createConversion } from "../src/services/units.js";
+import { createConversion, convert } from "../src/services/units.js";
 import { makeTestCtx } from "./helpers.js";
 
-function expectAppError(fn: () => unknown, code: string): void {
+function expectAppError(fn: () => unknown, code: string): AppError {
   try {
     fn();
   } catch (error) {
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe(code);
-    return;
+    return error as AppError;
   }
   throw new Error(`Expected an AppError with code ${code}`);
 }
@@ -355,5 +355,63 @@ describe("mergeIngredients", () => {
     expectAppError(() => mergeIngredients(ctx, source.id, source.id), "validation");
     expectAppError(() => mergeIngredients(ctx, source.id, "ing_missing"), "not_found");
     expect(getIngredient(ctx, target.id)).toBeDefined();
+  });
+
+  it("converts same-location stock with the source ingredient's own conversions", () => {
+    const { ctx } = makeTestCtx();
+    const source = createIngredient(ctx, { name: "Canned tomato", category: "canned" });
+    const target = createIngredient(ctx, { name: "Tomato", category: "produce" });
+    setStock(ctx, { ingredientId: target.id, qty: 14.5, unit: "oz", location: "pantry" });
+    setStock(ctx, { ingredientId: source.id, qty: 2, unit: "can", location: "pantry" });
+    // Only the source knows cans: 1 can = 400 g, which chains into oz via the built-in table.
+    createConversion(ctx, {
+      ingredientId: source.id,
+      fromUnit: "can",
+      toUnit: "g",
+      factor: 400,
+    });
+
+    const expected = 14.5 + convert(ctx, 800, "g", "oz")!;
+    const merged = mergeIngredients(ctx, source.id, target.id);
+
+    const pantryRow = merged.ingredient.pantry.find((row) => row.location === "pantry")!;
+    expect(pantryRow.qty).toBeCloseTo(expected, 6);
+    expect(pantryRow.unit).toBe("oz");
+    expect(merged.moved.pantryItems).toBe(1);
+    expect(getIngredient(ctx, target.id).pantry).toHaveLength(1);
+  });
+
+  it("refuses to discard same-location stock it cannot convert and rolls back", () => {
+    const { ctx } = makeTestCtx();
+    const source = createIngredient(ctx, { name: "Olive oil", category: "condiment" });
+    const target = createIngredient(ctx, { name: "Oil", category: "condiment" });
+    const targetPantry = setStock(ctx, {
+      ingredientId: target.id,
+      qty: 1,
+      unit: "cup",
+      location: "pantry",
+    });
+    setStock(ctx, { ingredientId: source.id, qty: 1, unit: "bottle", location: "pantry" });
+
+    const error = expectAppError(
+      () => mergeIngredients(ctx, source.id, target.id),
+      "unprocessable",
+    );
+    expect(error.details).toMatchObject({
+      ingredient: target.id,
+      source: source.id,
+      fromUnit: "bottle",
+      toUnit: "cup",
+    });
+
+    // The transaction rolled back: nothing moved and nothing was deleted.
+    const sourceView = getIngredient(ctx, source.id);
+    expect(sourceView.pantry).toHaveLength(1);
+    expect(sourceView.pantry[0]!.qty).toBe(1);
+    expect(sourceView.pantry[0]!.unit).toBe("bottle");
+    expect(getIngredient(ctx, target.id).pantry[0]!.qty).toBe(1);
+    expect(listMovements(ctx, { pantryItemId: targetPantry.item.id })).toHaveLength(1);
+    expect(findIngredientByName(ctx, "olive oil")?.id).toBe(source.id);
+    expect(listIngredients(ctx).map((row) => row.id).sort()).toEqual([source.id, target.id].sort());
   });
 });

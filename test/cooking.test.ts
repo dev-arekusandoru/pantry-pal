@@ -172,6 +172,85 @@ describe("completeCookEvent", () => {
     skipCookEvent(ctx, skippedEvent.id);
     expectAppError(() => completeCookEvent(ctx, skippedEvent.id), "conflict");
   });
+
+  it("records only the stock that was actually removed when the pantry runs short", () => {
+    const { ctx } = makeTestCtx();
+    const chicken = resolveIngredient(ctx, "chicken breast", { create: true });
+    const recipe = createRecipe(ctx, {
+      title: "Roast chicken",
+      servings: 2,
+      ingredients: [{ ingredientId: chicken.id, qty: 2, unit: "lb" }],
+    });
+    applyMovement(ctx, {
+      ingredientId: chicken.id,
+      location: "fridge",
+      kind: "set",
+      qty: 1,
+      unit: "lb",
+      reason: "purchase",
+    });
+    const event = addCook(ctx, recipe.id, 2);
+
+    const result = completeCookEvent(ctx, event.id);
+
+    expect(result.movements).toHaveLength(1);
+    expect(result.movements[0]!.qty).toBeCloseTo(-1, 6);
+    expect(result.movements[0]!.qtyAfter).toBeCloseTo(0, 6);
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+  });
+
+  it("clamps the requested amount in the ingredient unit when the pantry row uses another unit", () => {
+    const { ctx } = makeTestCtx();
+    const oil = resolveIngredient(ctx, "olive oil", { create: true });
+    const recipe = createRecipe(ctx, {
+      title: "Dressing",
+      servings: 2,
+      ingredients: [{ ingredientId: oil.id, qty: 8, unit: "tbsp" }],
+    });
+    applyMovement(ctx, {
+      ingredientId: oil.id,
+      location: "pantry",
+      kind: "set",
+      qty: 0.25,
+      unit: "cup",
+      reason: "purchase",
+    });
+    const event = addCook(ctx, recipe.id, 2);
+
+    const result = completeCookEvent(ctx, event.id);
+
+    // 0.25 cup = 4 tbsp, so only 4 of the requested 8 tbsp leave the pantry.
+    expect(result.movements).toHaveLength(1);
+    expect(result.movements[0]!.qty).toBeCloseTo(-4, 6);
+    expect(result.movements[0]!.unit).toBe("tbsp");
+    expect(stockAt(ctx, oil.id, "pantry")?.qty).toBeCloseTo(0, 6);
+  });
+
+  it("writes no movement when the chosen pantry row is already out", () => {
+    const { ctx } = makeTestCtx();
+    const chicken = resolveIngredient(ctx, "chicken breast", { create: true });
+    const recipe = createRecipe(ctx, {
+      title: "Chicken soup",
+      servings: 2,
+      ingredients: [{ ingredientId: chicken.id, qty: 1, unit: "lb" }],
+    });
+    applyMovement(ctx, {
+      ingredientId: chicken.id,
+      location: "fridge",
+      kind: "set",
+      qty: 0,
+      unit: "lb",
+      reason: "purchase",
+    });
+    const event = addCook(ctx, recipe.id, 2);
+
+    const result = completeCookEvent(ctx, event.id);
+
+    expect(result.movements).toHaveLength(0);
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+    expect(reopenCookEvent(ctx, event.id).movements).toHaveLength(0);
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+  });
 });
 
 describe("skipCookEvent", () => {
@@ -208,5 +287,33 @@ describe("reopenCookEvent", () => {
     expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(3, 6);
 
     expectAppError(() => reopenCookEvent(ctx, event.id), "conflict");
+  });
+
+  it("restores exactly the clamped amount, never inventing stock", () => {
+    const { ctx } = makeTestCtx();
+    const chicken = resolveIngredient(ctx, "chicken breast", { create: true });
+    const recipe = createRecipe(ctx, {
+      title: "Roast chicken",
+      servings: 2,
+      ingredients: [{ ingredientId: chicken.id, qty: 2, unit: "lb" }],
+    });
+    applyMovement(ctx, {
+      ingredientId: chicken.id,
+      location: "fridge",
+      kind: "set",
+      qty: 1,
+      unit: "lb",
+      reason: "purchase",
+    });
+    const event = addCook(ctx, recipe.id, 2);
+
+    completeCookEvent(ctx, event.id);
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+
+    const reopened = reopenCookEvent(ctx, event.id);
+
+    expect(reopened.movements).toHaveLength(1);
+    expect(reopened.movements[0]!.qty).toBeCloseTo(1, 6);
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(1, 6);
   });
 });

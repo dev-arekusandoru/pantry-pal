@@ -18,6 +18,13 @@ export const isoDateSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD")
   .describe("Calendar date (YYYY-MM-DD).");
 
+export const isoTimestampSchema = z
+  .string()
+  .refine((value) => !Number.isNaN(Date.parse(value)), {
+    message: "Expected an ISO-8601 timestamp",
+  })
+  .describe("Timestamp (ISO-8601, e.g. 2026-11-01T16:00:00.000Z).");
+
 export const ingredientCategorySchema = z
   .enum(INGREDIENT_CATEGORIES)
   .describe("Ingredient aisle/category, also used to order shopping items.");
@@ -228,7 +235,7 @@ export const addItemSchema = z
       .string()
       .optional()
       .describe("Display name, or the free-text item name when nothing resolves."),
-    qty: z.number().nullable().optional().describe("Quantity to buy."),
+    qty: z.number().nonnegative().nullable().optional().describe("Quantity to buy."),
     unit: z.string().nullable().optional().describe("Unit for `qty`."),
     note: z.string().optional().describe("Free-form note for the shopper."),
     purposeNote: z.string().optional(),
@@ -276,12 +283,12 @@ export const updateShoppingItemInputSchema = z
   .object({
     name: z.string().optional(),
     category: ingredientCategorySchema.optional(),
-    qty: z.number().nullable().optional(),
+    qty: z.number().nonnegative().nullable().optional(),
     unit: z.string().nullable().optional(),
     note: z.string().nullable().optional(),
     purposeNote: z.string().nullable().optional(),
     needsCheck: z.boolean().optional(),
-    actualQty: z.number().nullable().optional(),
+    actualQty: z.number().nonnegative().nullable().optional(),
     actualUnit: z.string().nullable().optional(),
     substituteIngredient: z
       .string()
@@ -294,7 +301,10 @@ export const updateShoppingItemInputSchema = z
 export const checkItemSchema = z.object({
   itemId: id(),
   checked: z.boolean(),
-  actualQty: z.number().nullable().optional(),
+  checkedAt: isoTimestampSchema
+    .optional()
+    .describe("When the item was checked (defaults to now). Ignored when unchecking."),
+  actualQty: z.number().nonnegative().nullable().optional(),
   actualUnit: z.string().nullable().optional(),
   substituteIngredient: z.string().nullable().optional(),
 });
@@ -309,7 +319,7 @@ export const completeShoppingListInputSchema = z
       .array(
         z.object({
           itemId: id(),
-          qty: z.number().nullable().optional(),
+          qty: z.number().nonnegative().nullable().optional(),
           unit: z.string().nullable().optional(),
           location: storageLocationSchema.optional(),
         }),
@@ -320,6 +330,15 @@ export const completeShoppingListInputSchema = z
       .boolean()
       .optional()
       .describe("Default true: only checked items become stock."),
+    recordPurchases: z
+      .boolean()
+      .optional()
+      .describe(
+        "Default true: checked items write purchase movements. false = pantry already reflects this trip, e.g. importing history.",
+      ),
+    completedAt: isoTimestampSchema
+      .optional()
+      .describe("Completion time (defaults to now)."),
   })
   .openapi("CompleteShoppingListInput");
 
@@ -351,6 +370,7 @@ export const completeShoppingListResponseSchema = z.object({
   list: shoppingListSchema,
   movements: z.array(stockMovementSchema),
   skipped: z.array(skippedShoppingItemSchema),
+  warnings: z.array(z.string()),
 });
 
 export const listShoppingListsQuerySchema = z.object({

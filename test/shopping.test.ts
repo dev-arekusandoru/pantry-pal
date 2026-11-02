@@ -16,6 +16,7 @@ import {
 import { AppError, type ErrorCode } from "../src/lib/errors.js";
 import { newId } from "../src/lib/ids.js";
 import { normalizeName } from "../src/services/ingredients.js";
+import { listMovements } from "../src/services/pantry.js";
 import {
   addItems,
   checkItems,
@@ -29,7 +30,7 @@ import {
   updateItem,
   updateShoppingList,
 } from "../src/services/shopping.js";
-import { makeTestCtx } from "./helpers.js";
+import { makeTestApp, makeTestCtx } from "./helpers.js";
 
 interface IngredientOptions {
   name: string;
@@ -576,5 +577,109 @@ describe("completeShoppingList", () => {
     expect(pantryRow(ctx, beef)!.qty).toBe(3);
     const looseItem = getShoppingList(ctx, looseList.list.id).items[0]!;
     expect(looseItem.checkedAt).not.toBeNull();
+  });
+
+  it("completes without purchase movements when the pantry already reflects the trip", () => {
+    const { ctx } = makeTestCtx();
+    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    addPantryItem(ctx, { ingredientId: beef, qty: 3, unit: "lb" });
+
+    const detail = createShoppingList(ctx, {
+      items: [{ ingredient: "Ground beef", qty: 2, unit: "lb" }],
+    });
+    const item = detail.items[0]!;
+    const checkedAt = "2026-10-15T09:30:00.000Z";
+    checkItems(ctx, detail.list.id, [{ itemId: item.id, checked: true, checkedAt }]);
+
+    const completedAt = "2026-10-16T18:00:00.000Z";
+    const result = completeShoppingList(ctx, detail.list.id, {
+      recordPurchases: false,
+      completedAt,
+    });
+
+    expect(result.list.status).toBe("done");
+    expect(result.list.completedAt).toBe(completedAt);
+    expect(result.movements).toEqual([]);
+    expect(result.skipped).toEqual([]);
+    expect(result.warnings).toEqual([]);
+    // No ledger entry, no stock change.
+    expect(listMovements(ctx, { limit: 100 })).toHaveLength(0);
+    expect(pantryRow(ctx, beef)!.qty).toBe(3);
+
+    const stored = getShoppingList(ctx, detail.list.id).items.find((row) => row.id === item.id)!;
+    expect(stored.checkedAt).toBe(checkedAt);
+    expect(stored.actualQty).toBe(2);
+    expect(stored.actualUnit).toBe("lb");
+  });
+
+  it("surfaces a warning when a purchase cannot be compared with the pantry unit", () => {
+    const { ctx } = makeTestCtx();
+    const oil = addIngredient(ctx, { name: "Olive oil", defaultUnit: "cup" });
+    addPantryItem(ctx, { ingredientId: oil, qty: 1, unit: "cup" });
+
+    const detail = createShoppingList(ctx, {
+      items: [{ ingredient: "Olive oil", qty: 1, unit: "bottle" }],
+    });
+    const item = detail.items[0]!;
+    checkItems(ctx, detail.list.id, [{ itemId: item.id, checked: true }]);
+
+    const result = completeShoppingList(ctx, detail.list.id);
+
+    expect(result.list.status).toBe("done");
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain("Olive oil");
+    expect(result.warnings[0]).toContain("units not comparable");
+    // The stock is untouched, but the caller can now see why.
+    expect(pantryRow(ctx, oil)!.qty).toBe(1);
+    expect(result.movements[0]!.qtyAfter).toBe(1);
+  });
+});
+
+describe("shopping quantity validation", () => {
+  it("rejects negative quantities on every write path with 400", async () => {
+    const { ctx, request } = makeTestApp();
+    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+
+    const created = await request<{ list: { id: string }; items: { id: string }[] }>(
+      "POST",
+      "/api/v1/shopping-lists",
+      { title: "Market", items: [{ ingredient: "Ground beef", qty: 2, unit: "lb" }] },
+    );
+    expect(created.status).toBe(201);
+    const listId = created.body.list.id;
+    const itemId = created.body.items[0]!.id;
+
+    const add = await request("POST", `/api/v1/shopping-lists/${listId}/items`, {
+      items: [{ ingredient: "Ground beef", qty: -2, unit: "lb" }],
+    });
+    expect(add.status).toBe(400);
+
+    const updateQty = await request("PATCH", `/api/v1/shopping-lists/${listId}/items/${itemId}`, {
+      qty: -1,
+    });
+    expect(updateQty.status).toBe(400);
+
+    const updateActual = await request(
+      "PATCH",
+      `/api/v1/shopping-lists/${listId}/items/${itemId}`,
+      { actualQty: -1 },
+    );
+    expect(updateActual.status).toBe(400);
+
+    const check = await request("POST", `/api/v1/shopping-lists/${listId}/check`, {
+      items: [{ itemId, checked: true, actualQty: -1 }],
+    });
+    expect(check.status).toBe(400);
+
+    const complete = await request("POST", `/api/v1/shopping-lists/${listId}/complete`, {
+      received: [{ itemId, qty: -1 }],
+    });
+    expect(complete.status).toBe(400);
+
+    // Nothing was written by the rejected requests.
+    const detail = getShoppingList(ctx, listId);
+    expect(detail.list.status).toBe("draft");
+    expect(detail.items[0]!.qty).toBe(2);
+    expect(pantryRow(ctx, beef)).toBeUndefined();
   });
 });

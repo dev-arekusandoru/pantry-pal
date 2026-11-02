@@ -102,6 +102,22 @@ describe("createRecipe", () => {
     });
   });
 
+  it("records the optional statusNote on the initial status event", () => {
+    const { ctx } = makeTestCtx();
+    const recipe = createRecipe(ctx, {
+      title: "Import Pending",
+      status: "rotation",
+      statusNote: "imported from an old notebook",
+    });
+    const history = listStatusHistory(ctx, recipe.id);
+    expect(history.items).toHaveLength(1);
+    expect(history.items[0]).toMatchObject({
+      recipeId: recipe.id,
+      status: "rotation",
+      note: "imported from an old notebook",
+    });
+  });
+
   it("rejects an unknown explicit ingredient id", () => {
     const { ctx } = makeTestCtx();
     expectAppError(

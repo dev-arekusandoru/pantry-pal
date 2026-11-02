@@ -232,4 +232,76 @@ describe("conversion rows", () => {
     );
     expect(listIngredients(ctx)).toHaveLength(0);
   });
+
+  it("rejects a conversion whose reverse pair already exists in the same scope", () => {
+    const { ctx } = makeTestCtx();
+    const ingredient = createIngredient(ctx, { name: "Canned tomato" });
+    createConversion(ctx, {
+      ingredientId: ingredient.id,
+      fromUnit: "can",
+      toUnit: "lb",
+      factor: 1,
+    });
+
+    // The reverse pair (units normalized) must not contradict the stored factor.
+    expectAppError(
+      () =>
+        createConversion(ctx, {
+          ingredientId: ingredient.id,
+          fromUnit: "pounds",
+          toUnit: "cans",
+          factor: 2,
+        }),
+      "conflict",
+    );
+    // The same pair in the same direction is still a duplicate after normalization.
+    expectAppError(
+      () =>
+        createConversion(ctx, {
+          ingredientId: ingredient.id,
+          fromUnit: "cans",
+          toUnit: "lbs",
+          factor: 1,
+        }),
+      "conflict",
+    );
+    expect(listConversions(ctx, { ingredientId: ingredient.id })).toHaveLength(1);
+    expect(convert(ctx, 1, "can", "lb", ingredient.id)).toBeCloseTo(1, 9);
+    expect(convert(ctx, 1, "lb", "can", ingredient.id)).toBeCloseTo(1, 9);
+
+    // Same-scope only: the global scope is a different conversion.
+    createConversion(ctx, { fromUnit: "lb", toUnit: "can", factor: 0.5 });
+    expect(listConversions(ctx)).toHaveLength(2);
+  });
+
+  it("walks multi-path conversions deterministically regardless of insertion order", () => {
+    function graph(rows: Array<[string, string, number]>) {
+      const { ctx } = makeTestCtx();
+      const ingredient = createIngredient(ctx, { name: "Flour bag" });
+      for (const [fromUnit, toUnit, factor] of rows) {
+        createConversion(ctx, { ingredientId: ingredient.id, fromUnit, toUnit, factor });
+      }
+      return { ctx, ingredient };
+    }
+
+    const forwardOrder = graph([
+      ["bag", "oz", 32],
+      ["bag", "g", 1000],
+    ]);
+    const reverseOrder = graph([
+      ["bag", "g", 1000],
+      ["bag", "oz", 32],
+    ]);
+
+    const forwardKg = convert(forwardOrder.ctx, 1, "bag", "kg", forwardOrder.ingredient.id)!;
+    const reverseKg = convert(reverseOrder.ctx, 1, "bag", "kg", reverseOrder.ingredient.id)!;
+
+    // Rows are ordered by unit pair, so the `bag -> g` path always wins: 1 bag = 1 kg.
+    expect(forwardKg).toBeCloseTo(1, 9);
+    expect(reverseKg).toBeCloseTo(1, 9);
+    expect(convert(forwardOrder.ctx, 1, "kg", "bag", forwardOrder.ingredient.id)).toBeCloseTo(
+      1 / forwardKg,
+      9,
+    );
+  });
 });

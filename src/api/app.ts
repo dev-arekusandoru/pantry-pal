@@ -18,8 +18,8 @@ export interface CreateAppOptions {
   /** Clock used for request contexts (tests inject a fixed one). */
   now?: () => Date;
   /**
-   * MCP mount point. Defaults to the stub in `src/mcp/mount.ts`; a later agent
-   * supplies the real implementation without touching app wiring.
+   * MCP mount point overrides (tests or alternate transports). Defaults to the
+   * Streamable HTTP handler in `src/mcp/mount.ts`.
    */
   mountMcp?: (app: App, deps: McpDeps) => void;
 }

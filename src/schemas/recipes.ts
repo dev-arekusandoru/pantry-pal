@@ -165,6 +165,12 @@ export const createRecipeSchema = z
   .partial()
   .extend({
     title: z.string().min(1).describe("Recipe title."),
+    statusNote: z
+      .string()
+      .optional()
+      .describe(
+        "Why the recipe starts in this status; stored as the note of the initial status history event.",
+      ),
     servings: z
       .number()
       .positive()

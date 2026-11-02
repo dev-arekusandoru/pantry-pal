@@ -22,7 +22,9 @@ frontend later, without either of them re-implementing food math.
   Recipes scale to any serving count server-side.
 - **Dietary rules.** Scoped to an ingredient, category, recipe, tag or keyword; severity
   `forbidden` / `avoid` / `limit`; optional condition note for judgment calls; optionally scoped to
-  a single household member. `recipe_check` returns the rules a recipe hits.
+  a single household member. `recipe_check` returns the rules a recipe hits. Keyword rules match
+  whole words, case-insensitively and plural-tolerantly (`ham` covers "diced ham" and "hams" but not
+  "hamburger"); they never match inside a longer word.
 - **Meal plans.** Weekly plans with dated slots (breakfast/lunch/dinner/…), cook events that may feed
   several slots (batch cooking and leftovers), freeform slots, and prep tasks.
 - **Shopping lists.** Generated from plan demand minus stock already on hand, with manual items kept
@@ -87,7 +89,8 @@ pnpm db:generate             # drizzle-kit migrations after editing src/db/schem
 ```
 
 The CLI (`pnpm cli …`) runs pending migrations first: `migrate`, `household init|show`,
-`token create|list|revoke`, `seed <file.json>`. Pass `--db <path>` to override the database file.
+`token create|list|revoke`, `seed <file.json> [--force]`. Pass `--db <path>` to override the
+database file.
 
 ## Configuration
 

@@ -6,7 +6,7 @@ import { isIsoDate, nowIso } from "../lib/time.js";
 import { applyMovement, getStockForIngredient } from "./pantry.js";
 import { getCookEvent, type CookEventView } from "./plans.js";
 import { scaleRecipeIngredients } from "./recipes.js";
-import { normalizeUnit } from "./units.js";
+import { convert, normalizeUnit } from "./units.js";
 
 export type StockMovement = typeof stockMovements.$inferSelect;
 type PantryRow = typeof pantryItems.$inferSelect;
@@ -153,11 +153,21 @@ export function completeCookEvent(
         }
 
         const target = pickStockRow(stock, ingredient.unit);
+        const wanted = Math.abs(ingredient.qty);
+        // Never record more than the pantry actually holds: the ledger row is what
+        // reopenCookEvent reverses, so an over-recorded decrement would create stock.
+        const available =
+          target.qty === null
+            ? null
+            : convert(t, target.qty, target.unit, ingredient.unit, ingredient.ingredientId);
+        const requested = available === null ? wanted : Math.min(wanted, Math.abs(available));
+        if (requested <= 0) continue;
+
         const result = applyMovement(t, {
           ingredientId: ingredient.ingredientId,
           location: target.location,
           kind: "delta",
-          qty: -Math.abs(ingredient.qty),
+          qty: -requested,
           unit: ingredient.unit,
           reason: "cook",
           refType: "cook_event",
