@@ -1,0 +1,14 @@
+services:
+  pantrypal:
+    build: .
+    image: pantrypal:dev
+    container_name: pantrypal
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      PANTRYPAL_DB_PATH: /data/pantrypal.db
+      PORT: "8787"
+      HOST: 0.0.0.0
+    volumes:
+      - ./data:/data

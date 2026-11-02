@@ -1,0 +1,25 @@
+# Dependencies and build output are produced inside the image.
+node_modules
+dist
+coverage
+
+# Runtime state never belongs in the build context.
+data
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# VCS, editor and OS noise.
+.git
+.gitignore
+.github
+.vscode
+.idea
+.DS_Store
+
+# Docs and tests are not needed to compile or run the service.
+*.md
+docs
+test
+original chef docs

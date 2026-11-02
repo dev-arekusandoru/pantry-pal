@@ -1,8 +1,11 @@
-# PantryPal — v1 Implementation Plan
+# PantryPal — v1 implementation plan
 
 Open-source, self-hosted backend for household food state (pantry, recipes, rules, meal plans,
 shopping). One service exposes a REST API and an MCP endpoint over HTTP; a web frontend comes later
 on the same REST API.
+
+[`src/db/schema.ts`](src/db/schema.ts) is the source of truth for the data model. This document
+explains the shape and the decisions behind it rather than restating every column.
 
 ## Decisions
 
@@ -14,8 +17,8 @@ on the same REST API.
 | Auth | Bearer API tokens (hashed in DB, created via CLI); OAuth later |
 | Tenancy | One household per instance; `household_id` on every root table |
 | Inventory | Completing a cook auto-decrements pantry |
-| Recipes | Every meal is a recipe, including simple breakfasts (scrambled eggs). Structured ingredients + full instructions + source URL |
-| Migration | One-off curated seed from Chef's six markdown files; DB authoritative afterwards. No generic importer |
+| Recipes | Every meal is a recipe, including simple breakfasts; full structured data (ingredients, steps, nutrition, storage notes), not a link |
+| Migration | One-off curated seed from the household's docs: `seed/chef-2026-11.json`. DB authoritative afterwards, no generic importer |
 | Deploy | Docker image + `docker-compose.yml`; data in one volume |
 | License | MIT |
 
@@ -39,124 +42,139 @@ MCP  (/mcp tools)  ─┘
 ```
 src/
   db/schema.ts, db/migrations/
-  services/{pantry,ingredients,recipes,rules,plans,cooking,shopping,units}.ts
+  services/{pantry,ingredients,recipes,rules,plans,cooking,demand,shopping,units}.ts
   api/routes/*.ts          # REST adapters
   mcp/server.ts, mcp/tools/*.ts
   auth/                    # token middleware
-  cli.ts                   # token create/revoke, migrate, seed
-seed/chef-2026-11.json     # curated from "original chef docs/"
+  cli.ts                   # token create/revoke, migrate, household init, seed
+seed/chef-2026-11.json     # complete curated household snapshot
+seed/FORMAT.md             # seed format + loader rules
 test/
+Dockerfile, docker-compose.yml, docs/   # deployment + MCP client docs
 ```
 
-## Schema (v1)
+## Data model (v1)
 
-Every root table has `household_id`. Timestamps are ISO UTC. Quantities are `qty REAL NULL` +
-`unit TEXT`.
+Every table below `household` has `household_id`. Timestamps are ISO-8601 UTC, dates are
+`YYYY-MM-DD`, and a quantity is `qty REAL NULL` + normalized `unit TEXT` (NULL quantity = present
+but unmeasured).
 
-- **household**: name, default_servings, settings_json (spice level, batch sizes, etc.)
-- **api_token**: name, token_hash, last_used_at, revoked_at
-- **ingredient**: canonical_name, category, default_unit, is_staple, par_qty, par_unit, notes, archived_at
-- **ingredient_alias**: ingredient_id, alias (unique per household, lowercase)
-- **unit_conversion**: ingredient_id NULL (= global), from_unit, to_unit, factor
-- **pantry_item**: ingredient_id, location (pantry/fridge/freezer), qty NULL, unit, qty_approx bool,
-  status (on_hand/low/out/unknown), raw_text, last_verified_at, note.
-  Unique on (ingredient_id, location).
-- **stock_movement** (append-only): pantry_item_id, kind (`set` | `delta`), qty, unit,
-  reason (purchase/cook/waste/adjust/import), ref_type, ref_id, created_at.
-  `pantry_item` is the cached projection. A `set` row handles "on hand" and other unknown amounts.
-- **recipe**: title, source_url, servings, prep_minutes, cook_minutes, instructions_json (ordered
-  steps), image_url, spice_level, tags_json, status (want_to_try/rotation/never/archived), rating, notes
-- **recipe_ingredient**: recipe_id, ingredient_id, qty, unit, prep_note, optional, scaling_exempt,
-  group_label, sort_order
-- **recipe_status_event**: recipe_id, status, rating, note, at
-- **dietary_rule**: scope (ingredient/category/recipe/tag/freeform), target_id NULL, target_text,
-  severity (forbidden/avoid/limit), condition_note
-- **meal_plan**: week_start (Monday), status (draft/active/archived), notes
-- **cook_event**: meal_plan_id, recipe_id, cook_date, planned_servings, actual_servings, label,
-  status (planned/done/skipped), completed_at
-- **meal_slot**: meal_plan_id, date, meal_type, kind (meal/freeform/skip), cook_event_id NULL,
-  servings, label. One cook_event can feed many slots (chili feeds 3 lunches). Slots dated after
-  the cook are leftovers, so no separate leftover kind is needed. The cook date can fall outside
-  the plan week (chili cooked Sun Nov 1 for the Nov 2 week). Freeform slots ("fridge clean-out")
-  have no cook_event.
-- **prep_task**: meal_plan_id, due_date, description, cook_event_id NULL, done_at
-- **shopping_list**: meal_plan_id NULL, status (draft/shopping/done), created_at, completed_at
-- **shopping_list_item**: list_id, ingredient_id NULL, freeform_text, qty, unit, purpose_note,
-  source (generated/manual), checked_at, actual_qty, actual_unit
+- **household**: name, IANA timezone, `settings` JSON (default servings, spice level, lunch/dinner
+  batch sizes, week start, unit system, free-form `planningNotes` for agents); **household_member**
+  rows with display name and free-text dietary notes.
+- **api_token**: name, identifying prefix, hash, `last_used_at`, `revoked_at`.
+- **ingredient**: name + normalized name, description, image, category, default unit and location,
+  shelf life, staple flag, par quantity/unit, notes, archive date; **ingredient_alias** (lowercase,
+  unique per household); **unit_conversion** (per ingredient or household-global, one factor).
+- **pantry_item**: cached projection per `(ingredient, location)`: qty, unit, approximate flag,
+  status, raw text, note, purchased/opened/expiry dates, last verified.
+- **stock_movement** (append-only): `set` or `delta`, qty/unit, reason
+  (purchase/cook/waste/adjust/import/verify), reference type + id, note, and the resulting
+  `qty_after`/`status_after`.
+- **recipe**: title, slug, description, source URL/name, author, image, servings, yield text,
+  prep/cook/total minutes, dish spice level, cuisine, meal types, tags, equipment, nutrition JSON,
+  storage notes, leftover days, status, rating, notes. **recipe_ingredient**: qty with optional
+  `qtyMax` range, unit, prep note, optional, scaling-exempt, group label, position.
+  **recipe_step**: text, group label, duration hint, position. **recipe_status_event**: status
+  history with rating and note.
+- **dietary_rule**: scope `ingredient | category | recipe | tag | keyword`, severity
+  `forbidden | avoid | limit`, condition note for judgment calls, reason, and an optional member
+  scope (NULL = whole household).
+- **meal_plan**: week start (Monday, unique per household), title, status, notes. **cook_event**:
+  plan (NULL for ad-hoc cooks), recipe, cook date (may fall outside the plan week), planned and
+  actual servings, label, status, completion time, rating, notes. **meal_slot**: date, meal type,
+  kind (`meal | freeform | skip`), cook event, servings, label, notes. **prep_task**: due date,
+  description, optional cook event, done time.
+- **shopping_list**: optional plan, title, status (`draft | shopping | done`), notes, completion
+  time. **shopping_list_item**: linked ingredient or free text, display name, aisle category,
+  qty/unit, purpose note, `needsCheck`, source (`generated | manual`), checked time, actual
+  qty/unit, substitute ingredient.
 
-No reservation table. Committed stock = planned cook_events × scaled recipe ingredients. Available
-= on hand − committed. Both are computed, so swapping a meal can't leave stale reservations behind.
+Consequences worth remembering:
+
+- **Ledger first.** Every stock change is a `stock_movement`; `pantry_item` is only a projection, so
+  "why is this here?" and "what did we waste?" are answerable from history.
+- **No reservation table.** Committed stock is computed from planned cook events × scaled recipe
+  ingredients; available = on hand − committed. Swapping or moving a meal cannot leave a stale
+  reservation behind.
+- **Leftovers are slots.** One cook event can feed several slots on later dates; a slot dated after
+  its cook is leftovers. There is no separate leftover entity, and the cook date may precede the
+  plan week.
+- **Uncertainty is explicit.** Unknown amounts, approximate amounts, incomparable units and
+  substitutions have their own fields (`qty NULL`, `qty_approx`, `needs_check`,
+  `substitute_ingredient_id`) instead of being rounded into a number.
+- **Member-scoped rules.** Dietary rules can apply to one household member, not just the household.
 
 ## Core computations
 
-- **Resolve ingredient**: name → alias/canonical match; unknown names are returned as candidates and
-  are never auto-created silently.
-- **Convert**: per-ingredient conversion first, then global. If no conversion exists, the result is
-  "incomparable" and is never guessed.
-- **Demand(plan)**: sum of scaled recipe_ingredients for planned cook_events (`scaling_exempt` items
-  are not scaled).
+- **Resolve ingredient**: name → alias/canonical match. Unknown names are returned as candidates and
+  are only created when the caller explicitly asks for creation.
+- **Convert**: per-ingredient conversion first, then global, including the inverse direction. If no
+  conversion exists, the result is "incomparable" and is never guessed across mass/volume/count.
+- **Demand(plan)**: sum of scaled `recipe_ingredient` rows for planned cook events
+  (`scaling_exempt` items are not scaled).
+- **Scale recipe**: factor = servings / recipe.servings; exempt and unmeasured lines stay unscaled.
 - **Shopping generate**: demand − available, grouped by ingredient. Unknown or incomparable stock
-  goes to a "check pantry" bucket. Manual items are kept on regenerate.
-- **Shopping complete**: checked items → `delta` purchase movements.
-- **Cook complete**: scaled ingredients → `delta` cook movements (clamped at 0, unknowns left
-  untouched); sets actual_servings. If the recipe has no ingredients yet, it completes with a
-  warning and nothing is decremented.
-- **Rule check(recipe)**: returns matching rules with their condition_note. The agent decides
+  goes to a "check pantry" bucket (`needs_check`). Manual items are kept on regenerate.
+- **Shopping complete**: checked items → `delta` purchase movements, using actual qty/unit and
+  recording substitutions.
+- **Cook complete**: scaled ingredients → `delta` cook movements (clamped at 0, unknown amounts left
+  untouched); records actual servings, rating and notes.
+- **Rule check(recipe)**: returns matching rules with their `condition_note`. The agent decides
   conditional cases.
 
 ## REST API (`/api/v1`)
 
-`ingredients`, `pantry` (+ `/movements`, `/adjust`, `/set`), `recipes` (+ `/status`, `/check`),
-`rules`, `plans` (+ `/slots`, `/cook-events/:id/complete`, `/prep-tasks`), `shopping-lists`
-(+ `/generate`, `/items`, `/complete`), `household`. OpenAPI generated from Zod.
+`household` (+ `/members`), `ingredients` (+ `/aliases`, `/merge`), `unit-conversions` and
+`units/convert`, `pantry` (+ `/movements`, `/availability`, `/set`, `/adjust`, `/bulk`), `recipes`
+(+ `/{idOrSlug}`, `/status`, `/check`, `/scaled`), `rules` (+ `/check-ingredients`), `plans`
+(+ `/slots`, `/cook-events`, `/prep-tasks`, `/demand`), `cook-events/{id}/complete` and
+`shopping-lists` (+ `/generate`, `/items`, `/check`, `/complete`). OpenAPI is generated from the Zod
+route definitions at `/openapi.json`.
 
-## MCP tools (~15, compact JSON with ids + labels)
+## MCP tools (~26, compact JSON with ids + labels)
 
-`pantry_query`, `pantry_update` (set/adjust, bulk lines), `ingredient_resolve`,
-`recipe_search`, `recipe_get`, `recipe_save` (create/update incl. ingredients + steps),
-`recipe_set_status`, `rules_list`, `rules_manage`, `plan_get`, `plan_set_slots`,
-`cook_complete`, `shopping_generate`, `shopping_get`, `shopping_update` (check/add/complete),
-`household_prefs`.
+Household: `household_get`, `household_update`. Ingredients: `ingredient_search`,
+`ingredient_upsert`. Pantry: `pantry_query`, `pantry_update`, `pantry_history`, `availability`.
+Recipes/rules: `recipe_search`, `recipe_get`, `recipe_save`, `recipe_set_status`, `recipe_check`,
+`rules_list`, `rules_manage`. Plans/cooking: `plan_get`, `plan_create`, `plan_set_slots`,
+`plan_update`, `prep_tasks`, `cook_complete`, `cook_history`. Shopping: `shopping_generate`,
+`shopping_get`, `shopping_update`, `shopping_complete`. See [docs/mcp.md](docs/mcp.md) for the tool
+contract and agent workflows.
 
 ## Milestones
 
-1. **Skeleton**: pnpm project, lint/format, Vitest, Drizzle + migrations, Hono app, token auth +
-   CLI, health endpoint, Dockerfile/compose.
+1. **Skeleton** — done: pnpm project, Vitest, Drizzle schema + migrations, Hono app, bearer token
+   auth + CLI, health endpoint, seed file, Dockerfile/compose, docs.
 2. **Ingredients + pantry + ledger**: services, REST, tests for set/delta projection and conversions.
-3. **Recipes + rules**: structured ingredients, instructions, status history, rule check.
+3. **Recipes + rules**: structured ingredients and steps, status history, rule check, scaling.
 4. **Plans + cook events**: slots, leftovers, prep tasks, cook-complete decrement.
 5. **Shopping**: demand, availability, generate/check/complete.
-6. **Seed**: curated JSON + `cli seed` loading through services (see Seed mapping). It needs the
-   plan and shopping tables, so it comes after them.
-7. **MCP**: Streamable HTTP endpoint with bearer auth; wire up Chef and run one real week end to end.
-8. **Docs**: README, self-hosting guide, MCP client config examples.
+6. **Seed loader**: `cli seed` applying the curated JSON through the service layer.
+7. **MCP**: Streamable HTTP endpoint with bearer auth; wire up an agent and run one real week end to
+   end.
+8. **Docs**: README, self-hosting guide, MCP client config examples — written alongside 1–7.
 
-v1 is done when Chef runs one full week (plan → shopping list → purchase → cooks) against the
-service with no markdown files.
+v1 is done when the household runs one full week (plan → shopping list → purchase → cooks) against
+the service with no markdown files.
 
-## Seed mapping (from `original chef docs/`)
+## Seed (`seed/chef-2026-11.json`)
 
-- **Household**: 2 people, spice level mild (heat added after), lunch batch 6 servings, dinner 4
-  servings, cook-once-eat-twice dinners.
-- **Pantry**: one ingredient per line; the pantry.md "notes" column becomes the ingredient
-  category. Clean numbers are parsed (`3 lb`, `2 x 14.5 oz cans` → 2 can + 14.5 oz/can conversion).
-  "on hand" → qty NULL, status on_hand. Allocation parentheticals ("chili 2 + b&b 1") are dropped,
-  because commitments are computed. "Salt, black pepper" becomes two items. The "Common spices" and
-  "Tomatoes" summary lines are dropped. Original line kept in `raw_text`. One `set`/import movement
-  per item.
-- **Recipes**: 5 lunch/dinner recipes + breakfasts (overnight oats, eggs & toast, pancakes) as
-  stubs: title, URL where known, status want_to_try, no ingredients. Chef fills ingredients via
-  `recipe_save`. Rotation and want-to-try files are empty.
-- **Rules**: no mushrooms (forbidden); no pork, all cuts (forbidden); seafood except tuna/salmon
-  (forbidden, condition); mayo (avoid, "minor role ok"); beef only as ground beef (forbidden for
-  non-ground beef cuts); pot roast recipe excluded. "Keep mild" goes in household settings, not
-  rules.
-- **Plan Nov 2–8**: all cook events planned (chili Sun Nov 1 not yet cooked); grid → slots;
-  overnight oats cook_event the night before; prep schedule → prep_tasks.
-- **Shopping list Nov 2–8**: imported as `done`, items checked, with **no** purchase movements
-  (the pantry snapshot already includes them). Items marked "on hand" are skipped.
+One-time import of the household's state as of 2026-11-01, loaded through the service layer (never
+raw SQL) by `pantrypal seed`. It is a complete snapshot, not stubs:
 
-## Known v1 limitation
+- household (2 members, mild spice level, batch sizes, planning notes) and 65 ingredients with
+  categories, default units/locations, aliases and staples;
+- 16 unit conversions that make recipe units comparable to pantry units (`can → oz`,
+  `count → lb`, `head → clove`, `bunch → sprig`, …);
+- 46 pantry rows with original text preserved, including approximate and unknown amounts;
+- 11 dietary rules (never-use list, "beef only as ground beef", "mayo in a minor role only");
+- 8 recipes with real ingredients, ordered steps, times, servings, images and nutrition: 5
+  transcribed from source pages, 3 breakfasts authored for the household;
+- one week plan (12 cook events, 21 slots, 7 prep tasks) with every cook event still `planned`;
+- one completed shopping list (33 items) for the same week.
 
-Shopping generation and cook decrement only become useful once Chef has saved structured
-ingredients for each recipe. Getting that done is the first step of the end-to-end trial week.
+Import rules that matter: allocation parentheticals are dropped because commitments are computed
+(the original line stays in `raw_text`); the shopping list is historical, so it creates no purchase
+movements (the pantry snapshot already includes those purchases); "keep it mild" is a household
+setting, not a rule. Format and loader semantics: [seed/FORMAT.md](seed/FORMAT.md).
