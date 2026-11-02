@@ -190,6 +190,12 @@ export const createRecipeSchema = z
 export const updateRecipeSchema = z
   .object({
     ...recipeScalarFields,
+    statusNote: z
+      .string()
+      .optional()
+      .describe(
+        "Why the status or rating changed; stored as the note of the status-history event the patch writes.",
+      ),
     ingredients: z
       .array(recipeIngredientInputSchema)
       .optional()
@@ -387,10 +393,6 @@ export const searchRecipesQuerySchema = z.object({
 
 export const idOrSlugParamSchema = z.object({
   idOrSlug: z.string().min(1).describe("Recipe id or slug."),
-});
-
-export const recipeIdParamSchema = z.object({
-  id: z.string().min(1).describe("Recipe id."),
 });
 
 export const scaleRecipeQuerySchema = z.object({

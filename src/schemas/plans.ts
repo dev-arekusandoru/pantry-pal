@@ -425,8 +425,6 @@ export const planSummarySchema = z.object({
 
 export const listPlansResponseSchema = z.object({ items: z.array(planSummarySchema) });
 
-export const listCookEventsResponseSchema = z.object({ items: z.array(cookEventViewSchema) });
-
 export const listPrepTasksResponseSchema = z.object({ items: z.array(prepTaskViewSchema) });
 
 export const setSlotsResultSchema = z.object({
@@ -457,6 +455,26 @@ export const stockMovementSchema = z.object({
   qtyAfter: z.number().nullable(),
   statusAfter: z.enum(PANTRY_STATUSES),
   createdAt: z.string(),
+});
+
+export const cookEventMovementSchema = stockMovementSchema
+  .extend({
+    ingredientId: z.string(),
+    ingredientName: z.string(),
+  })
+  .openapi("CookEventMovement");
+
+export const cookEventHistoryItemSchema = cookEventViewSchema
+  .extend({
+    movements: z
+      .array(cookEventMovementSchema)
+      .optional()
+      .describe("Pantry movements produced by this cook; present when movements are requested."),
+  })
+  .openapi("CookEventHistoryItem");
+
+export const listCookEventsResponseSchema = z.object({
+  items: z.array(cookEventHistoryItemSchema),
 });
 
 export const cookEventMutationResultSchema = z.object({

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { App } from "../src/api/app.js";
+import { completeCookEvent } from "../src/services/cooking.js";
+import { findIngredientByName, resolveIngredient } from "../src/services/ingredients.js";
+import { applyMovement } from "../src/services/pantry.js";
+import { addCookEvent, createPlan } from "../src/services/plans.js";
+import { createRecipe, listStatusHistory } from "../src/services/recipes.js";
+import { createRule } from "../src/services/rules.js";
 import { makeTestApp } from "./helpers.js";
 
 /** Every tool the server must expose, by name. */
@@ -188,6 +194,100 @@ describe("MCP endpoint", () => {
 
     expect(result.isError).toBe(true);
     expect(payload).toMatchObject({ error: { code: "not_found" } });
+  });
+
+  it("retargets an ingredient rule when rules_manage update passes a name", async () => {
+    const { app, token, ctx } = makeTestApp();
+    const peanuts = resolveIngredient(ctx, "Peanuts", { create: true });
+    const rule = createRule(ctx, {
+      scope: "ingredient",
+      ingredientId: peanuts.id,
+      severity: "forbidden",
+      reason: "allergy",
+    });
+
+    const { result, payload } = await callTool(app, token, "rules_manage", {
+      action: "update",
+      ruleId: rule.id,
+      ingredient: "Tree nuts",
+    });
+
+    expect(result.isError).toBeUndefined();
+    const updated = (payload as { rule: { ingredientId: string } }).rule;
+    const treeNuts = findIngredientByName(ctx, "Tree nuts");
+    expect(treeNuts).not.toBeNull();
+    expect(updated.ingredientId).toBe(treeNuts!.id);
+    expect(updated.ingredientId).not.toBe(peanuts.id);
+  });
+
+  it("stores statusNote when recipe_save patches the status", async () => {
+    const { app, token, ctx } = makeTestApp();
+    const recipe = createRecipe(ctx, { title: "MCP Patched" });
+
+    const { result } = await callTool(app, token, "recipe_save", {
+      id: recipe.id,
+      status: "rotation",
+      statusNote: "promoted after testing",
+    });
+
+    expect(result.isError).toBeUndefined();
+    const history = listStatusHistory(ctx, recipe.id).items;
+    expect(history).toHaveLength(2);
+    expect(history[0]).toMatchObject({ status: "rotation", note: "promoted after testing" });
+  });
+
+  it("accepts recipe slugs in recipe_check and recipe_set_status", async () => {
+    const { app, token, ctx } = makeTestApp();
+    const recipe = createRecipe(ctx, { title: "Slug Tool" });
+
+    const check = await callTool(app, token, "recipe_check", { recipeId: recipe.slug });
+    expect((check.payload as { recipeId: string }).recipeId).toBe(recipe.id);
+
+    const status = await callTool(app, token, "recipe_set_status", {
+      recipeId: recipe.slug,
+      status: "rotation",
+    });
+    expect((status.payload as { recipe: { status: string } }).recipe.status).toBe("rotation");
+  });
+
+  it("includes the pantry movements a cook produced in cook_history", async () => {
+    const { app, token, ctx } = makeTestApp();
+    const recipe = createRecipe(ctx, {
+      title: "Bean Bowl",
+      servings: 2,
+      ingredients: [{ ingredient: "Black beans", qty: 1, unit: "can" }],
+    });
+    const beans = recipe.ingredients[0]!.ingredientId;
+    applyMovement(ctx, {
+      ingredientId: beans,
+      kind: "set",
+      qty: 3,
+      unit: "can",
+      reason: "purchase",
+    });
+
+    const plan = createPlan(ctx, { weekStart: "2026-11-02" });
+    const event = addCookEvent(ctx, plan.id, {
+      recipeId: recipe.id,
+      cookDate: "2026-11-03",
+      plannedServings: 2,
+    });
+    completeCookEvent(ctx, event.id);
+
+    const { payload } = await callTool(app, token, "cook_history", {});
+    const items = (payload as { items: { id: string; movements: unknown[] }[] }).items;
+    expect(items).toHaveLength(1);
+    expect(items[0]!.id).toBe(event.id);
+    expect(items[0]!.movements).toHaveLength(1);
+    expect(items[0]!.movements[0]).toMatchObject({
+      refType: "cook_event",
+      refId: event.id,
+      ingredientId: beans,
+      ingredientName: "Black beans",
+      qty: -1,
+      unit: "can",
+      qtyAfter: 2,
+    });
   });
 
   it("rejects unauthenticated requests and non-POST methods", async () => {

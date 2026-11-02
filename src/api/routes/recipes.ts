@@ -5,7 +5,6 @@ import {
   createRecipeSchema,
   deleteRecipeResultSchema,
   idOrSlugParamSchema,
-  recipeIdParamSchema,
   recipeSearchResultSchema,
   recipeStatusHistorySchema,
   recipeViewSchema,
@@ -22,6 +21,7 @@ import {
   deleteRecipe,
   getRecipe,
   listStatusHistory,
+  resolveRecipeId,
   scaleRecipeIngredients,
   searchRecipes,
   setRecipeStatus,
@@ -136,12 +136,13 @@ const deleteRecipeHandler: RouteHandler<typeof deleteRecipeRoute, AppEnv> = (c) 
 
 const setRecipeStatusRoute = createRoute({
   method: "post",
-  path: "/recipes/{id}/status",
+  path: "/recipes/{idOrSlug}/status",
   tags: ["recipes"],
   summary: "Set recipe status",
-  description: "Updates the recipe status (and optional rating) and appends a status event.",
+  description:
+    "Updates the recipe status (and optional rating) and appends a status event. Accepts an id or slug.",
   request: {
-    params: recipeIdParamSchema,
+    params: idOrSlugParamSchema,
     body: { content: json(setRecipeStatusSchema), required: true },
   },
   responses: {
@@ -151,49 +152,56 @@ const setRecipeStatusRoute = createRoute({
 
 const setRecipeStatusHandler: RouteHandler<typeof setRecipeStatusRoute, AppEnv> = (c) =>
   c.json(
-    setRecipeStatus(c.var.ctx, c.req.valid("param").id, c.req.valid("json")),
+    setRecipeStatus(
+      c.var.ctx,
+      resolveRecipeId(c.var.ctx, c.req.valid("param").idOrSlug),
+      c.req.valid("json"),
+    ),
     200,
   );
 
 const statusHistoryRoute = createRoute({
   method: "get",
-  path: "/recipes/{id}/status-history",
+  path: "/recipes/{idOrSlug}/status-history",
   tags: ["recipes"],
   summary: "Recipe status history",
-  description: "Status events, newest first.",
-  request: { params: recipeIdParamSchema },
+  description: "Status events, newest first. Accepts a recipe id or slug.",
+  request: { params: idOrSlugParamSchema },
   responses: {
     200: { description: "Status events", content: json(recipeStatusHistorySchema) },
   },
 });
 
 const statusHistoryHandler: RouteHandler<typeof statusHistoryRoute, AppEnv> = (c) =>
-  c.json(listStatusHistory(c.var.ctx, c.req.valid("param").id), 200);
+  c.json(
+    listStatusHistory(c.var.ctx, resolveRecipeId(c.var.ctx, c.req.valid("param").idOrSlug)),
+    200,
+  );
 
 const checkRecipeRoute = createRoute({
   method: "get",
-  path: "/recipes/{id}/check",
+  path: "/recipes/{idOrSlug}/check",
   tags: ["recipes"],
   summary: "Check a recipe against dietary rules",
   description:
-    "Returns matching rule violations and spice mismatch. `ok` is false only for unconditional forbidden matches; conditional violations are reported for the agent to judge.",
-  request: { params: recipeIdParamSchema },
+    "Returns matching rule violations and spice mismatch. `ok` is false only for unconditional forbidden matches; conditional violations are reported for the agent to judge. Accepts a recipe id or slug.",
+  request: { params: idOrSlugParamSchema },
   responses: {
     200: { description: "Rule check", content: json(ruleCheckSchema) },
   },
 });
 
 const checkRecipeHandler: RouteHandler<typeof checkRecipeRoute, AppEnv> = (c) =>
-  c.json(checkRecipe(c.var.ctx, c.req.valid("param").id), 200);
+  c.json(checkRecipe(c.var.ctx, resolveRecipeId(c.var.ctx, c.req.valid("param").idOrSlug)), 200);
 
 const scaledIngredientsRoute = createRoute({
   method: "get",
-  path: "/recipes/{id}/scaled",
+  path: "/recipes/{idOrSlug}/scaled",
   tags: ["recipes"],
   summary: "Scale recipe ingredients",
   description:
-    "Scales ingredient quantities to the requested servings. Scaling-exempt and unmeasured ingredients stay untouched.",
-  request: { params: recipeIdParamSchema, query: scaleRecipeQuerySchema },
+    "Scales ingredient quantities to the requested servings. Scaling-exempt and unmeasured ingredients stay untouched. Accepts a recipe id or slug.",
+  request: { params: idOrSlugParamSchema, query: scaleRecipeQuerySchema },
   responses: {
     200: { description: "Scaled ingredients", content: json(scaledIngredientsResultSchema) },
   },
@@ -204,7 +212,7 @@ const scaledIngredientsHandler: RouteHandler<typeof scaledIngredientsRoute, AppE
     {
       items: scaleRecipeIngredients(
         c.var.ctx,
-        c.req.valid("param").id,
+        resolveRecipeId(c.var.ctx, c.req.valid("param").idOrSlug),
         c.req.valid("query").servings,
       ),
     },

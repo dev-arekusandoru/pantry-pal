@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, like, lt, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, like, lt, or, sql } from "drizzle-orm";
 import type { Ctx } from "../context.js";
 import {
   ingredientAliases,
@@ -167,10 +167,16 @@ function applyMovementIn(ctx: Ctx, input: ApplyMovementInput): MovementResult {
   } else {
     const delta = input.qty as number;
     itemUnit = existing?.unit ?? unit;
-    if (existing === undefined || existing.qty === null) {
+    if (existing === undefined) {
+      // No row yet: the household is known to have zero of it, so the delta is
+      // the starting amount in the movement's own unit. Clamped at 0 like any
+      // other delta.
+      qtyAfter = Math.max(0, delta);
+      statusAfter = computeStatus(ctx, ingredient, qtyAfter, itemUnit);
+    } else if (existing.qty === null) {
       // Unknown amounts stay unknown; a positive delta means "we know we have it".
       qtyAfter = null;
-      statusAfter = delta > 0 ? "on_hand" : (existing?.status ?? "unknown");
+      statusAfter = delta > 0 ? "on_hand" : existing.status;
     } else {
       const converted = convert(ctx, delta, unit ?? itemUnit, itemUnit, ingredient.id);
       if (converted === null) {
@@ -581,6 +587,13 @@ export interface ListMovementsOptions {
   limit?: number;
   /** Only movements created strictly before this ISO timestamp. */
   before?: string;
+  /**
+   * Rowid of the last movement on the previous page (`stock_movement.rowid`,
+   * insertion order). Combine with `before` for a compound
+   * `(createdAt, rowid)` cursor: rows sharing the boundary timestamp are then
+   * paginated in rowid order instead of being skipped or duplicated.
+   */
+  beforeRowid?: number;
 }
 
 /** Ledger entries, newest first. */
@@ -597,7 +610,16 @@ export function listMovements(
   if (options.ingredientId !== undefined) {
     conditions.push(eq(pantryItems.ingredientId, options.ingredientId));
   }
-  if (options.before !== undefined) conditions.push(lt(stockMovements.createdAt, options.before));
+  if (options.before !== undefined && options.beforeRowid !== undefined) {
+    const rowid = sql`${stockMovements}.rowid`;
+    conditions.push(
+      sql`(${stockMovements.createdAt} < ${options.before} OR (${stockMovements.createdAt} = ${options.before} AND ${rowid} < ${options.beforeRowid}))`,
+    );
+  } else if (options.before !== undefined) {
+    conditions.push(lt(stockMovements.createdAt, options.before));
+  } else if (options.beforeRowid !== undefined) {
+    conditions.push(sql`${stockMovements}.rowid < ${options.beforeRowid}`);
+  }
 
   const requested = options.limit ?? 50;
   const limit = Math.min(200, Math.max(1, Math.trunc(Number.isFinite(requested) ? requested : 50)));
@@ -613,7 +635,7 @@ export function listMovements(
     .innerJoin(pantryItems, eq(pantryItems.id, stockMovements.pantryItemId))
     .innerJoin(ingredients, eq(ingredients.id, pantryItems.ingredientId))
     .where(and(...conditions))
-    .orderBy(desc(stockMovements.createdAt), desc(stockMovements.id))
+    .orderBy(desc(stockMovements.createdAt), desc(sql`${stockMovements}.rowid`))
     .limit(limit)
     .all();
 

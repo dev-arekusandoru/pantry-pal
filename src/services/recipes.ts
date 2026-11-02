@@ -84,8 +84,12 @@ export interface CreateRecipeInput {
   steps?: RecipeStepInput[];
 }
 
-/** Patch: only provided fields change; `ingredients`/`steps` replace the full lists. `statusNote` is create-only. */
-export type UpdateRecipeInput = Partial<Omit<CreateRecipeInput, "statusNote">>;
+/**
+ * Patch: only provided fields change; `ingredients`/`steps` replace the full
+ * lists. `statusNote` becomes the note of the status event written when the
+ * status or rating changes.
+ */
+export type UpdateRecipeInput = Partial<CreateRecipeInput>;
 
 export interface SearchRecipesInput {
   query?: string;
@@ -568,16 +572,18 @@ export function updateRecipe(ctx: Ctx, id: string, patch: UpdateRecipeInput): Re
       insertStepRows(tx, existing.id, patch.steps);
     }
 
-    if (patch.status !== undefined && patch.status !== existing.status) {
+    const statusChanged = patch.status !== undefined && patch.status !== existing.status;
+    const ratingChanged = patch.rating !== undefined && patch.rating !== existing.rating;
+    if (statusChanged || ratingChanged) {
       tx.db
         .insert(recipeStatusEvents)
         .values({
           id: newId("rse"),
           householdId: tx.householdId,
           recipeId: existing.id,
-          status: patch.status,
+          status: updated.status,
           rating: updated.rating,
-          note: null,
+          note: patch.statusNote ?? null,
           createdAt: nowIso(tx),
         })
         .run();
@@ -585,6 +591,11 @@ export function updateRecipe(ctx: Ctx, id: string, patch: UpdateRecipeInput): Re
 
     return getRecipe(tx, existing.id);
   });
+}
+
+/** Canonical id for a recipe referenced by its id or slug. */
+export function resolveRecipeId(ctx: Ctx, idOrSlug: string): string {
+  return findRecipe(ctx, idOrSlug).id;
 }
 
 /** Recipe with ingredients (ordered, nested ingredient), steps and cook stats. */
@@ -761,7 +772,7 @@ export function listStatusHistory(
         eq(recipeStatusEvents.recipeId, recipe.id),
       ),
     )
-    .orderBy(desc(recipeStatusEvents.createdAt), desc(recipeStatusEvents.id))
+    .orderBy(desc(recipeStatusEvents.createdAt), desc(sql`${recipeStatusEvents}.rowid`))
     .all();
   return { items };
 }

@@ -12,6 +12,7 @@ import { createRuleSchema, ruleScopeSchema, ruleSeveritySchema } from "../../sch
 import {
   createRecipe,
   getRecipe,
+  resolveRecipeId,
   scaleRecipeIngredients,
   searchRecipes,
   setRecipeStatus,
@@ -58,21 +59,30 @@ const recipeGetInput = z.object({
 
 const recipeSaveInput = z
   .object({
-    id: z.string().optional().describe("Existing recipe id; omit to create a new recipe."),
+    id: z
+      .string()
+      .optional()
+      .describe("Existing recipe id (rcp_…) or slug; omit to create a new recipe."),
     ...createRecipeSchema.shape,
     title: z.string().min(1).optional().describe("Recipe title (required when creating)."),
+    statusNote: z
+      .string()
+      .optional()
+      .describe(
+        "Why the recipe starts in its status (create) or why status/rating changed (update); stored on the status-history event.",
+      ),
   })
   .describe(
     "Create (no `id`) or patch (with `id`) a recipe, including its ingredient lines and steps. `ingredients`/`steps` replace the full list.",
   );
 
 const recipeSetStatusInput = z.object({
-  recipeId: z.string().min(1).describe("Recipe id (rcp_…)."),
+  recipeId: z.string().min(1).describe("Recipe id (rcp_…) or slug."),
   ...setRecipeStatusSchema.shape,
 });
 
 const recipeCheckInput = z.object({
-  recipeId: z.string().optional().describe("Check a stored recipe."),
+  recipeId: z.string().optional().describe("Check a stored recipe by id (rcp_…) or slug."),
   ingredients: z
     .array(z.string().min(1))
     .min(1)
@@ -162,7 +172,7 @@ export function registerRecipeTools(server: McpServer, ctx: Ctx): void {
     },
     tool((args: z.infer<typeof recipeSetStatusInput>) => {
       const { recipeId, ...input } = args;
-      return setRecipeStatus(ctx, recipeId, input);
+      return setRecipeStatus(ctx, resolveRecipeId(ctx, recipeId), input);
     }),
   );
 
@@ -176,7 +186,9 @@ export function registerRecipeTools(server: McpServer, ctx: Ctx): void {
       annotations: { readOnlyHint: true },
     },
     tool((args: z.infer<typeof recipeCheckInput>) => {
-      if (args.recipeId !== undefined) return checkRecipe(ctx, args.recipeId);
+      if (args.recipeId !== undefined) {
+        return checkRecipe(ctx, resolveRecipeId(ctx, args.recipeId));
+      }
       if (args.ingredients !== undefined) return checkIngredients(ctx, args.ingredients);
       throw new AppError("validation", "Provide `recipeId` or `ingredients`");
     }),

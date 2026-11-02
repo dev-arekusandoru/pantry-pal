@@ -123,7 +123,7 @@ reference — it is generated from the route definitions; the table below is the
 | Ingredients | `/ingredients`, `/ingredients/{id}/aliases`, `/ingredients/{id}/merge` | Search/list, create/update, aliases, merging duplicates |
 | Units | `/units/convert`, `/unit-conversions` | Unit normalization and conversion checks; per-ingredient and global conversion factors |
 | Pantry | `/pantry`, `/pantry/movements`, `/pantry/availability`, `/pantry/set`, `/pantry/adjust`, `/pantry/bulk` | Stock per location, ledger history, available = on hand − committed |
-| Recipes | `/recipes`, `/recipes/{idOrSlug}`, `/recipes/{id}/status`, `/recipes/{id}/check`, `/recipes/{id}/scaled` | Full recipes with ingredients + steps, status history, rule check, scaling to servings |
+| Recipes | `/recipes`, `/recipes/{idOrSlug}`, `/recipes/{idOrSlug}/status`, `/recipes/{idOrSlug}/status-history`, `/recipes/{idOrSlug}/check`, `/recipes/{idOrSlug}/scaled` | Full recipes with ingredients + steps, status history, rule check, scaling to servings |
 | Rules | `/rules`, `/rules/check-ingredients` | CRUD over ingredient/category/recipe/tag/keyword rules, optionally member-scoped |
 | Plans | `/plans`, `/plans/{id}/slots`, `/plans/{id}/cook-events`, `/plans/{id}/prep-tasks`, `/plans/{id}/demand`, `/cook-events/{id}/complete` | Weekly grid, cook events feeding multiple slots, demand, prep schedule, cook completion |
 | Shopping lists | `/shopping-lists`, `/shopping-lists/generate`, `/shopping-lists/{id}/items`, `/shopping-lists/{id}/check`, `/shopping-lists/{id}/complete` | Generate from a plan, check items off in store, complete into purchases |

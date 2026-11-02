@@ -197,9 +197,43 @@ describe("applyMovement ledger", () => {
     const result = adjustStock(ctx, { ingredient: "Bananas", delta: 6, unit: "count" });
 
     expect(result.item.ingredient.name).toBe("Bananas");
-    expect(result.item.qty).toBeNull();
+    expect(result.item.qty).toBe(6);
+    expect(result.item.unit).toBe("count");
     expect(result.item.status).toBe("on_hand");
+    expect(result.movement.qtyAfter).toBe(6);
     expect(listIngredients(ctx)).toHaveLength(1);
+  });
+
+  it("starts a missing row at zero so a purchase delta becomes the quantity", () => {
+    const { ctx } = makeClock();
+    const eggs = createIngredient(ctx, { name: "Eggs", defaultUnit: "count" }).id;
+
+    const purchase = applyMovement(ctx, {
+      ingredientId: eggs,
+      kind: "delta",
+      qty: 16,
+      unit: "count",
+      reason: "purchase",
+    });
+
+    expect(purchase.item.qty).toBe(16);
+    expect(purchase.item.unit).toBe("count");
+    expect(purchase.item.status).toBe("on_hand");
+    expect(purchase.movement.qtyAfter).toBe(16);
+    expect(purchase.movement.statusAfter).toBe("on_hand");
+    expect(purchase.warning).toBeUndefined();
+
+    // A negative delta on a row that never existed clamps at 0 and reads as out.
+    const removed = applyMovement(ctx, {
+      ingredientId: createIngredient(ctx, { name: "Saffron", defaultUnit: "g" }).id,
+      kind: "delta",
+      qty: -3,
+      unit: "g",
+      reason: "cook",
+    });
+    expect(removed.item.qty).toBe(0);
+    expect(removed.item.status).toBe("out");
+    expect(removed.movement.qtyAfter).toBe(0);
   });
 });
 

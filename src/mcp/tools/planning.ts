@@ -296,7 +296,9 @@ export function registerPlanningTools(server: McpServer, ctx: Ctx): void {
       inputSchema: cookHistoryInput,
       annotations: { readOnlyHint: true },
     },
-    tool((args: z.infer<typeof cookHistoryInput>) => listCookEvents(ctx, args)),
+    tool((args: z.infer<typeof cookHistoryInput>) =>
+      listCookEvents(ctx, { ...args, includeMovements: true }),
+    ),
   );
 
   server.registerTool(

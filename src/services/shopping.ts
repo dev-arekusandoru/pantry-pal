@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 import type { Ctx } from "../context.js";
 import {
   ingredients,
@@ -265,7 +265,7 @@ export function listShoppingLists(
     .select()
     .from(shoppingLists)
     .where(and(...conditions))
-    .orderBy(desc(shoppingLists.createdAt), desc(shoppingLists.id))
+    .orderBy(desc(shoppingLists.createdAt), desc(sql`${shoppingLists}.rowid`))
     .all();
   return { items };
 }

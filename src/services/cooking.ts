@@ -1,6 +1,12 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import type { Ctx } from "../context.js";
-import { cookEvents, pantryItems, stockMovements, type CookStatus } from "../db/schema.js";
+import {
+  cookEvents,
+  ingredients,
+  pantryItems,
+  stockMovements,
+  type CookStatus,
+} from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { isIsoDate, nowIso } from "../lib/time.js";
 import { applyMovement, getStockForIngredient } from "./pantry.js";
@@ -310,6 +316,17 @@ export function reopenCookEvent(ctx: Ctx, cookEventId: string): ReopenCookEventR
   });
 }
 
+/** A stock movement attributed to a cook, with the ingredient it touched. */
+export interface CookEventMovementView extends StockMovement {
+  ingredientId: string;
+  ingredientName: string;
+}
+
+export interface CookEventHistoryItem extends CookEventView {
+  /** Present only when `includeMovements` was requested. */
+  movements?: CookEventMovementView[];
+}
+
 export interface ListCookEventsInput {
   planId?: string;
   from?: string;
@@ -317,13 +334,15 @@ export interface ListCookEventsInput {
   status?: CookStatus;
   recipeId?: string;
   limit?: number;
+  /** Attach the pantry movements each cook produced (`refType` = cook_event). */
+  includeMovements?: boolean;
 }
 
 /** Cook history ("what did we eat"), newest cook date first. */
 export function listCookEvents(
   ctx: Ctx,
   input: ListCookEventsInput = {},
-): { items: CookEventView[] } {
+): { items: CookEventHistoryItem[] } {
   const conditions = [eq(cookEvents.householdId, ctx.householdId)];
   if (input.planId !== undefined) conditions.push(eq(cookEvents.mealPlanId, input.planId));
   if (input.status !== undefined) conditions.push(eq(cookEvents.status, input.status));
@@ -347,9 +366,45 @@ export function listCookEvents(
     .select({ id: cookEvents.id })
     .from(cookEvents)
     .where(and(...conditions))
-    .orderBy(desc(cookEvents.cookDate), desc(cookEvents.createdAt))
+    .orderBy(desc(cookEvents.cookDate), desc(cookEvents.createdAt), desc(sql`${cookEvents}.rowid`))
     .limit(limit)
     .all();
 
-  return { items: rows.map((row) => getCookEvent(ctx, row.id)) };
+  const items: CookEventHistoryItem[] = rows.map((row) => getCookEvent(ctx, row.id));
+
+  if (input.includeMovements === true && items.length > 0) {
+    const movements = ctx.db
+      .select({
+        movement: stockMovements,
+        ingredientId: pantryItems.ingredientId,
+        ingredientName: ingredients.name,
+      })
+      .from(stockMovements)
+      .innerJoin(pantryItems, eq(pantryItems.id, stockMovements.pantryItemId))
+      .innerJoin(ingredients, eq(ingredients.id, pantryItems.ingredientId))
+      .where(
+        and(
+          eq(stockMovements.householdId, ctx.householdId),
+          eq(stockMovements.refType, "cook_event"),
+          inArray(
+            stockMovements.refId,
+            items.map((item) => item.id),
+          ),
+        ),
+      )
+      .orderBy(asc(stockMovements.createdAt), asc(sql`${stockMovements}.rowid`))
+      .all();
+
+    const byEvent = new Map<string, CookEventMovementView[]>();
+    for (const { movement, ingredientId, ingredientName } of movements) {
+      if (movement.refId === null) continue;
+      const list = byEvent.get(movement.refId);
+      const view = { ...movement, ingredientId, ingredientName };
+      if (list === undefined) byEvent.set(movement.refId, [view]);
+      else list.push(view);
+    }
+    for (const item of items) item.movements = byEvent.get(item.id) ?? [];
+  }
+
+  return { items };
 }

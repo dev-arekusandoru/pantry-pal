@@ -240,7 +240,13 @@ export function updateRule(ctx: Ctx, id: string, patch: UpdateRuleInput): Dietar
   const scope = patch.scope ?? existing.scope;
 
   const target = normalizeTarget(ctx, scope, {
-    ingredientId: patch.ingredientId !== undefined ? patch.ingredientId : existing.ingredientId,
+    // An explicit name retargets the rule: never let the stored id shadow it.
+    ingredientId:
+      patch.ingredientId !== undefined
+        ? patch.ingredientId
+        : patch.ingredient !== undefined
+          ? null
+          : existing.ingredientId,
     ...(patch.ingredient === undefined ? {} : { ingredient: patch.ingredient }),
     recipeId: patch.recipeId !== undefined ? patch.recipeId : existing.recipeId,
     targetText: patch.targetText !== undefined ? patch.targetText : existing.targetText,

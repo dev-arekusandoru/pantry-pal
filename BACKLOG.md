@@ -18,4 +18,9 @@
 - Expiry dates and use-soon alerts
 - Analytics: what we actually eat, waste, cost per meal
 - Price tracking per ingredient/store
-- Par levels → auto-add staples to shopping list
+- Purchase-friendly units on shopping lists: tiny converted amounts show as "0.02 cup" sugar or "0.13 cup" flour; show them in the recipe unit or round to package sizes
+- Smarter staple handling: spices/oils with unknown stock currently land in the "check pantry" bucket every week
+
+## Tooling
+- CI (typecheck + tests + docker build), linter/formatter config
+- Verify the Docker image build (not yet run: the build host had no Docker socket access)

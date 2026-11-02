@@ -114,11 +114,11 @@ unresolved candidates rather than silently created, unless the call asks for cre
 |---|---|---|
 | `recipe_search` | — | Find recipes by title/description/tag, status, meal type, ingredient or maximum total time. |
 | `recipe_get` | — | One recipe by id or slug with structured ingredients, ordered steps, times, nutrition and notes; pass `servings` to include the scaled ingredient list. |
-| `recipe_save` | `create` / `update` | Create a recipe (no `id`, `title` required) or patch one (`id`), including ingredient lines (qty/unit/ranges/optional) and steps. |
-| `recipe_set_status` | — | Move a recipe through `want_to_try` / `rotation` / `never` / `archived` with an optional rating and note. |
-| `recipe_check` | — | Check a recipe (`recipeId`) or loose ingredient names (`ingredients`) against dietary rules; returns matching rules with their condition notes so the agent can judge exceptions. |
+| `recipe_save` | `create` / `update` | Create a recipe (no `id`, `title` required) or patch one (`id` or slug), including ingredient lines (qty/unit/ranges/optional) and steps. `statusNote` on a patch is recorded on the status-history event written when the status or rating changes. |
+| `recipe_set_status` | — | Move a recipe (id or slug) through `want_to_try` / `rotation` / `never` / `archived` with an optional rating and note. |
+| `recipe_check` | — | Check a stored recipe (`recipeId`, id or slug) or loose ingredient names (`ingredients`) against dietary rules; returns matching rules with their condition notes so the agent can judge exceptions. |
 | `rules_list` | — | List dietary rules (ingredient/category/recipe/tag/keyword scope, severity, condition notes, member scope). |
-| `rules_manage` | `create` / `update` / `delete` | Manage dietary rules; targets depend on scope (ingredient id or name, recipe id, category/tag/keyword text). |
+| `rules_manage` | `create` / `update` / `delete` | Manage dietary rules; targets depend on scope (ingredient id or name, recipe id, category/tag/keyword text). An update that passes `ingredient` retargets an ingredient rule to that name (created when unknown). |
 
 ### Plans and cooking
 
@@ -130,7 +130,7 @@ unresolved candidates rather than silently created, unless the call asks for cre
 | `plan_update` | `update` / `add_cook` / `update_cook` / `delete_cook` | Update plan metadata, or add/reschedule/retarget/remove cook events (recipe, cook date, planned servings, label, rating). |
 | `prep_tasks` | `list` / `add` / `update` / `complete` / `delete` | List (optionally by plan/date, including done), add, edit, complete or remove prep tasks. |
 | `cook_complete` | `complete` / `skip` / `reopen` | Complete a cook: records actual servings, rating and notes and decrements the pantry by the scaled ingredients; skip records it as not cooked; reopen restores stock. |
-| `cook_history` | — | Recent cook events with recipe, date, servings, rating, notes and the movements they produced. |
+| `cook_history` | — | Recent cook events with recipe, date, servings, rating and notes, each with the pantry movements it produced (ingredient name, quantity, unit, resulting stock). |
 
 ### Shopping
 

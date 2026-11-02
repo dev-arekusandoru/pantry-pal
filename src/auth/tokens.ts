@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { apiTokens } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
@@ -59,7 +59,7 @@ export function listTokens(db: Db, householdId: string): ApiTokenSummary[] {
     .select()
     .from(apiTokens)
     .where(eq(apiTokens.householdId, householdId))
-    .orderBy(desc(apiTokens.createdAt))
+    .orderBy(desc(apiTokens.createdAt), desc(sql`${apiTokens}.rowid`))
     .all()
     .map(toSummary);
 }

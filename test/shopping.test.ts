@@ -526,6 +526,33 @@ describe("completeShoppingList", () => {
     expectAppError(() => updateShoppingList(ctx, listId, { title: "Nope" }), "conflict");
   });
 
+  it("stocks checked items for ingredients that have no pantry row yet", () => {
+    const { ctx } = makeTestCtx();
+    const eggs = addIngredient(ctx, { name: "Eggs", defaultUnit: "count" });
+    expect(pantryRow(ctx, eggs)).toBeUndefined();
+
+    const detail = createShoppingList(ctx, {
+      items: [{ ingredient: "Eggs", qty: 16, unit: "count" }],
+    });
+    const item = detail.items[0]!;
+    checkItems(ctx, detail.list.id, [{ itemId: item.id, checked: true }]);
+
+    const result = completeShoppingList(ctx, detail.list.id);
+
+    expect(result.movements).toHaveLength(1);
+    expect(result.movements[0]).toMatchObject({
+      kind: "delta",
+      qty: 16,
+      qtyAfter: 16,
+      statusAfter: "on_hand",
+      reason: "purchase",
+    });
+    const row = pantryRow(ctx, eggs)!;
+    expect(row.qty).toBe(16);
+    expect(row.unit).toBe("count");
+    expect(row.status).toBe("on_hand");
+  });
+
   it("uses received overrides and stores them in the given location", () => {
     const { ctx } = makeTestCtx();
     const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });

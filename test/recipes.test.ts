@@ -13,7 +13,7 @@ import {
   setRecipeStatus,
   updateRecipe,
 } from "../src/services/recipes.js";
-import { FIXED_NOW, makeTestCtx } from "./helpers.js";
+import { FIXED_NOW, makeTestApp, makeTestCtx } from "./helpers.js";
 
 function expectAppError(fn: () => unknown, code: AppError["code"]): AppError {
   try {
@@ -224,6 +224,38 @@ describe("updateRecipe", () => {
     expect(history.items).toHaveLength(2);
     expect(history.items[0]!.status).toBe("rotation");
   });
+
+  it("stores statusNote as the note of the status event written by the patch", () => {
+    const { ctx } = makeTestCtx({ now: tickingClock() });
+    const created = createRecipe(ctx, { title: "Patch Note" });
+
+    updateRecipe(ctx, created.id, {
+      status: "rotation",
+      statusNote: "Sunday favourite",
+    });
+
+    const history = listStatusHistory(ctx, created.id);
+    expect(history.items).toHaveLength(2);
+    expect(history.items[0]).toMatchObject({
+      status: "rotation",
+      note: "Sunday favourite",
+    });
+  });
+
+  it("records a status event with the note when only the rating changes", () => {
+    const { ctx } = makeTestCtx({ now: tickingClock() });
+    const created = createRecipe(ctx, { title: "Rated Patch" });
+
+    updateRecipe(ctx, created.id, { rating: 4, statusNote: "family liked it" });
+
+    const history = listStatusHistory(ctx, created.id);
+    expect(history.items).toHaveLength(2);
+    expect(history.items[0]).toMatchObject({
+      status: "want_to_try",
+      rating: 4,
+      note: "family liked it",
+    });
+  });
 });
 
 describe("scaleRecipeIngredients", () => {
@@ -286,10 +318,71 @@ describe("setRecipeStatus", () => {
     expect(getRecipe(ctx, created.id).status).toBe("archived");
   });
 
+  it("orders events written in the same millisecond by insertion order", () => {
+    // Fixed clock: the initial event and both updates share one `createdAt`.
+    const { ctx } = makeTestCtx();
+    const created = createRecipe(ctx, { title: "Tied Timestamps" });
+    setRecipeStatus(ctx, created.id, { status: "rotation", note: "first change" });
+    setRecipeStatus(ctx, created.id, { status: "archived", note: "second change" });
+
+    const history = listStatusHistory(ctx, created.id);
+    expect(new Set(history.items.map((event) => event.createdAt)).size).toBe(1);
+    expect(history.items.map((event) => event.status)).toEqual([
+      "archived",
+      "rotation",
+      "want_to_try",
+    ]);
+    expect(history.items.map((event) => event.note)).toEqual([
+      "second change",
+      "first change",
+      null,
+    ]);
+  });
+
   it("rejects an out-of-range rating", () => {
     const { ctx } = makeTestCtx();
     const created = createRecipe(ctx, { title: "Rated" });
     expectAppError(() => setRecipeStatus(ctx, created.id, { status: "rotation", rating: 9 }), "validation");
+  });
+});
+
+describe("recipe REST sub-routes", () => {
+  it("accepts a slug for check, status, status-history and scaled", async () => {
+    const { ctx, request } = makeTestApp();
+    const recipe = createRecipe(ctx, {
+      title: "Slug Sub-Routes",
+      servings: 2,
+      ingredients: [{ ingredient: "Jasmine rice", qty: 1, unit: "cup" }],
+    });
+
+    const check = await request<{ recipeId: string }>(
+      "GET",
+      `/api/v1/recipes/${recipe.slug}/check`,
+    );
+    expect(check.status).toBe(200);
+    expect(check.body.recipeId).toBe(recipe.id);
+
+    const status = await request<{ recipe: { status: string } }>(
+      "POST",
+      `/api/v1/recipes/${recipe.slug}/status`,
+      { status: "rotation", note: "by slug" },
+    );
+    expect(status.status).toBe(200);
+    expect(status.body.recipe.status).toBe("rotation");
+
+    const history = await request<{ items: { status: string; note: string | null }[] }>(
+      "GET",
+      `/api/v1/recipes/${recipe.slug}/status-history`,
+    );
+    expect(history.status).toBe(200);
+    expect(history.body.items[0]).toMatchObject({ status: "rotation", note: "by slug" });
+
+    const scaled = await request<{ items: { qty: number | null }[] }>(
+      "GET",
+      `/api/v1/recipes/${recipe.slug}/scaled?servings=4`,
+    );
+    expect(scaled.status).toBe(200);
+    expect(scaled.body.items[0]!.qty).toBe(2);
   });
 });
 
