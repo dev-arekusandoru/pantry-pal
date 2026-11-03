@@ -12,3 +12,16 @@ services:
       HOST: 0.0.0.0
     volumes:
       - ./data:/data
+    networks:
+      - default
+      - rakazo
+
+# Shared network with the rakazo stack. The network is owned by rakazo's compose
+# project, so it must exist before this stack starts:
+#   docker network ls | grep -i rakazo
+#   docker network create rakazo_app   # only if missing
+# Override the name with RAKAZO_NETWORK if it differs.
+networks:
+  rakazo:
+    name: ${RAKAZO_NETWORK:-rakazo_app}
+    external: true
