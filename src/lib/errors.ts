@@ -4,7 +4,8 @@ export type ErrorCode =
   | "conflict"
   | "validation"
   | "unprocessable"
-  | "unauthorized";
+  | "unauthorized"
+  | "unavailable";
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
   not_found: 404,
@@ -12,6 +13,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   validation: 400,
   unprocessable: 422,
   unauthorized: 401,
+  unavailable: 503,
 };
 
 /** HTTP status for a domain error code. */

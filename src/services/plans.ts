@@ -26,6 +26,7 @@ import {
 } from "../lib/time.js";
 import { getHousehold } from "./households.js";
 import { getRecipe } from "./recipes.js";
+import { planHasStaleShoppingList } from "./shopping.js";
 
 // ---------------------------------------------------------------------------
 // Public shapes
@@ -1174,6 +1175,170 @@ export function setSlots(ctx: Ctx, planId: string, ops: SetSlotsOp[]): SetSlotsR
 }
 
 // ---------------------------------------------------------------------------
+// Swapping a meal
+// ---------------------------------------------------------------------------
+
+export const SWAP_SCOPES = ["this", "with_leftovers"] as const;
+export type SwapScope = (typeof SWAP_SCOPES)[number];
+
+export interface SwapMealInput extends RecipeRef {
+  /** Slot to change. Alternatively give `date` + `mealType` (creates the slot when none exists). */
+  slotId?: string;
+  date?: string;
+  mealType?: MealType;
+  /**
+   * `this`: only this meal; `with_leftovers`: the cook that feeds this slot, and so
+   * every slot it feeds.
+   */
+  scope: SwapScope;
+}
+
+export interface SwapMealResult {
+  plan: PlanView;
+  /** True when an open shopping list generated from this plan no longer matches it. */
+  shoppingListStale: boolean;
+}
+
+/** The slot a swap targets, or null when the date+mealType group has none yet. */
+function findSwapSlot(ctx: Ctx, plan: PlanRow, input: SwapMealInput): SlotRow | null {
+  if (input.slotId !== undefined) {
+    const row = requireSlotRow(ctx, input.slotId);
+    if (row.mealPlanId !== plan.id) {
+      throw new AppError("not_found", `Slot ${row.id} not found in plan ${plan.id}`, {
+        planId: plan.id,
+        slotId: row.id,
+      });
+    }
+    return row;
+  }
+  if (input.date === undefined || input.mealType === undefined) {
+    throw new AppError("validation", "Provide slotId, or date and mealType");
+  }
+  assertIsoDate(input.date, "date");
+  assertWithinWeek(input.date, plan.weekStart);
+  const rows = ctx.db
+    .select()
+    .from(mealSlots)
+    .where(
+      and(
+        eq(mealSlots.householdId, ctx.householdId),
+        eq(mealSlots.mealPlanId, plan.id),
+        eq(mealSlots.date, input.date),
+        eq(mealSlots.mealType, input.mealType),
+      ),
+    )
+    .orderBy(asc(mealSlots.position), asc(mealSlots.id))
+    .all();
+  if (rows.length > 1) {
+    throw new AppError(
+      "validation",
+      `${rows.length} slots exist at ${input.date} ${input.mealType}; pass slotId`,
+      { date: input.date, mealType: input.mealType, slotIds: rows.map((row) => row.id) },
+    );
+  }
+  return rows[0] ?? null;
+}
+
+/**
+ * Put a different recipe on a meal slot in one transaction.
+ *
+ * A slot is fed by a cook event (leftover slots share the cook of an earlier day).
+ * - `with_leftovers` changes the recipe of that cook, so every slot it feeds changes.
+ * - `this` changes it in place when the cook feeds only this slot, otherwise the slot
+ *   detaches into its own new cook (dated the slot's date) and the others keep theirs.
+ * - A slot with no cook (empty, freeform or skip) gets a new cook; both scopes agree.
+ *
+ * Cooks that are already done can't be changed; a leftover slot of a done cook can
+ * still be detached with `this`. The swapped-out cook is never left feeding nothing:
+ * in-place edits keep it in use and detaching only happens when others still use it.
+ */
+export function swapMeal(ctx: Ctx, planId: string, input: SwapMealInput): SwapMealResult {
+  if (!SWAP_SCOPES.includes(input.scope)) {
+    throw new AppError("validation", `scope must be one of ${SWAP_SCOPES.join(", ")}`, {
+      scope: input.scope,
+    });
+  }
+  const plan = requirePlanRow(ctx, planId);
+  const settings = settingsOf(ctx);
+
+  ctx.db.transaction((tx) => {
+    const t = withTx(ctx, tx);
+    const timestamp = nowIso(t);
+    const recipe = resolveRecipeRef(t, input);
+    const slot = findSwapSlot(t, plan, input);
+    const event = slot?.cookEventId ? requireCookEventRow(t, slot.cookEventId) : null;
+
+    if (event !== null && slot !== null) {
+      const fed = eventStats(t, event.id)?.fedSlots ?? 0;
+      const inPlace = event.status === "planned" && (input.scope === "with_leftovers" || fed <= 1);
+      if (inPlace) {
+        t.db
+          .update(cookEvents)
+          .set({ recipeId: recipe.id, updatedAt: timestamp })
+          .where(eq(cookEvents.id, event.id))
+          .run();
+        return;
+      }
+      if (input.scope === "with_leftovers") {
+        throw new AppError(
+          "validation",
+          `Cook event ${event.id} is ${event.status}, so its recipe can't be changed`,
+          { id: event.id, status: event.status },
+        );
+      }
+      if (event.status === "done" && slot.date <= event.cookDate) {
+        throw new AppError("validation", `Cook event ${event.id} is already done, so it can't be swapped`, {
+          id: event.id,
+          status: event.status,
+        });
+      }
+    }
+
+    // Slot without a cook, or one detaching from a cook that others still use.
+    const date = slot?.date ?? input.date;
+    const mealType = slot?.mealType ?? input.mealType;
+    if (date === undefined || mealType === undefined) {
+      throw new AppError("validation", "Provide slotId, or date and mealType");
+    }
+    const plannedServings = slot?.servings ?? defaultServingsForMeal(settings, mealType);
+    assertPositive(plannedServings, "plannedServings");
+
+    const eventId = newId("ce");
+    t.db
+      .insert(cookEvents)
+      .values({
+        id: eventId,
+        householdId: t.householdId,
+        mealPlanId: plan.id,
+        recipeId: recipe.id,
+        cookDate: date,
+        plannedServings,
+        status: "planned",
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      })
+      .run();
+
+    if (slot === null) {
+      insertSlotRow(t, plan.id, plan.weekStart, {
+        date,
+        mealType,
+        kind: "meal",
+        cookEventId: eventId,
+      });
+    } else {
+      t.db
+        .update(mealSlots)
+        .set({ kind: "meal", cookEventId: eventId, label: null })
+        .where(eq(mealSlots.id, slot.id))
+        .run();
+    }
+  });
+
+  return { plan: buildPlanView(ctx, plan), shoppingListStale: planHasStaleShoppingList(ctx, plan.id) };
+}
+
+// ---------------------------------------------------------------------------
 // Cook events
 // ---------------------------------------------------------------------------
 
@@ -1206,6 +1371,40 @@ export function addCookEvent(
       label: input.label ?? null,
       status: "planned",
       notes: input.notes ?? null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    })
+    .run();
+  return toCookEventViewById(ctx, eventId);
+}
+
+export interface AddAdHocCookEventInput extends RecipeRef {
+  /** Defaults to today on the context clock. */
+  cookDate?: string;
+  /** Defaults to the household defaultServings. */
+  plannedServings?: number;
+}
+
+/** A cook outside any plan (`mealPlanId` is null), e.g. cooking from the recipe box. */
+export function addAdHocCookEvent(ctx: Ctx, input: AddAdHocCookEventInput): CookEventView {
+  const cookDate = input.cookDate ?? todayIn(ctx);
+  assertIsoDate(cookDate, "cookDate");
+  const recipe = resolveRecipeRef(ctx, input);
+  const plannedServings = input.plannedServings ?? settingsOf(ctx).defaultServings;
+  assertPositive(plannedServings, "plannedServings");
+
+  const eventId = newId("ce");
+  const timestamp = nowIso(ctx);
+  ctx.db
+    .insert(cookEvents)
+    .values({
+      id: eventId,
+      householdId: ctx.householdId,
+      mealPlanId: null,
+      recipeId: recipe.id,
+      cookDate,
+      plannedServings,
+      status: "planned",
       createdAt: timestamp,
       updatedAt: timestamp,
     })

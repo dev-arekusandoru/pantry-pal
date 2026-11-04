@@ -1,0 +1,292 @@
+.loading {
+  display: grid;
+  gap: 14px;
+}
+
+/* ---------- dinner tonight ---------- */
+.tonight,
+.tonightPlain {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+}
+
+.tonight {
+  padding: 10px 10px 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.tonightPlain {
+  padding: 22px 22px 24px;
+}
+
+.tonightPlate {
+  aspect-ratio: 16 / 10;
+  border-radius: var(--r-lg);
+}
+
+.tonightBody {
+  padding: 0 12px;
+}
+
+.kicker {
+  display: inline-block;
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  padding: 3px 12px;
+  border-radius: var(--r-pill);
+  transform: rotate(-2deg);
+  margin-bottom: 10px;
+}
+
+.tonightTitle {
+  font-size: var(--fs-title);
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.tonightPlain .tonightTitle {
+  margin-bottom: 16px;
+}
+
+.tonightMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 14.5px;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+  margin-bottom: 16px;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (min-width: 700px) {
+  .tonight {
+    grid-template-columns: 1.1fr 1fr;
+    align-items: center;
+    padding: 12px;
+  }
+}
+
+/* ---------- prep nudge ---------- */
+.nudge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--peach-s);
+  border-radius: var(--r-md);
+  padding: 12px 12px 12px 16px;
+  margin-bottom: 22px;
+}
+
+.nudgeIcon {
+  display: inline-flex;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--tomato-text);
+}
+
+.nudgeText {
+  flex: 1;
+  min-width: 0;
+}
+
+.nudgeWhen {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+}
+
+.nudgeTask {
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+}
+
+.nudge > button {
+  flex: none;
+  padding: 0 16px;
+}
+
+/* ---------- days and slots ---------- */
+.days {
+  display: grid;
+  gap: 14px;
+}
+
+.day {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: 14px 16px 8px;
+  box-shadow: var(--shadow);
+}
+
+.isToday {
+  box-shadow: 0 0 0 3px var(--butter), var(--shadow);
+}
+
+.dayName {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.dayShort {
+  font-size: 26px;
+  font-variation-settings: "wdth" 80;
+}
+
+.dayDate {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.todayFlag {
+  margin-left: auto;
+  align-self: center;
+  background: var(--butter);
+  color: var(--ink-fixed);
+  padding: 2px 12px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-heavy);
+  transform: rotate(3deg);
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-top: 2px dashed var(--line);
+}
+
+.slots > .slot:first-child {
+  border-top: 0;
+}
+
+.slotMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px 0;
+  text-decoration: none;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slotBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.slotMeal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.slotMealFixed {
+  width: 72px;
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.slotTitle {
+  font-weight: var(--fw-bold);
+  font-size: 16.5px;
+  line-height: 1.2;
+}
+
+.leftover .slotTitle {
+  font-weight: var(--fw-semibold);
+}
+
+.slotNote {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.slotNote svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--tomato-text);
+}
+
+.stateTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  background: var(--pistachio-s);
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+
+.done .slotTitle {
+  color: var(--muted);
+}
+
+.skipped {
+  opacity: 0.7;
+}
+
+.skipped .slotTitle {
+  text-decoration: line-through;
+}
+
+.skipped .stateTag {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.planBtn {
+  min-height: 56px;
+}
+
+.slotAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tomato-text);
+  font-weight: var(--fw-bold);
+}
+
+.slotAdd svg {
+  width: 20px;
+  height: 20px;
+}

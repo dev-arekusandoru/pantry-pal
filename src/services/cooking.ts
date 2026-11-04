@@ -10,7 +10,7 @@ import {
 import { AppError } from "../lib/errors.js";
 import { isIsoDate, nowIso } from "../lib/time.js";
 import { applyMovement, getStockForIngredient } from "./pantry.js";
-import { getCookEvent, type CookEventView } from "./plans.js";
+import { addAdHocCookEvent, getCookEvent, type CookEventView, type RecipeRef } from "./plans.js";
 import { scaleRecipeIngredients } from "./recipes.js";
 import { convert, normalizeUnit } from "./units.js";
 
@@ -194,6 +194,34 @@ export function completeCookEvent(
     }
 
     return { cookEvent: getCookEvent(t, existing.id), movements, warnings };
+  });
+}
+
+export interface CookAdHocInput extends RecipeRef {
+  /** Servings cooked; defaults to the household defaultServings. */
+  servings?: number;
+  /** Defaults to today on the context clock. */
+  cookDate?: string;
+  /** Also complete the cook now (decrements the pantry). Default false. */
+  complete?: boolean;
+}
+
+/**
+ * Record a cook outside any plan (cooking from the recipe box). With `complete`,
+ * the cook is completed in the same transaction exactly like
+ * {@link completeCookEvent}; otherwise it stays planned and `movements` is empty.
+ */
+export function cookAdHoc(ctx: Ctx, input: CookAdHocInput): CompleteCookEventResult {
+  return ctx.db.transaction((tx) => {
+    const t = withTx(ctx, tx);
+    const created = addAdHocCookEvent(t, {
+      ...(input.recipeId === undefined ? {} : { recipeId: input.recipeId }),
+      ...(input.recipe === undefined ? {} : { recipe: input.recipe }),
+      ...(input.cookDate === undefined ? {} : { cookDate: input.cookDate }),
+      ...(input.servings === undefined ? {} : { plannedServings: input.servings }),
+    });
+    if (input.complete !== true) return { cookEvent: created, movements: [], warnings: [] };
+    return completeCookEvent(t, created.id);
   });
 }
 

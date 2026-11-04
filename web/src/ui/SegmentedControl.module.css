@@ -1,0 +1,30 @@
+.root {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 6px 4px 10px;
+}
+
+.root::-webkit-scrollbar {
+  display: none;
+}
+
+.seg {
+  flex: none;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  box-shadow: 0 0 0 2px var(--line);
+  transition: all var(--dur) var(--pop);
+}
+
+.on {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: none;
+  transform: rotate(-2deg) scale(1.04);
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `shopping_list` ADD `plan_fingerprint` text;

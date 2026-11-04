@@ -1,0 +1,55 @@
+.host {
+  position: fixed;
+  z-index: var(--z-toast);
+  left: 50%;
+  bottom: calc(var(--nav-h) + 30px + var(--safe-bottom));
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--ink);
+  color: var(--bg);
+  padding: 14px 24px;
+  border-radius: var(--r-pill);
+  font-weight: var(--fw-bold);
+  text-align: center;
+  animation: pop-in 0.35s var(--pop);
+}
+
+.error {
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+}
+
+.action {
+  font-weight: var(--fw-heavy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 32px;
+  padding: 0 4px;
+}
+
+@media (min-width: 768px) {
+  .host {
+    bottom: 32px;
+    left: calc(50% + var(--rail-w) / 2);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
+  }
+}

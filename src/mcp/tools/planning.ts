@@ -7,6 +7,7 @@ import {
   isoDateSchema,
   planStatusSchema,
   setSlotsSchema,
+  swapMealSchema,
 } from "../../schemas/plans.js";
 import { completeCookEvent, listCookEvents, reopenCookEvent, skipCookEvent } from "../../services/cooking.js";
 import { computeAvailability, computeDemand } from "../../services/demand.js";
@@ -21,6 +22,7 @@ import {
   getPlan,
   listPrepTasks,
   setSlots,
+  swapMeal,
   updateCookEvent,
   updatePlan,
   updatePrepTask,
@@ -37,6 +39,11 @@ const planGetInput = z.object({
 const planSetSlotsInput = z.object({
   planId: z.string().min(1).describe("Plan id (plan_…)."),
   ops: setSlotsSchema.shape.ops,
+});
+
+const planSwapMealInput = z.object({
+  planId: z.string().min(1).describe("Plan id (plan_…)."),
+  ...swapMealSchema.shape,
 });
 
 const planUpdateInput = z
@@ -143,6 +150,20 @@ export function registerPlanningTools(server: McpServer, ctx: Ctx): void {
       inputSchema: planSetSlotsInput,
     },
     tool((args: z.infer<typeof planSetSlotsInput>) => setSlots(ctx, args.planId, args.ops)),
+  );
+
+  server.registerTool(
+    "plan_swap_meal",
+    {
+      title: "Swap a meal",
+      description:
+        "Put a different recipe on one meal slot. scope=with_leftovers changes the cook that feeds the slot (every slot it feeds changes); scope=this changes only this meal (a slot sharing its cook becomes its own cook). Slots without a cook get a new one; target them by slotId, or by date+mealType. Cooks already done can't be swapped. Returns the plan and shoppingListStale (regenerate the list when true).",
+      inputSchema: planSwapMealInput,
+    },
+    tool((args: z.infer<typeof planSwapMealInput>) => {
+      const { planId, ...input } = args;
+      return swapMeal(ctx, planId, input);
+    }),
   );
 
   server.registerTool(

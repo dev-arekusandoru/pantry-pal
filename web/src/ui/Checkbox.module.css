@@ -1,0 +1,64 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: inherit;
+}
+
+.box {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: var(--r-xs);
+  border: 3px solid var(--line);
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  transition: all 0.2s;
+}
+
+.box svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--ink-fixed);
+  stroke-width: 3.2;
+  opacity: 0;
+  transform: scale(0.3) rotate(-30deg);
+  transition: all 0.3s var(--pop);
+}
+
+.input:checked + .box {
+  background: var(--pistachio);
+  border-color: var(--pistachio);
+}
+
+.input:checked + .box svg {
+  opacity: 1;
+  transform: none;
+}
+
+.input:focus-visible + .box {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.input:disabled + .box {
+  opacity: 0.5;
+}
+
+.label {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  line-height: 1.2;
+}

@@ -482,3 +482,42 @@ export const cookEventMutationResultSchema = z.object({
   movements: z.array(stockMovementSchema),
   warnings: z.array(z.string()),
 });
+
+export const cookAdHocSchema = z
+  .object({
+    ...recipeRefShape,
+    servings: servingsField.describe("Servings cooked. Defaults to the household defaultServings."),
+    cookDate: isoDateSchema
+      .optional()
+      .describe("Date of the cook. Defaults to today (UTC date of the server clock)."),
+    complete: z
+      .boolean()
+      .optional()
+      .describe("Also complete the cook now and decrement the pantry. Default false."),
+  })
+  .openapi({ description: "Record a cook outside any meal plan, optionally completing it at once." });
+
+export const swapMealSchema = z
+  .object({
+    slotId: z
+      .string()
+      .min(1)
+      .optional()
+      .describe("Slot to change. Omit it to target `date` + `mealType` (a slot is created when none exists)."),
+    date: isoDateSchema.optional().describe("Used with `mealType` when `slotId` is omitted."),
+    mealType: mealTypeSchema.optional().describe("Used with `date` when `slotId` is omitted."),
+    ...recipeRefShape,
+    scope: z
+      .enum(["this", "with_leftovers"])
+      .describe(
+        "`this`: only this meal (a slot that shares a cook with other slots becomes its own cook). `with_leftovers`: the cook that feeds this slot, so every slot it feeds changes.",
+      ),
+  })
+  .openapi({ description: "Put a different recipe on one meal slot." });
+
+export const swapMealResultSchema = z.object({
+  plan: planViewSchema,
+  shoppingListStale: z
+    .boolean()
+    .describe("True when an open shopping list generated from this plan is now out of date."),
+});

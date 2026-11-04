@@ -99,6 +99,8 @@ database file.
 | `PANTRYPAL_DB_PATH` | `./data/pantrypal.db` (image: `/data/pantrypal.db`) | SQLite file; its directory is created on start and WAL mode is enabled |
 | `PORT` | `8787` | HTTP listen port |
 | `HOST` | `0.0.0.0` | HTTP bind address |
+| `PANTRYPAL_TRUST_NETWORK` | unset (off) | `1` or `true`: `/api/v1/*` requests without an `Authorization` header act as the instance's household (see [Authentication](#authentication)) |
+| `PANTRYPAL_WEB_DIR` | `web/dist` under the app root | Directory of the built web app served at `/`; when it has no `index.html` the server only serves the API |
 
 Pending migrations run automatically at startup and in every CLI command; there is no separate
 migrate step to remember.
@@ -110,11 +112,18 @@ CLI, stored as SHA-256 hashes with a short prefix for identification, and can be
 time (`pnpm cli token revoke <id>`). `GET /health` is public. One token belongs to one household;
 this is a single-household-per-instance design.
 
+**Network trust (opt-in, for the web app).** With `PANTRYPAL_TRUST_NETWORK=1`, `/api/v1/*` requests
+that send no `Authorization` header act as the instance's single household, so the browser UI needs
+no login: anyone who can reach the port is in. A token that is sent is still verified (an invalid one
+is a 401), `/mcp` always requires a token, and the default is off. Only enable it on a private
+network, for example behind `tailscale serve`; see [docs/self-hosting.md](docs/self-hosting.md#web-app-and-network-trust).
+If the instance has no household yet, those requests get a 503 with code `unavailable`.
+
 ## REST API
 
 Base path `/api/v1`, JSON in and out, camelCase fields. Errors are
 `{"error": {"code", "message", "details?"}}` with codes `not_found`, `conflict`, `validation`,
-`unprocessable`, `unauthorized`. Lists are `{"items": [...]}`. `/openapi.json` is the authoritative
+`unprocessable`, `unauthorized`, `unavailable`. Lists are `{"items": [...]}`. `/openapi.json` is the authoritative
 reference — it is generated from the route definitions; the table below is the map.
 
 | Group | Endpoints (base) | Highlights |
@@ -125,8 +134,8 @@ reference — it is generated from the route definitions; the table below is the
 | Pantry | `/pantry`, `/pantry/movements`, `/pantry/availability`, `/pantry/set`, `/pantry/adjust`, `/pantry/bulk` | Stock per location, ledger history, available = on hand − committed |
 | Recipes | `/recipes`, `/recipes/{idOrSlug}`, `/recipes/{idOrSlug}/status`, `/recipes/{idOrSlug}/status-history`, `/recipes/{idOrSlug}/check`, `/recipes/{idOrSlug}/scaled` | Full recipes with ingredients + steps, status history, rule check, scaling to servings |
 | Rules | `/rules`, `/rules/check-ingredients` | CRUD over ingredient/category/recipe/tag/keyword rules, optionally member-scoped |
-| Plans | `/plans`, `/plans/{id}/slots`, `/plans/{id}/cook-events`, `/plans/{id}/prep-tasks`, `/plans/{id}/demand`, `/cook-events/{id}/complete` | Weekly grid, cook events feeding multiple slots, demand, prep schedule, cook completion |
-| Shopping lists | `/shopping-lists`, `/shopping-lists/generate`, `/shopping-lists/{id}/items`, `/shopping-lists/{id}/check`, `/shopping-lists/{id}/complete` | Generate from a plan, check items off in store, complete into purchases |
+| Plans | `/plans`, `/plans/{id}/slots`, `/plans/{id}/swap`, `/plans/{id}/cook-events`, `/plans/{id}/prep-tasks`, `/plans/{id}/demand`, `/cook-events`, `/cook-events/{id}/complete` | Weekly grid, cook events feeding multiple slots, one-call meal swap, demand, prep schedule, cook completion, ad-hoc cooks outside any plan (`POST /cook-events`, optionally completed at once) |
+| Shopping lists | `/shopping-lists`, `/shopping-lists/generate`, `/shopping-lists/{id}/items`, `/shopping-lists/{id}/check`, `/shopping-lists/{id}/complete` | Generate from a plan, check items off in store, complete into purchases; lists carry `stale` when the plan changed after generation |
 
 ## MCP
 

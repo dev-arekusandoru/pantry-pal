@@ -1,0 +1,31 @@
+.banner {
+  position: fixed;
+  z-index: var(--z-toast);
+  top: calc(10px + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 94vw;
+  padding: 8px 8px 8px 18px;
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow);
+  font-weight: var(--fw-bold);
+  animation: drop 0.35s var(--pop);
+}
+
+.banner button {
+  color: inherit;
+  height: 40px;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -24px);
+  }
+}

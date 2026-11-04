@@ -1,0 +1,127 @@
+/* Global reset + base elements. Component styles live in CSS modules. */
+@import "@fontsource-variable/bricolage-grotesque/wdth.css";
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: var(--fw-regular) var(--fs-base) / 1.45 var(--font);
+  font-variation-settings: var(--wdth-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+body.scroll-locked {
+  overflow: hidden;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: var(--fw-heavy);
+  letter-spacing: -0.02em;
+  font-variation-settings: var(--wdth-heading);
+}
+
+h1 {
+  font-size: var(--fs-display);
+  line-height: 0.92;
+}
+h2 {
+  font-size: var(--fs-h2);
+}
+h3 {
+  font-size: var(--fs-h3);
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  font-variation-settings: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+/* Visible focus everywhere. Contrast against both page and tinted blocks. */
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 14px;
+}
+
+[data-theme="dark"] :focus-visible {
+  outline-color: var(--butter);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :focus-visible {
+    outline-color: var(--butter);
+  }
+}
+
+::selection {
+  background: var(--butter);
+  color: #3b2218;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

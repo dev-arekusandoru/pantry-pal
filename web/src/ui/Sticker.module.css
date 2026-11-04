@@ -1,0 +1,38 @@
+.sticker {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  font-size: calc(var(--size) * 0.54);
+  line-height: 1;
+  transform: rotate(var(--tilt));
+}
+
+.disc {
+  border-radius: 50%;
+  background: var(--card);
+}
+.peach {
+  box-shadow: 0 0 0 3px var(--peach-s), 0 3px 0 3px var(--peach-s);
+}
+.pistachio {
+  box-shadow: 0 0 0 3px var(--pistachio-s), 0 3px 0 3px var(--pistachio-s);
+}
+.blue {
+  box-shadow: 0 0 0 3px var(--blue-s), 0 3px 0 3px var(--blue-s);
+}
+.gum {
+  box-shadow: 0 0 0 3px var(--gum-s), 0 3px 0 3px var(--gum-s);
+}
+.butter {
+  box-shadow: 0 0 0 3px var(--butter-s), 0 3px 0 3px var(--butter-s);
+}
+.plain {
+  background: var(--bg);
+}
+
+.die-cut {
+  font-size: var(--size);
+  filter: drop-shadow(0 6px 0 rgba(255, 255, 255, 0.55)) drop-shadow(0 8px 10px rgba(80, 30, 0, 0.2));
+}

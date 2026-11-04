@@ -8,6 +8,13 @@
       "when": 1793587707467,
       "tag": "0000_certain_nightshade",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793671345583,
+      "tag": "0001_shopping_list_plan_fingerprint",
+      "breakpoints": true
     }
   ]
 }

@@ -13,12 +13,18 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "pnpm build:server && pnpm web:build",
     "start": "node dist/server.js",
     "cli": "tsx src/cli.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && pnpm --filter @pantrypal/web typecheck",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "build:server": "tsc -p tsconfig.build.json",
+    "test:web": "pnpm --filter @pantrypal/web test",
+    "test:all": "vitest run && pnpm test:web",
+    "openapi": "tsx scripts/openapi.ts && pnpm --filter @pantrypal/web openapi:types",
+    "web:dev": "pnpm --filter @pantrypal/web dev",
+    "web:build": "pnpm --filter @pantrypal/web build"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

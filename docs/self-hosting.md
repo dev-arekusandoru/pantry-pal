@@ -57,6 +57,37 @@ PANTRYPAL_DB_PATH=/srv/pantrypal/pantrypal.db node dist/server.js
 Use a process supervisor (systemd, runit, s6) to keep it running; the server handles `SIGTERM` and
 closes the database cleanly.
 
+## Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PANTRYPAL_DB_PATH` | `./data/pantrypal.db` (image: `/data/pantrypal.db`) | SQLite file; its directory is created on start |
+| `PORT` | `8787` | HTTP listen port |
+| `HOST` | `0.0.0.0` | HTTP bind address |
+| `PANTRYPAL_TRUST_NETWORK` | unset (off) | `1` or `true` lets `/api/v1/*` requests without a token act as the household (see below). Never applies to `/mcp` |
+| `PANTRYPAL_WEB_DIR` | `web/dist` under the app root | Directory of the built web app served at `/`. If it has no `index.html`, only the API is served and the startup log says so |
+
+## Web app and network trust
+
+The server serves the web app at `/` (client routes fall back to `index.html`; `/api`, `/mcp`,
+`/health` and `/openapi.json` are never shadowed). Hashed files under `/assets/` are cached for a
+year; `index.html` is always revalidated.
+
+The browser calls `/api/v1/*` same-origin and has no login, so run it with
+`PANTRYPAL_TRUST_NETWORK=1`: requests without an `Authorization` header then act as the household.
+**Anyone who can reach the port can read and change your data**, so only turn this on when the port
+is reachable only by people you trust, such as a tailnet:
+
+```sh
+# on the host; gives you https://<box>.<tailnet>.ts.net (HTTPS is needed for the cook-mode wake lock)
+tailscale serve --bg 8787
+```
+
+Bind the published port to loopback as shown under [Reverse proxy and TLS](#reverse-proxy-and-tls)
+so only the proxy reaches it. A request that does send a token is still verified (a bad token is a
+401), `/mcp` always requires a token, and the flag is off by default. If the database has no
+household yet, trusted requests get a `503` with code `unavailable`; run `household init` first.
+
 ## Volumes and backups
 
 Everything durable is in the SQLite database plus its WAL sidecars (`pantrypal.db`,

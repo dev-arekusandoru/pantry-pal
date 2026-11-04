@@ -1,0 +1,61 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg);
+  border-radius: var(--r-pill);
+  padding: 4px;
+}
+
+.step {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  box-shadow: 0 2px 0 var(--line);
+  transition: transform var(--dur-fast) var(--pop);
+}
+
+.step:active:not(:disabled) {
+  transform: scale(0.88);
+}
+
+.step:disabled {
+  opacity: 0.35;
+}
+
+.step svg {
+  width: 18px;
+  height: 18px;
+}
+
+.value {
+  min-width: 66px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.valueButton {
+  height: 44px;
+  padding: 0 6px;
+  border-radius: var(--r-pill);
+  text-decoration: underline dotted color-mix(in srgb, var(--ink) 35%, transparent);
+  text-underline-offset: 4px;
+}
+
+.valueButton:active {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.value b {
+  font-weight: var(--fw-heavy);
+  font-size: var(--fs-base);
+}
+
+.value small {
+  font-weight: var(--fw-semibold);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}

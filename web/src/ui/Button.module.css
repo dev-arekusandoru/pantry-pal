@@ -1,0 +1,68 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  padding: 0 22px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--ink);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-base);
+  line-height: 1;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 0 0 2px var(--line), 0 4px 0 var(--line);
+  transition: transform var(--dur-fast) var(--pop), box-shadow var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 2px var(--line), 0 1px 0 var(--line);
+}
+
+.btn > svg {
+  width: 19px;
+  height: 19px;
+}
+
+.primary {
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+  box-shadow: 0 4px 0 var(--tomato-d);
+}
+
+.primary:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--tomato-d);
+}
+
+.ghost {
+  background: transparent;
+  box-shadow: none;
+  padding: 0 14px;
+}
+
+.ghost:active:not(:disabled) {
+  transform: scale(0.96);
+  box-shadow: none;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.lg {
+  height: 60px;
+  font-size: var(--fs-lg);
+  padding: 0 30px;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.btn[aria-busy="true"] {
+  opacity: 0.7;
+}

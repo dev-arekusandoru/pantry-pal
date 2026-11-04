@@ -1,0 +1,22 @@
+.plate {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-lg);
+  background: radial-gradient(circle at 30% 25%, var(--butter-s), var(--peach-s));
+  display: grid;
+  place-items: center;
+}
+
+.emoji {
+  font-size: clamp(44px, 12vw, 72px);
+  filter: drop-shadow(0 5px 0 rgba(255, 255, 255, 0.5));
+}
+
+.plate img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

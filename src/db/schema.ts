@@ -560,6 +560,11 @@ export const shoppingLists = sqliteTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     completedAt: text("completed_at"),
+    /**
+     * Fingerprint of the plan's shopping-relevant cooks when the list was last
+     * generated; compared on read to derive `stale`. NULL = never generated.
+     */
+    planFingerprint: text("plan_fingerprint"),
   },
   (t) => [index("shopping_list_plan_idx").on(t.mealPlanId)],
 );

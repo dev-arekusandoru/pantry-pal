@@ -1,0 +1,322 @@
+/* Butter yellow in light, dark cocoa in dark: both come from --cook-bg / --cook-ink. */
+.cook {
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--cook-bg);
+  color: var(--cook-ink);
+  padding: calc(14px + var(--safe-top)) 16px calc(18px + var(--safe-bottom));
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+}
+
+/* Paint the whole viewport, not just the centred column. */
+.cook::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--cook-bg);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.round {
+  flex: none;
+  color: var(--ink);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.title b {
+  font-size: 18px;
+  font-weight: var(--fw-heavy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title span {
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+  opacity: 0.7;
+}
+
+.progress {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0 0;
+}
+
+.progress i {
+  flex: 1;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--cook-ink) 22%, transparent);
+  transition: all 0.3s var(--pop);
+}
+
+.progress .passed {
+  background: var(--cook-ink);
+}
+
+.progress .now {
+  background: var(--tomato);
+  transform: scaleY(1.35);
+}
+
+.alerts {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 16px;
+  border-radius: var(--r-sm);
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+  font-weight: var(--fw-heavy);
+  animation: ring 0.9s ease-in-out infinite;
+}
+
+.alert span {
+  flex: 1 1 140px;
+}
+
+.alert button {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+}
+
+@keyframes ring {
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--ink);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 18px 0;
+  /* Vertical scroll is the browser's; horizontal swipes are ours. */
+  touch-action: pan-y;
+}
+
+.main > :first-child {
+  margin-top: auto;
+}
+
+.main > :last-child {
+  margin-bottom: auto;
+}
+
+.group {
+  align-self: flex-start;
+  font-size: 15px;
+  font-weight: var(--fw-heavy);
+  padding: 3px 14px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--cook-ink) 14%, transparent);
+}
+
+.text {
+  font-size: var(--fs-cook);
+  line-height: 1.1;
+  font-weight: var(--fw-heavy);
+  font-variation-settings: "wdth" 84;
+  letter-spacing: -0.025em;
+  text-wrap: pretty;
+}
+
+.timerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 0 28px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--ink);
+  font-weight: var(--fw-heavy);
+  font-size: 19px;
+  box-shadow: 0 5px 0 rgba(59, 34, 24, 0.15);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer svg {
+  width: 24px;
+  height: 24px;
+  color: var(--tomato-text);
+}
+
+.timer.running {
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+  font-size: 26px;
+}
+
+.timer.running svg {
+  color: var(--on-tomato);
+}
+
+.cancel {
+  color: var(--cook-ink);
+}
+
+.foot {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+}
+
+.cook .next {
+  background: var(--cook-ink);
+  color: var(--cook-bg);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
+}
+
+.cook .foot button:not(.next) {
+  color: var(--ink);
+}
+
+.sheetSub {
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+  margin-bottom: 8px;
+}
+
+.ingList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ingList > li {
+  display: contents;
+}
+
+.sheetGroup {
+  flex-basis: 100%;
+  font-size: 15px;
+  font-weight: var(--fw-heavy);
+  margin-top: 8px;
+}
+
+.ingChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 16px 6px 8px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: 0 3px 0 var(--line);
+  font-size: 15.5px;
+}
+
+.ingChip small {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+}
+
+.done {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.doneTitle {
+  font-size: var(--fs-title);
+  line-height: 1;
+}
+
+.doneText {
+  max-width: 36ch;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.warnings {
+  max-width: 44ch;
+  padding: 12px 18px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  text-align: left;
+  display: grid;
+  gap: 4px;
+}
+
+.warnings li::before {
+  content: "⚠️ ";
+}
+
+.doneActions {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  margin-top: 8px;
+}
+
+.doneActions a {
+  width: 100%;
+}

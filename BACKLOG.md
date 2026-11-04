@@ -2,17 +2,19 @@
 
 ## Frontend
 - Web app on the REST API: pantry table + stock edits
-- Week plan view (grid, swap meals, leftovers)
+- Week plan view: drag leftovers between days, per-slot servings (basic meal swap is in v1, see docs/FRONTEND.md)
 - Recipe browser + cooking mode (step-by-step instructions, scaled ingredients, wake lock)
 - Shopping list mobile view (check off in store)
 
 ## Platform
+- Real web auth (login + session cookie, or OAuth); v1 frontend relies on Tailscale network access
 - OAuth 2.1 for remote MCP clients
 - Multiple households per instance (users, membership, token → household scoping)
 - Postgres support
 - Backups/export (JSON dump, markdown week export)
 
 ## Features
+- Mascot / illustrated character for the web app
 - Recipe URL import (schema.org/Recipe scraping)
 - Receipt/photo → pantry bulk import
 - Expiry dates and use-soon alerts

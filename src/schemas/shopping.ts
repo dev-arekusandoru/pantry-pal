@@ -175,6 +175,11 @@ export const shoppingListSchema = z
     createdAt: z.string(),
     updatedAt: z.string(),
     completedAt: z.string().nullable(),
+    stale: z
+      .boolean()
+      .describe(
+        "True when the list is bound to a plan, not completed, and the plan's planned cooks (recipes or servings) changed since the list was last generated. Regenerate the list to clear it.",
+      ),
   })
   .openapi("ShoppingList");
 
@@ -412,7 +417,7 @@ export const deleteResponseSchema = z.object({ deleted: z.literal(true), id: z.s
 
 export const errorResponseSchema = z.object({
   error: z.object({
-    code: z.enum(["not_found", "conflict", "validation", "unprocessable", "unauthorized"]),
+    code: z.enum(["not_found", "conflict", "validation", "unprocessable", "unauthorized", "unavailable"]),
     message: z.string(),
   }),
 });

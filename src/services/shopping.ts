@@ -1,6 +1,8 @@
-import { and, asc, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, asc, desc, eq, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 import type { Ctx } from "../context.js";
 import {
+  cookEvents,
   ingredients,
   mealPlans,
   shoppingListItems,
@@ -27,7 +29,15 @@ import { findIngredientByName } from "./ingredients.js";
 import { applyMovement } from "./pantry.js";
 import { convert } from "./units.js";
 
-export type ShoppingList = typeof shoppingLists.$inferSelect;
+export type ShoppingListRow = typeof shoppingLists.$inferSelect;
+/** A list as exposed to callers: the row without internals, plus the derived `stale` flag. */
+export type ShoppingList = Omit<ShoppingListRow, "planFingerprint"> & {
+  /**
+   * True when the list is bound to a plan, not completed, and the plan's planned
+   * cooks (set, recipes or servings) changed since the list was last generated.
+   */
+  stale: boolean;
+};
 export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
 export type StockMovement = typeof stockMovements.$inferSelect;
 type Ingredient = typeof ingredients.$inferSelect;
@@ -153,7 +163,7 @@ function defaultListTitle(plan: typeof mealPlans.$inferSelect): string {
   return `Shopping — week of ${plan.weekStart}`;
 }
 
-function loadList(ctx: Ctx, listId: string): ShoppingList {
+function loadList(ctx: Ctx, listId: string): ShoppingListRow {
   const list = ctx.db
     .select()
     .from(shoppingLists)
@@ -199,14 +209,76 @@ function listItems(ctx: Ctx, listId: string): ShoppingListItem[] {
     .all();
 }
 
-function assertMutable(list: ShoppingList): void {
+function assertMutable(list: ShoppingListRow): void {
   if (list.status === "done") {
     throw new AppError("conflict", "Shopping list is already completed", { listId: list.id });
   }
 }
 
+/**
+ * Hash of what shopping demand depends on: each cook of the plan that has not
+ * been skipped (completed cooks stay in, so finishing a cook is not a change)
+ * with its recipe and planned servings. Dates and slot layout don't change what
+ * must be bought, so moving leftovers around never marks a list stale.
+ */
+function planFingerprint(ctx: Ctx, planId: string): string {
+  const rows = ctx.db
+    .select({
+      id: cookEvents.id,
+      recipeId: cookEvents.recipeId,
+      plannedServings: cookEvents.plannedServings,
+    })
+    .from(cookEvents)
+    .where(
+      and(
+        eq(cookEvents.householdId, ctx.householdId),
+        eq(cookEvents.mealPlanId, planId),
+        ne(cookEvents.status, "skipped"),
+      ),
+    )
+    .orderBy(asc(cookEvents.id))
+    .all();
+  return createHash("sha256").update(JSON.stringify(rows)).digest("hex");
+}
+
+/** Row → exposed list; `fingerprints` caches plan fingerprints across one call. */
+function toListView(
+  ctx: Ctx,
+  row: ShoppingListRow,
+  fingerprints: Map<string, string> = new Map(),
+): ShoppingList {
+  const { planFingerprint: generatedFingerprint, ...rest } = row;
+  let stale = false;
+  if (row.mealPlanId !== null && row.status !== "done" && generatedFingerprint !== null) {
+    let current = fingerprints.get(row.mealPlanId);
+    if (current === undefined) {
+      current = planFingerprint(ctx, row.mealPlanId);
+      fingerprints.set(row.mealPlanId, current);
+    }
+    stale = current !== generatedFingerprint;
+  }
+  return { ...rest, stale };
+}
+
+/** True when any open list generated from this plan is out of date with it. */
+export function planHasStaleShoppingList(ctx: Ctx, planId: string): boolean {
+  const rows = ctx.db
+    .select()
+    .from(shoppingLists)
+    .where(
+      and(
+        eq(shoppingLists.householdId, ctx.householdId),
+        eq(shoppingLists.mealPlanId, planId),
+        ne(shoppingLists.status, "done"),
+      ),
+    )
+    .all();
+  const cache = new Map<string, string>();
+  return rows.some((row) => toListView(ctx, row, cache).stale);
+}
+
 function buildDetail(ctx: Ctx, listId: string, includeChecked: boolean): ShoppingListDetail {
-  const list = loadList(ctx, listId);
+  const list = toListView(ctx, loadList(ctx, listId));
   const all = listItems(ctx, listId);
   const items = includeChecked ? all : all.filter((item) => item.checkedAt === null);
 
@@ -261,13 +333,14 @@ export function listShoppingLists(
     conditions.push(eq(shoppingLists.mealPlanId, input.mealPlanId));
   }
 
-  const items = ctx.db
+  const rows = ctx.db
     .select()
     .from(shoppingLists)
     .where(and(...conditions))
     .orderBy(desc(shoppingLists.createdAt), desc(sql`${shoppingLists}.rowid`))
     .all();
-  return { items };
+  const cache = new Map<string, string>();
+  return { items: rows.map((row) => toListView(ctx, row, cache)) };
 }
 
 /** A list with its items grouped by aisle, plus checked/remaining counts. */
@@ -825,7 +898,7 @@ export function completeShoppingList(
       .returning()
       .get();
 
-    return { list: updated, movements, skipped, warnings };
+    return { list: toListView(scoped, updated), movements, skipped, warnings };
   });
 }
 
@@ -928,6 +1001,7 @@ export function generateShoppingList(
   const plan = loadPlan(ctx, input.mealPlanId);
   const includeStaples = input.includeStaples ?? true;
 
+  const fingerprint = planFingerprint(ctx, plan.id);
   const demand = computeDemand(ctx, { mealPlanId: plan.id });
   const availability = availabilityFor(ctx, demand);
   const demandById = new Map<string, DemandLine>(demand.map((line) => [line.ingredientId, line] as const));
@@ -1048,6 +1122,7 @@ export function generateShoppingList(
         .update(shoppingLists)
         .set({
           mealPlanId: plan.id,
+          planFingerprint: fingerprint,
           ...(input.title === undefined || input.title.trim() === ""
             ? {}
             : { title: input.title.trim() }),
@@ -1064,6 +1139,7 @@ export function generateShoppingList(
           id: newId("sl"),
           householdId: ctx.householdId,
           mealPlanId: plan.id,
+          planFingerprint: fingerprint,
           title:
             requestedTitle === undefined || requestedTitle === ""
               ? defaultListTitle(plan)

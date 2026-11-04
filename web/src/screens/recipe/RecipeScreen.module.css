@@ -1,0 +1,301 @@
+.page {
+  position: relative;
+}
+
+/* Recipes tab: blue (--tab) accents come from the shell's data-tab. */
+.hero {
+  position: relative;
+}
+
+.photo {
+  aspect-ratio: 4 / 3;
+  max-height: 44vh;
+  width: 100%;
+  border-radius: var(--r-xl);
+}
+
+.back {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+}
+
+.body {
+  padding: 22px 2px 0;
+}
+
+.title {
+  font-size: clamp(36px, 10vw, 54px);
+  line-height: 0.95;
+  margin-bottom: 12px;
+  text-wrap: balance;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: var(--fw-semibold);
+}
+
+.meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta svg {
+  width: 17px;
+  height: 17px;
+  color: var(--tomato-text);
+}
+
+.desc {
+  margin: 14px 0 0;
+  max-width: 60ch;
+  font-size: 16.5px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.rules {
+  margin: 10px 0 0;
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  background: var(--peach-s);
+  font-size: var(--fs-sm);
+  display: grid;
+  gap: 4px;
+}
+
+.rules li::before {
+  content: "• ";
+}
+
+.ings {
+  margin-top: 24px;
+  background: var(--card);
+  border-radius: 32px;
+  padding: 20px 18px 16px;
+  box-shadow: var(--shadow);
+}
+
+.ingsHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.summary {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  background: var(--peach-s);
+  display: grid;
+  gap: 2px;
+  font-size: var(--fs-sm);
+}
+
+.summary[data-state="ok"] {
+  background: var(--pistachio-s);
+}
+
+.summary b {
+  font-size: var(--fs-base);
+}
+
+.summary span {
+  font-weight: var(--fw-bold);
+}
+
+.group {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: var(--fw-heavy);
+  background: var(--butter-s);
+  padding: 3px 14px;
+  border-radius: var(--r-pill);
+  margin: 16px 0 4px;
+}
+
+.ingList {
+  margin-top: 6px;
+}
+
+.ing {
+  display: grid;
+  grid-template-columns: 30px minmax(52px, 84px) 1fr 26px;
+  gap: 8px;
+  align-items: baseline;
+  padding: 11px 0;
+  border-top: 2px dashed var(--line);
+  font-size: 16.5px;
+}
+
+.ingList > li:first-child .ing {
+  border-top: 0;
+}
+
+.ingEmoji {
+  font-size: 20px;
+  text-align: center;
+}
+
+.ingAmount {
+  font-weight: var(--fw-heavy);
+  font-variant-numeric: tabular-nums;
+}
+
+.ingName small {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+}
+
+.have {
+  display: inline-grid;
+  place-items: center;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: var(--fw-heavy);
+  color: var(--ink-fixed);
+}
+
+.have svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 3.2;
+}
+
+.have[data-have="have"] {
+  background: var(--pistachio);
+}
+.have[data-have="some"] {
+  background: var(--butter);
+}
+.have[data-have="none"] {
+  background: var(--peach);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+}
+
+.legend .have {
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+.legend .have:first-child {
+  margin-left: 0;
+}
+
+.method {
+  margin-top: 30px;
+}
+
+.method h2 {
+  margin-bottom: 10px;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.stepNum {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+  font-weight: var(--fw-heavy);
+  font-size: 19px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 3px 0 var(--tomato-d);
+}
+
+.steps li:nth-child(3n + 2) .stepNum {
+  background: var(--blue);
+  color: var(--on-blue);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--blue) 70%, black);
+}
+
+.steps li:nth-child(3n) .stepNum {
+  background: var(--butter);
+  color: var(--ink-fixed);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--butter) 75%, black);
+}
+
+.steps p {
+  max-width: 62ch;
+  font-size: 16.5px;
+  line-height: 1.55;
+  padding-top: 7px;
+}
+
+.steps .group {
+  margin: 0;
+}
+
+.dur {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: var(--fw-bold);
+  background: var(--butter-s);
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.dur svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Sticky inside the page flow, so it never overlaps the desktop nav rail. */
+.bar {
+  margin: 0 -16px;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px calc(16px + var(--safe-bottom));
+  background: linear-gradient(transparent, var(--bg) 45%);
+  pointer-events: none;
+}
+
+.cta {
+  width: 100%;
+  max-width: 440px;
+  pointer-events: auto;
+}

@@ -25,7 +25,8 @@ The endpoint is **stateless**: no `Mcp-Session-Id` is issued and every request i
 (each POST builds a fresh server bound to the token's household, and the database is the state).
 JSON responses are enabled, so simple request/response clients work without SSE parsing.
 `Accept` must still list both `application/json` and `text/event-stream`, as the Streamable HTTP
-spec requires. `GET /health` needs no token; `/mcp` and `/api/v1/*` always do. Tokens are
+spec requires. `GET /health` needs no token; `/mcp` always needs one, and so does `/api/v1/*` unless the
+operator runs the web app's `PANTRYPAL_TRUST_NETWORK=1` mode (which never applies to `/mcp`). Tokens are
 created with the CLI (`token create --name <client>`) — see
 [self-hosting.md](self-hosting.md#token-management).
 
@@ -127,6 +128,7 @@ unresolved candidates rather than silently created, unless the call asks for cre
 | `plan_get` | — | Read a week plan by id, `weekStart` or `"current"`: cook events, slot grid (including leftovers and freeform slots), prep tasks, warnings and status. |
 | `plan_create` | — | Create a week plan for a `weekStart` with title, notes, status, cook events, slots and prep tasks in one transaction. |
 | `plan_set_slots` | — | Replace the slot grid for one or more date+mealType groups; slots reference cook events, so one batch can feed several meals. |
+| `plan_swap_meal` | — | Put a different recipe on one meal slot (`slotId`, or `date` + `mealType` for a day with no slot). `scope: "with_leftovers"` changes the cook that feeds the slot, so every slot it feeds changes; `scope: "this"` changes only this meal, and a slot that shares its cook becomes its own cook. A slot without a cook gets a new one; a cook that is already done can't be swapped. Returns the updated `plan` and `shoppingListStale` (true when an open shopping list for the plan no longer matches it, so regenerate it with `shopping_generate`). |
 | `plan_update` | `update` / `add_cook` / `update_cook` / `delete_cook` | Update plan metadata, or add/reschedule/retarget/remove cook events (recipe, cook date, planned servings, label, rating). |
 | `prep_tasks` | `list` / `add` / `update` / `complete` / `delete` | List (optionally by plan/date, including done), add, edit, complete or remove prep tasks. |
 | `cook_complete` | `complete` / `skip` / `reopen` | Complete a cook: records actual servings, rating and notes and decrements the pantry by the scaled ingredients; skip records it as not cooked; reopen restores stock. |

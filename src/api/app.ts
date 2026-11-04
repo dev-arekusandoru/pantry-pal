@@ -7,6 +7,7 @@ import { isAppError } from "../lib/errors.js";
 import { mountMcp as defaultMountMcp, type McpDeps } from "../mcp/mount.js";
 import { routeRegistrars } from "./routes/index.js";
 import { healthHandler, healthRoute, packageVersion } from "./routes/health.js";
+import { createWebMiddleware } from "./web.js";
 
 export type { AppEnv } from "../auth/middleware.js";
 
@@ -22,6 +23,14 @@ export interface CreateAppOptions {
    * Streamable HTTP handler in `src/mcp/mount.ts`.
    */
   mountMcp?: (app: App, deps: McpDeps) => void;
+  /**
+   * Network-trust auth for `/api/v1/*` only: requests without an `Authorization`
+   * header act as the instance's single household. Tokens that are sent are still
+   * verified. Never applies to `/mcp`. Default false.
+   */
+  trustNetwork?: boolean;
+  /** Directory of the built web app to serve at `/` (SPA fallback). Omit to serve none. */
+  webDir?: string;
 }
 
 /**
@@ -61,12 +70,15 @@ export function createApp(options: CreateAppOptions): App {
     return c.json({ error: { code: "internal", message: "Internal server error" } }, 500);
   });
 
-  // Everything below /api/v1 requires a bearer token.
+  // Everything below /api/v1 requires a bearer token (or network trust, when enabled).
   const api = new OpenAPIHono<AppEnv>({ defaultHook });
   for (const register of routeRegistrars) register(api);
 
   const auth = createAuthMiddleware(db, now);
-  app.use("/api/v1/*", auth);
+  const apiAuth = options.trustNetwork === true
+    ? createAuthMiddleware(db, now, { trustNetwork: true })
+    : auth;
+  app.use("/api/v1/*", apiAuth);
   app.route("/api/v1", api);
 
   // MCP transport shares the same auth and service layer.
@@ -91,11 +103,13 @@ export function createApp(options: CreateAppOptions): App {
       title: "PantryPal",
       version: packageVersion(),
       description:
-        "Self-hosted household pantry, recipe, meal-plan and shopping backend. All /api/v1 routes require a bearer API token.",
+        "Self-hosted household pantry, recipe, meal-plan and shopping backend. All /api/v1 routes require a bearer API token, unless the server runs with PANTRYPAL_TRUST_NETWORK=1 (then requests without a token act as the household).",
     },
     tags: [{ name: "meta", description: "Health and API metadata" }],
     security: [{ bearerAuth: [] }],
   });
+
+  if (options.webDir !== undefined) app.use("*", createWebMiddleware(options.webDir));
 
   return app;
 }

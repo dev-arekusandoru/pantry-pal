@@ -1,0 +1,42 @@
+.root {
+  position: relative;
+  display: flex;
+}
+
+.root svg {
+  position: absolute;
+  left: 18px;
+  top: 17px;
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.root input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 54px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: inset 0 0 0 2.5px var(--line);
+  padding: 0 22px 0 50px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.root input:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--blue);
+}
+
+.root input::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.root input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}

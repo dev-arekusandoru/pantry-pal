@@ -5,6 +5,7 @@ import {
   addCookEventSchema,
   addPrepTaskSchema,
   completeCookEventSchema,
+  cookAdHocSchema,
   cookEventMutationResultSchema,
   cookEventViewSchema,
   createPlanSchema,
@@ -23,6 +24,8 @@ import {
   setSlotsSchema,
   skipCookEventSchema,
   slotViewSchema,
+  swapMealResultSchema,
+  swapMealSchema,
   updateCookEventSchema,
   updatePlanSchema,
   updatePrepTaskSchema,
@@ -42,6 +45,7 @@ import {
   listPlans,
   listPrepTasks,
   setSlots,
+  swapMeal,
   updateCookEvent,
   updatePlan,
   updatePrepTask,
@@ -49,6 +53,7 @@ import {
 } from "../../services/plans.js";
 import {
   completeCookEvent,
+  cookAdHoc,
   listCookEvents,
   reopenCookEvent,
   skipCookEvent,
@@ -186,6 +191,24 @@ const deleteSlotRoute = createRoute({
   responses: { 200: jsonResponse(idResultSchema), 404: { description: "Plan or slot not found" } },
 });
 
+const swapMealRoute = createRoute({
+  method: "post",
+  path: "/plans/{id}/swap",
+  tags: ["plans"],
+  summary: "Swap the recipe on one meal slot",
+  description:
+    "One transaction. scope `with_leftovers` replaces the recipe of the cook that feeds the slot (every slot it feeds changes). scope `this` changes only this meal: a slot sharing its cook with other slots becomes its own cook dated that day. Slots without a cook get a new cook. Cooks already done can't be swapped. Returns the updated plan and whether an open shopping list for it is now stale.",
+  request: {
+    params: planIdParam,
+    body: { content: { "application/json": { schema: swapMealSchema } } },
+  },
+  responses: {
+    200: jsonResponse(swapMealResultSchema),
+    400: { description: "Invalid swap (e.g. the cook is already done)" },
+    404: { description: "Plan, slot or recipe not found" },
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Cook events
 // ---------------------------------------------------------------------------
@@ -202,6 +225,23 @@ const addCookEventRoute = createRoute({
   responses: {
     201: jsonResponse(cookEventViewSchema, "Cook event created"),
     400: { description: "Invalid input" },
+  },
+});
+
+const cookAdHocRoute = createRoute({
+  method: "post",
+  path: "/cook-events",
+  tags: ["cooking"],
+  summary: "Record a cook outside any plan",
+  description:
+    "Creates a cook event with no meal plan. With `complete: true` it is completed in the same transaction (pantry decremented, same as completing a planned cook). Always returns `{ cookEvent, movements, warnings }`; movements and warnings are empty unless completed.",
+  request: {
+    body: { content: { "application/json": { schema: cookAdHocSchema } } },
+  },
+  responses: {
+    201: jsonResponse(cookEventMutationResultSchema, "Cook recorded"),
+    400: { description: "Invalid input" },
+    404: { description: "Recipe not found" },
   },
 });
 
@@ -384,10 +424,15 @@ export function registerPlansRoutes(app: OpenAPIHono<AppEnv>): void {
     assertSlotInPlan(planId, slotId, c.var.ctx);
     return c.json(deleteSlot(c.var.ctx, slotId), 200);
   });
+  app.openapi(swapMealRoute, (c) => {
+    const { id: planId } = c.req.valid("param");
+    return c.json(swapMeal(c.var.ctx, planId, c.req.valid("json")), 200);
+  });
 
   app.openapi(addCookEventRoute, (c) =>
     c.json(addCookEvent(c.var.ctx, c.req.valid("param").id, c.req.valid("json")), 201),
   );
+  app.openapi(cookAdHocRoute, (c) => c.json(cookAdHoc(c.var.ctx, c.req.valid("json")), 201));
   app.openapi(listCookEventsRoute, (c) =>
     c.json(listCookEvents(c.var.ctx, c.req.valid("query")), 200),
   );

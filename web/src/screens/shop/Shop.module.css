@@ -1,0 +1,365 @@
+.skeletons {
+  display: grid;
+  gap: 12px;
+}
+
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -6px 0 14px 6px;
+}
+
+.switchTitle {
+  min-width: 0;
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- header count + meter ---------- */
+.count {
+  background: var(--card);
+  color: var(--ink);
+  border-radius: var(--r-md);
+  padding: 10px 16px;
+  text-align: center;
+  line-height: 1;
+  box-shadow: var(--shadow);
+  transform: rotate(3deg);
+  margin: 0 36px 6px 0;
+}
+
+.countN {
+  font-size: 44px;
+  font-weight: var(--fw-heavy);
+  color: var(--tomato-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.countOf {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.meter {
+  height: 18px;
+  background: var(--card);
+  border-radius: var(--r-pill);
+  margin: -4px 0 18px;
+  padding: 3px;
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.meter i {
+  display: block;
+  height: 100%;
+  min-width: 12px;
+  background: var(--pistachio);
+  border-radius: var(--r-pill);
+  transition: width 0.5s var(--pop);
+}
+
+/* ---------- stale banner ---------- */
+.stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  background: var(--butter-s);
+}
+
+.staleText {
+  flex: 1 1 200px;
+  font-weight: var(--fw-semibold);
+}
+
+/* ---------- add bar ---------- */
+.addBar {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 24px;
+}
+
+.addInput,
+.qtyInput {
+  min-width: 0;
+  height: 54px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: inset 0 0 0 2.5px var(--line);
+  padding: 0 22px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.addInput {
+  flex: 1;
+}
+
+.addInput:focus,
+.qtyInput:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--blue);
+}
+
+.addInput::placeholder,
+.qtyInput::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+/* ---------- aisles ---------- */
+.aisle {
+  margin-bottom: 24px;
+}
+
+.aisleName {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-h3);
+  margin: 0 6px 10px;
+}
+
+.aisleName small {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  background: var(--pistachio-s);
+  padding: 3px 12px;
+  border-radius: var(--r-pill);
+  font-variation-settings: var(--wdth-body);
+  letter-spacing: 0;
+}
+
+.items {
+  display: grid;
+  gap: 8px;
+}
+
+.item {
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  transition: background 0.3s;
+}
+
+/* The whole row is the checkbox label, so the whole row is the tap target. */
+.item > label {
+  display: flex;
+  width: 100%;
+  min-height: 68px;
+  padding: 12px 16px 12px 12px;
+  gap: 12px;
+}
+
+.item > label > span:nth-child(3) {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.itemEmoji {
+  font-size: 26px;
+  width: 34px;
+  text-align: center;
+  flex: none;
+  transition: transform 0.3s var(--pop), opacity 0.3s;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.itemName {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  line-height: 1.2;
+}
+
+.itemWhy {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.itemQty {
+  flex: none;
+  font-weight: var(--fw-heavy);
+  background: var(--bg);
+  border-radius: var(--r-pill);
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+.got {
+  background: var(--pistachio-s);
+  box-shadow: none;
+}
+
+.got .itemName {
+  text-decoration: line-through;
+  text-decoration-thickness: 2.5px;
+  text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent);
+  color: var(--muted);
+}
+
+.got .itemEmoji {
+  transform: scale(0.8) rotate(-8deg);
+  opacity: 0.7;
+}
+
+.got .itemQty {
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+}
+
+.finish {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.finish p {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  margin-top: 12px;
+  font-weight: var(--fw-semibold);
+}
+
+/* ---------- list picker ---------- */
+.pickList {
+  display: grid;
+  gap: 8px;
+}
+
+.pickRow {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 16px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: 0 0 0 2px var(--line);
+}
+
+.pickRow svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.pickOn {
+  box-shadow: 0 0 0 3px var(--pistachio);
+}
+
+.pickBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.pickTitle {
+  font-weight: var(--fw-bold);
+}
+
+.pickSub {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+/* ---------- done sheet ---------- */
+.sheetNote {
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+  margin-bottom: 12px;
+}
+
+.sheetFoot {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--butter-s);
+  font-weight: var(--fw-semibold);
+  line-height: 1.8;
+}
+
+.review {
+  display: grid;
+}
+
+.reviewRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  border-top: 2px dashed var(--line);
+}
+
+.reviewRow:first-child {
+  border-top: 0;
+}
+
+.reviewName {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+}
+
+.reviewName small {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--muted);
+}
+
+.qtyEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.qtyInput {
+  width: 84px;
+  height: 48px;
+  padding: 0 12px;
+  text-align: center;
+  font-weight: var(--fw-heavy);
+  font-variant-numeric: tabular-nums;
+}
+
+.qtyInput[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 3px var(--tomato);
+}
+
+.qtyUnit {
+  min-width: 36px;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+}

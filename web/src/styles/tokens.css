@@ -1,0 +1,200 @@
+/*
+ * PantryPal design tokens (Glaze direction).
+ *
+ * Three layers:
+ *   1. Theme-independent: type, radii, motion, layout.
+ *   2. Color sets: light (default), dark (system preference or explicit).
+ *   3. Per-tab colors: `data-tab="week|shop|pantry|recipes|settings"` on any
+ *      ancestor sets --tab, --tab-s, --on-tab and --tab-sticker.
+ *
+ * Theme selection is the `data-theme` attribute on <html>: "light" | "dark" |
+ * "system" (see src/app/theme.ts). "system" and "unset" follow the OS.
+ * Adding a theme = adding one more color block below.
+ */
+
+:root {
+  /* ----- type ----- */
+  --font: "Bricolage Grotesque Variable", ui-rounded, system-ui, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13.5px;
+  --fs-base: 16px;
+  --fs-md: 17px;
+  --fs-lg: 19px;
+  --fs-h3: 24px;
+  --fs-h2: 28px;
+  --fs-title: clamp(30px, 8vw, 40px);
+  --fs-display: clamp(40px, 11vw, 60px);
+  --fs-cook: clamp(30px, 6.6vw, 52px);
+  --fw-regular: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-heavy: 800;
+  --wdth-body: "wdth" 94;
+  --wdth-heading: "wdth" 86;
+
+  /* ----- shape ----- */
+  --r-xs: 13px;
+  --r-sm: 18px;
+  --r-md: 24px;
+  --r-lg: 28px;
+  --r-xl: 34px;
+  --r-pill: 999px;
+
+  /* ----- spacing ----- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* ----- motion ----- */
+  --pop: cubic-bezier(0.3, 1.6, 0.5, 1);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 0.15s;
+  --dur: 0.25s;
+  --dur-slow: 0.45s;
+
+  /* ----- layout ----- */
+  --nav-h: 76px;
+  --rail-w: 250px;
+  --content-max: 760px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --z-nav: 20;
+  --z-sheet: 50;
+  --z-toast: 90;
+
+  /* ----- color: light ----- */
+  --bg: #fff3e0;
+  --card: #ffffff;
+  --ink: #3b2218;
+  --muted: #7f6050; /* 5.2:1 on --bg, AA */
+  --line: #f1ddc4;
+
+  --tomato: #ee5a3d; /* decorative: stickers, icons, big numerals */
+  --tomato-text: #c93f25; /* tomato used as text (AA on --bg and --card) */
+  --tomato-fill: #c93f25; /* action fill, white label (AA) */
+  --tomato-d: #a32f1a; /* press-down edge under --tomato-fill */
+  --on-tomato: #ffffff;
+
+  --butter: #ffd14a;
+  --butter-s: #ffedb0;
+  --pistachio: #aedc7c;
+  --pistachio-s: #ddf2c3;
+  --blue: #5562e6;
+  --blue-s: #dce0ff;
+  --on-blue: #ffffff;
+  --gum: #ff9dc8;
+  --gum-s: #ffd9ea;
+  --peach: #ffb48b;
+  --peach-s: #ffe0cd;
+
+  --shadow: 0 2px 0 rgba(59, 34, 24, 0.06), 0 10px 24px -10px rgba(120, 60, 20, 0.28);
+  --overlay: rgba(59, 34, 24, 0.5);
+  --ink-fixed: #3b2218; /* cocoa ink for text on bright tab fills, both themes */
+  --cook-bg: var(--butter);
+  --cook-ink: #3b2218;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1e120d;
+    --card: #2e1c14;
+    --ink: #ffebd6;
+    --muted: #c3a491;
+    --line: #4b3226;
+
+    --tomato: #f26645;
+    --tomato-text: #f26645;
+    --tomato-fill: #c8432a;
+    --tomato-d: #8f2e1b;
+    --on-tomato: #ffffff;
+
+    --butter: #f4c03a;
+    --butter-s: #58451a;
+    --pistachio: #93c95e;
+    --pistachio-s: #31481f;
+    --blue: #7f8bff;
+    --blue-s: #323872;
+    --on-blue: #1e120d;
+    --gum: #f58bbc;
+    --gum-s: #5c2b42;
+    --peach: #ffb48b;
+    --peach-s: #5a3523;
+
+    --shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 12px 26px -10px rgba(0, 0, 0, 0.6);
+    --overlay: rgba(0, 0, 0, 0.6);
+    --cook-bg: #1e120d;
+    --cook-ink: #ffebd6;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1e120d;
+  --card: #2e1c14;
+  --ink: #ffebd6;
+  --muted: #c3a491;
+  --line: #4b3226;
+
+  --tomato: #f26645;
+  --tomato-text: #f26645;
+  --tomato-fill: #c8432a;
+  --tomato-d: #8f2e1b;
+  --on-tomato: #ffffff;
+
+  --butter: #f4c03a;
+  --butter-s: #58451a;
+  --pistachio: #93c95e;
+  --pistachio-s: #31481f;
+  --blue: #7f8bff;
+  --blue-s: #323872;
+  --on-blue: #1e120d;
+  --gum: #f58bbc;
+  --gum-s: #5c2b42;
+  --peach: #ffb48b;
+  --peach-s: #5a3523;
+
+  --shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 12px 26px -10px rgba(0, 0, 0, 0.6);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --cook-bg: #1e120d;
+  --cook-ink: #ffebd6;
+  color-scheme: dark;
+}
+
+/* ----- per-tab colors ----- */
+/* Every block sets the full set, so nested data-tab elements (nav items inside
+   a tinted shell) never inherit another tab's colors. */
+:root,
+[data-tab="week"] {
+  --tab: var(--butter);
+  --tab-s: var(--butter-s);
+  --on-tab: var(--ink-fixed);
+  --tab-sticker: "🍳";
+}
+[data-tab="shop"] {
+  --tab: var(--pistachio);
+  --tab-s: var(--pistachio-s);
+  --on-tab: var(--ink-fixed);
+  --tab-sticker: "🧺";
+}
+[data-tab="pantry"] {
+  --tab: var(--gum);
+  --tab-s: var(--gum-s);
+  --on-tab: var(--ink-fixed);
+  --tab-sticker: "🫙";
+}
+[data-tab="recipes"] {
+  --tab: var(--blue);
+  --tab-s: var(--blue-s);
+  --on-tab: var(--on-blue);
+  --tab-sticker: "📖";
+}
+[data-tab="settings"] {
+  --tab: var(--peach);
+  --tab-s: var(--peach-s);
+  --on-tab: var(--ink-fixed);
+  --tab-sticker: "⚙️";
+}
