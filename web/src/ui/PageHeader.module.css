@@ -15,12 +15,13 @@
 }
 
 .head::after {
-  content: var(--tab-sticker);
+  content: "";
   position: absolute;
   right: -6px;
   top: -12px;
-  font-size: 96px;
-  line-height: 1;
+  width: 96px;
+  height: 96px;
+  background: var(--tab-sticker) center / contain no-repeat;
   transform: rotate(12deg);
   filter: drop-shadow(0 6px 0 rgba(255, 255, 255, 0.55)) drop-shadow(0 8px 10px rgba(80, 30, 0, 0.2));
   pointer-events: none;
@@ -45,7 +46,8 @@
     min-height: 170px;
   }
   .head::after {
-    font-size: 128px;
+    width: 128px;
+    height: 128px;
     right: 8px;
     top: -18px;
   }

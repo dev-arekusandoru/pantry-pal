@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Button, Card, EmptyState, ErrorState, Icon, PageHeader, SearchInput, SegmentedControl, Skeleton } from "@/ui";
+import { errorMessage } from "@/api";
+import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInput, SegmentedControl, Skeleton, toast } from "@/ui";
 import { AddSheet } from "./AddSheet";
 import styles from "./Pantry.module.css";
-import { useAdjustItem, usePantry, useSetQty, useSetStatus } from "./queries";
+import { useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetQty, useSetStatus } from "./queries";
 import { SetQtySheet } from "./SetQtySheet";
 import { StockRow } from "./StockRow";
 import { LOCATION_LABEL, LOCATION_ORDER, groupByLocation, nextStatus, stepFor, type PantryItem, type StorageLocation } from "./stock";
@@ -12,6 +13,8 @@ export function PantryScreen() {
   const adjust = useAdjustItem();
   const setQty = useSetQty();
   const setStatus = useSetStatus();
+  const remove = useRemoveItem();
+  const restore = useRestoreItem();
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState<StorageLocation | "all">("all");
   const [editing, setEditing] = useState<PantryItem | null>(null);
@@ -53,64 +56,85 @@ export function PantryScreen() {
 
   return (
     <>
-      <PageHeader
-        title="Pantry"
-        sub={items.length === 0 ? "Nothing on the shelves yet" : `${items.length} ${items.length === 1 ? "thing" : "things"} on the shelves`}
-        aside={addButton}
-      />
-      {items.length === 0 ? (
-        <EmptyState emoji="🫙" title="Your pantry is empty" action={addButton}>
-          Add what you have and PantryPal can plan around it.
-        </EmptyState>
-      ) : (
-        <>
-          <div className={styles.tools}>
-            <SearchInput label="Search the pantry" value={query} onChange={setQuery} />
-            {present.length > 1 && (
-              <SegmentedControl
-                label="Filter by location"
-                value={activeLocation}
-                onChange={setLocation}
-                options={[{ value: "all", label: "Everything" }, ...present.map((l) => ({ value: l, label: LOCATION_LABEL[l] }))]}
-              />
+      <div className={styles.screen}>
+        <PageHeader
+          title="Pantry"
+          sub={items.length === 0 ? "Nothing on the shelves yet" : `${items.length} ${items.length === 1 ? "thing" : "things"} on the shelves`}
+        />
+        {items.length === 0 ? (
+          <EmptyState emoji="1FAD9" title="Your pantry is empty" action={addButton}>
+            Add what you have and PantryPal can plan around it.
+          </EmptyState>
+        ) : (
+          <>
+            <div className={styles.tools}>
+              <SearchInput label="Search the pantry" value={query} onChange={setQuery} />
+              {present.length > 1 && (
+                <SegmentedControl
+                  label="Filter by location"
+                  value={activeLocation}
+                  onChange={setLocation}
+                  options={[{ value: "all", label: "Everything" }, ...present.map((l) => ({ value: l, label: LOCATION_LABEL[l] }))]}
+                />
+              )}
+            </div>
+            {groups.length === 0 ? (
+              <EmptyState
+                emoji="1F50E"
+                title={`Nothing matches "${query.trim()}"`}
+                action={
+                  <Button variant="primary" icon={<Icon name="plus" />} onClick={() => setAdding(true)}>
+                    Add it to the pantry
+                  </Button>
+                }
+              >
+                Try another name, or add it.
+              </EmptyState>
+            ) : (
+              groups.map((g) => (
+                <Card key={g.location} as="section" radius="xl" className={styles.shelf} data-loc={g.location} aria-label={LOCATION_LABEL[g.location]}>
+                  <h2 className={styles.shelfName}>
+                    {LOCATION_LABEL[g.location]}
+                    <small>{g.items.length}</small>
+                  </h2>
+                  <ul>
+                    {g.items.map((item) => (
+                      <StockRow
+                        key={item.id}
+                        item={item}
+                        onStep={(it, dir) => adjust.mutate({ item: it, delta: dir > 0 ? stepFor(it.unit) : -Math.min(stepFor(it.unit), it.qty ?? 0) })}
+                        onEditQty={setEditing}
+                        onCycleStatus={(it) => setStatus.mutate({ item: it, status: nextStatus(it.status) })}
+                      />
+                    ))}
+                  </ul>
+                </Card>
+              ))
             )}
-          </div>
-          {groups.length === 0 ? (
-            <EmptyState
-              emoji="🔎"
-              title={`Nothing matches "${query.trim()}"`}
-              action={
-                <Button variant="primary" icon={<Icon name="plus" />} onClick={() => setAdding(true)}>
-                  Add it to the pantry
-                </Button>
-              }
-            >
-              Try another name, or add it.
-            </EmptyState>
-          ) : (
-            groups.map((g) => (
-              <Card key={g.location} as="section" radius="xl" className={styles.shelf} data-loc={g.location} aria-label={LOCATION_LABEL[g.location]}>
-                <h2 className={styles.shelfName}>
-                  {LOCATION_LABEL[g.location]}
-                  <small>{g.items.length}</small>
-                </h2>
-                <ul>
-                  {g.items.map((item) => (
-                    <StockRow
-                      key={item.id}
-                      item={item}
-                      onStep={(it, dir) => adjust.mutate({ item: it, delta: dir > 0 ? stepFor(it.unit) : -Math.min(stepFor(it.unit), it.qty ?? 0) })}
-                      onEditQty={setEditing}
-                      onCycleStatus={(it) => setStatus.mutate({ item: it, status: nextStatus(it.status) })}
-                    />
-                  ))}
-                </ul>
-              </Card>
-            ))
-          )}
-        </>
-      )}
-      <SetQtySheet item={editing} onClose={() => setEditing(null)} onSave={(item, qty) => setQty.mutate({ item, qty })} />
+          </>
+        )}
+      </div>
+      <SetQtySheet
+        item={editing}
+        onClose={() => setEditing(null)}
+        onSave={(item, qty) => setQty.mutate({ item, qty })}
+        onRemove={(item) =>
+          remove.mutate(
+            { item },
+            {
+              onSuccess: () =>
+                toast.show({
+                  message: `${item.ingredient.name} removed from the ${LOCATION_LABEL[item.location].toLowerCase()} shelf`,
+                  action: {
+                    label: "Undo",
+                    onClick: () => restore.mutate({ item }, { onError: (error) => toast.error(errorMessage(error)) }),
+                  },
+                }),
+              onError: (error) => toast.error(errorMessage(error)),
+            },
+          )
+        }
+      />
       <AddSheet
         open={adding}
         onClose={() => setAdding(false)}
@@ -118,6 +142,7 @@ export function PantryScreen() {
         initialName={query.trim()}
         initialLocation={activeLocation === "all" ? "pantry" : activeLocation}
       />
+      <Fab label="Add to the pantry" onClick={() => setAdding(true)} />
     </>
   );
 }

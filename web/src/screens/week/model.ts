@@ -1,4 +1,5 @@
 import type { components, paths } from "@/api";
+import type { EmojiCode } from "@/ui/emoji";
 import { addDays, daysBetween, weekdayName } from "./dates";
 
 export type PlanView = paths["/plans/current"]["get"]["responses"][200]["content"]["application/json"];
@@ -21,12 +22,12 @@ export const MEAL_LABEL: Record<MealType, string> = {
   dessert: "Dessert",
 };
 
-export const MEAL_EMOJI: Record<MealType, string> = {
-  breakfast: "🍳",
-  lunch: "🥪",
-  dinner: "🍝",
-  snack: "🍎",
-  dessert: "🍰",
+export const MEAL_EMOJI: Record<MealType, EmojiCode> = {
+  breakfast: "1F373",
+  lunch: "1F96A",
+  dinner: "1F35D",
+  snack: "1F34E",
+  dessert: "1F370",
 };
 
 export interface MealGroup {

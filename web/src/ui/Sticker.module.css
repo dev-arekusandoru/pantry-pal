@@ -4,8 +4,6 @@
   flex: none;
   width: var(--size);
   height: var(--size);
-  font-size: calc(var(--size) * 0.54);
-  line-height: 1;
   transform: rotate(var(--tilt));
 }
 
@@ -33,6 +31,5 @@
 }
 
 .die-cut {
-  font-size: var(--size);
   filter: drop-shadow(0 6px 0 rgba(255, 255, 255, 0.55)) drop-shadow(0 8px 10px rgba(80, 30, 0, 0.2));
 }

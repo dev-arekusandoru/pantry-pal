@@ -1,5 +1,5 @@
 import { Link, Outlet, useMatches } from "@tanstack/react-router";
-import { Icon, cx } from "../ui";
+import { Emoji, Icon, cx } from "../ui";
 import styles from "./Shell.module.css";
 import { TABS, type TabId } from "./tabs";
 
@@ -22,7 +22,7 @@ export function Shell() {
       <nav className={styles.nav} aria-label="Main">
         <div className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">
-            🫙
+            <Emoji code="1FAD9" size={34} />
           </span>
           <span className={styles.brandName}>PantryPal</span>
         </div>

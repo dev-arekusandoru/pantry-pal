@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client, qk, unwrap } from "@/api";
 import { toast } from "@/ui";
-import type { PantryItem, PantryStatus, StorageLocation } from "./stock";
+import { restoreBody, type PantryItem, type PantryStatus, type StorageLocation } from "./stock";
 
 const listKey = [...qk.pantry, "list"] as const;
 /** Every stock edit shares this key so the refetch waits for the last one in flight. */
@@ -125,5 +125,42 @@ export function useAddStock() {
       return result;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.pantry }),
+  });
+}
+
+/**
+ * Remove a pantry row entirely (its movement history goes with it, since the row
+ * is the ledger subject). The list drops the row at once and rolls back on failure.
+ */
+export function useRemoveItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: editKey,
+    mutationFn: ({ item }: { item: PantryItem }) =>
+      unwrap(client.DELETE("/pantry/{id}", { params: { path: { id: item.id } } })),
+    onMutate: async ({ item }) => {
+      await qc.cancelQueries({ queryKey: listKey });
+      const previous = qc.getQueryData<PantryItem[]>(listKey);
+      qc.setQueryData<PantryItem[]>(listKey, (items) => items?.filter((i) => i.id !== item.id));
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) qc.setQueryData(listKey, context.previous);
+    },
+    onSettled: () => {
+      if (qc.isMutating({ mutationKey: editKey }) <= 1) return qc.invalidateQueries({ queryKey: qk.pantry });
+    },
+  });
+}
+
+/** Undo for a removal: re-adds the row where it was with its previous amount. */
+export function useRestoreItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: editKey,
+    mutationFn: ({ item }: { item: PantryItem }) => unwrap(client.POST("/pantry/set", { body: restoreBody(item) })),
+    onSettled: () => {
+      if (qc.isMutating({ mutationKey: editKey }) <= 1) return qc.invalidateQueries({ queryKey: qk.pantry });
+    },
   });
 }

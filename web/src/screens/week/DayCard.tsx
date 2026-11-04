@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Icon, IconButton, Sticker, cx } from "@/ui";
+import { Icon, IconButton, Sticker, cx, toast } from "@/ui";
+import { useUndoCook } from "../cook/queries";
 import { monthDay, weekdayName } from "./dates";
 import {
   MEAL_EMOJI,
@@ -90,6 +91,14 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
   const { canSwap } = swapPlanFor(slot, plan);
   const { tone, tilt } = MEAL_STICKER[mealType];
   const openSwap = () => onSwap({ date, mealType, slot });
+  const undo = useUndoCook();
+
+  function undoCook() {
+    if (!cook) return;
+    undo.mutate(cook.id, {
+      onSuccess: () => toast.show({ message: "Cook undone. Pantry restored." }),
+    });
+  }
 
   const label = (
     <>
@@ -133,6 +142,15 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
         <button type="button" className={styles.slotMain} onClick={openSwap}>
           {label}
         </button>
+      )}
+      {state === "done" && cook && (
+        <IconButton
+          variant="plain"
+          label={`Undo ${slotName(slot)} cooked`}
+          icon={<Icon name="undo" />}
+          disabled={undo.isPending}
+          onClick={undoCook}
+        />
       )}
       {canSwap && (
         <IconButton

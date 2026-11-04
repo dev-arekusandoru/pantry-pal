@@ -1,10 +1,13 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type TouchEvent } from "react";
-import { Button, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx } from "@/ui";
+import { errorMessage } from "@/api";
+import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx, toast } from "@/ui";
 import { formatClock, formatDuration, stepSeconds } from "../recipe/duration";
 import { formatAmount, formatNumber, localDate } from "../recipe/lib";
-import { isNotFound, usePlannedCooks, useRecipe, useScaledIngredients } from "../recipe/queries";
-import { useFinishCook, type FinishInput } from "./queries";
+import { isNotFound, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "../recipe/queries";
+import type { EditableStatus } from "../recipe/status";
+import { clearCookProgress, isResumable, readCookProgress, saveCookProgress } from "./progress";
+import { useFinishCook, useUndoCook, type FinishInput } from "./queries";
 import { useStepTimers } from "./timers";
 import { useWakeLock } from "./wakeLock";
 import styles from "./CookScreen.module.css";
@@ -15,9 +18,14 @@ export interface CookScreenProps {
   cookEvent?: string;
   /** Servings to cook (`?servings=`). Defaults to the planned cook's, then the recipe's. */
   servings?: number;
+  /** Resume saved progress immediately (`?resume`, from the recipe page). */
+  resume?: boolean;
+  /** Page cook mode was opened from (`?from`), so leaving it can return there. */
+  from?: "recipe" | "week";
 }
 
 interface DoneState {
+  cookEventId: string;
   servings: number;
   movements: number;
   warnings: string[];
@@ -25,14 +33,32 @@ interface DoneState {
 
 const SWIPE_MIN_PX = 60;
 
-export function CookScreen({ slug, cookEvent, servings: servingsParam }: CookScreenProps) {
+export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = false, from }: CookScreenProps) {
   const navigate = useNavigate();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  // Where the cook route was pushed from, so "back" returns there without a duplicate.
+  const origin = from;
   const recipe = useRecipe(slug);
   const r = recipe.data;
+
+  const [saved] = useState(() => readCookProgress(slug));
+  const [resumeState, setResumeState] = useState<"ask" | "resumed" | "restarted">(
+    resume && saved !== null ? "resumed" : saved !== null ? "ask" : "restarted",
+  );
+
+  const stepCount = r?.steps.length ?? 0;
+  const resumable = isResumable(saved, stepCount);
+  const resumePending = resumeState === "ask" && resumable;
+  const resumed = resumeState === "resumed" && resumable ? saved : null;
+
+  // A saved cook context fills in whatever the URL didn't carry.
+  const plannedCookId = cookEvent ?? resumed?.cookEvent;
+  const requestedServings = servingsParam ?? resumed?.servings;
   const planned = usePlannedCooks(r?.id);
-  const plannedCook = cookEvent !== undefined ? planned.data?.find((c) => c.id === cookEvent) : undefined;
-  const ready = r !== undefined && (servingsParam !== undefined || cookEvent === undefined || !planned.isPending);
-  const servings = ready ? (servingsParam ?? plannedCook?.plannedServings ?? r.servings) : undefined;
+  const plannedCook = plannedCookId !== undefined ? planned.data?.find((c) => c.id === plannedCookId) : undefined;
+  const ready = r !== undefined && (requestedServings !== undefined || plannedCookId === undefined || !planned.isPending);
+  const servings = ready ? (requestedServings ?? plannedCook?.plannedServings ?? r.servings) : undefined;
   const scaled = useScaledIngredients(slug, servings);
 
   const [step, setStep] = useState(0);
@@ -41,14 +67,37 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam }: CookScr
   const [done, setDone] = useState<DoneState | null>(null);
   const timers = useStepTimers();
   const finish = useFinishCook();
+  const undo = useUndoCook();
   const touch = useRef<{ x: number; y: number } | null>(null);
 
   useWakeLock(done === null);
 
-  const stepCount = r?.steps.length ?? 0;
   const lastStep = Math.max(0, stepCount - 1);
   const atEnd = step >= lastStep;
-  const overlayOpen = ingredientsOpen || askPlanned;
+  const overlayOpen = ingredientsOpen || askPlanned || resumePending;
+
+  // `?resume` jumps straight to the saved step once the recipe (and its step count) is known.
+  const resumeApplied = useRef(false);
+  useEffect(() => {
+    if (!r || resumeState !== "resumed" || resumeApplied.current) return;
+    resumeApplied.current = true;
+    if (isResumable(saved, r.steps.length)) {
+      setStep(Math.min(r.steps.length - 1, saved.step));
+    }
+  }, [r, resumeState, saved]);
+
+  // Keep the place, servings and planned cook across exits. Not while the resume
+  // prompt is open: that would overwrite it with step 0 before the user chooses.
+  useEffect(() => {
+    if (!r || servings === undefined || done !== null || resumePending || r.steps.length === 0) return;
+    saveCookProgress(slug, {
+      step: Math.min(step, r.steps.length - 1),
+      stepCount: r.steps.length,
+      servings,
+      ...(plannedCookId !== undefined ? { cookEvent: plannedCookId } : {}),
+      savedAt: new Date().toISOString(),
+    });
+  }, [r, slug, step, servings, done, resumePending, plannedCookId]);
 
   function go(delta: number) {
     setStep((s) => Math.min(lastStep, Math.max(0, s + delta)));
@@ -78,25 +127,115 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam }: CookScr
     go(dx < 0 ? 1 : -1);
   }
 
+  /**
+   * Leave cook mode without leaving the cook route under the recipe page: pop it
+   * when there is history to pop, otherwise replace it. Back from the recipe then
+   * reaches whatever page the user came from.
+   */
   function exit() {
+    if (canGoBack) {
+      router.history.back();
+      return;
+    }
     void navigate({
       to: "/recipes/$slug",
       params: { slug },
-      search: { ...(servings !== undefined ? { servings } : {}), ...(cookEvent !== undefined ? { cookEvent } : {}) },
+      search: {
+        ...(servings !== undefined ? { servings } : {}),
+        ...(plannedCookId !== undefined ? { cookEvent: plannedCookId } : {}),
+      },
+      replace: true,
     });
   }
 
-  function complete(input: FinishInput) {
+  /**
+   * Course corrections that pop the cook route instead of stacking another copy of
+   * the destination, so Back from there reaches the originating page.
+   */
+  function backToRecipe() {
+    if (origin === "recipe" && canGoBack) {
+      router.history.back();
+      return;
+    }
+    void navigate({ to: "/recipes/$slug", params: { slug }, replace: true });
+  }
+
+  function backToWeek() {
+    if (origin === "week" && canGoBack) {
+      router.history.back();
+      return;
+    }
+    void navigate({ to: "/", replace: true });
+  }
+
+  function resumeAt() {
+    if (!resumable || saved === null) return;
+    setResumeState("resumed");
+    setStep(Math.min(lastStep, Math.max(0, saved.step)));
+  }
+
+  function startOver() {
+    clearCookProgress(slug);
+    setResumeState("restarted");
+    setStep(0);
+  }
+
+  function undoCook(cookEventId: string) {
+    undo.mutate(cookEventId, {
+      onSuccess: () => {
+        clearCookProgress(slug);
+        toast.show({ message: "Cook undone. Pantry restored." });
+        backToRecipe();
+      },
+    });
+  }
+
+  function complete(input: FinishInput, allowFallback = true) {
     setAskPlanned(false);
     finish.mutate(input, {
-      onSuccess: (res) => setDone({ servings: input.servings, movements: res.movements.length, warnings: res.warnings }),
+      onSuccess: (res) => {
+        clearCookProgress(slug);
+        setDone({
+          cookEventId: res.cookEvent.id,
+          servings: input.servings,
+          movements: res.movements.length,
+          warnings: res.warnings,
+        });
+        toast.show({
+          message: `${r?.title ?? "Recipe"} is marked cooked`,
+          action: { label: "Undo", onClick: () => undoCook(res.cookEvent.id) },
+        });
+      },
+      onError: (error) => {
+        // The URL can outlive the cook it points at (a replanned or swapped week,
+        // an already-deleted cook). Finish the cook the user is actually making.
+        if (allowFallback && input.kind === "planned" && isNotFound(error)) {
+          completeFallback();
+          return;
+        }
+        toast.error(errorMessage(error));
+      },
     });
+  }
+
+  /** Ad-hoc / currently-planned-cook path, used when the URL's cook event is gone. */
+  function completeFallback() {
+    if (!r || servings === undefined) return;
+    const today = localDate();
+    const match = planned.data?.find((c) => c.cookDate === today);
+    if (match !== undefined) {
+      complete({ kind: "planned", cookEventId: match.id, servings }, false);
+      return;
+    }
+    complete({ kind: "adhoc", recipeId: r.id, servings }, false);
   }
 
   /** Finish: a planned cook from the URL, else ask about tonight's plan, else an ad-hoc cook. */
   function onFinish() {
     if (!r || servings === undefined) return;
-    if (cookEvent !== undefined) return complete({ kind: "planned", cookEventId: cookEvent, servings });
+    if (plannedCookId !== undefined) {
+      return complete({ kind: "planned", cookEventId: plannedCookId, servings });
+    }
     const today = localDate();
     if (planned.data?.some((c) => c.cookDate === today)) return setAskPlanned(true);
     complete({ kind: "adhoc", recipeId: r.id, servings });
@@ -108,7 +247,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam }: CookScr
       <div className={styles.cook}>
         {isNotFound(recipe.error) ? (
           <EmptyState
-            emoji="🍽️"
+            emoji="1F37D"
             title="Recipe not found"
             action={
               <Link to="/recipes" className={buttonClass({ variant: "primary" })}>
@@ -123,7 +262,20 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam }: CookScr
     );
   }
 
-  if (done !== null) return <DoneScreen title={r.title} done={done} slug={slug} />;
+  if (done !== null) {
+    return (
+      <DoneScreen
+        title={r.title}
+        done={done}
+        slug={slug}
+        askRating={r.status === "want_to_try"}
+        onUndo={() => undoCook(done.cookEventId)}
+        undoing={undo.isPending}
+        onBackToWeek={backToWeek}
+        onBackToRecipe={backToRecipe}
+      />
+    );
+  }
 
   const current = r.steps[step];
   const secs = current ? stepSeconds(current) : null;
@@ -272,6 +424,26 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam }: CookScr
       </Sheet>
 
       <Sheet
+        open={resumePending && saved !== null}
+        onClose={resumeAt}
+        title="Pick up where you left off?"
+        variant="center"
+        footer={
+          <>
+            <Button onClick={startOver}>Start over</Button>
+            <Button variant="primary" onClick={resumeAt}>
+              Resume at step {(saved?.step ?? 0) + 1}
+            </Button>
+          </>
+        }
+      >
+        <p>
+          You stopped at step {(saved?.step ?? 0) + 1} of {stepCount}
+          {saved !== null ? ` (${formatNumber(saved.servings)} servings)` : ""}.
+        </p>
+      </Sheet>
+
+      <Sheet
         open={askPlanned}
         onClose={() => setAskPlanned(false)}
         title="Cooking tonight's planned meal?"
@@ -300,10 +472,38 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam }: CookScr
   );
 }
 
-function DoneScreen({ title, done, slug }: { title: string; done: DoneState; slug: string }) {
+function DoneScreen({
+  title,
+  done,
+  slug,
+  askRating,
+  onUndo,
+  undoing,
+  onBackToWeek,
+  onBackToRecipe,
+}: {
+  title: string;
+  done: DoneState;
+  /** Recipe slug for the status change. */
+  slug: string;
+  /** True when the recipe is still want-to-try, i.e. not rated yet. */
+  askRating: boolean;
+  onUndo: () => void;
+  undoing: boolean;
+  onBackToWeek: () => void;
+  onBackToRecipe: () => void;
+}) {
+  const setStatus = useSetRecipeStatus();
+  const [answered, setAnswered] = useState(false);
+  const showRating = askRating && !answered;
+
+  function rate(status: EditableStatus) {
+    setStatus.mutate({ slug, status }, { onSuccess: () => setAnswered(true) });
+  }
+
   return (
     <div className={cx(styles.cook, styles.done)}>
-      <Sticker emoji="🎉" shape="die-cut" size={96} tilt={-8} />
+      <Sticker emoji="1F389" shape="die-cut" size={96} tilt={-8} />
       <h1 className={styles.doneTitle}>Nice cooking!</h1>
       <p className={styles.doneText}>
         {title} ({formatNumber(done.servings)} servings) is done.{" "}
@@ -314,17 +514,49 @@ function DoneScreen({ title, done, slug }: { title: string; done: DoneState; slu
       {done.warnings.length > 0 && (
         <ul className={styles.warnings} aria-label="Heads up">
           {done.warnings.map((w) => (
-            <li key={w}>{w}</li>
+            <li key={w}>
+              <Emoji code="26A0" size={15} />
+              <span>{w}</span>
+            </li>
           ))}
         </ul>
       )}
+      {showRating && (
+        <div className={styles.rate} role="group" aria-label="How was it?">
+          <p className={styles.rateTitle}>How was it?</p>
+          <div className={styles.rateActions}>
+            <Button
+              size="lg"
+              icon={<Emoji code="1F44D" size={20} />}
+              loading={setStatus.isPending && setStatus.variables?.status === "rotation"}
+              onClick={() => rate("rotation")}
+            >
+              Cook it again
+            </Button>
+            <Button
+              size="lg"
+              icon={<Emoji code="1F44E" size={20} />}
+              loading={setStatus.isPending && setStatus.variables?.status === "never"}
+              onClick={() => rate("never")}
+            >
+              Never again
+            </Button>
+          </div>
+          <Button variant="ghost" onClick={() => setAnswered(true)}>
+            Not now
+          </Button>
+        </div>
+      )}
       <div className={styles.doneActions}>
-        <Link to="/" className={buttonClass({ variant: "primary", size: "lg", className: styles.next })}>
+        <Button variant="primary" size="lg" className={styles.next} onClick={onBackToWeek}>
           Back to the week
-        </Link>
-        <Link to="/recipes/$slug" params={{ slug }} className={buttonClass({ size: "lg" })}>
+        </Button>
+        <Button size="lg" onClick={onBackToRecipe}>
           Back to the recipe
-        </Link>
+        </Button>
+        <Button size="lg" icon={<Icon name="undo" />} loading={undoing} onClick={onUndo}>
+          Undo
+        </Button>
       </div>
     </div>
   );

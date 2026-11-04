@@ -24,10 +24,10 @@ export function StockRow({ item, onStep, onEditQty, onCycleStatus }: StockRowPro
   return (
     <li className={styles.row}>
       <Sticker emoji={ingredientEmoji(name)} tone="plain" size={46} />
-      <span className={styles.body}>
+      <button type="button" className={styles.body} onClick={() => onEditQty(item)}>
         <span className={styles.name}>{name}</span>
         {note && <span className={styles.note}>{note}</span>}
-      </span>
+      </button>
       {item.qty !== null ? (
         <Stepper
           label={name}

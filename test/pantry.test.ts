@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "../src/lib/errors.js";
+import { availabilityFor } from "../src/services/demand.js";
 import {
   addAlias,
   createIngredient,
@@ -18,7 +19,7 @@ import {
   updatePantryItem,
   verifyItem,
 } from "../src/services/pantry.js";
-import { makeTestCtx } from "./helpers.js";
+import { makeTestApp, makeTestCtx } from "./helpers.js";
 
 function makeClock(start = "2026-11-01T12:00:00.000Z") {
   let current = new Date(start);
@@ -336,9 +337,26 @@ describe("listPantry", () => {
 
     deletePantryItem(ctx, set.item.id);
     expect(getStockForIngredient(ctx, set.item.ingredientId)).toHaveLength(1);
+    expect(listPantry(ctx).map((row) => row.id)).not.toContain(set.item.id);
     expect(listMovements(ctx, { pantryItemId: set.item.id })).toHaveLength(0);
     expectAppError(() => deletePantryItem(ctx, set.item.id), "not_found");
     expectAppError(() => getPantryItem(ctx, set.item.id), "not_found");
+  });
+
+  it("makes a removed row vanish from the list and availability with no movements left behind", () => {
+    const { ctx } = makeClock();
+    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g", location: "fridge" });
+    const ingredientId = set.item.ingredientId;
+
+    expect(listPantry(ctx).map((row) => row.id)).toContain(set.item.id);
+    expect(availabilityFor(ctx, []).find((line) => line.ingredientId === ingredientId)?.onHand).toBe(500);
+
+    deletePantryItem(ctx, set.item.id);
+
+    expect(listPantry(ctx).map((row) => row.id)).not.toContain(set.item.id);
+    expect(availabilityFor(ctx, []).some((line) => line.ingredientId === ingredientId)).toBe(false);
+    // The row is the ledger subject: its movements go with it, nothing dangles.
+    expect(listMovements(ctx, { ingredientId })).toHaveLength(0);
   });
 });
 
@@ -459,5 +477,27 @@ describe("listMovements", () => {
     const older = listMovements(ctx, { ingredientId: set.item.ingredientId, before: newest.createdAt });
     expect(older).toHaveLength(2);
     expect(older[0]!.qtyAfter).toBe(7);
+  });
+});
+
+describe("DELETE /pantry/{id}", () => {
+  it("removes the row from GET /pantry and answers 404 for an unknown id", async () => {
+    const { ctx, request } = makeTestApp();
+    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g", location: "fridge" });
+
+    const before = await request<{ items: { id: string }[] }>("GET", "/api/v1/pantry");
+    expect(before.body.items.map((row) => row.id)).toContain(set.item.id);
+
+    const removed = await request("DELETE", `/api/v1/pantry/${set.item.id}`);
+    expect(removed.status).toBe(204);
+
+    const after = await request<{ items: { id: string }[] }>("GET", "/api/v1/pantry");
+    expect(after.body.items.map((row) => row.id)).not.toContain(set.item.id);
+
+    const repeat = await request("DELETE", `/api/v1/pantry/${set.item.id}`);
+    expect(repeat.status).toBe(404);
+
+    const unknown = await request("DELETE", "/api/v1/pantry/pi_unknown");
+    expect(unknown.status).toBe(404);
   });
 });

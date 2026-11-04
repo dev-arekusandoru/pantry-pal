@@ -3,7 +3,9 @@ import type { Ctx } from "../context.js";
 import {
   cookEvents,
   ingredients,
+  mealSlots,
   pantryItems,
+  prepTasks,
   stockMovements,
   type CookStatus,
 } from "../db/schema.js";
@@ -266,9 +268,71 @@ export function skipCookEvent(
 }
 
 /**
- * Reopen a completed cook (`done → planned`), writing compensating `adjust`
- * movements that reverse whatever this event took out of the pantry.
+ * Write compensating `adjust` movements that reverse whatever this cook event
+ * took out of the pantry, netting the ledger rows per pantry item and unit.
  */
+function reverseCookMovements(
+  ctx: Ctx,
+  event: typeof cookEvents.$inferSelect,
+  note: string,
+): { movements: StockMovement[]; warnings: string[] } {
+  const ledger = ctx.db
+    .select()
+    .from(stockMovements)
+    .where(
+      and(
+        eq(stockMovements.householdId, ctx.householdId),
+        eq(stockMovements.refType, "cook_event"),
+        eq(stockMovements.refId, event.id),
+      ),
+    )
+    .all();
+
+  const netByItemUnit = new Map<string, { pantryItemId: string; unit: string | null; net: number }>();
+  for (const movement of ledger) {
+    if (movement.qty === null) continue;
+    const key = `${movement.pantryItemId}\u0000${movement.unit ?? ""}`;
+    const current = netByItemUnit.get(key) ?? {
+      pantryItemId: movement.pantryItemId,
+      unit: movement.unit,
+      net: 0,
+    };
+    current.net += movement.qty;
+    netByItemUnit.set(key, current);
+  }
+
+  const movements: StockMovement[] = [];
+  const warnings: string[] = [];
+  for (const { pantryItemId, unit, net } of netByItemUnit.values()) {
+    if (Math.abs(net) < 1e-9) continue;
+    const item = ctx.db
+      .select()
+      .from(pantryItems)
+      .where(and(eq(pantryItems.householdId, ctx.householdId), eq(pantryItems.id, pantryItemId)))
+      .get();
+    if (!item) {
+      warnings.push(`Pantry item ${pantryItemId} no longer exists; nothing was restored for it.`);
+      continue;
+    }
+    const result = applyMovement(ctx, {
+      ingredientId: item.ingredientId,
+      location: item.location,
+      kind: "delta",
+      qty: -net,
+      unit,
+      reason: "adjust",
+      refType: "cook_event",
+      refId: event.id,
+      note,
+    });
+    movements.push(result.movement);
+    if (result.warning !== undefined) warnings.push(result.warning);
+  }
+
+  return { movements, warnings };
+}
+
+/** Reopen a completed cook (`done → planned`), writing the compensating movements. */
 export function reopenCookEvent(ctx: Ctx, cookEventId: string): ReopenCookEventResult {
   return ctx.db.transaction((tx) => {
     const t = withTx(ctx, tx);
@@ -281,58 +345,11 @@ export function reopenCookEvent(ctx: Ctx, cookEventId: string): ReopenCookEventR
       );
     }
 
-    const ledger = t.db
-      .select()
-      .from(stockMovements)
-      .where(
-        and(
-          eq(stockMovements.householdId, t.householdId),
-          eq(stockMovements.refType, "cook_event"),
-          eq(stockMovements.refId, existing.id),
-        ),
-      )
-      .all();
-
-    const netByItemUnit = new Map<string, { pantryItemId: string; unit: string | null; net: number }>();
-    for (const movement of ledger) {
-      if (movement.qty === null) continue;
-      const key = `${movement.pantryItemId}\u0000${movement.unit ?? ""}`;
-      const current = netByItemUnit.get(key) ?? {
-        pantryItemId: movement.pantryItemId,
-        unit: movement.unit,
-        net: 0,
-      };
-      current.net += movement.qty;
-      netByItemUnit.set(key, current);
-    }
-
-    const movements: StockMovement[] = [];
-    const warnings: string[] = [];
-    for (const { pantryItemId, unit, net } of netByItemUnit.values()) {
-      if (Math.abs(net) < 1e-9) continue;
-      const item = t.db
-        .select()
-        .from(pantryItems)
-        .where(and(eq(pantryItems.householdId, t.householdId), eq(pantryItems.id, pantryItemId)))
-        .get();
-      if (!item) {
-        warnings.push(`Pantry item ${pantryItemId} no longer exists; nothing was restored for it.`);
-        continue;
-      }
-      const result = applyMovement(t, {
-        ingredientId: item.ingredientId,
-        location: item.location,
-        kind: "delta",
-        qty: -net,
-        unit,
-        reason: "adjust",
-        refType: "cook_event",
-        refId: existing.id,
-        note: `Reopened cook event ${existing.id}`,
-      });
-      movements.push(result.movement);
-      if (result.warning !== undefined) warnings.push(result.warning);
-    }
+    const { movements, warnings } = reverseCookMovements(
+      t,
+      existing,
+      `Reopened cook event ${existing.id}`,
+    );
 
     t.db
       .update(cookEvents)
@@ -341,6 +358,68 @@ export function reopenCookEvent(ctx: Ctx, cookEventId: string): ReopenCookEventR
       .run();
 
     return { cookEvent: getCookEvent(t, existing.id), movements, warnings };
+  });
+}
+
+export interface UndoCookEventResult {
+  /** The reopened cook, or null when an ad-hoc cook was deleted. */
+  cookEvent: CookEventView | null;
+  deleted: boolean;
+  /** Compensating adjustments written to the ledger. */
+  movements: StockMovement[];
+  warnings: string[];
+}
+
+/**
+ * Undo a completed cook: reverse its pantry movements and return it to planned.
+ * An ad-hoc cook (no plan, nothing referencing it) is deleted instead, so the
+ * recipe box doesn't keep a phantom planned cook.
+ */
+export function undoCookEvent(ctx: Ctx, cookEventId: string): UndoCookEventResult {
+  return ctx.db.transaction((tx) => {
+    const t = withTx(ctx, tx);
+    const existing = requireEventRow(t, cookEventId);
+    if (existing.status !== "done") {
+      throw new AppError(
+        "conflict",
+        `Cook event ${cookEventId} is ${existing.status}, only completed cooks can be undone`,
+        { id: cookEventId, status: existing.status },
+      );
+    }
+
+    const { movements, warnings } = reverseCookMovements(
+      t,
+      existing,
+      `Undid cook event ${existing.id}`,
+    );
+
+    const slot = t.db
+      .select({ id: mealSlots.id })
+      .from(mealSlots)
+      .where(
+        and(eq(mealSlots.householdId, t.householdId), eq(mealSlots.cookEventId, existing.id)),
+      )
+      .get();
+    const prep = t.db
+      .select({ id: prepTasks.id })
+      .from(prepTasks)
+      .where(
+        and(eq(prepTasks.householdId, t.householdId), eq(prepTasks.cookEventId, existing.id)),
+      )
+      .get();
+
+    if (existing.mealPlanId === null && slot === undefined && prep === undefined) {
+      t.db.delete(cookEvents).where(eq(cookEvents.id, existing.id)).run();
+      return { cookEvent: null, deleted: true, movements, warnings };
+    }
+
+    t.db
+      .update(cookEvents)
+      .set({ status: "planned", completedAt: null, actualServings: null, updatedAt: nowIso(t) })
+      .where(eq(cookEvents.id, existing.id))
+      .run();
+
+    return { cookEvent: getCookEvent(t, existing.id), deleted: false, movements, warnings };
   });
 }
 

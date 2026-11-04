@@ -1,0 +1,8 @@
+.emoji {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}

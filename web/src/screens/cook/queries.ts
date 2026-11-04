@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { client, qk, unwrap } from "@/api";
 import { localDate } from "../recipe/lib";
 
@@ -8,7 +8,20 @@ export type FinishInput =
   /** Record and complete a cook that is not on the plan. */
   | { kind: "adhoc"; recipeId: string; servings: number };
 
-/** Finishing a cook decrements the pantry and completes planned meals, so refresh everything that shows them. */
+/** Cooks move pantry stock and plan status, so refresh everything that shows either. */
+function invalidateCookResults(queryClient: QueryClient): Promise<unknown> {
+  return Promise.all(
+    [qk.pantry, qk.plans, qk.prepTasks, qk.cookEvents, qk.recipes, qk.shoppingLists].map((queryKey) =>
+      queryClient.invalidateQueries({ queryKey }),
+    ),
+  );
+}
+
+/**
+ * Finishing a cook decrements the pantry and completes planned meals, so refresh
+ * everything that shows them. Errors are handled by the caller: a stale
+ * `cookEvent` id falls back to an ad-hoc cook instead of failing.
+ */
 export function useFinishCook() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -25,11 +38,19 @@ export function useFinishCook() {
               body: { recipeId: input.recipeId, servings: input.servings, cookDate: localDate(), complete: true },
             }),
           ),
-    onSuccess: () =>
-      Promise.all(
-        [qk.pantry, qk.plans, qk.prepTasks, qk.cookEvents, qk.recipes].map((queryKey) =>
-          queryClient.invalidateQueries({ queryKey }),
-        ),
+    meta: { silent: true },
+    onSuccess: () => invalidateCookResults(queryClient),
+  });
+}
+
+/** Undo a completed cook from the week or the "mark cooked" toast. */
+export function useUndoCook() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (cookEventId: string) =>
+      unwrap(
+        client.POST("/cook-events/{id}/undo", { params: { path: { id: cookEventId } } }),
       ),
+    onSuccess: () => invalidateCookResults(queryClient),
   });
 }

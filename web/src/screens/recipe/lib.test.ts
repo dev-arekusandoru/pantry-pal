@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { EMOJI_ASSETS } from "@/ui/emoji";
 import { formatClock, parseDurationSeconds, stepSeconds } from "./duration";
-import { formatAmount, formatNumber, haveIngredient, localDate } from "./lib";
+import { formatAmount, formatNumber, haveIngredient, localDate, recipeEmoji, type MealType } from "./lib";
 
 describe("parseDurationSeconds", () => {
   it.each([
@@ -87,5 +88,17 @@ describe("haveIngredient", () => {
 describe("localDate", () => {
   it("uses the local calendar date", () => {
     expect(localDate(new Date(2026, 10, 2, 23, 59))).toBe("2026-11-02");
+  });
+});
+
+describe("recipeEmoji", () => {
+  it("returns bundled OpenMoji assets for every meal type and the fallback", () => {
+    const meals: MealType[] = ["breakfast", "lunch", "dinner", "snack", "dessert"];
+    for (const meal of meals) expect(EMOJI_ASSETS[recipeEmoji([meal])]).toBeTypeOf("string");
+    expect(EMOJI_ASSETS[recipeEmoji([])]).toBeTypeOf("string");
+  });
+
+  it("prefers the dinner icon over other meal types", () => {
+    expect(recipeEmoji(["breakfast", "dinner"])).toBe("1F35D");
   });
 });

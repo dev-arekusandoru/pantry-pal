@@ -95,6 +95,16 @@ export function SettingsScreen() {
           PantryPal{version.data ? ` v${version.data}` : ""}
           <br />
           Self-hosted. Your pantry stays on your own server.
+          <br />
+          Food icons by{" "}
+          <a href="https://openmoji.org" target="_blank" rel="noreferrer">
+            OpenMoji
+          </a>{" "}
+          (CC BY-SA 4.0). UI icons by{" "}
+          <a href="https://phosphoricons.com" target="_blank" rel="noreferrer">
+            Phosphor
+          </a>{" "}
+          (MIT).
         </p>
       </div>
     </>

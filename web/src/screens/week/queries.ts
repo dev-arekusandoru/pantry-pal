@@ -1,18 +1,21 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, client, qk, unwrap } from "@/api";
-import { householdQueryOptions } from "@/screens/settings/queries";
+import { householdQueryOptions, weekStartsOnOf } from "@/screens/settings/queries";
 import { localToday, weekStartFor } from "./dates";
 import { nudgeWindow, type AvailabilityLine, type MealType, type PlanView } from "./model";
 
-const PLAN_KEY = [...qk.plans, "current"] as const;
+/** Cache key for one week's plan (the API looks plans up by id or weekStart). */
+const planKey = (weekStart: string) => [...qk.plans, weekStart] as const;
 
-/** The plan for this week, or `null` when none exists yet (the API answers 404). */
-export function usePlan() {
+/** The plan for the given week, or `null` when none exists yet (the API answers 404). */
+export function usePlan(weekStart: string) {
   return useQuery({
-    queryKey: PLAN_KEY,
+    queryKey: planKey(weekStart),
     queryFn: async (): Promise<PlanView | null> => {
       try {
-        return await unwrap(client.GET("/plans/current"));
+        return await unwrap(
+          client.GET("/plans/{idOrWeekStart}", { params: { path: { idOrWeekStart: weekStart } } }),
+        );
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) return null;
         throw error;
@@ -69,7 +72,7 @@ export function useSwapMeal(planId: string) {
         }),
       ),
     onSuccess: ({ plan }) => {
-      queryClient.setQueryData<PlanView | null>(PLAN_KEY, plan);
+      queryClient.setQueryData(planKey(plan.weekStart), plan);
       // Shopping lists carry the stale flag; availability counts planned demand; cooks changed.
       for (const root of [qk.shoppingLists, qk.pantry, qk.cookEvents]) {
         void queryClient.invalidateQueries({ queryKey: root });
@@ -84,16 +87,16 @@ export function useStartEmptyWeek() {
   return useMutation({
     mutationFn: async () => {
       const household = await queryClient.fetchQuery(householdQueryOptions());
-      const weekStart = weekStartFor(localToday(), household.settings.weekStartsOn);
+      const weekStart = weekStartFor(localToday(), weekStartsOnOf(household));
       return unwrap(client.POST("/plans", { body: { weekStart, status: "active" } }));
     },
     onSuccess: (plan) => {
-      queryClient.setQueryData<PlanView | null>(PLAN_KEY, plan);
+      queryClient.setQueryData(planKey(plan.weekStart), plan);
       void queryClient.invalidateQueries({ queryKey: qk.plans });
     },
     onError: () => {
       // A 409 means the plan already exists (server and browser disagree on today); show it.
-      void queryClient.invalidateQueries({ queryKey: PLAN_KEY });
+      void queryClient.invalidateQueries({ queryKey: qk.plans });
     },
   });
 }
@@ -121,16 +124,6 @@ export function useAvailability(enabled: boolean) {
     queryFn: () => unwrap(client.GET("/pantry/availability")),
     enabled,
     select: (data): Map<string, AvailabilityLine> => new Map(data.items.map((l) => [l.ingredientId, l])),
-  });
-}
-
-/** Rule check for one recipe; only runs once its row has been seen. */
-export function useRecipeRuleCheck(slug: string, enabled: boolean) {
-  return useQuery({
-    queryKey: [...qk.recipes, "rule-check", slug],
-    queryFn: () => unwrap(client.GET("/recipes/{idOrSlug}/check", { params: { path: { idOrSlug: slug } } })),
-    enabled,
-    staleTime: 5 * 60_000,
   });
 }
 

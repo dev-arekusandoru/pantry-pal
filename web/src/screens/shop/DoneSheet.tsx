@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Sheet, ingredientEmoji } from "@/ui";
+import { Button, Emoji, Sheet, ingredientEmoji } from "@/ui";
 import type { ShoppingItem } from "./cart";
 import { formatAmount, parseQty, qtyToInput, unitLabel } from "./format";
 import styles from "./Shop.module.css";
@@ -93,7 +93,7 @@ function ReviewRow({ item, text, onChange }: { item: ShoppingItem; text: string 
   return (
     <li className={styles.reviewRow}>
       <span className={styles.itemEmoji} aria-hidden="true">
-        {ingredientEmoji(item.name)}
+        <Emoji code={ingredientEmoji(item.name)} size={26} />
       </span>
       <span className={styles.reviewName}>
         {item.name}

@@ -9,7 +9,7 @@ import {
   setSlotsSchema,
   swapMealSchema,
 } from "../../schemas/plans.js";
-import { completeCookEvent, listCookEvents, reopenCookEvent, skipCookEvent } from "../../services/cooking.js";
+import { completeCookEvent, listCookEvents, reopenCookEvent, skipCookEvent, undoCookEvent } from "../../services/cooking.js";
 import { computeAvailability, computeDemand } from "../../services/demand.js";
 import {
   addCookEvent,
@@ -85,8 +85,10 @@ const prepTasksInput = z.object({
 
 const cookCompleteInput = z.object({
   action: z
-    .enum(["complete", "skip", "reopen"])
-    .describe("complete records the cook and decrements the pantry; reopen restores stock."),
+    .enum(["complete", "skip", "reopen", "undo"])
+    .describe(
+      "complete records the cook and decrements the pantry; reopen returns it to planned and restores stock; undo does the same but deletes ad-hoc cooks outside any plan.",
+    ),
   cookEventId: z.string().min(1).describe("Cook event id (ce_…)."),
   actualServings: z.number().positive().optional().describe("Servings actually produced."),
   rating: z.number().int().min(1).max(5).optional().describe("Post-cook rating (1-5)."),
@@ -277,9 +279,9 @@ export function registerPlanningTools(server: McpServer, ctx: Ctx): void {
   server.registerTool(
     "cook_complete",
     {
-      title: "Complete, skip or reopen a cook",
+      title: "Complete, skip, reopen or undo a cook",
       description:
-        "action=complete marks the cook done with actual servings/rating and decrements the pantry by the scaled recipe ingredients; skip records it as not cooked; reopen returns it to planned and restores stock.",
+        "action=complete marks the cook done with actual servings/rating and decrements the pantry by the scaled recipe ingredients; skip records it as not cooked; reopen returns it to planned and restores stock; undo reverses a completed cook the same way and deletes ad-hoc cooks that no plan references.",
       inputSchema: cookCompleteInput,
       annotations: { destructiveHint: true },
     },
@@ -304,6 +306,8 @@ export function registerPlanningTools(server: McpServer, ctx: Ctx): void {
           };
         case "reopen":
           return reopenCookEvent(ctx, args.cookEventId);
+        case "undo":
+          return undoCookEvent(ctx, args.cookEventId);
       }
     }),
   );

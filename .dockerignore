@@ -20,11 +20,7 @@ data
 .idea
 .DS_Store
 
-# Design mockups are reference material only.
-mockups
-
 # Docs and tests are not needed to compile or run the service.
 *.md
 docs
 test
-original chef docs

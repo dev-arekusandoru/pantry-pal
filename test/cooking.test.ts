@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { Ctx } from "../src/context.js";
 import type { ErrorCode } from "../src/lib/errors.js";
 import { AppError } from "../src/lib/errors.js";
-import { completeCookEvent, reopenCookEvent, skipCookEvent } from "../src/services/cooking.js";
+import {
+  completeCookEvent,
+  cookAdHoc,
+  listCookEvents,
+  reopenCookEvent,
+  skipCookEvent,
+  undoCookEvent,
+} from "../src/services/cooking.js";
 import { resolveIngredient } from "../src/services/ingredients.js";
 import { applyMovement, getStockForIngredient } from "../src/services/pantry.js";
 import { addCookEvent, createPlan, listPlans } from "../src/services/plans.js";
@@ -315,5 +322,46 @@ describe("reopenCookEvent", () => {
     expect(reopened.movements).toHaveLength(1);
     expect(reopened.movements[0]!.qty).toBeCloseTo(1, 6);
     expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(1, 6);
+  });
+});
+
+describe("undoCookEvent", () => {
+  it("restores stock and returns a planned cook to planned", () => {
+    const { ctx, chicken, recipe } = kitchen();
+    const event = addCook(ctx, recipe.id, 2);
+    completeCookEvent(ctx, event.id);
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(2, 6);
+
+    const undone = undoCookEvent(ctx, event.id);
+
+    expect(undone.deleted).toBe(false);
+    expect(undone.cookEvent?.id).toBe(event.id);
+    expect(undone.cookEvent?.status).toBe("planned");
+    expect(undone.cookEvent?.actualServings).toBeNull();
+    expect(undone.movements).toHaveLength(1);
+    expect(undone.movements[0]!.note).toContain("Undid");
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(3, 6);
+
+    expectAppError(() => undoCookEvent(ctx, event.id), "conflict");
+  });
+
+  it("deletes a completed ad-hoc cook nothing references", () => {
+    const { ctx, chicken, recipe } = kitchen();
+    const completed = cookAdHoc(ctx, {
+      recipeId: recipe.id,
+      servings: 2,
+      cookDate: "2026-11-01",
+      complete: true,
+    });
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(2, 6);
+
+    const undone = undoCookEvent(ctx, completed.cookEvent.id);
+
+    expect(undone.deleted).toBe(true);
+    expect(undone.cookEvent).toBeNull();
+    expect(undone.movements).toHaveLength(1);
+    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(3, 6);
+    expect(listCookEvents(ctx).items).toEqual([]);
+    expectAppError(() => undoCookEvent(ctx, completed.cookEvent.id), "not_found");
   });
 });

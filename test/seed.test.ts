@@ -19,10 +19,10 @@ import { convert } from "../src/services/units.js";
 import { makeTestCtx, type TestContext } from "./helpers.js";
 
 const SEED_JSON = JSON.parse(
-  readFileSync(new URL("../seed/chef-2026-11.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../seed/example.json", import.meta.url), "utf8"),
 ) as unknown;
 
-const COMPLETED_AT = "2026-11-01T16:00:00.000Z";
+const COMPLETED_AT = "2026-02-01T16:00:00.000Z";
 
 function errorFrom(fn: () => unknown): unknown {
   try {
@@ -38,7 +38,7 @@ function asAppError(error: unknown): AppError {
   return error;
 }
 
-describe("loadSeed(seed/chef-2026-11.json)", () => {
+describe("loadSeed(seed/example.json)", () => {
   let test: TestContext;
   let result: SeedResult;
 
@@ -83,8 +83,8 @@ describe("loadSeed(seed/chef-2026-11.json)", () => {
 
   it("applies the household and its members", () => {
     const household = getHousehold(test.db, test.ctx.householdId);
-    expect(household.name).toBe("PantryPal Home");
-    expect(household.timezone).toBe("America/New_York");
+    expect(household.name).toBe("Example Household");
+    expect(household.timezone).toBe("UTC");
     expect(household.settings).toMatchObject({
       defaultServings: 2,
       spiceLevel: "mild",
@@ -100,14 +100,14 @@ describe("loadSeed(seed/chef-2026-11.json)", () => {
   });
 
   it("links the chili cook on Nov 1 to the Mon-Wed lunch slots, all leftovers", () => {
-    const plan = getPlan(test.ctx, "2026-11-02");
+    const plan = getPlan(test.ctx, "2026-02-02");
     expect(plan.status).toBe("active");
     expect(plan.cookEvents).toHaveLength(12);
 
     const chili = plan.cookEvents.find((event) => event.label === "Batch A - lunch (Mon-Wed)");
     expect(chili).toBeDefined();
     expect(chili?.recipeTitle).toBe("Easy Slow Cooker Chili");
-    expect(chili?.cookDate).toBe("2026-11-01");
+    expect(chili?.cookDate).toBe("2026-02-01");
     expect(chili?.status).toBe("planned");
     expect(chili?.plannedServings).toBe(6);
 
@@ -116,18 +116,18 @@ describe("loadSeed(seed/chef-2026-11.json)", () => {
       .filter(({ slot }) => slot.cookEventId === chili?.id);
 
     expect(lunchSlots.map(({ date }) => date)).toEqual([
-      "2026-11-02",
-      "2026-11-03",
-      "2026-11-04",
+      "2026-02-02",
+      "2026-02-03",
+      "2026-02-04",
     ]);
-    // The chili is cooked on 2026-11-01, so every later lunch is a leftover
+    // The chili is cooked on 2026-02-01, so every later lunch is a leftover
     // (isLeftover = slot.date > cookDate).
     expect(lunchSlots.map(({ slot }) => slot.isLeftover)).toEqual([true, true, true]);
     expect(lunchSlots.map(({ slot }) => slot.servings)).toEqual([2, 2, 2]);
 
     const freeform = plan.days
       .flatMap((day) => day.meals.lunch.map((slot) => ({ date: day.date, slot })))
-      .find(({ date }) => date === "2026-11-08");
+      .find(({ date }) => date === "2026-02-08");
     expect(freeform?.slot).toMatchObject({
       kind: "freeform",
       label: "Leftovers / fridge clean-out",
@@ -154,8 +154,8 @@ describe("loadSeed(seed/chef-2026-11.json)", () => {
       unit: "lb",
       status: "on_hand",
       qtyApprox: false,
-      rawText: "Ground beef, 85% lean | 3 lb (chili 2 + beef & broccoli 1) | protein | 2026-11-01",
-      note: "Allocation parenthetical dropped; commitments are computed.",
+      rawText: "Ground beef | 3 lb | protein | 2026-02-01",
+      note: null,
     });
 
     const beefMovements = listMovements(test.ctx, { ingredientId: beef!.id });
@@ -178,7 +178,7 @@ describe("loadSeed(seed/chef-2026-11.json)", () => {
       qty: null,
       unit: null,
       status: "on_hand",
-      rawText: "Salt, black pepper | on hand | spice | 2026-11-01",
+      rawText: "Salt | on hand | spice | 2026-02-01",
     });
 
     const movements = listMovements(test.ctx, { limit: 200 });
@@ -204,9 +204,9 @@ describe("loadSeed(seed/chef-2026-11.json)", () => {
     expect(detail.list).toMatchObject({
       status: "done",
       completedAt: COMPLETED_AT,
-      title: "Week of Mon Nov 2 - Sun Nov 8, 2026",
+      title: "Week of Mon Feb 2 - Sun Feb 8, 2026",
     });
-    expect(detail.list.mealPlanId).toBe(getPlan(test.ctx, "2026-11-02").id);
+    expect(detail.list.mealPlanId).toBe(getPlan(test.ctx, "2026-02-02").id);
     expect(detail.items).toHaveLength(33);
     expect(detail.counts).toMatchObject({ total: 33, checked: 33, remaining: 0 });
 
@@ -246,13 +246,13 @@ describe("loadSeed(seed/chef-2026-11.json)", () => {
       expect(history[0]).toMatchObject({
         status: "want_to_try",
         rating: null,
-        note: "Seeded from chef-2026-11.json",
+        note: "Seeded from example.json",
       });
     }
   });
 
   it("computes plan demand from the planned servings", () => {
-    const plan = getPlan(test.ctx, "2026-11-02");
+    const plan = getPlan(test.ctx, "2026-02-02");
     const beef = findIngredientByName(test.ctx, "Ground beef");
     const demand = computeDemand(test.ctx, { mealPlanId: plan.id });
     const line = demand.find((entry) => entry.ingredientId === beef!.id);

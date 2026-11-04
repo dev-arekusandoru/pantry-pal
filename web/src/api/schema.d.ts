@@ -940,7 +940,93 @@ export interface paths {
                 };
             };
         };
-        delete?: never;
+        /**
+         * Clear a shopping list
+         * @description Removes every item — generated or manual, checked or not. The list itself stays (including its plan binding), so it can be regenerated later. Nothing is written to stock.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Shopping list id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cleared list detail */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShoppingListDetail"];
+                    };
+                };
+                /** @description Request validation failed */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                message: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                message: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Conflict with the current list state */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                message: string;
+                            };
+                        };
+                    };
+                };
+                /** @description Unprocessable input (for example an unresolvable ingredient) */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            error: {
+                                /** @enum {string} */
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                message: string;
+                            };
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -5075,6 +5161,115 @@ export interface paths {
                                 servingsAllocated: number;
                                 servingsRemaining: number;
                             };
+                            movements: {
+                                id: string;
+                                householdId: string;
+                                pantryItemId: string;
+                                /** @enum {string} */
+                                kind: "set" | "delta";
+                                qty: number | null;
+                                unit: string | null;
+                                /** @enum {string} */
+                                reason: "purchase" | "cook" | "waste" | "adjust" | "import" | "verify";
+                                /** @enum {string|null} */
+                                refType: "cook_event" | "shopping_list" | "manual" | "seed" | null;
+                                refId: string | null;
+                                note: string | null;
+                                qtyAfter: number | null;
+                                /** @enum {string} */
+                                statusAfter: "on_hand" | "low" | "out" | "unknown";
+                                createdAt: string;
+                            }[];
+                            warnings: string[];
+                        };
+                    };
+                };
+                /** @description Cook event not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Cook is not completed */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cook-events/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo a completed cook
+         * @description Restores the pantry stock this cook took out and returns a planned cook to `planned`. A cook created outside any plan (no plan, no referencing slot or prep task) is deleted instead.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Cook event id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description The reopened cook, or null when an ad-hoc cook was deleted. */
+                            cookEvent: {
+                                id: string;
+                                householdId: string;
+                                mealPlanId: string | null;
+                                recipeId: string;
+                                recipeTitle: string;
+                                /**
+                                 * @description Calendar date (YYYY-MM-DD).
+                                 * @example 2026-11-02
+                                 */
+                                cookDate: string;
+                                plannedServings: number;
+                                actualServings: number | null;
+                                label: string | null;
+                                /**
+                                 * @description Cook lifecycle status.
+                                 * @example planned
+                                 * @enum {string}
+                                 */
+                                status: "planned" | "done" | "skipped";
+                                completedAt: string | null;
+                                rating: number | null;
+                                notes: string | null;
+                                createdAt: string;
+                                updatedAt: string;
+                                fedSlots: number;
+                                servingsAllocated: number;
+                                servingsRemaining: number;
+                            } | null;
+                            /** @description True when an ad-hoc cook was removed instead of reopened. */
+                            deleted: boolean;
                             movements: {
                                 id: string;
                                 householdId: string;

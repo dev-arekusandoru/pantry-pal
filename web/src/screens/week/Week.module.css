@@ -1,3 +1,61 @@
+/* ---------- week header navigation ---------- */
+.weekHead h1 {
+  font-size: var(--fs-h3);
+}
+
+.weekHead p {
+  white-space: nowrap;
+}
+
+.weekNav {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.weekRange {
+  font-size: 14px;
+}
+
+.weekNav .weekNavBtn {
+  width: 44px;
+  height: 44px;
+}
+
+.weekNav .weekNavBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.weekNav .weekJump {
+  position: relative;
+  height: 36px;
+  padding: 0 12px;
+  font-size: var(--fs-sm);
+}
+
+/* Stretch the pill's hit area to 44px without growing the header. */
+.weekJump::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+/* Shrink the sticker on phones so the nav row stays clear of it. */
+@media (max-width: 440px) {
+  header.weekHead::after {
+    font-size: 56px;
+    top: -6px;
+  }
+}
+
+@media (min-width: 600px) {
+  .weekHead h1 {
+    font-size: var(--fs-title);
+  }
+}
+
 .loading {
   display: grid;
   gap: 14px;

@@ -1,0 +1,55 @@
+.fab {
+  position: fixed;
+  z-index: var(--z-fab);
+  /* Phones: clear the floating bottom nav, safe area included. */
+  right: var(--fab-inset);
+  bottom: calc(var(--nav-gap) + var(--nav-h) + var(--safe-bottom) + var(--fab-gap));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: var(--fab-size);
+  min-width: var(--fab-size);
+  padding: 0;
+  border-radius: var(--r-pill);
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 5px 0 var(--tomato-d), var(--shadow);
+  transition: transform var(--dur-fast) var(--pop), box-shadow var(--dur-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fab > svg {
+  width: 28px;
+  height: 28px;
+}
+
+.fab:active:not(:disabled) {
+  transform: translateY(3px) scale(0.97);
+  box-shadow: 0 2px 0 var(--tomato-d), var(--shadow);
+}
+
+.fab:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.extended {
+  padding: 0 24px 0 18px;
+}
+
+.label {
+  font-size: var(--fs-base);
+}
+
+/* Wide screens: the nav is a left rail, so sit against the content column's edge. */
+@media (min-width: 768px) {
+  .fab {
+    right: max(var(--main-pad), calc((100vw - var(--rail-w) - var(--content-max)) / 2 + var(--main-pad)));
+    bottom: calc(var(--fab-inset) + var(--safe-bottom));
+  }
+}

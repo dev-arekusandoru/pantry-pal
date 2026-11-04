@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { localToday, weekStartFor } from "./dates";
+import { localToday, parseWeekParam, selectedWeekStart, weekStartFor } from "./dates";
 import { pantryCoverage, pickNextPrep, prepDueLabel, swapPlanFor, type AvailabilityLine, type PlanView, type PrepTask, type Slot } from "./model";
 
 function task(id: string, dueDate: string, position = 0, done = false): PrepTask {
@@ -17,6 +17,24 @@ describe("dates", () => {
     expect(weekStartFor("2026-11-02", 1)).toBe("2026-11-02");
     expect(weekStartFor("2026-11-08", 1)).toBe("2026-11-02"); // Sun belongs to the Monday week
     expect(weekStartFor("2026-11-04", 0)).toBe("2026-11-01"); // Sunday start
+  });
+
+  it("keeps only real dates in the ?week= param", () => {
+    expect(parseWeekParam("2026-11-09")).toBe("2026-11-09");
+    expect(parseWeekParam("2026-02-30")).toBeNull(); // not a real day
+    expect(parseWeekParam("2026-11-9")).toBeNull(); // wrong shape
+    expect(parseWeekParam("last monday")).toBeNull();
+    expect(parseWeekParam(20261109)).toBeNull();
+    expect(parseWeekParam(["2026-11-09", "2026-11-10"])).toBeNull(); // repeated params parse to an array
+    expect(parseWeekParam(undefined)).toBeNull();
+  });
+
+  it("snaps the ?week= param to a week start, falling back to the current week", () => {
+    expect(selectedWeekStart(undefined, "2026-11-03", 1)).toBe("2026-11-02");
+    expect(selectedWeekStart("2026-11-09", "2026-11-03", 1)).toBe("2026-11-09"); // already a week start
+    expect(selectedWeekStart("2026-11-12", "2026-11-03", 1)).toBe("2026-11-09"); // mid-week deep link
+    expect(selectedWeekStart("garbage", "2026-11-08", 1)).toBe("2026-11-02"); // invalid falls back
+    expect(selectedWeekStart(undefined, "2026-11-08", 0)).toBe("2026-11-08"); // Sunday-start households
   });
 });
 

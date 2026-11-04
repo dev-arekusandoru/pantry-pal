@@ -1,9 +1,12 @@
+import type { ReactNode } from "react";
 import styles from "./SegmentedControl.module.css";
 import { cx } from "./cx";
 
 export interface SegmentOption<T extends string> {
   value: T;
   label: string;
+  /** Optional decorative icon before the label. */
+  icon?: ReactNode;
 }
 
 export interface SegmentedControlProps<T extends string> {
@@ -27,6 +30,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
           aria-pressed={o.value === value}
           onClick={() => onChange(o.value)}
         >
+          {o.icon}
           {o.label}
         </button>
       ))}

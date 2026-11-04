@@ -9,11 +9,10 @@
 }
 
 .emoji {
-  font-size: clamp(44px, 12vw, 72px);
   filter: drop-shadow(0 5px 0 rgba(255, 255, 255, 0.5));
 }
 
-.plate img {
+.photo {
   position: absolute;
   inset: 0;
   width: 100%;

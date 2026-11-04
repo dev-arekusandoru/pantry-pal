@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Button, Icon, Pill, buttonClass } from "@/ui";
+import { Button, Icon, Pill, buttonClass, toast } from "@/ui";
+import { useUndoCook } from "../cook/queries";
 import { recipeSlug } from "./DayCard";
 import { weekdayName } from "./dates";
 import { MEAL_EMOJI, slotName, slotNote, slotState, swapPlanFor, tonightSlot, type PlanView, type RecipeSummary } from "./model";
@@ -39,6 +40,7 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
   const recipe = recipes?.get(cook.recipeId);
   const slug = recipeSlug(recipes, cook.recipeId);
   const state = slotState(slot);
+  const undo = useUndoCook();
   const planned = cook.status === "planned";
   const cookView = plan.cookEvents.find((c) => c.id === cook.id);
   const servings = cookView?.plannedServings;
@@ -90,7 +92,7 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
             <Link
               to="/recipes/$slug/cook"
               params={{ slug }}
-              search={{ cookEvent: cook.id, ...(servings !== undefined ? { servings } : {}) }}
+              search={{ cookEvent: cook.id, ...(servings !== undefined ? { servings } : {}), from: "week" }}
               className={buttonClass({ variant: "primary" })}
             >
               <Icon name="flame" />
@@ -108,6 +110,20 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
           {canSwap && (
             <Button variant="ghost" icon={<Icon name="swap" />} onClick={() => onSwap(target)} aria-label={`Swap ${slotName(slot)}`}>
               Swap
+            </Button>
+          )}
+          {state === "done" && (
+            <Button
+              variant="ghost"
+              icon={<Icon name="undo" />}
+              loading={undo.isPending}
+              onClick={() =>
+                undo.mutate(cook.id, {
+                  onSuccess: () => toast.show({ message: "Cook undone. Pantry restored." }),
+                })
+              }
+            >
+              Undo
             </Button>
           )}
         </div>

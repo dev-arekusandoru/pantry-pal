@@ -17,6 +17,16 @@ export function setChecked(detail: ShoppingDetail, itemId: string, checkedAt: st
   };
 }
 
+/** `detail` with every item removed: counts zeroed, groups empty, the list itself untouched. */
+export function cleared(detail: ShoppingDetail): ShoppingDetail {
+  return {
+    ...detail,
+    items: [],
+    groups: [],
+    counts: { total: 0, checked: 0, remaining: 0, needsCheck: 0 },
+  };
+}
+
 /** Still-to-get items first, then the ones in the cart; server order kept within each. */
 export function uncheckedFirst(items: readonly ShoppingItem[]): ShoppingItem[] {
   return [...items.filter((i) => i.checkedAt === null), ...items.filter((i) => i.checkedAt !== null)];

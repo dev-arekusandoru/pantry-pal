@@ -6,7 +6,7 @@ export interface PageHeaderProps {
   title: string;
   /** Line under the title, e.g. "Mon Nov 2 to Sun Nov 8". */
   sub?: ReactNode;
-  /** Right-hand slot: a count badge, an add button. */
+  /** Right-hand slot: a count badge or another compact control. Primary add actions belong in a Fab. */
   aside?: ReactNode;
   className?: string;
 }

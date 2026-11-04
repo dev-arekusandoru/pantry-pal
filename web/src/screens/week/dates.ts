@@ -47,8 +47,32 @@ export function monthDay(date: string): string {
   return toUtc(date).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-/** "Mon Nov 2 to Sun Nov 8" */
+/** "Oct 26 – Nov 1" */
 export function weekRange(weekStart: string): string {
   const end = addDays(weekStart, 6);
-  return `${weekdayName(weekStart, "short")} ${monthDay(weekStart)} to ${weekdayName(end, "short")} ${monthDay(end)}`;
+  return `${monthDay(weekStart)} – ${monthDay(end)}`;
+}
+
+/** True for a real `YYYY-MM-DD` calendar date ("2026-02-30" is not one). */
+function isCalendarDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = toUtc(value);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
+/**
+ * The `?week=` search param: a valid calendar date, or null when it is missing
+ * or garbage, so bad deep links fall back to the current week.
+ */
+export function parseWeekParam(value: unknown): string | null {
+  return isCalendarDate(value) ? value : null;
+}
+
+/**
+ * The week to display: the `?week=` param snapped to the start of its week
+ * (household `weekStartsOn`, 1 = Monday), or the current week when the param is
+ * missing or invalid.
+ */
+export function selectedWeekStart(week: string | null | undefined, today: string, weekStartsOn: number): string {
+  return weekStartFor(parseWeekParam(week) ?? today, weekStartsOn);
 }

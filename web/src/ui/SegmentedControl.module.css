@@ -12,6 +12,10 @@
 
 .seg {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 44px;
   padding: 0 18px;
   border-radius: var(--r-pill);

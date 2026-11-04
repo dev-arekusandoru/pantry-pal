@@ -6,6 +6,7 @@ import { applyMovement } from "../src/services/pantry.js";
 import { addCookEvent, createPlan } from "../src/services/plans.js";
 import { createRecipe, listStatusHistory } from "../src/services/recipes.js";
 import { createRule } from "../src/services/rules.js";
+import { createShoppingList } from "../src/services/shopping.js";
 import { makeTestApp } from "./helpers.js";
 
 /** Every tool the server must expose, by name. */
@@ -186,6 +187,37 @@ describe("MCP endpoint", () => {
     expect(payload.items[0]?.unit).toBe("lb");
   });
 
+  it("deletes a pantry row through pantry_update and answers not_found for an unknown id", async () => {
+    const { app, token } = makeTestApp();
+
+    await callTool(app, token, "pantry_update", {
+      action: "bulk",
+      lines: [{ op: "set", ingredient: "Sesame oil", qty: 1, unit: "cup", reason: "purchase" }],
+    });
+    const before = await callTool(app, token, "pantry_query", { query: "sesame" });
+    // Tool payloads are parsed JSON from the server; shaped like the stock test above.
+    const listed = before.payload as { items: { id: string }[] };
+    expect(listed.items).toHaveLength(1);
+
+    const removed = await callTool(app, token, "pantry_update", {
+      action: "delete",
+      pantryItemId: listed.items[0]!.id,
+    });
+    expect(removed.result.isError).toBeUndefined();
+    expect(removed.payload).toEqual({ deleted: true, id: listed.items[0]!.id });
+
+    const after = await callTool(app, token, "pantry_query", { query: "sesame" });
+    const emptied = after.payload as { items: unknown[] };
+    expect(emptied.items).toHaveLength(0);
+
+    const missing = await callTool(app, token, "pantry_update", {
+      action: "delete",
+      pantryItemId: "pi_missing",
+    });
+    expect(missing.result.isError).toBe(true);
+    expect(missing.payload).toMatchObject({ error: { code: "not_found" } });
+  });
+
   it("returns an AppError as an isError body with the domain code", async () => {
     const { app, token } = makeTestApp();
 
@@ -289,6 +321,24 @@ describe("MCP endpoint", () => {
       unit: "can",
       qtyAfter: 2,
     });
+  });
+
+  it("clears every item through shopping_update clear_items", async () => {
+    const { app, token, ctx } = makeTestApp();
+    const list = createShoppingList(ctx, {
+      title: "Market",
+      items: [{ name: "Candles" }, { name: "Milk" }],
+    });
+
+    const { result, payload } = await callTool(app, token, "shopping_update", {
+      action: "clear_items",
+      shoppingListId: list.list.id,
+    });
+
+    expect(result.isError).toBeUndefined();
+    const detail = payload as { items: unknown[]; counts: { total: number; checked: number } };
+    expect(detail.items).toEqual([]);
+    expect(detail.counts).toEqual({ total: 0, checked: 0, remaining: 0, needsCheck: 0 });
   });
 
   it("rejects unauthenticated requests and non-POST methods", async () => {

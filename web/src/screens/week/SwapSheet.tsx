@@ -4,7 +4,7 @@ import { Button, Icon, Pill, SearchInput, Sheet, Skeleton, toast } from "@/ui";
 import { monthDay, weekdayName } from "./dates";
 import { MEAL_EMOJI, pantryCoverage, slotName, swapPlanFor, type AvailabilityLine, type MealType, type PlanView, type RecipeSummary, type Slot } from "./model";
 import { Plate } from "./Plate";
-import { useAvailability, usePickerRecipes, useRecipeIngredients, useRecipeRuleCheck, useSwapMeal } from "./queries";
+import { useAvailability, usePickerRecipes, useRecipeIngredients, useSwapMeal } from "./queries";
 import styles from "./SwapSheet.module.css";
 
 /** Which meal is being changed. `slot` is null for an empty meal with no slot yet. */
@@ -152,7 +152,7 @@ function ScopeChoice({ recipe, slot, fed, busy, onChoose, onBack }: ScopeChoiceP
   );
 }
 
-/** Resolves once the row scrolls into view, so rule/pantry lookups only run for rows that are seen. */
+/** Resolves once the row scrolls into view, so the pantry lookup only runs for rows that are seen. */
 function useSeen<T extends Element>() {
   const ref = useRef<T>(null);
   const [seen, setSeen] = useState(typeof IntersectionObserver === "undefined");
@@ -194,43 +194,10 @@ function PickerRow({ recipe, mealType, availability, disabled, onPick }: PickerR
           </span>
         )}
         <span className={styles.pills}>
-          <RuleFit slug={recipe.slug} enabled={seen} />
           <PantryFit slug={recipe.slug} enabled={seen} availability={availability} />
         </span>
       </span>
     </button>
-  );
-}
-
-const SEVERITY_RANK = { forbidden: 0, avoid: 1, limit: 2 } as const;
-
-function RuleFit({ slug, enabled }: { slug: string; enabled: boolean }) {
-  const check = useRecipeRuleCheck(slug, enabled);
-  if (check.isError) return null;
-  if (!check.data) return <Skeleton width={110} height={24} radius={999} />;
-
-  const { ok, violations, spice } = check.data;
-  const worst = [...violations].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])[0];
-  if (worst) {
-    const more = violations.length > 1 ? ` +${violations.length - 1}` : "";
-    return (
-      <Pill tone={ok ? "peach" : "tomato"} icon={<Icon name="alert" />} className={styles.pillText}>
-        {ok ? "Heads up" : "Breaks a rule"}: {worst.matched}
-        {more}
-      </Pill>
-    );
-  }
-  if (spice?.exceeds) {
-    return (
-      <Pill tone="peach" icon={<Icon name="alert" />}>
-        Spicier than you like
-      </Pill>
-    );
-  }
-  return (
-    <Pill tone="pistachio" icon={<Icon name="check" />}>
-      Fits your rules
-    </Pill>
   );
 }
 

@@ -1,10 +1,27 @@
 import { createRoute } from "@tanstack/react-router";
 import { shellRoute } from "@/app/routes";
+import { parseWeekParam } from "./dates";
 import { WeekScreen } from "./WeekScreen";
 
 export const weekRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/",
   staticData: { tab: "week" },
-  component: WeekScreen,
+  /** `?week=YYYY-MM-DD` deep-links a browsed week; invalid values drop to the current week. */
+  validateSearch: (search: Record<string, unknown>): { week?: string } => {
+    const week = parseWeekParam(search.week);
+    return week ? { week } : {};
+  },
+  component: WeekPage,
 });
+
+function WeekPage() {
+  const { week } = weekRoute.useSearch();
+  const navigate = weekRoute.useNavigate();
+  return (
+    <WeekScreen
+      week={week}
+      onSelectWeek={(weekStart) => void navigate({ search: weekStart === null ? {} : { week: weekStart } })}
+    />
+  );
+}

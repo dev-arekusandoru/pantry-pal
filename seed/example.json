@@ -1,7 +1,7 @@
 {
   "household": {
-    "name": "PantryPal Home",
-    "timezone": "America/New_York",
+    "name": "Example Household",
+    "timezone": "UTC",
     "settings": {
       "defaultServings": 2,
       "spiceLevel": "mild",
@@ -14,11 +14,11 @@
     "members": [
       {
         "name": "Robin",
-        "notes": "Mild spice preferred; heat added after cooking. Eats all planned meals."
+        "notes": "Mild spice, added after cooking. Eats all planned meals."
       },
       {
         "name": "Sam",
-        "notes": "Prefers beef only as ground beef (no steak/roast cuts). No mushrooms, no pork, no seafood beyond tuna and salmon. Mayonnaise only in a minor role. Mild spice."
+        "notes": "No mushrooms, no pork, no seafood beyond tuna and salmon; beef only as ground beef. Mayonnaise only in a minor role. Mild spice."
       }
     ]
   },
@@ -29,7 +29,10 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
       "isStaple": true,
-      "aliases": ["extra virgin olive oil", "evoo"],
+      "aliases": [
+        "extra virgin olive oil",
+        "evoo"
+      ],
       "description": "Everyday cooking oil; also used for roasting and sauteing.",
       "shelfLifeDays": 365
     },
@@ -39,7 +42,11 @@
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
       "isStaple": true,
-      "aliases": ["white rice", "long grain rice", "jasmine rice"],
+      "aliases": [
+        "white rice",
+        "long grain rice",
+        "jasmine rice"
+      ],
       "description": "Dry rice; about 1 cup dry yields 3 cups cooked."
     },
     {
@@ -48,7 +55,10 @@
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
       "isStaple": true,
-      "aliases": ["chicken broth", "chicken soup base"],
+      "aliases": [
+        "chicken broth",
+        "chicken soup base"
+      ],
       "description": "Stock or broth used for soup and sauces."
     },
     {
@@ -57,7 +67,9 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
       "isStaple": true,
-      "aliases": ["soy"],
+      "aliases": [
+        "soy"
+      ],
       "description": "Low-sodium preferred for stir-fry."
     },
     {
@@ -66,7 +78,9 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["corn starch"],
+      "aliases": [
+        "corn starch"
+      ],
       "description": "Thickener for stir-fry sauce."
     },
     {
@@ -75,7 +89,10 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["unsalted butter", "salted butter"],
+      "aliases": [
+        "unsalted butter",
+        "salted butter"
+      ],
       "shelfLifeDays": 30
     },
     {
@@ -84,7 +101,10 @@
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["flour", "ap flour"],
+      "aliases": [
+        "flour",
+        "ap flour"
+      ],
       "description": "Roux thickener and pancake base."
     },
     {
@@ -101,7 +121,10 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["cocoa powder", "cocoa"],
+      "aliases": [
+        "cocoa powder",
+        "cocoa"
+      ],
       "description": "Secret chili ingredient; adds depth without chocolate flavor."
     },
     {
@@ -110,7 +133,10 @@
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["sugar", "white sugar"],
+      "aliases": [
+        "sugar",
+        "white sugar"
+      ],
       "description": "Also used as a 1 tsp measure in chili."
     },
     {
@@ -119,7 +145,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["crushed red pepper"],
+      "aliases": [
+        "crushed red pepper"
+      ],
       "description": "Served on the side so the household can add heat after cooking."
     },
     {
@@ -128,7 +156,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["sesame oil"],
+      "aliases": [
+        "sesame oil"
+      ],
       "description": "Finishing oil for stir-fry; small bottle."
     },
     {
@@ -137,7 +167,10 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["light brown sugar", "dark brown sugar"]
+      "aliases": [
+        "light brown sugar",
+        "dark brown sugar"
+      ]
     },
     {
       "name": "Penne pasta",
@@ -145,7 +178,10 @@
       "defaultUnit": "oz",
       "defaultLocation": "pantry",
       "isStaple": true,
-      "aliases": ["pasta", "penne"],
+      "aliases": [
+        "pasta",
+        "penne"
+      ],
       "description": "Pantry holds 10 oz penne plus other pasta shapes."
     },
     {
@@ -154,7 +190,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["oregano"]
+      "aliases": [
+        "oregano"
+      ]
     },
     {
       "name": "Ground ginger",
@@ -162,7 +200,10 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["ginger powder", "ginger"]
+      "aliases": [
+        "ginger powder",
+        "ginger"
+      ]
     },
     {
       "name": "Salt",
@@ -170,7 +211,11 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["kosher salt", "table salt", "sea salt"]
+      "aliases": [
+        "kosher salt",
+        "table salt",
+        "sea salt"
+      ]
     },
     {
       "name": "Black pepper",
@@ -178,7 +223,11 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["pepper", "ground black pepper", "freshly ground black pepper"]
+      "aliases": [
+        "pepper",
+        "ground black pepper",
+        "freshly ground black pepper"
+      ]
     },
     {
       "name": "Ground beef",
@@ -186,7 +235,12 @@
       "defaultUnit": "lb",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["lean ground beef", "85% lean ground beef", "ground beef 85% lean", "hamburger meat"],
+      "aliases": [
+        "lean ground beef",
+        "85% lean ground beef",
+        "ground beef 85% lean",
+        "hamburger meat"
+      ],
       "description": "85% lean. The only beef cut the household uses.",
       "shelfLifeDays": 2
     },
@@ -196,7 +250,11 @@
       "defaultUnit": "lb",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["boneless skinless chicken breast", "chicken breasts", "chicken breast pieces"],
+      "aliases": [
+        "boneless skinless chicken breast",
+        "chicken breasts",
+        "chicken breast pieces"
+      ],
       "description": "Boneless, skinless. About 8 oz per breast.",
       "shelfLifeDays": 2
     },
@@ -206,7 +264,12 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["salmon", "skinless salmon fillets", "salmon fillet", "salmon filets"],
+      "aliases": [
+        "salmon",
+        "skinless salmon fillets",
+        "salmon fillet",
+        "salmon filets"
+      ],
       "description": "Skinless fillets, about 6 oz each.",
       "shelfLifeDays": 2
     },
@@ -216,7 +279,9 @@
       "defaultUnit": "count",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["red onions"],
+      "aliases": [
+        "red onions"
+      ],
       "shelfLifeDays": 30
     },
     {
@@ -225,7 +290,13 @@
       "defaultUnit": "count",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["yellow onions", "onion", "onions", "large yellow onion", "small onion"],
+      "aliases": [
+        "yellow onions",
+        "onion",
+        "onions",
+        "large yellow onion",
+        "small onion"
+      ],
       "shelfLifeDays": 30
     },
     {
@@ -234,7 +305,12 @@
       "defaultUnit": "clove",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["garlic cloves", "garlic clove", "minced garlic", "roasted garlic cloves"],
+      "aliases": [
+        "garlic cloves",
+        "garlic clove",
+        "minced garlic",
+        "roasted garlic cloves"
+      ],
       "description": "About 10 cloves per head.",
       "shelfLifeDays": 60
     },
@@ -244,7 +320,9 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["carrot"],
+      "aliases": [
+        "carrot"
+      ],
       "shelfLifeDays": 14
     },
     {
@@ -253,7 +331,10 @@
       "defaultUnit": "stalk",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["celery stalks", "celery stalk"],
+      "aliases": [
+        "celery stalks",
+        "celery stalk"
+      ],
       "shelfLifeDays": 14
     },
     {
@@ -262,7 +343,9 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["turnip"],
+      "aliases": [
+        "turnip"
+      ],
       "shelfLifeDays": 14
     },
     {
@@ -271,7 +354,9 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["parsnip"],
+      "aliases": [
+        "parsnip"
+      ],
       "shelfLifeDays": 14
     },
     {
@@ -280,7 +365,12 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["red bell peppers", "red pepper", "bell pepper", "bell peppers"],
+      "aliases": [
+        "red bell peppers",
+        "red pepper",
+        "bell pepper",
+        "bell peppers"
+      ],
       "shelfLifeDays": 7
     },
     {
@@ -289,7 +379,10 @@
       "defaultUnit": "head",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["broccoli", "broccoli floret"],
+      "aliases": [
+        "broccoli",
+        "broccoli floret"
+      ],
       "description": "One large head yields about 3 cups of florets.",
       "shelfLifeDays": 7
     },
@@ -299,7 +392,10 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["zucchinis", "medium zucchini"],
+      "aliases": [
+        "zucchinis",
+        "medium zucchini"
+      ],
       "shelfLifeDays": 7
     },
     {
@@ -308,7 +404,12 @@
       "defaultUnit": "count",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["white potatoes", "potato", "potatoes", "large white potato"],
+      "aliases": [
+        "white potatoes",
+        "potato",
+        "potatoes",
+        "large white potato"
+      ],
       "description": "One large potato is about 8 oz.",
       "shelfLifeDays": 30
     },
@@ -318,7 +419,10 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["lemons", "lemon wedges"],
+      "aliases": [
+        "lemons",
+        "lemon wedges"
+      ],
       "shelfLifeDays": 14
     },
     {
@@ -327,7 +431,11 @@
       "defaultUnit": "bunch",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["basil", "basil leaves", "fresh basil leaves"],
+      "aliases": [
+        "basil",
+        "basil leaves",
+        "fresh basil leaves"
+      ],
       "shelfLifeDays": 5
     },
     {
@@ -336,7 +444,11 @@
       "defaultUnit": "bunch",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["dill", "dill sprig", "fresh dill sprig"],
+      "aliases": [
+        "dill",
+        "dill sprig",
+        "fresh dill sprig"
+      ],
       "shelfLifeDays": 5
     },
     {
@@ -345,7 +457,10 @@
       "defaultUnit": "sprig",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["rosemary", "fresh rosemary sprig"],
+      "aliases": [
+        "rosemary",
+        "fresh rosemary sprig"
+      ],
       "shelfLifeDays": 10
     },
     {
@@ -354,7 +469,10 @@
       "defaultUnit": "cup",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["heavy whipping cream", "cream"],
+      "aliases": [
+        "heavy whipping cream",
+        "cream"
+      ],
       "shelfLifeDays": 10
     },
     {
@@ -363,7 +481,12 @@
       "defaultUnit": "cup",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["parmesan", "grated parmesan", "parmesan cheese grated", "grated parmesan cheese"],
+      "aliases": [
+        "parmesan",
+        "grated parmesan",
+        "parmesan cheese grated",
+        "grated parmesan cheese"
+      ],
       "description": "Grated; freshly grated melts best.",
       "shelfLifeDays": 30
     },
@@ -373,7 +496,12 @@
       "defaultUnit": "bag",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["cheddar", "cheddar cheese", "shredded cheddar cheese", "mild cheddar"],
+      "aliases": [
+        "cheddar",
+        "cheddar cheese",
+        "shredded cheddar cheese",
+        "mild cheddar"
+      ],
       "description": "Mild cheddar for chili topping.",
       "shelfLifeDays": 14
     },
@@ -383,7 +511,10 @@
       "defaultUnit": "cup",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["whole milk", "2% milk"],
+      "aliases": [
+        "whole milk",
+        "2% milk"
+      ],
       "shelfLifeDays": 7
     },
     {
@@ -392,7 +523,11 @@
       "defaultUnit": "slice",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["toast", "sandwich bread", "white bread"],
+      "aliases": [
+        "toast",
+        "sandwich bread",
+        "white bread"
+      ],
       "shelfLifeDays": 5
     },
     {
@@ -401,7 +536,11 @@
       "defaultUnit": "count",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["egg", "large eggs", "large egg"],
+      "aliases": [
+        "egg",
+        "large eggs",
+        "large egg"
+      ],
       "shelfLifeDays": 21
     },
     {
@@ -410,7 +549,11 @@
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["oats", "old-fashioned oats", "oatmeal"]
+      "aliases": [
+        "oats",
+        "old-fashioned oats",
+        "oatmeal"
+      ]
     },
     {
       "name": "Chia seeds",
@@ -418,7 +561,9 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["chia"]
+      "aliases": [
+        "chia"
+      ]
     },
     {
       "name": "Vanilla extract",
@@ -426,7 +571,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["vanilla"]
+      "aliases": [
+        "vanilla"
+      ]
     },
     {
       "name": "Baking powder",
@@ -442,7 +589,9 @@
       "defaultUnit": "cup",
       "defaultLocation": "other",
       "isStaple": false,
-      "aliases": ["cold water"],
+      "aliases": [
+        "cold water"
+      ],
       "description": "Used for cornstarch slurry and rice."
     },
     {
@@ -460,7 +609,9 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "fridge",
       "isStaple": false,
-      "aliases": ["mayo"],
+      "aliases": [
+        "mayo"
+      ],
       "description": "Declared only so the avoid rule can reference it; not currently stocked."
     },
     {
@@ -469,7 +620,12 @@
       "defaultUnit": "can",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["diced tomatoes with green chiles", "canned tomatoes with green chilies", "diced tomatoes w/ green chilies", "rotel"],
+      "aliases": [
+        "diced tomatoes with green chiles",
+        "canned tomatoes with green chilies",
+        "diced tomatoes w/ green chilies",
+        "rotel"
+      ],
       "description": "Mild; 14.5 oz cans."
     },
     {
@@ -478,7 +634,9 @@
       "defaultUnit": "can",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["canned tomato sauce"],
+      "aliases": [
+        "canned tomato sauce"
+      ],
       "description": "8 oz cans; 3 cans equal about 24 oz."
     },
     {
@@ -487,7 +645,9 @@
       "defaultUnit": "can",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["dark kidney beans"],
+      "aliases": [
+        "dark kidney beans"
+      ],
       "description": "15 oz can."
     },
     {
@@ -496,7 +656,9 @@
       "defaultUnit": "can",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["light kidney beans"],
+      "aliases": [
+        "light kidney beans"
+      ],
       "description": "15 oz can."
     },
     {
@@ -505,7 +667,11 @@
       "defaultUnit": "jar",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["sun-dried tomatoes", "sundried tomatoes", "sun dried tomatoes"],
+      "aliases": [
+        "sun-dried tomatoes",
+        "sundried tomatoes",
+        "sun dried tomatoes"
+      ],
       "description": "Oil-packed; a small jar drains to about 1 cup."
     },
     {
@@ -514,7 +680,11 @@
       "defaultUnit": "jar",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["mixed olives", "pitted olives", "olives"],
+      "aliases": [
+        "mixed olives",
+        "pitted olives",
+        "olives"
+      ],
       "description": "Kalamata/Castelvetrano mix; small jar holds about 1/2 cup drained."
     },
     {
@@ -523,7 +693,9 @@
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["beef stock"],
+      "aliases": [
+        "beef stock"
+      ],
       "description": "Carton or can; used in chili and pasta sauce."
     },
     {
@@ -532,7 +704,9 @@
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["ground chili powder"]
+      "aliases": [
+        "ground chili powder"
+      ]
     },
     {
       "name": "Ground cumin",
@@ -540,7 +714,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["cumin"]
+      "aliases": [
+        "cumin"
+      ]
     },
     {
       "name": "Paprika",
@@ -548,7 +724,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["ground paprika"]
+      "aliases": [
+        "ground paprika"
+      ]
     },
     {
       "name": "Sweet paprika",
@@ -565,7 +743,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["coriander"]
+      "aliases": [
+        "coriander"
+      ]
     },
     {
       "name": "Garlic powder",
@@ -581,7 +761,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["parsley flakes"]
+      "aliases": [
+        "parsley flakes"
+      ]
     },
     {
       "name": "Italian seasoning",
@@ -589,7 +771,10 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["dried italian seasoning", "italian herb seasoning"]
+      "aliases": [
+        "dried italian seasoning",
+        "italian herb seasoning"
+      ]
     },
     {
       "name": "White pepper",
@@ -597,7 +782,9 @@
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
       "isStaple": false,
-      "aliases": ["ground white pepper"]
+      "aliases": [
+        "ground white pepper"
+      ]
     }
   ],
   "unitConversions": [
@@ -722,7 +909,7 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Olive oil | on hand | staple | 2026-11-01",
+      "rawText": "Olive oil | on hand | staple | 2026-02-01",
       "note": "Staple; amount not tracked."
     },
     {
@@ -732,7 +919,7 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Rice | on hand | staple | 2026-11-01",
+      "rawText": "Rice | on hand | staple | 2026-02-01",
       "note": "Staple; amount not tracked."
     },
     {
@@ -742,8 +929,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Chicken stock | on hand (topped up) | staple | 2026-11-01",
-      "note": "Topped up to about 12 cups during the Nov 1 shop."
+      "rawText": "Chicken stock | on hand | staple | 2026-02-01",
+      "note": "Staple; amount not tracked."
     },
     {
       "ingredient": "Soy sauce",
@@ -752,7 +939,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Soy sauce | on hand | staple | 2026-11-01"
+      "rawText": "Soy sauce | on hand | staple | 2026-02-01",
+      "note": "Staple; amount not tracked."
     },
     {
       "ingredient": "Cornstarch",
@@ -761,7 +949,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Cornstarch | on hand | baking | 2026-11-01"
+      "rawText": "Cornstarch | on hand | baking | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Butter",
@@ -770,7 +959,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Butter | on hand | dairy | 2026-11-01"
+      "rawText": "Butter | on hand | dairy | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "All-purpose flour",
@@ -779,7 +969,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "All-purpose flour | on hand | baking | 2026-11-01"
+      "rawText": "All-purpose flour | on hand | baking | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Honey",
@@ -788,7 +979,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Honey | on hand | pantry | 2026-11-01"
+      "rawText": "Honey | on hand | pantry | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Unsweetened cocoa powder",
@@ -797,7 +989,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Unsweetened cocoa powder | on hand | baking | 2026-11-01"
+      "rawText": "Unsweetened cocoa powder | on hand | baking | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Granulated sugar",
@@ -806,7 +999,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Granulated sugar | on hand | baking | 2026-11-01"
+      "rawText": "Granulated sugar | on hand | baking | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Red pepper flakes",
@@ -815,8 +1009,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Red pepper flakes | on hand | spice | 2026-11-01",
-      "note": "Served on the side for heat."
+      "rawText": "Red pepper flakes | on hand | spice | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Toasted sesame oil",
@@ -825,7 +1019,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Toasted sesame oil | on hand (small bottle) | pantry | 2026-11-01"
+      "rawText": "Toasted sesame oil | on hand | pantry | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Brown sugar",
@@ -834,7 +1029,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Brown sugar | on hand | baking | 2026-11-01"
+      "rawText": "Brown sugar | on hand | baking | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Penne pasta",
@@ -843,17 +1039,18 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Pasta (penne + other types) | on hand (10 oz penne + others) | staple | 2026-11-01",
-      "note": "At least 10 oz penne plus other shapes."
+      "rawText": "Penne pasta | on hand | staple | 2026-02-01",
+      "note": "Staple; amount not tracked."
     },
     {
       "ingredient": "Dried oregano",
       "location": "pantry",
-      "qty": 1,
+      "qty": 0.5,
       "unit": "tsp",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Dried oregano | on hand (1 tsp) | spice | 2026-11-01"
+      "rawText": "Dried oregano | 0.5 tsp | spice | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Ground ginger",
@@ -862,7 +1059,8 @@
       "unit": "tsp",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Ground ginger | on hand (1/2 tsp) | spice | 2026-11-01"
+      "rawText": "Ground ginger | 0.5 tsp | spice | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Salt",
@@ -871,8 +1069,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Salt, black pepper | on hand | spice | 2026-11-01",
-      "note": "Split from a combined line with black pepper."
+      "rawText": "Salt | on hand | spice | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Black pepper",
@@ -881,8 +1079,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Salt, black pepper | on hand | spice | 2026-11-01",
-      "note": "Split from a combined line with salt."
+      "rawText": "Black pepper | on hand | spice | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Ground beef",
@@ -891,103 +1089,108 @@
       "unit": "lb",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Ground beef, 85% lean | 3 lb (chili 2 + beef & broccoli 1) | protein | 2026-11-01",
-      "note": "Allocation parenthetical dropped; commitments are computed."
+      "rawText": "Ground beef | 3 lb | protein | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Chicken breast",
       "location": "fridge",
-      "qty": 2.5,
+      "qty": 1.5,
       "unit": "lb",
-      "qtyApprox": true,
+      "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Chicken breast, boneless skinless | ~2.5 lb (soup 2 pieces + marry me 1.5 lb) | protein | 2026-11-01",
-      "note": "Approximate; about 2 pieces for soup plus 1.5 lb for pasta."
+      "rawText": "Chicken breast | 1.5 lb | protein | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Salmon fillets",
+      "location": "fridge",
+      "qty": 2,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Salmon fillets | 2 count | protein | 2026-02-01",
+      "note": null
+    },
+    {
+      "ingredient": "Red onion",
+      "location": "pantry",
+      "qty": 2,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Red onion | 2 count | produce | 2026-02-01",
+      "note": null
+    },
+    {
+      "ingredient": "Yellow onion",
+      "location": "pantry",
+      "qty": 2,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Yellow onion | 2 count | produce | 2026-02-01",
+      "note": null
+    },
+    {
+      "ingredient": "Garlic",
+      "location": "pantry",
+      "qty": 6,
+      "unit": "clove",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Garlic | 6 clove | produce | 2026-02-01",
+      "note": null
+    },
+    {
+      "ingredient": "Carrots",
+      "location": "fridge",
+      "qty": 1,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Carrots | 1 count | produce | 2026-02-01",
+      "note": null
+    },
+    {
+      "ingredient": "Celery",
+      "location": "fridge",
+      "qty": 3,
+      "unit": "stalk",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Celery | 3 stalk | produce | 2026-02-01",
+      "note": null
+    },
+    {
+      "ingredient": "Turnips",
       "location": "fridge",
       "qty": 4,
       "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Salmon fillets, skinless | 4 x 6 oz (1.5 lb) | protein | 2026-11-01",
-      "note": "4 fillets at 6 oz each; unit conversions count->oz and count->lb cover the 1.5 lb total."
-    },
-    {
-      "ingredient": "Red onion",
-      "location": "pantry",
-      "qty": 1,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Red onion | 1 | produce | 2026-11-01"
-    },
-    {
-      "ingredient": "Yellow onion",
-      "location": "pantry",
-      "qty": 3,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Yellow onions | 3 (chili 1 large, soup 1 small, beef & broccoli 1) | produce | 2026-11-01",
-      "note": "Allocation parenthetical dropped."
-    },
-    {
-      "ingredient": "Garlic",
-      "location": "pantry",
-      "qty": 10,
-      "unit": "clove",
-      "qtyApprox": true,
-      "status": "on_hand",
-      "rawText": "Garlic | 1-2 heads (~10 cloves) | produce | 2026-11-01",
-      "note": "1-2 heads, approximately 10 cloves."
-    },
-    {
-      "ingredient": "Carrots",
-      "location": "fridge",
-      "qty": 2,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Carrots | 2 | produce | 2026-11-01"
-    },
-    {
-      "ingredient": "Celery",
-      "location": "fridge",
-      "qty": 2,
-      "unit": "stalk",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Celery | 2 stalks | produce | 2026-11-01"
-    },
-    {
-      "ingredient": "Turnips",
-      "location": "fridge",
-      "qty": 2,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Turnips | 2 | produce | 2026-11-01"
+      "rawText": "Turnips | 4 count | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Parsnips",
       "location": "fridge",
-      "qty": 2,
+      "qty": 1,
       "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Parsnips | 2 | produce | 2026-11-01"
+      "rawText": "Parsnips | 1 count | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Red bell pepper",
       "location": "fridge",
-      "qty": 2,
+      "qty": 1,
       "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Red bell peppers | 2 (beef & broccoli 1, salmon 1) | produce | 2026-11-01",
-      "note": "Allocation parenthetical dropped."
+      "rawText": "Red bell pepper | 1 count | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Broccoli florets",
@@ -996,28 +1199,28 @@
       "unit": "head",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Broccoli florets | 1 large head (3 cups) | produce | 2026-11-01",
-      "note": "Large head, about 3 cups of florets."
+      "rawText": "Broccoli florets | 1 head | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Zucchini",
       "location": "fridge",
-      "qty": 1,
+      "qty": 2,
       "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Zucchini | 1 medium | produce | 2026-11-01",
-      "note": "Medium."
+      "rawText": "Zucchini | 2 count | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "White potato",
       "location": "pantry",
-      "qty": 1,
+      "qty": 2,
       "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "White potato | 1 large (8 oz) | produce | 2026-11-01",
-      "note": "One large potato, about 8 oz."
+      "rawText": "White potato | 2 count | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Lemon",
@@ -1026,7 +1229,8 @@
       "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Lemon | 1 | produce | 2026-11-01"
+      "rawText": "Lemon | 1 count | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Fresh basil",
@@ -1035,18 +1239,18 @@
       "unit": "bunch",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Fresh basil | 1 small bunch | produce | 2026-11-01",
-      "note": "Small bunch."
+      "rawText": "Fresh basil | 1 bunch | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Fresh dill",
       "location": "fridge",
-      "qty": 1,
+      "qty": 2,
       "unit": "bunch",
-      "qtyApprox": true,
+      "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Fresh dill | 1 sprig/bunch | produce | 2026-11-01",
-      "note": "Listed as 1 sprig/bunch; treated as 1 bunch (about 8 sprigs)."
+      "rawText": "Fresh dill | 2 bunch | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Fresh rosemary",
@@ -1055,25 +1259,28 @@
       "unit": "sprig",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Fresh rosemary | 1 sprig | produce | 2026-11-01"
+      "rawText": "Fresh rosemary | 1 sprig | produce | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Heavy cream",
       "location": "fridge",
-      "qty": 1,
+      "qty": 2,
       "unit": "cup",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Heavy cream | 1 cup (half pint) | dairy | 2026-11-01"
+      "rawText": "Heavy cream | 2 cup | dairy | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Parmesan cheese",
       "location": "fridge",
-      "qty": 1,
+      "qty": 1.5,
       "unit": "cup",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Parmesan cheese, grated | 1 cup | dairy | 2026-11-01"
+      "rawText": "Parmesan cheese | 1.5 cup | dairy | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Shredded cheddar",
@@ -1082,16 +1289,18 @@
       "unit": "bag",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Shredded cheddar | 1 bag (optional chili topping) | dairy | 2026-11-01"
+      "rawText": "Shredded cheddar | 1 bag | dairy | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Diced tomatoes with green chilies",
       "location": "pantry",
-      "qty": 2,
+      "qty": 1,
       "unit": "can",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Diced tomatoes w/ green chilies, MILD | 2 (14.5 oz) cans | canned | 2026-11-01"
+      "rawText": "Diced tomatoes with green chilies | 1 can | canned | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Tomato sauce",
@@ -1100,35 +1309,38 @@
       "unit": "can",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Tomato sauce | 3 (8 oz) cans (or 1 x 24 oz) | canned | 2026-11-01"
+      "rawText": "Tomato sauce | 3 can | canned | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Sun-dried tomatoes (in oil)",
       "location": "pantry",
-      "qty": 1,
+      "qty": 2,
       "unit": "jar",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Sun-dried tomatoes (in oil) | 1 jar (need 1 cup drained) | canned | 2026-11-01",
-      "note": "About 1 cup drained."
+      "rawText": "Sun-dried tomatoes (in oil) | 2 jar | canned | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Dark red kidney beans",
       "location": "pantry",
-      "qty": 1,
+      "qty": 2,
       "unit": "can",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Dark red kidney beans | 1 (15 oz) can | canned | 2026-11-01"
+      "rawText": "Dark red kidney beans | 2 can | canned | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Light red kidney beans",
       "location": "pantry",
-      "qty": 1,
+      "qty": 2,
       "unit": "can",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Light red kidney beans | 1 (15 oz) can | canned | 2026-11-01"
+      "rawText": "Light red kidney beans | 2 can | canned | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Mixed pitted olives",
@@ -1137,18 +1349,18 @@
       "unit": "jar",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Mixed pitted olives | 1 small jar (need 1/2 cup) | canned | 2026-11-01",
-      "note": "Small jar, about 1/2 cup drained."
+      "rawText": "Mixed pitted olives | 1 jar | canned | 2026-02-01",
+      "note": null
     },
     {
       "ingredient": "Beef broth",
       "location": "pantry",
-      "qty": 2.5,
+      "qty": 1,
       "unit": "cup",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Beef broth | 2.5 cups (chili 1/2 cup + marry me 2 cups) | canned | 2026-11-01",
-      "note": "Allocation parenthetical dropped."
+      "rawText": "Beef broth | 1 cup | canned | 2026-02-01",
+      "note": null
     }
   ],
   "rules": [
@@ -1239,9 +1451,21 @@
       "totalMinutes": 385,
       "spiceLevel": "mild",
       "cuisine": "Tex-Mex",
-      "mealTypes": ["lunch", "dinner"],
-      "tags": ["slow-cooker", "batch-cook", "chili", "ground-beef", "freezer-friendly"],
-      "equipment": ["6-quart slow cooker", "large deep non-stick skillet"],
+      "mealTypes": [
+        "lunch",
+        "dinner"
+      ],
+      "tags": [
+        "slow-cooker",
+        "batch-cook",
+        "chili",
+        "ground-beef",
+        "freezer-friendly"
+      ],
+      "equipment": [
+        "6-quart slow cooker",
+        "large deep non-stick skillet"
+      ],
       "nutrition": {
         "calories": 415,
         "proteinG": 32,
@@ -1463,9 +1687,21 @@
       "totalMinutes": 495,
       "spiceLevel": "none",
       "cuisine": "American",
-      "mealTypes": ["lunch", "dinner"],
-      "tags": ["slow-cooker", "soup", "batch-cook", "freezer-friendly", "chicken"],
-      "equipment": ["6-quart slow cooker", "measuring cups and spoons"],
+      "mealTypes": [
+        "lunch",
+        "dinner"
+      ],
+      "tags": [
+        "slow-cooker",
+        "soup",
+        "batch-cook",
+        "freezer-friendly",
+        "chicken"
+      ],
+      "equipment": [
+        "6-quart slow cooker",
+        "measuring cups and spoons"
+      ],
       "nutrition": {
         "calories": 129,
         "proteinG": 7,
@@ -1625,9 +1861,20 @@
       "totalMinutes": 30,
       "spiceLevel": "mild",
       "cuisine": "Italian-American",
-      "mealTypes": ["dinner"],
-      "tags": ["30-minute", "pasta", "chicken", "creamy", "weeknight"],
-      "equipment": ["large skillet", "large pot for pasta"],
+      "mealTypes": [
+        "dinner"
+      ],
+      "tags": [
+        "30-minute",
+        "pasta",
+        "chicken",
+        "creamy",
+        "weeknight"
+      ],
+      "equipment": [
+        "large skillet",
+        "large pot for pasta"
+      ],
       "nutrition": {
         "calories": 646,
         "proteinG": 41,
@@ -1855,9 +2102,22 @@
       "totalMinutes": 55,
       "spiceLevel": "mild",
       "cuisine": "Mediterranean",
-      "mealTypes": ["dinner"],
-      "tags": ["sheet-pan", "one-pan", "salmon", "gluten-free", "dairy-free", "whole30"],
-      "equipment": ["large rimmed sheet pan", "parchment paper", "mixing bowl"],
+      "mealTypes": [
+        "dinner"
+      ],
+      "tags": [
+        "sheet-pan",
+        "one-pan",
+        "salmon",
+        "gluten-free",
+        "dairy-free",
+        "whole30"
+      ],
+      "equipment": [
+        "large rimmed sheet pan",
+        "parchment paper",
+        "mixing bowl"
+      ],
       "nutrition": {
         "calories": 380,
         "proteinG": 36.5,
@@ -2092,9 +2352,21 @@
       "totalMinutes": 30,
       "spiceLevel": "mild",
       "cuisine": "Asian-American",
-      "mealTypes": ["dinner"],
-      "tags": ["30-minute", "stir-fry", "ground-beef", "rice", "weeknight"],
-      "equipment": ["wok or large skillet", "small covered container", "rice cooker (optional)"],
+      "mealTypes": [
+        "dinner"
+      ],
+      "tags": [
+        "30-minute",
+        "stir-fry",
+        "ground-beef",
+        "rice",
+        "weeknight"
+      ],
+      "equipment": [
+        "wok or large skillet",
+        "small covered container",
+        "rice cooker (optional)"
+      ],
       "nutrition": {
         "calories": 488,
         "proteinG": 32,
@@ -2323,9 +2595,19 @@
       "totalMinutes": 10,
       "spiceLevel": "none",
       "cuisine": "American",
-      "mealTypes": ["breakfast"],
-      "tags": ["breakfast", "no-cook", "meal-prep", "make-ahead"],
-      "equipment": ["2 jars with lids", "spoon"],
+      "mealTypes": [
+        "breakfast"
+      ],
+      "tags": [
+        "breakfast",
+        "no-cook",
+        "meal-prep",
+        "make-ahead"
+      ],
+      "equipment": [
+        "2 jars with lids",
+        "spoon"
+      ],
       "nutrition": null,
       "storageNotes": "Keeps up to 3 days in the fridge. Stir and loosen with a splash of milk before eating; eat cold or reheat.",
       "leftoverDays": 3,
@@ -2416,9 +2698,18 @@
       "totalMinutes": 13,
       "spiceLevel": "none",
       "cuisine": "American",
-      "mealTypes": ["breakfast"],
-      "tags": ["breakfast", "quick", "eggs"],
-      "equipment": ["non-stick skillet", "toaster"],
+      "mealTypes": [
+        "breakfast"
+      ],
+      "tags": [
+        "breakfast",
+        "quick",
+        "eggs"
+      ],
+      "equipment": [
+        "non-stick skillet",
+        "toaster"
+      ],
       "nutrition": null,
       "storageNotes": "Best eaten fresh; refrigerate leftovers up to 1 day.",
       "leftoverDays": 1,
@@ -2503,9 +2794,19 @@
       "totalMinutes": 20,
       "spiceLevel": "none",
       "cuisine": "American",
-      "mealTypes": ["breakfast"],
-      "tags": ["breakfast", "weekend", "pantry"],
-      "equipment": ["mixing bowls", "whisk", "griddle or skillet"],
+      "mealTypes": [
+        "breakfast"
+      ],
+      "tags": [
+        "breakfast",
+        "weekend",
+        "pantry"
+      ],
+      "equipment": [
+        "mixing bowls",
+        "whisk",
+        "griddle or skillet"
+      ],
       "nutrition": null,
       "storageNotes": "Refrigerate leftovers up to 2 days; reheat in the toaster or a dry skillet.",
       "leftoverDays": 2,
@@ -2605,15 +2906,15 @@
   ],
   "plans": [
     {
-      "weekStart": "2026-11-02",
-      "title": "Week of Mon Nov 2 - Sun Nov 8, 2026",
+      "weekStart": "2026-02-02",
+      "title": "Week of Mon Feb 2 - Sun Feb 8, 2026",
       "status": "active",
-      "notes": "Lunch batch A (chili) is cooked Sun Nov 1 and feeds Mon-Wed; batch B (chicken soup) is cooked Wed Nov 4 and feeds Thu-Sat. Dinners cook once for 4 servings and are eaten as leftovers the next day. Overnight oats are prepped the night before; eggs & toast are cooked same-day. All recipes are new this week: review against the never-use list before cooking and move liked recipes to rotation.",
+      "notes": "Lunch batch A (chili) is cooked Sun Feb 1 and feeds Mon-Wed; batch B (chicken soup) is cooked Wed Feb 4 and feeds Thu-Sat. Dinners cook once for 4 servings and are eaten as leftovers the next day. Overnight oats are prepped the night before; eggs & toast are cooked same-day. All recipes are new this week: review against the never-use list before cooking and move liked recipes to rotation.",
       "cookEvents": [
         {
           "key": "chili-batch-a",
           "recipe": "slow-cooker-chili",
-          "cookDate": "2026-11-01",
+          "cookDate": "2026-02-01",
           "plannedServings": 6,
           "label": "Batch A - lunch (Mon-Wed)",
           "status": "planned"
@@ -2621,7 +2922,7 @@
         {
           "key": "soup-batch-b",
           "recipe": "lazy-chicken-soup",
-          "cookDate": "2026-11-04",
+          "cookDate": "2026-02-04",
           "plannedServings": 6,
           "label": "Batch B - lunch (Thu-Sat)",
           "status": "planned"
@@ -2629,7 +2930,7 @@
         {
           "key": "marry-me-mon",
           "recipe": "marry-me-chicken-pasta",
-          "cookDate": "2026-11-02",
+          "cookDate": "2026-02-02",
           "plannedServings": 4,
           "label": "Dinner - cook once, leftovers Tue",
           "status": "planned"
@@ -2637,7 +2938,7 @@
         {
           "key": "salmon-wed",
           "recipe": "mediterranean-salmon-sheet-pan",
-          "cookDate": "2026-11-04",
+          "cookDate": "2026-02-04",
           "plannedServings": 4,
           "label": "Dinner - cook once, leftovers Thu",
           "status": "planned"
@@ -2645,7 +2946,7 @@
         {
           "key": "beef-broccoli-fri",
           "recipe": "ground-beef-and-broccoli",
-          "cookDate": "2026-11-06",
+          "cookDate": "2026-02-06",
           "plannedServings": 4,
           "label": "Dinner - cook once, leftovers Sat",
           "status": "planned"
@@ -2653,7 +2954,7 @@
         {
           "key": "oats-sun",
           "recipe": "overnight-oats",
-          "cookDate": "2026-11-01",
+          "cookDate": "2026-02-01",
           "plannedServings": 2,
           "label": "Prep Sun night for Mon breakfast",
           "status": "planned"
@@ -2661,7 +2962,7 @@
         {
           "key": "oats-tue",
           "recipe": "overnight-oats",
-          "cookDate": "2026-11-03",
+          "cookDate": "2026-02-03",
           "plannedServings": 2,
           "label": "Prep Tue night for Wed breakfast",
           "status": "planned"
@@ -2669,7 +2970,7 @@
         {
           "key": "oats-thu",
           "recipe": "overnight-oats",
-          "cookDate": "2026-11-05",
+          "cookDate": "2026-02-05",
           "plannedServings": 2,
           "label": "Prep Thu night for Fri breakfast",
           "status": "planned"
@@ -2677,7 +2978,7 @@
         {
           "key": "eggs-tue",
           "recipe": "eggs-and-toast",
-          "cookDate": "2026-11-03",
+          "cookDate": "2026-02-03",
           "plannedServings": 2,
           "label": "Breakfast",
           "status": "planned"
@@ -2685,7 +2986,7 @@
         {
           "key": "eggs-thu",
           "recipe": "eggs-and-toast",
-          "cookDate": "2026-11-05",
+          "cookDate": "2026-02-05",
           "plannedServings": 2,
           "label": "Breakfast",
           "status": "planned"
@@ -2693,7 +2994,7 @@
         {
           "key": "eggs-sat",
           "recipe": "eggs-and-toast",
-          "cookDate": "2026-11-07",
+          "cookDate": "2026-02-07",
           "plannedServings": 2,
           "label": "Breakfast - pancakes optional",
           "status": "planned"
@@ -2701,7 +3002,7 @@
         {
           "key": "eggs-sun",
           "recipe": "eggs-and-toast",
-          "cookDate": "2026-11-08",
+          "cookDate": "2026-02-08",
           "plannedServings": 2,
           "label": "Breakfast",
           "status": "planned"
@@ -2709,35 +3010,35 @@
       ],
       "slots": [
         {
-          "date": "2026-11-02",
+          "date": "2026-02-02",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "oats-sun",
           "servings": 2
         },
         {
-          "date": "2026-11-02",
+          "date": "2026-02-02",
           "mealType": "lunch",
           "kind": "meal",
           "cookEvent": "chili-batch-a",
           "servings": 2
         },
         {
-          "date": "2026-11-02",
+          "date": "2026-02-02",
           "mealType": "dinner",
           "kind": "meal",
           "cookEvent": "marry-me-mon",
           "servings": 2
         },
         {
-          "date": "2026-11-03",
+          "date": "2026-02-03",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "eggs-tue",
           "servings": 2
         },
         {
-          "date": "2026-11-03",
+          "date": "2026-02-03",
           "mealType": "lunch",
           "kind": "meal",
           "cookEvent": "chili-batch-a",
@@ -2745,7 +3046,7 @@
           "notes": "Leftover batch A."
         },
         {
-          "date": "2026-11-03",
+          "date": "2026-02-03",
           "mealType": "dinner",
           "kind": "meal",
           "cookEvent": "marry-me-mon",
@@ -2753,14 +3054,14 @@
           "notes": "Leftovers from Monday."
         },
         {
-          "date": "2026-11-04",
+          "date": "2026-02-04",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "oats-tue",
           "servings": 2
         },
         {
-          "date": "2026-11-04",
+          "date": "2026-02-04",
           "mealType": "lunch",
           "kind": "meal",
           "cookEvent": "chili-batch-a",
@@ -2768,28 +3069,28 @@
           "notes": "Last of batch A."
         },
         {
-          "date": "2026-11-04",
+          "date": "2026-02-04",
           "mealType": "dinner",
           "kind": "meal",
           "cookEvent": "salmon-wed",
           "servings": 2
         },
         {
-          "date": "2026-11-05",
+          "date": "2026-02-05",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "eggs-thu",
           "servings": 2
         },
         {
-          "date": "2026-11-05",
+          "date": "2026-02-05",
           "mealType": "lunch",
           "kind": "meal",
           "cookEvent": "soup-batch-b",
           "servings": 2
         },
         {
-          "date": "2026-11-05",
+          "date": "2026-02-05",
           "mealType": "dinner",
           "kind": "meal",
           "cookEvent": "salmon-wed",
@@ -2797,14 +3098,14 @@
           "notes": "Leftovers from Wednesday."
         },
         {
-          "date": "2026-11-06",
+          "date": "2026-02-06",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "oats-thu",
           "servings": 2
         },
         {
-          "date": "2026-11-06",
+          "date": "2026-02-06",
           "mealType": "lunch",
           "kind": "meal",
           "cookEvent": "soup-batch-b",
@@ -2812,14 +3113,14 @@
           "notes": "Leftover batch B."
         },
         {
-          "date": "2026-11-06",
+          "date": "2026-02-06",
           "mealType": "dinner",
           "kind": "meal",
           "cookEvent": "beef-broccoli-fri",
           "servings": 2
         },
         {
-          "date": "2026-11-07",
+          "date": "2026-02-07",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "eggs-sat",
@@ -2827,7 +3128,7 @@
           "notes": "Pancakes optional instead of or alongside eggs & toast."
         },
         {
-          "date": "2026-11-07",
+          "date": "2026-02-07",
           "mealType": "lunch",
           "kind": "meal",
           "cookEvent": "soup-batch-b",
@@ -2835,7 +3136,7 @@
           "notes": "Last of batch B."
         },
         {
-          "date": "2026-11-07",
+          "date": "2026-02-07",
           "mealType": "dinner",
           "kind": "meal",
           "cookEvent": "beef-broccoli-fri",
@@ -2843,7 +3144,7 @@
           "notes": "Leftovers from Friday."
         },
         {
-          "date": "2026-11-08",
+          "date": "2026-02-08",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "eggs-sun",
@@ -2851,13 +3152,13 @@
           "notes": "Eggs & toast or oats."
         },
         {
-          "date": "2026-11-08",
+          "date": "2026-02-08",
           "mealType": "lunch",
           "kind": "freeform",
           "label": "Leftovers / fridge clean-out"
         },
         {
-          "date": "2026-11-08",
+          "date": "2026-02-08",
           "mealType": "dinner",
           "kind": "freeform",
           "label": "Leftovers / simple"
@@ -2865,36 +3166,36 @@
       ],
       "prepTasks": [
         {
-          "dueDate": "2026-11-01",
+          "dueDate": "2026-02-01",
           "description": "Cook Batch A chili in the slow cooker (5-6 hours on low).",
           "cookEvent": "chili-batch-a"
         },
         {
-          "dueDate": "2026-11-01",
+          "dueDate": "2026-02-01",
           "description": "Prep Monday's overnight oats.",
           "cookEvent": "oats-sun"
         },
         {
-          "dueDate": "2026-11-03",
+          "dueDate": "2026-02-03",
           "description": "Prep Wednesday's overnight oats.",
           "cookEvent": "oats-tue"
         },
         {
-          "dueDate": "2026-11-04",
+          "dueDate": "2026-02-04",
           "description": "Cook Batch B chicken soup in the slow cooker (6-8 hours on low or 4 on high).",
           "cookEvent": "soup-batch-b"
         },
         {
-          "dueDate": "2026-11-04",
+          "dueDate": "2026-02-04",
           "description": "Prep Thursday's overnight oats."
         },
         {
-          "dueDate": "2026-11-05",
+          "dueDate": "2026-02-05",
           "description": "Prep Friday's overnight oats.",
           "cookEvent": "oats-thu"
         },
         {
-          "dueDate": "2026-11-06",
+          "dueDate": "2026-02-06",
           "description": "Cook Ground Beef & Broccoli (quick, about 30 minutes).",
           "cookEvent": "beef-broccoli-fri"
         }
@@ -2903,11 +3204,11 @@
   ],
   "shoppingLists": [
     {
-      "title": "Week of Mon Nov 2 - Sun Nov 8, 2026",
-      "plan": "2026-11-02",
+      "title": "Week of Mon Feb 2 - Sun Feb 8, 2026",
+      "plan": "2026-02-02",
       "status": "done",
-      "completedAt": "2026-11-01T16:00:00.000Z",
-      "notes": "Purchased 2026-11-01; pantry updated and all items are on hand. The pantry snapshot in this seed already includes these purchases, so the loader must not create purchase movements. The 'Already on hand' section and the 'Salt, black pepper - on hand' line were skipped.",
+      "completedAt": "2026-02-01T16:00:00.000Z",
+      "notes": "Purchased 2026-02-01; pantry updated and all items are on hand. The pantry snapshot in this file already includes these purchases, so the loader must not create purchase movements. The 'Already on hand' section and the 'Salt, black pepper - on hand' line were skipped.",
       "items": [
         {
           "ingredient": "Ground beef",

@@ -57,7 +57,7 @@ COPY --from=build /app/dist ./dist
 # Static web app, served by the Hono server at `/` (path: <package root>/web/dist).
 COPY --from=build /app/web/dist ./web/dist
 COPY --from=build /app/drizzle ./drizzle
-# Curated seed file, so `node dist/cli.js seed seed/chef-2026-11.json` works in
+# Example seed file, so `node dist/cli.js seed seed/example.json` works in
 # the container without extra mounts.
 COPY seed ./seed
 

@@ -1,6 +1,7 @@
 /** Pure helpers shared by the recipe box, recipe detail and cook mode. */
 
 import type { components } from "@/api/schema";
+import type { EmojiCode } from "@/ui/emoji";
 
 export type MealType = components["schemas"]["MealType"];
 
@@ -110,18 +111,18 @@ export function haveIngredient(
   }
 }
 
-const MEAL_EMOJI: Record<MealType, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍝",
-  snack: "🍿",
-  dessert: "🍰",
+const MEAL_EMOJI: Record<MealType, EmojiCode> = {
+  breakfast: "1F95E",
+  lunch: "1F957",
+  dinner: "1F35D",
+  snack: "1F37F",
+  dessert: "1F370",
 };
 
-/** Placeholder emoji for a recipe without a (working) photo. */
-export function recipeEmoji(mealTypes: ReadonlyArray<MealType>): string {
+/** Decorative OpenMoji code for a recipe without a (working) photo. */
+export function recipeEmoji(mealTypes: ReadonlyArray<MealType>): EmojiCode {
   const first = mealTypes.find((m) => m === "dinner") ?? mealTypes[0];
-  return first ? MEAL_EMOJI[first] : "🍽️";
+  return first ? MEAL_EMOJI[first] : "1F37D";
 }
 
 /** "2026-11-03" -> "Tue, Nov 3" without timezone drift. */
@@ -134,15 +135,23 @@ export function formatDay(isoDate: string): string {
 export interface CookSearch {
   cookEvent?: string;
   servings?: number;
+  /** Jump straight back to saved progress (recipe page "Resume" link). */
+  resume?: boolean;
+  /** Page cook mode was opened from, so leaving it can return there without a loop. */
+  from?: "recipe" | "week";
 }
 
-/** Shared `?cookEvent=<id>&servings=<n>` search validation for the recipe and cook routes. */
+/** Shared `?cookEvent=<id>&servings=<n>&resume&from` search validation for the recipe and cook routes. */
 export function validateCookSearch(search: Record<string, unknown>): CookSearch {
   const cookEvent = typeof search.cookEvent === "string" && search.cookEvent !== "" ? search.cookEvent : undefined;
   const n = typeof search.servings === "string" ? Number(search.servings) : search.servings;
   const servings = typeof n === "number" && Number.isFinite(n) && n > 0 ? n : undefined;
+  const resume = search.resume === true || search.resume === "true";
+  const from = search.from === "recipe" || search.from === "week" ? search.from : undefined;
   return {
     ...(cookEvent !== undefined ? { cookEvent } : {}),
     ...(servings !== undefined ? { servings } : {}),
+    ...(resume ? { resume: true } : {}),
+    ...(from !== undefined ? { from } : {}),
   };
 }

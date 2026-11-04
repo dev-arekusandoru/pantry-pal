@@ -10,7 +10,7 @@ export interface PillProps extends HTMLAttributes<HTMLSpanElement> {
   icon?: ReactNode;
 }
 
-/** Small rounded label: counts, badges ("fits your rules"), "On hand". */
+/** Small rounded label: counts, statuses, "On hand". */
 export function Pill({ tone = "neutral", icon, className, children, ...rest }: PillProps) {
   return (
     <span className={cx(styles.pill, styles[tone], className)} {...rest}>

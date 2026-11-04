@@ -9,15 +9,18 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // The Hono server (`pnpm dev` at the repo root) listens on 8787.
+      // The Hono server (`pnpm dev` at the repo root) listens on 4787.
       // Override with PANTRYPAL_API_URL to point at another instance.
-      "/api": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:8787",
-      "/health": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:8787",
+      "/api": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
+      "/health": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
     },
   },
   build: {
     outDir: "dist",
     sourcemap: false,
+    // OpenMoji SVGs are shared, cacheable files; keep them out of the JS bundle
+    // instead of base64-inlining everything under Vite's default 4 kB limit.
+    assetsInlineLimit: 0,
   },
   test: {
     environment: "jsdom",

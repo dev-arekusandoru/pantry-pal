@@ -1,12 +1,20 @@
 import { Link, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import type { components } from "@/api";
-import { EmptyState, ErrorState, Icon, IconButton, Pill, Skeleton, Stepper, buttonClass, ingredientEmoji } from "@/ui";
+import { Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, SegmentedControl, Skeleton, Stepper, buttonClass, ingredientEmoji, type SegmentOption } from "@/ui";
 import { formatDuration, stepSeconds } from "./duration";
 import { formatAmount, formatDay, formatMinutes, formatNumber, haveIngredient, type Have, type MealType } from "./lib";
 import { RecipePhoto } from "./RecipePhoto";
-import { isNotFound, useAvailability, usePlannedCooks, useRecipe, useRuleCheck, useScaledIngredients } from "./queries";
+import { isNotFound, useAvailability, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "./queries";
+import type { EditableStatus } from "./status";
+import { isResumable, readCookProgress } from "../cook/progress";
 import styles from "./RecipeScreen.module.css";
+
+/** The permanent thumbs control: up keeps it in rotation, down never cooks it again. */
+const STATUS_OPTIONS: ReadonlyArray<SegmentOption<EditableStatus>> = [
+  { value: "rotation", label: "Rotation", icon: <Emoji code="1F44D" size={16} /> },
+  { value: "want_to_try", label: "Want to try" },
+  { value: "never", label: "Never", icon: <Emoji code="1F44E" size={16} /> },
+];
 
 export interface RecipeScreenProps {
   slug: string;
@@ -15,8 +23,6 @@ export interface RecipeScreenProps {
   /** Servings carried over from cook mode (`?servings=`). */
   servings?: number;
 }
-
-type RuleCheck = components["schemas"]["RecipeRuleCheck"];
 
 interface Row {
   id: string;
@@ -40,9 +46,13 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
   const canGoBack = useCanGoBack();
   const recipe = useRecipe(slug);
   const r = recipe.data;
+  const setStatus = useSetRecipeStatus();
 
   const planned = usePlannedCooks(r?.id);
   const plannedCook = cookEvent !== undefined ? planned.data?.find((c) => c.id === cookEvent) : undefined;
+  // Only carry a cook event into cook mode while it is still planned; a stale id
+  // from an old link would fail at Finish.
+  const plannedCookId = plannedCook?.id ?? (planned.isPending ? cookEvent : undefined);
   // Don't scale twice when the planned servings are about to arrive.
   const waitingForPlan = cookEvent !== undefined && servingsParam === undefined && planned.isPending && r !== undefined;
 
@@ -51,7 +61,8 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
 
   const scaled = useScaledIngredients(slug, servings);
   const availability = useAvailability();
-  const rules = useRuleCheck(slug);
+  // Saved cook-mode position for this recipe; shown as a resume affordance.
+  const progress = useMemo(() => readCookProgress(slug), [slug]);
 
   const rows = useMemo<Row[]>(() => {
     if (!r) return [];
@@ -84,7 +95,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
     if (isNotFound(recipe.error)) {
       return (
         <EmptyState
-          emoji="🍽️"
+          emoji="1F37D"
           title="Recipe not found"
           action={
             <Link to="/recipes" className={buttonClass({ variant: "primary" })}>
@@ -101,6 +112,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
 
   const time = formatMinutes(r.totalMinutes ?? (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0));
   const shownServings = servings ?? r.servings;
+  const savedProgress = isResumable(progress, r.steps.length) ? progress : null;
   const missing = rows.filter((x) => !x.optional && x.have === "none");
   const low = rows.filter((x) => !x.optional && x.have === "some");
 
@@ -125,6 +137,17 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
           {r.cuisine && <span>{r.cuisine}</span>}
         </p>
         {r.description && <p className={styles.desc}>{r.description}</p>}
+        {r.sourceUrl !== null && /^https?:\/\//i.test(r.sourceUrl) && (
+          <a
+            className={styles.source}
+            href={r.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="recipes" size={17} />
+            View original recipe{r.sourceName ? ` on ${r.sourceName}` : ""}
+          </a>
+        )}
 
         <div className={styles.badges}>
           {plannedCook && (
@@ -132,12 +155,23 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
               Planned for {formatDay(plannedCook.cookDate)}
             </Pill>
           )}
-          <RulesBadge check={rules.data} />
           {r.tags.map((t) => (
             <Pill key={t}>{t}</Pill>
           ))}
         </div>
-        <RulesDetail check={rules.data} />
+
+        {r.status !== "archived" && (
+          <div className={styles.status}>
+            <SegmentedControl
+              label="Recipe status"
+              options={STATUS_OPTIONS}
+              value={r.status}
+              onChange={(status) => {
+                if (status !== r.status) setStatus.mutate({ slug: r.slug, status });
+              }}
+            />
+          </div>
+        )}
 
         <section className={styles.ings} aria-labelledby="ings-h">
           <div className={styles.ingsHead}>
@@ -181,7 +215,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
                 {row.group && row.group !== rows[i - 1]?.group && <p className={styles.group}>{row.group}</p>}
                 <div className={styles.ing}>
                   <span className={styles.ingEmoji} aria-hidden="true">
-                    {ingredientEmoji(row.name)}
+                    <Emoji code={ingredientEmoji(row.name)} size={20} />
                   </span>
                   <span className={styles.ingAmount}>{row.amount}</span>
                   <span className={styles.ingName}>
@@ -245,10 +279,30 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
       </div>
 
       <div className={styles.bar}>
+        {savedProgress && (
+          <Link
+            to="/recipes/$slug/cook"
+            params={{ slug: r.slug }}
+            search={{
+              servings: savedProgress.servings,
+              ...(savedProgress.cookEvent !== undefined ? { cookEvent: savedProgress.cookEvent } : {}),
+              resume: true,
+              from: "recipe",
+            }}
+            className={buttonClass({ size: "lg", className: styles.cta })}
+          >
+            <Icon name="undo" />
+            Resume at step {savedProgress.step + 1}
+          </Link>
+        )}
         <Link
           to="/recipes/$slug/cook"
           params={{ slug: r.slug }}
-          search={{ servings: shownServings, ...(cookEvent !== undefined ? { cookEvent } : {}) }}
+          search={{
+            servings: shownServings,
+            ...(plannedCookId !== undefined ? { cookEvent: plannedCookId } : {}),
+            from: "recipe",
+          }}
           className={buttonClass({ variant: "primary", size: "lg", className: styles.cta })}
           aria-disabled={servings === undefined || undefined}
         >
@@ -257,53 +311,6 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
         </Link>
       </div>
     </article>
-  );
-}
-
-function RulesBadge({ check }: { check: RuleCheck | undefined }) {
-  if (!check) return null;
-  const spiceTooHot = check.spice?.exceeds === true;
-  if (!check.ok) {
-    return (
-      <Pill tone="tomato" icon={<Icon name="alert" />}>
-        Breaks a rule
-      </Pill>
-    );
-  }
-  if (check.violations.length > 0 || spiceTooHot) {
-    return (
-      <Pill tone="butter" icon={<Icon name="alert" />}>
-        Check the rules
-      </Pill>
-    );
-  }
-  return (
-    <Pill tone="pistachio" icon={<Icon name="check" />}>
-      Fits your rules
-    </Pill>
-  );
-}
-
-/** The rule hit(s) behind a failing or doubtful badge. */
-function RulesDetail({ check }: { check: RuleCheck | undefined }) {
-  if (!check) return null;
-  const spiceTooHot = check.spice?.exceeds === true;
-  if (check.violations.length === 0 && !spiceTooHot) return null;
-  return (
-    <ul className={styles.rules}>
-      {check.violations.map((v) => (
-        <li key={`${v.ruleId}-${v.matched}`}>
-          <b>{v.matched}</b>
-          {v.reason ? `: ${v.reason}` : ""}
-          {v.conditionNote ? ` (${v.conditionNote})` : ""}
-        </li>
-      ))}
-      {spiceTooHot && check.spice && (
-        <li>
-          <b>Spicier than usual</b>: {check.spice.recipeLevel} heat, your household is {check.spice.householdLevel}
-        </li>
-      )}
-    </ul>
   );
 }
 

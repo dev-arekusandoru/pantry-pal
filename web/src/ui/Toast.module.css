@@ -2,7 +2,8 @@
   position: fixed;
   z-index: var(--z-toast);
   left: 50%;
-  bottom: calc(var(--nav-h) + 30px + var(--safe-bottom));
+  /* Clear the nav and the FAB that floats above it, so a toast never covers the add action. */
+  bottom: calc(var(--nav-gap) + var(--nav-h) + var(--safe-bottom) + var(--fab-gap) + var(--fab-size) + var(--sp-3));
   transform: translateX(-50%);
   width: max-content;
   max-width: 92vw;

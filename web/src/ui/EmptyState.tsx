@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import styles from "./EmptyState.module.css";
 import { cx } from "./cx";
+import { Emoji } from "./Emoji";
+import type { EmojiCode } from "./emoji";
 
 export interface EmptyStateProps {
-  /** Big sticker emoji. */
-  emoji: string;
+  /** Big sticker icon (OpenMoji code). */
+  emoji: EmojiCode;
   title: string;
   /** Supporting sentence(s). */
   children?: ReactNode;
@@ -16,9 +18,7 @@ export interface EmptyStateProps {
 export function EmptyState({ emoji, title, children, action, className }: EmptyStateProps) {
   return (
     <div className={cx(styles.root, className)}>
-      <p className={styles.emoji} aria-hidden="true">
-        {emoji}
-      </p>
+      <Emoji code={emoji} size={54} className={styles.emoji} />
       <h2 className={styles.title}>{title}</h2>
       {children && <p className={styles.text}>{children}</p>}
       {action && <div className={styles.action}>{action}</div>}

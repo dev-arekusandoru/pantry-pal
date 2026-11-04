@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { Button, Card, Checkbox, EmptyState, ErrorState, Icon, PageHeader, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
+import { Button, Card, Checkbox, Emoji, EmptyState, ErrorState, Fab, Icon, PageHeader, Sheet, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
 import { aisleLabel, uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
 import { DoneSheet } from "./DoneSheet";
 import { formatAmount } from "./format";
 import styles from "./Shop.module.css";
-import { useAddItem, useCheckItem, useGenerateList, useShoppingList } from "./queries";
+import { useAddItem, useCheckItem, useClearList, useGenerateList, useShoppingList } from "./queries";
 
 export interface ShopListProps {
   list: ShoppingList;
@@ -21,9 +21,12 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
   const detail = useShoppingList(list.id);
   const check = useCheckItem(list.id);
   const add = useAddItem(list.id);
+  const clear = useClearList(list.id);
   const regenerate = useGenerateList();
   const [name, setName] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
 
   const checked = useMemo(
     () =>
@@ -65,7 +68,7 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         <PageHeader title="Shopping" sub={current.title} />
         {switcher}
         <EmptyState
-          emoji="🎉"
+          emoji="1F389"
           title="Shopping done!"
           action={
             <>
@@ -86,13 +89,18 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
     );
   }
 
+  function closeAdd() {
+    setAddOpen(false);
+    setName("");
+  }
+
   function submit(e: FormEvent) {
     e.preventDefault();
     const text = name.trim();
     if (!text) return;
     add.mutate(text, {
       onSuccess: () => {
-        setName("");
+        closeAdd();
         toast.show({ message: `Added ${text}` });
       },
     });
@@ -104,6 +112,15 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
       { mealPlanId: current.mealPlanId, listId: current.id },
       { onSuccess: () => toast.show({ message: "List updated" }) },
     );
+  }
+
+  function confirmClear() {
+    clear.mutate(undefined, {
+      onSuccess: () => {
+        setClearOpen(false);
+        toast.show({ message: "List cleared" });
+      },
+    });
   }
 
   return (
@@ -139,24 +156,9 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         </Card>
       )}
 
-      <form className={styles.addBar} onSubmit={submit}>
-        <input
-          className={styles.addInput}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Add something we forgot"
-          aria-label="Add an item"
-          autoComplete="off"
-          enterKeyHint="done"
-        />
-        <Button type="submit" variant="primary" icon={<Icon name="plus" />} loading={add.isPending} disabled={name.trim() === ""}>
-          Add
-        </Button>
-      </form>
-
       {counts.total === 0 ? (
-        <EmptyState emoji="🧺" title="Nothing on this list">
-          Add what you need above.
+        <EmptyState emoji="1F9FA" title="Nothing on this list" className={styles.screen}>
+          Add what you need with the plus button.
         </EmptyState>
       ) : (
         <div className={styles.aisles}>
@@ -180,13 +182,47 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
       )}
 
       {counts.total > 0 && (
-        <div className={styles.finish}>
+        <div className={cx(styles.finish, styles.screen)}>
           <Button variant="primary" size="lg" icon={<Icon name="check" />} onClick={() => setDoneOpen(true)}>
             Done shopping
           </Button>
           <p>Checked items go into the pantry.</p>
+          <Button variant="secondary" icon={<Icon name="trash" />} className={styles.clear} onClick={() => setClearOpen(true)}>
+            Clear list
+          </Button>
         </div>
       )}
+
+      <Fab label="Add an item" showLabel onClick={() => setAddOpen(true)} />
+
+      <Sheet
+        open={addOpen}
+        onClose={closeAdd}
+        title="Add an item"
+        footer={
+          <>
+            <Button onClick={closeAdd}>Cancel</Button>
+            <Button type="submit" form="shop-add" variant="primary" loading={add.isPending} disabled={name.trim() === ""}>
+              Add
+            </Button>
+          </>
+        }
+      >
+        <form id="shop-add" className={styles.addForm} onSubmit={submit}>
+          <label className={styles.addField}>
+            <span>What do you need?</span>
+            <input
+              className={styles.addInput}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Milk, lemons, dish soap"
+              autoComplete="off"
+              enterKeyHint="done"
+              autoFocus
+            />
+          </label>
+        </form>
+      </Sheet>
 
       <DoneSheet
         open={doneOpen}
@@ -199,6 +235,26 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
           onCompleted();
         }}
       />
+
+      <Sheet
+        open={clearOpen}
+        onClose={() => setClearOpen(false)}
+        title="Clear the list?"
+        footer={
+          <>
+            <Button onClick={() => setClearOpen(false)}>Keep the list</Button>
+            <Button variant="primary" loading={clear.isPending} onClick={confirmClear}>
+              Clear list
+            </Button>
+          </>
+        }
+      >
+        <p className={styles.sheetNote}>
+          Every item on this list will be removed — checked off or not, added by hand or from the plan. Nothing goes into your
+          pantry.
+          {current.mealPlanId !== null && " You can rebuild the list from your plan afterwards."}
+        </p>
+      </Sheet>
     </>
   );
 }
@@ -211,7 +267,7 @@ function ItemRow({ item, onToggle }: { item: ShoppingItem; onToggle: (checked: b
     <li className={cx(styles.item, got && styles.got)}>
       <Checkbox checked={got} onChange={onToggle} aria-label={item.name}>
         <span className={styles.itemEmoji} aria-hidden="true">
-          {ingredientEmoji(item.name)}
+          <Emoji code={ingredientEmoji(item.name)} size={26} />
         </span>
         <span className={styles.itemBody}>
           <span className={styles.itemName}>{item.name}</span>

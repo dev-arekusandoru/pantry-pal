@@ -61,7 +61,7 @@ Claude Desktop / Claude Code style (`mcpServers`), for a server behind TLS:
 }
 ```
 
-For local development the URL is `http://localhost:8787/mcp`. If your client does not expand
+For local development the URL is `http://localhost:4787/mcp`. If your client does not expand
 environment variables, paste the token literally and keep that file private. With the Claude Code
 CLI:
 
@@ -131,7 +131,7 @@ unresolved candidates rather than silently created, unless the call asks for cre
 | `plan_swap_meal` | — | Put a different recipe on one meal slot (`slotId`, or `date` + `mealType` for a day with no slot). `scope: "with_leftovers"` changes the cook that feeds the slot, so every slot it feeds changes; `scope: "this"` changes only this meal, and a slot that shares its cook becomes its own cook. A slot without a cook gets a new one; a cook that is already done can't be swapped. Returns the updated `plan` and `shoppingListStale` (true when an open shopping list for the plan no longer matches it, so regenerate it with `shopping_generate`). |
 | `plan_update` | `update` / `add_cook` / `update_cook` / `delete_cook` | Update plan metadata, or add/reschedule/retarget/remove cook events (recipe, cook date, planned servings, label, rating). |
 | `prep_tasks` | `list` / `add` / `update` / `complete` / `delete` | List (optionally by plan/date, including done), add, edit, complete or remove prep tasks. |
-| `cook_complete` | `complete` / `skip` / `reopen` | Complete a cook: records actual servings, rating and notes and decrements the pantry by the scaled ingredients; skip records it as not cooked; reopen restores stock. |
+| `cook_complete` | `complete` / `skip` / `reopen` / `undo` | Complete a cook: records actual servings, rating and notes and decrements the pantry by the scaled ingredients; skip records it as not cooked; reopen restores stock; undo restores stock and deletes an ad-hoc cook no plan references. |
 | `cook_history` | — | Recent cook events with recipe, date, servings, rating and notes, each with the pantry movements it produced (ingredient name, quantity, unit, resulting stock). |
 
 ### Shopping
@@ -140,7 +140,7 @@ unresolved candidates rather than silently created, unless the call asks for cre
 |---|---|---|
 | `shopping_generate` | — | Create or refresh a shopping list for a plan: demand minus stock on hand, with a "check the pantry" bucket for unknown/incomparable amounts. |
 | `shopping_get` | — | With a list id: the list with items, quantities, aisle categories, check-off state and provenance notes. Without: all list summaries. |
-| `shopping_update` | `update_list` / `add_items` / `update_item` / `delete_item` / `check` | Update list fields, add manual items (kept across regeneration), edit or delete items, and check items off with actual quantities/substitutes. |
+| `shopping_update` | `update_list` / `add_items` / `update_item` / `delete_item` / `clear_items` / `check` | Update list fields, add manual items (kept across regeneration), edit or delete items, clear every item off a list, and check items off with actual quantities/substitutes. |
 | `shopping_complete` | — | Close the list and turn checked purchases into pantry movements. |
 
 Errors come back as tool errors whose text is the same JSON shape as the REST API

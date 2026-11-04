@@ -3,6 +3,11 @@
   gap: 12px;
 }
 
+/* Keeps the last shelf clear of the floating add button. */
+.screen {
+  padding-bottom: calc(var(--fab-size) + var(--fab-gap) + var(--sp-4));
+}
+
 .tools {
   display: grid;
   gap: 8px;
@@ -55,11 +60,27 @@
   border-top: 0;
 }
 
+/* The tappable body: opens the edit/remove sheet for the item. */
 .body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
   min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.body:active {
+  opacity: 0.6;
 }
 
 .name {
@@ -187,4 +208,8 @@ select.input {
   display: flex;
   gap: 10px;
   justify-content: center;
+}
+
+.removeTrigger {
+  width: 100%;
 }

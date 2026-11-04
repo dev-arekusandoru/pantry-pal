@@ -31,6 +31,18 @@ export function nextStatus(status: PantryStatus): PantryStatus {
   }
 }
 
+/** Body for `POST /pantry/set` that re-adds a removed row where it was, with its amount. */
+export function restoreBody(item: PantryItem) {
+  return {
+    ingredientId: item.ingredientId,
+    location: item.location,
+    qty: item.qty,
+    unit: item.unit,
+    qtyApprox: item.qtyApprox,
+    status: item.status,
+  };
+}
+
 export const STATUS_LABEL: Record<PantryStatus, string> = {
   on_hand: "On hand",
   low: "Running low",

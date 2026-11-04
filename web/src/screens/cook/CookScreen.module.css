@@ -305,8 +305,10 @@
   gap: 4px;
 }
 
-.warnings li::before {
-  content: "⚠️ ";
+.warnings li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .doneActions {
@@ -317,6 +319,35 @@
   margin-top: 8px;
 }
 
-.doneActions a {
+.rate {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.rateTitle {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+}
+
+.rateActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.rateActions button {
+  width: 100%;
+}
+
+.doneActions a,
+.doneActions button {
   width: 100%;
 }

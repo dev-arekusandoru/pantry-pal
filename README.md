@@ -60,12 +60,12 @@ upgrades, and [docs/mcp.md](docs/mcp.md) to connect an MCP client.
 
 ### Importing the example data set
 
-`seed/chef-2026-11.json` is a complete curated household state (ingredients, conversions, pantry,
+`seed/example.json` is a complete synthetic household state (ingredients, conversions, pantry,
 rules, 8 recipes with full ingredients and steps, one week plan, one shopping list). After
 `household init`, load it instead of starting empty:
 
 ```sh
-docker compose exec pantrypal node dist/cli.js seed seed/chef-2026-11.json
+docker compose exec pantrypal node dist/cli.js seed seed/example.json
 ```
 
 ## Local development
@@ -76,7 +76,7 @@ Requires Node 22+ and pnpm.
 pnpm install
 pnpm cli household init --name "Our House"
 pnpm cli token create --name chef
-pnpm dev                     # http://localhost:8787
+pnpm dev                     # http://localhost:4787
 ```
 
 Other useful commands:
@@ -97,7 +97,7 @@ database file.
 | Variable | Default | Purpose |
 |---|---|---|
 | `PANTRYPAL_DB_PATH` | `./data/pantrypal.db` (image: `/data/pantrypal.db`) | SQLite file; its directory is created on start and WAL mode is enabled |
-| `PORT` | `8787` | HTTP listen port |
+| `PORT` | `4787` (image: `8787`) | HTTP listen port |
 | `HOST` | `0.0.0.0` | HTTP bind address |
 | `PANTRYPAL_TRUST_NETWORK` | unset (off) | `1` or `true`: `/api/v1/*` requests without an `Authorization` header act as the instance's household (see [Authentication](#authentication)) |
 | `PANTRYPAL_WEB_DIR` | `web/dist` under the app root | Directory of the built web app served at `/`; when it has no `index.html` the server only serves the API |
@@ -131,11 +131,11 @@ reference — it is generated from the route definitions; the table below is the
 | Household | `/household`, `/household/members` | Name, timezone, settings (servings, spice level, week start, planning notes); members with notes |
 | Ingredients | `/ingredients`, `/ingredients/{id}/aliases`, `/ingredients/{id}/merge` | Search/list, create/update, aliases, merging duplicates |
 | Units | `/units/convert`, `/unit-conversions` | Unit normalization and conversion checks; per-ingredient and global conversion factors |
-| Pantry | `/pantry`, `/pantry/movements`, `/pantry/availability`, `/pantry/set`, `/pantry/adjust`, `/pantry/bulk` | Stock per location, ledger history, available = on hand − committed |
+| Pantry | `/pantry`, `/pantry/movements`, `/pantry/availability`, `/pantry/set`, `/pantry/adjust`, `/pantry/bulk`, `/pantry/{id}` (GET/PATCH/DELETE) | Stock per location, ledger history, available = on hand − committed; deleting a row takes its movement history with it |
 | Recipes | `/recipes`, `/recipes/{idOrSlug}`, `/recipes/{idOrSlug}/status`, `/recipes/{idOrSlug}/status-history`, `/recipes/{idOrSlug}/check`, `/recipes/{idOrSlug}/scaled` | Full recipes with ingredients + steps, status history, rule check, scaling to servings |
 | Rules | `/rules`, `/rules/check-ingredients` | CRUD over ingredient/category/recipe/tag/keyword rules, optionally member-scoped |
-| Plans | `/plans`, `/plans/{id}/slots`, `/plans/{id}/swap`, `/plans/{id}/cook-events`, `/plans/{id}/prep-tasks`, `/plans/{id}/demand`, `/cook-events`, `/cook-events/{id}/complete` | Weekly grid, cook events feeding multiple slots, one-call meal swap, demand, prep schedule, cook completion, ad-hoc cooks outside any plan (`POST /cook-events`, optionally completed at once) |
-| Shopping lists | `/shopping-lists`, `/shopping-lists/generate`, `/shopping-lists/{id}/items`, `/shopping-lists/{id}/check`, `/shopping-lists/{id}/complete` | Generate from a plan, check items off in store, complete into purchases; lists carry `stale` when the plan changed after generation |
+| Plans | `/plans`, `/plans/{id}/slots`, `/plans/{id}/swap`, `/plans/{id}/cook-events`, `/plans/{id}/prep-tasks`, `/plans/{id}/demand`, `/cook-events`, `/cook-events/{id}/complete`, `/cook-events/{id}/undo` | Weekly grid, cook events feeding multiple slots, one-call meal swap, demand, prep schedule, cook completion and undo, ad-hoc cooks outside any plan (`POST /cook-events`, optionally completed at once) |
+| Shopping lists | `/shopping-lists`, `/shopping-lists/generate`, `/shopping-lists/{id}/items` (POST add, DELETE clear), `/shopping-lists/{id}/check`, `/shopping-lists/{id}/complete` | Generate from a plan, clear or check items off in store, complete into purchases; lists carry `stale` when the plan changed after generation |
 
 ## MCP
 
@@ -169,10 +169,10 @@ nullable real plus a normalized unit string (nullable = unknown amount).
 ## Seeding from JSON
 
 The `seed` command imports a JSON snapshot through the service layer (no raw SQL), for moving an
-existing household in or starting from the curated example:
+existing household in or starting from the synthetic example:
 
 ```sh
-pnpm cli seed seed/chef-2026-11.json
+pnpm cli seed seed/example.json
 ```
 
 It is a one-time import: it refuses to run when the household already has data, resolves all
@@ -192,3 +192,8 @@ documented in [seed/FORMAT.md](seed/FORMAT.md).
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Bundled assets: all emoji art is designed by [OpenMoji](https://openmoji.org) – the open-source
+emoji and icon project. License: CC BY-SA 4.0 (full text in
+[`web/src/assets/openmoji/LICENSE.txt`](web/src/assets/openmoji/LICENSE.txt)). UI icons are
+[Phosphor](https://phosphoricons.com), licensed MIT.

@@ -13,12 +13,14 @@ export const cookRoute = createRoute({
 
 function CookPage() {
   const { slug } = cookRoute.useParams();
-  const { cookEvent, servings } = cookRoute.useSearch();
+  const { cookEvent, servings, resume, from } = cookRoute.useSearch();
   return (
     <CookScreen
       slug={slug}
       {...(cookEvent !== undefined ? { cookEvent } : {})}
       {...(servings !== undefined ? { servings } : {})}
+      {...(resume !== undefined ? { resume } : {})}
+      {...(from !== undefined ? { from } : {})}
     />
   );
 }

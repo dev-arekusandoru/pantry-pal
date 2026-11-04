@@ -483,6 +483,15 @@ export const cookEventMutationResultSchema = z.object({
   warnings: z.array(z.string()),
 });
 
+export const cookEventUndoResultSchema = z.object({
+  cookEvent: cookEventViewSchema
+    .nullable()
+    .describe("The reopened cook, or null when an ad-hoc cook was deleted."),
+  deleted: z.boolean().describe("True when an ad-hoc cook was removed instead of reopened."),
+  movements: z.array(stockMovementSchema),
+  warnings: z.array(z.string()),
+});
+
 export const cookAdHocSchema = z
   .object({
     ...recipeRefShape,

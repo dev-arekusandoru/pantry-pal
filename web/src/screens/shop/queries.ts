@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { ApiError, client, qk, unwrap } from "@/api";
-import { setChecked, type ShoppingDetail } from "./cart";
+import { cleared, setChecked, type ShoppingDetail } from "./cart";
 
 const keys = {
   /** This week's plan as the shop screen needs it: id only, null when there is none. */
@@ -72,6 +72,28 @@ export function useCheckItem(listId: string) {
         return qc.invalidateQueries({ queryKey: qk.shoppingLists });
       }
     },
+  });
+}
+
+/** Optimistic clear: empties the detail at once, rolls back on failure, refetches when it lands. */
+export function useClearList(listId: string) {
+  const qc = useQueryClient();
+  const detailKey = keys.detail(listId);
+  return useMutation({
+    mutationKey: ["shop-clear", listId] as const,
+    mutationFn: () =>
+      unwrap(client.DELETE("/shopping-lists/{id}/items", { params: { path: { id: listId } } })),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: detailKey });
+      const previous = qc.getQueryData<ShoppingDetail>(detailKey);
+      qc.setQueryData<ShoppingDetail>(detailKey, (d) => d && cleared(d));
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) qc.setQueryData(detailKey, context.previous);
+    },
+    onSuccess: (detail) => qc.setQueryData(detailKey, detail),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
   });
 }
 

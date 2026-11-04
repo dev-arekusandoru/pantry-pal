@@ -6164,6 +6164,190 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "shopping"
+        ],
+        "summary": "Clear a shopping list",
+        "description": "Removes every item — generated or manual, checked or not. The list itself stays (including its plan binding), so it can be regenerated later. Nothing is written to stock.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Shopping list id."
+            },
+            "required": true,
+            "description": "Shopping list id.",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cleared list detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShoppingListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found",
+                            "conflict",
+                            "validation",
+                            "unprocessable",
+                            "unauthorized",
+                            "unavailable"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found",
+                            "conflict",
+                            "validation",
+                            "unprocessable",
+                            "unauthorized",
+                            "unavailable"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict with the current list state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found",
+                            "conflict",
+                            "validation",
+                            "unprocessable",
+                            "unauthorized",
+                            "unavailable"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable input (for example an unresolvable ingredient)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "not_found",
+                            "conflict",
+                            "validation",
+                            "unprocessable",
+                            "unauthorized",
+                            "unavailable"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/shopping-lists/{id}/items/{itemId}": {
@@ -15307,6 +15491,279 @@
                   },
                   "required": [
                     "cookEvent",
+                    "movements",
+                    "warnings"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cook event not found"
+          },
+          "409": {
+            "description": "Cook is not completed"
+          }
+        }
+      }
+    },
+    "/api/v1/cook-events/{id}/undo": {
+      "post": {
+        "tags": [
+          "cooking"
+        ],
+        "summary": "Undo a completed cook",
+        "description": "Restores the pantry stock this cook took out and returns a planned cook to `planned`. A cook created outside any plan (no plan, no referencing slot or prep task) is deleted instead.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Cook event id."
+            },
+            "required": true,
+            "description": "Cook event id.",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cookEvent": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "householdId": {
+                          "type": "string"
+                        },
+                        "mealPlanId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "recipeId": {
+                          "type": "string"
+                        },
+                        "recipeTitle": {
+                          "type": "string"
+                        },
+                        "cookDate": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "description": "Calendar date (YYYY-MM-DD).",
+                          "example": "2026-11-02"
+                        },
+                        "plannedServings": {
+                          "type": "number"
+                        },
+                        "actualServings": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "planned",
+                            "done",
+                            "skipped"
+                          ],
+                          "description": "Cook lifecycle status.",
+                          "example": "planned"
+                        },
+                        "completedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "rating": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "fedSlots": {
+                          "type": "integer"
+                        },
+                        "servingsAllocated": {
+                          "type": "number"
+                        },
+                        "servingsRemaining": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "householdId",
+                        "mealPlanId",
+                        "recipeId",
+                        "recipeTitle",
+                        "cookDate",
+                        "plannedServings",
+                        "actualServings",
+                        "label",
+                        "status",
+                        "completedAt",
+                        "rating",
+                        "notes",
+                        "createdAt",
+                        "updatedAt",
+                        "fedSlots",
+                        "servingsAllocated",
+                        "servingsRemaining"
+                      ],
+                      "description": "The reopened cook, or null when an ad-hoc cook was deleted."
+                    },
+                    "deleted": {
+                      "type": "boolean",
+                      "description": "True when an ad-hoc cook was removed instead of reopened."
+                    },
+                    "movements": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "householdId": {
+                            "type": "string"
+                          },
+                          "pantryItemId": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "set",
+                              "delta"
+                            ]
+                          },
+                          "qty": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "unit": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "purchase",
+                              "cook",
+                              "waste",
+                              "adjust",
+                              "import",
+                              "verify"
+                            ]
+                          },
+                          "refType": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "cook_event",
+                              "shopping_list",
+                              "manual",
+                              "seed",
+                              null
+                            ]
+                          },
+                          "refId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "qtyAfter": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "statusAfter": {
+                            "type": "string",
+                            "enum": [
+                              "on_hand",
+                              "low",
+                              "out",
+                              "unknown"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "householdId",
+                          "pantryItemId",
+                          "kind",
+                          "qty",
+                          "unit",
+                          "reason",
+                          "refType",
+                          "refId",
+                          "note",
+                          "qtyAfter",
+                          "statusAfter",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "cookEvent",
+                    "deleted",
                     "movements",
                     "warnings"
                   ]

@@ -263,6 +263,31 @@ describe("POST /cook-events (ad-hoc cook)", () => {
     expect((await request("POST", "/api/v1/cook-events", { recipe: "nope" })).status).toBe(404);
     expect((await request("POST", "/api/v1/cook-events", { servings: 2 })).status).toBe(400);
   });
+
+  it("undoes a completed ad-hoc cook, restoring stock and removing the event", async () => {
+    const { request, recipe, ctx, chicken } = kitchen();
+
+    const created = await request<CookResult>("POST", "/api/v1/cook-events", {
+      recipeId: recipe.id,
+      servings: 2,
+      complete: true,
+    });
+    expect(getStockForIngredient(ctx, chicken.id)[0]!.qty).toBeCloseTo(2, 6);
+
+    const undone = await request<{ deleted: boolean; cookEvent: null; movements: unknown[] }>(
+      "POST",
+      `/api/v1/cook-events/${created.body.cookEvent.id}/undo`,
+    );
+
+    expect(undone.status).toBe(200);
+    expect(undone.body.deleted).toBe(true);
+    expect(undone.body.cookEvent).toBeNull();
+    expect(undone.body.movements).toHaveLength(1);
+    expect(getStockForIngredient(ctx, chicken.id)[0]!.qty).toBeCloseTo(3, 6);
+
+    const history = await request<{ items: unknown[] }>("GET", "/api/v1/cook-events");
+    expect(history.body.items).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------------

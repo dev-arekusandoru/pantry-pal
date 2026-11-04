@@ -673,6 +673,37 @@ export function deleteItem(
   return { deleted: true, id: itemId };
 }
 
+/**
+ * Remove every item from an open list — generated or manual, checked or not.
+ * The list itself survives with its plan binding and fingerprint untouched, so
+ * the `stale` flag keeps telling the truth (a later regenerate repopulates it
+ * from current demand either way). Nothing is written to stock.
+ */
+export function clearItems(ctx: Ctx, listId: string): ShoppingListDetail {
+  const list = loadList(ctx, listId);
+  assertMutable(list);
+
+  ctx.db.transaction((tx) => {
+    const scoped = txCtx(ctx, tx);
+    scoped.db
+      .delete(shoppingListItems)
+      .where(
+        and(
+          eq(shoppingListItems.householdId, ctx.householdId),
+          eq(shoppingListItems.shoppingListId, listId),
+        ),
+      )
+      .run();
+    scoped.db
+      .update(shoppingLists)
+      .set({ updatedAt: nowIso(scoped) })
+      .where(eq(shoppingLists.id, listId))
+      .run();
+  });
+
+  return getShoppingList(ctx, listId);
+}
+
 export interface CheckItemInput {
   itemId: string;
   checked: boolean;

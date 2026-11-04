@@ -57,11 +57,17 @@
 
   /* ----- layout ----- */
   --nav-h: 76px;
+  --nav-gap: 12px; /* space between the floating bottom nav and the screen edge */
   --rail-w: 250px;
   --content-max: 760px;
+  --main-pad: 16px; /* side padding of the content column (the shell raises it on wide screens) */
+  --fab-size: 62px;
+  --fab-gap: 18px; /* space between the FAB and the nav bar / page edge */
+  --fab-inset: 20px; /* how far the FAB sits from the content edge */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --z-nav: 20;
+  --z-fab: 30;
   --z-sheet: 50;
   --z-toast: 90;
 
@@ -172,29 +178,29 @@
   --tab: var(--butter);
   --tab-s: var(--butter-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: "🍳";
+  --tab-sticker: url("../assets/openmoji/1F373.svg");
 }
 [data-tab="shop"] {
   --tab: var(--pistachio);
   --tab-s: var(--pistachio-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: "🧺";
+  --tab-sticker: url("../assets/openmoji/1F9FA.svg");
 }
 [data-tab="pantry"] {
   --tab: var(--gum);
   --tab-s: var(--gum-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: "🫙";
+  --tab-sticker: url("../assets/openmoji/1FAD9.svg");
 }
 [data-tab="recipes"] {
   --tab: var(--blue);
   --tab-s: var(--blue-s);
   --on-tab: var(--on-blue);
-  --tab-sticker: "📖";
+  --tab-sticker: url("../assets/openmoji/1F4D6.svg");
 }
 [data-tab="settings"] {
   --tab: var(--peach);
   --tab-s: var(--peach-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: "⚙️";
+  --tab-sticker: url("../assets/openmoji/2699.svg");
 }

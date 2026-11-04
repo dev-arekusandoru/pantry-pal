@@ -25,6 +25,17 @@ export function useHousehold() {
 }
 
 /**
+ * The household's first weekday (0 = Sunday … 6 = Saturday), or Monday when
+ * settings are missing. The API type promises `settings`, but a stale server
+ * (e.g. an old build behind a wrong `PANTRYPAL_API_URL`) can answer with an
+ * older shape — consumers must not crash on it.
+ */
+export function weekStartsOnOf(household: Household | undefined): number {
+  const value = household?.settings?.weekStartsOn;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 6 ? value : 1;
+}
+
+/**
  * Patches the household (settings merge key-by-key on the server). The cache is
  * updated optimistically so steppers feel instant; patches run one at a time so
  * rapid taps land in order, and the server copy is refetched once they settle.

@@ -23,7 +23,7 @@ import {
 import { createConversion } from "../services/units.js";
 
 /** Note written to the status event recorded while seeding a recipe. */
-const SEED_NOTE = "Seeded from chef-2026-11.json";
+const SEED_NOTE = "Seeded from example.json";
 
 export interface SeedResult {
   summary: Record<string, number>;

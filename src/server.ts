@@ -3,7 +3,7 @@ import { createApp } from "./api/app.js";
 import { defaultWebDir, hasWebApp } from "./api/web.js";
 import { openDb, runMigrations } from "./db/client.js";
 
-const DEFAULT_PORT = 8787;
+const DEFAULT_PORT = 4787;
 
 const dbPath = process.env.PANTRYPAL_DB_PATH ?? "./data/pantrypal.db";
 const hostname = process.env.HOST ?? "0.0.0.0";

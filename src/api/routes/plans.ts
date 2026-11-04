@@ -7,6 +7,7 @@ import {
   completeCookEventSchema,
   cookAdHocSchema,
   cookEventMutationResultSchema,
+  cookEventUndoResultSchema,
   cookEventViewSchema,
   createPlanSchema,
   deleteCookEventQuerySchema,
@@ -57,6 +58,7 @@ import {
   listCookEvents,
   reopenCookEvent,
   skipCookEvent,
+  undoCookEvent,
 } from "../../services/cooking.js";
 
 const planParam = z.object({ idOrWeekStart: z.string().describe("Plan id or weekStart date.") });
@@ -334,6 +336,21 @@ const reopenCookEventRoute = createRoute({
   },
 });
 
+const undoCookEventRoute = createRoute({
+  method: "post",
+  path: "/cook-events/{id}/undo",
+  tags: ["cooking"],
+  summary: "Undo a completed cook",
+  description:
+    "Restores the pantry stock this cook took out and returns a planned cook to `planned`. A cook created outside any plan (no plan, no referencing slot or prep task) is deleted instead.",
+  request: { params: cookEventParam },
+  responses: {
+    200: jsonResponse(cookEventUndoResultSchema),
+    404: { description: "Cook event not found" },
+    409: { description: "Cook is not completed" },
+  },
+});
+
 // ---------------------------------------------------------------------------
 // Prep tasks
 // ---------------------------------------------------------------------------
@@ -457,6 +474,9 @@ export function registerPlansRoutes(app: OpenAPIHono<AppEnv>): void {
   );
   app.openapi(reopenCookEventRoute, (c) =>
     c.json(reopenCookEvent(c.var.ctx, c.req.valid("param").id), 200),
+  );
+  app.openapi(undoCookEventRoute, (c) =>
+    c.json(undoCookEvent(c.var.ctx, c.req.valid("param").id), 200),
   );
 
   app.openapi(listPrepTasksRoute, (c) =>

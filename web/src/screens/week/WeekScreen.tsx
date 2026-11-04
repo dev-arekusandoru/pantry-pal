@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, PageHeader, Skeleton } from "@/ui";
+import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, toast } from "@/ui";
+import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
 import { DayCard } from "./DayCard";
-import { localToday, weekRange } from "./dates";
+import { addDays, localToday, monthDay, selectedWeekStart, weekRange, weekStartFor } from "./dates";
 import { PrepNudge } from "./PrepNudge";
 import { usePlan, usePrepTasks, useRecipeIndex, useStartEmptyWeek } from "./queries";
 import { SwapSheet, type SwapTarget } from "./SwapSheet";
@@ -23,18 +24,68 @@ function useToday(): string {
   return today;
 }
 
-export function WeekScreen() {
+export interface WeekScreenProps {
+  /** The route's validated `?week=` param; undefined = current week. */
+  week?: string;
+  /** Show the week starting `weekStart`, or the current week when null. */
+  onSelectWeek: (weekStart: string | null) => void;
+}
+
+export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   const today = useToday();
-  const plan = usePlan();
+  const household = useHousehold();
+  // Plans are keyed by the household's first weekday; weekStartsOnOf returns
+  // Monday when a stale API answers without settings (see settings/queries).
+  const weekStartsOn = weekStartsOnOf(household.data);
+  const currentWeek = weekStartFor(today, weekStartsOn);
+  const selectedWeek = selectedWeekStart(week, today, weekStartsOn);
+  const isCurrentWeek = selectedWeek === currentWeek;
+  const plan = usePlan(selectedWeek);
   const recipes = useRecipeIndex();
   const prep = usePrepTasks(today);
   const startWeek = useStartEmptyWeek();
   const [target, setTarget] = useState<SwapTarget | null>(null);
+  // A swap target belongs to one plan's slots; drop it when the visible week changes.
+  useEffect(() => setTarget(null), [selectedWeek]);
+
+  const browseWeek = (days: number) => {
+    const next = addDays(selectedWeek, days);
+    onSelectWeek(next === currentWeek ? null : next);
+  };
+
+  const title = isCurrentWeek ? "This week" : `Week of ${monthDay(selectedWeek)}`;
+  const rangeLabel = weekRange(selectedWeek);
+  const navRow = (
+    <span className={styles.weekNav}>
+      <IconButton
+        className={styles.weekNavBtn}
+        variant="plain"
+        label="Previous week"
+        icon={<Icon name="back" />}
+        onClick={() => browseWeek(-7)}
+      />
+      <span className={styles.weekRange}>{rangeLabel}</span>
+      <IconButton
+        className={styles.weekNavBtn}
+        variant="plain"
+        label="Next week"
+        icon={<Icon name="back" style={{ transform: "scaleX(-1)" }} />}
+        onClick={() => browseWeek(7)}
+      />
+      {!isCurrentWeek && (
+        <Button className={styles.weekJump} onClick={() => onSelectWeek(null)}>
+          This week
+        </Button>
+      )}
+    </span>
+  );
+
+  const header = <PageHeader className={styles.weekHead} title={title} sub={navRow} />;
 
   if (plan.isPending) {
     return (
       <>
-        <PageHeader title="This week" />
+        {header}
         <div className={styles.loading} aria-busy="true" aria-label="Loading the week">
           <Skeleton height={260} radius={34} />
           <Skeleton height={150} radius={28} />
@@ -47,18 +98,45 @@ export function WeekScreen() {
   if (plan.isError) {
     return (
       <>
-        <PageHeader title="This week" />
+        {header}
         <ErrorState error={plan.error} onRetry={() => void plan.refetch()} />
       </>
     );
   }
 
   if (plan.data === null) {
+    // Other weeks: a future week offers planning (coming soon), a past week just states the gap.
+    if (!isCurrentWeek) {
+      return (
+        <>
+          {header}
+          {selectedWeek > currentWeek ? (
+            <EmptyState
+              emoji="1F5D3"
+              title="Nothing planned for this week yet"
+              action={
+                <Button
+                  variant="primary"
+                  icon={<Icon name="plus" />}
+                  onClick={() => toast.show({ message: "Coming soon — weekly planning is on the way" })}
+                >
+                  Plan this week
+                </Button>
+              }
+            >
+              Plan it here when weekly planning arrives, or ask your AI assistant to plan these days over MCP.
+            </EmptyState>
+          ) : (
+            <EmptyState emoji="1F4ED" title="Nothing was planned that week" />
+          )}
+        </>
+      );
+    }
     return (
       <>
-        <PageHeader title="This week" sub="No plan yet" />
+        {header}
         <EmptyState
-          emoji="🗓️"
+          emoji="1F5D3"
           title="Nothing planned this week"
           action={
             <Button
@@ -78,18 +156,20 @@ export function WeekScreen() {
     );
   }
 
-  const week = plan.data;
+  const planView = plan.data;
   return (
     <>
-      <PageHeader title="This week" sub={weekRange(week.weekStart)} />
-      <TonightCard plan={week} today={today} recipes={recipes.data} onSwap={setTarget} />
-      {prep.data && <PrepNudge tasks={prep.data} today={today} />}
+      {header}
+      {isCurrentWeek && (
+        <TonightCard plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
+      )}
+      {isCurrentWeek && prep.data && <PrepNudge tasks={prep.data} today={today} />}
       <ul className={styles.days}>
-        {week.days.map((day) => (
-          <DayCard key={day.date} day={day} plan={week} today={today} recipes={recipes.data} onSwap={setTarget} />
+        {planView.days.map((day) => (
+          <DayCard key={day.date} day={day} plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
         ))}
       </ul>
-      <SwapSheet target={target} plan={week} onClose={() => setTarget(null)} />
+      <SwapSheet target={target} plan={planView} onClose={() => setTarget(null)} />
     </>
   );
 }

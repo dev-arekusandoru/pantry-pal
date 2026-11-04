@@ -86,10 +86,6 @@
   gap: 6px;
 }
 
-.pillText {
-  white-space: normal;
-}
-
 .scope {
   display: grid;
   gap: 12px;

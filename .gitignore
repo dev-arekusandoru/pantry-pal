@@ -4,3 +4,23 @@ data/
 *.db
 *.db-*
 coverage/
+
+# Local tooling and runtime state.
+.hippo/
+.claude/
+*.log
+*.tsbuildinfo
+
+# Environment files.
+.env
+.env.*
+!.env.example
+
+# Editor and OS noise.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# OpenMoji SVGs come from the `openmoji` devDependency; only the license is tracked.
+web/src/assets/openmoji/*.svg

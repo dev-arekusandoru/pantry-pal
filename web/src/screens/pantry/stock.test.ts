@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupByLocation, nextStatus, stepFor, type PantryItem } from "./stock";
+import { groupByLocation, nextStatus, restoreBody, stepFor, type PantryItem } from "./stock";
 
 const item = (name: string, location: PantryItem["location"]): PantryItem =>
   ({ id: name, ingredient: { id: name, name, category: "other" }, location }) as PantryItem;
@@ -33,5 +33,31 @@ describe("groupByLocation", () => {
   it("filters by text and location", () => {
     expect(groupByLocation(items, "RI", "all").flatMap((g) => g.items.map((i) => i.id))).toEqual(["Rice"]);
     expect(groupByLocation(items, "", "fridge").map((g) => g.location)).toEqual(["fridge"]);
+  });
+});
+
+describe("restoreBody", () => {
+  it("re-adds a measured row with its amount, unit and place", () => {
+    const yogurt = { ...item("Yogurt", "fridge"), ingredientId: "ing_yogurt", qty: 500, unit: "g", qtyApprox: true, status: "on_hand" } as PantryItem;
+    expect(restoreBody(yogurt)).toEqual({
+      ingredientId: "ing_yogurt",
+      location: "fridge",
+      qty: 500,
+      unit: "g",
+      qtyApprox: true,
+      status: "on_hand",
+    });
+  });
+
+  it("keeps an unmeasured staple unmeasured with its status", () => {
+    const rice = { ...item("Rice", "pantry"), ingredientId: "ing_rice", qty: null, unit: null, qtyApprox: false, status: "unknown" } as PantryItem;
+    expect(restoreBody(rice)).toEqual({
+      ingredientId: "ing_rice",
+      location: "pantry",
+      qty: null,
+      unit: null,
+      qtyApprox: false,
+      status: "unknown",
+    });
   });
 });

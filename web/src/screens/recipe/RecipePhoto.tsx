@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cx } from "@/ui";
+import { Emoji, cx } from "@/ui";
 import { recipeEmoji, type MealType } from "./lib";
 import styles from "./RecipePhoto.module.css";
 
@@ -11,7 +11,7 @@ export interface RecipePhotoProps {
   priority?: boolean;
 }
 
-/** Recipe photo that falls back to an emoji plate when missing or broken. Decorative (the title sits next to it). */
+/** Recipe photo that falls back to a sticker icon when missing or broken. Decorative (the title sits next to it). */
 export function RecipePhoto({ imageUrl, mealTypes, className, priority }: RecipePhotoProps) {
   // Remember which URL failed, so a changed URL gets another try.
   const [failed, setFailed] = useState<string | null>(null);
@@ -20,6 +20,7 @@ export function RecipePhoto({ imageUrl, mealTypes, className, priority }: Recipe
     <div className={cx(styles.photo, className)}>
       {showImage ? (
         <img
+          className={styles.photoImg}
           src={imageUrl}
           alt=""
           loading={priority ? "eager" : "lazy"}
@@ -28,9 +29,7 @@ export function RecipePhoto({ imageUrl, mealTypes, className, priority }: Recipe
           onError={() => setFailed(imageUrl)}
         />
       ) : (
-        <span className={styles.plate} aria-hidden="true">
-          {recipeEmoji(mealTypes)}
-        </span>
+        <Emoji code={recipeEmoji(mealTypes)} size="clamp(44px, 12vw, 76px)" className={styles.plate} />
       )}
     </div>
   );
