@@ -1,5 +1,63 @@
 .page {
   position: relative;
+  /* Lets the fading skeleton copy sit behind the content during the crossfade. */
+  isolation: isolate;
+}
+
+/* Content that replaced a skeleton fades in while the ghost skeleton fades out
+   underneath it. Mounting with cached data stays still (the route transition
+   owns that). */
+.enter > .hero,
+.enter > .body > *,
+.enter > .bar {
+  animation: recipe-enter var(--dur-enter) var(--ease-out) both;
+}
+
+.enter > .body > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+.enter > .body > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+.enter > .body > *:nth-child(n + 3) {
+  animation-delay: 100ms;
+}
+.enter > .bar {
+  animation-delay: 100ms;
+}
+
+@keyframes recipe-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift));
+  }
+}
+
+.skeletonGhost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  pointer-events: none;
+  animation: skeleton-out var(--dur-exit) var(--ease-in) forwards;
+}
+
+@keyframes skeleton-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter > .hero,
+  .enter > .body > *,
+  .enter > .bar {
+    animation: none;
+  }
+  .skeletonGhost {
+    display: none;
+  }
 }
 
 /* Recipes tab: blue (--tab) accents come from the shell's data-tab. */
@@ -22,6 +80,11 @@
 
 .body {
   padding: 22px 2px 0;
+}
+
+/* Groups title/meta/badges/status so they stagger in as one block. */
+.head {
+  display: flow-root;
 }
 
 .title {
@@ -309,4 +372,54 @@
   width: 100%;
   max-width: 440px;
   pointer-events: auto;
+}
+
+/* Availability summary can arrive after the recipe; its space is reserved while
+   it loads so the ingredient list below never moves. */
+.summaryPlaceholder {
+  margin-top: 14px;
+}
+
+/* Placeholder laid out like the real page: hero aspect ratio, title, meta and
+   the ingredients card, so swapping to content does not move what is on screen. */
+.skeletonPhoto {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 44vh;
+  border-radius: var(--r-xl);
+}
+
+.skeletonBack {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+}
+
+.skeletonHead {
+  display: grid;
+  gap: 12px;
+}
+
+.skeletonPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skeletonCard {
+  margin-top: 24px;
+  padding: 20px 18px 16px;
+  border-radius: 32px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+}
+
+.skeletonCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
 }

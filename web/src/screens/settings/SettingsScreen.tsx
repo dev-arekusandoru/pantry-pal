@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Label, RadioGroup, Separator } from "radix-ui";
 import { useTheme, type ThemePreference } from "@/app/theme";
 import { Button, Card, ErrorState, PageHeader, Skeleton, Stepper, cx } from "@/ui";
@@ -32,6 +32,11 @@ export function SettingsScreen() {
   const { theme, setTheme } = useTheme();
   const version = useServerVersion();
   const status = useSaveStatus(update.isPending, update.isSuccess, update.submittedAt);
+  // One-way latch: did this screen ever show its skeleton? Sections fade in only
+  // when they replace it; a first paint that already has data is left to the
+  // route transition, so the two never fade the same frame.
+  const sawLoading = useRef(false);
+  if (household.isPending) sawLoading.current = true;
 
   if (household.isPending) {
     return (
@@ -63,7 +68,7 @@ export function SettingsScreen() {
       <p className={cx(styles.status, status === "saved" && styles.saved)} role="status" aria-live="polite">
         {status === "saving" ? "Saving…" : status === "saved" ? "Saved" : ""}
       </p>
-      <div className={styles.stack}>
+      <div className={cx(styles.stack, sawLoading.current && styles.stackIn)}>
         <Card as="section" aria-labelledby="settings-look" className={styles.section}>
           <h2 id="settings-look" className={styles.heading}>
             Look

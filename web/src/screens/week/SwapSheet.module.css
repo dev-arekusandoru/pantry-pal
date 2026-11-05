@@ -13,6 +13,27 @@
   gap: 10px;
 }
 
+/* Results replace the skeleton in the same frame: one short fade so the list
+   settles in instead of snapping. Rows keep their keys while the search
+   narrows (placeholder data), so this only plays when results first arrive. */
+.results {
+  animation: resultsIn var(--dur-enter) var(--ease-out);
+}
+
+/* The scope question takes over the sheet body; it fades in where the list was. */
+.scope {
+  display: grid;
+  gap: 12px;
+  animation: resultsIn var(--dur-enter) var(--ease-out);
+}
+
+@keyframes resultsIn {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift));
+  }
+}
+
 .note {
   text-align: center;
   color: var(--muted);
@@ -84,11 +105,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-
-.scope {
-  display: grid;
-  gap: 12px;
 }
 
 /* The option group sits where the two option cards used to be, so it keeps their stacking and gap. */

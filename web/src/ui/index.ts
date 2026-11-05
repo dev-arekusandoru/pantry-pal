@@ -38,3 +38,4 @@ export type { StickerProps } from "./Sticker";
 export { toast, ToastHost } from "./Toast";
 export type { ToastInput } from "./Toast";
 export { ingredientEmoji } from "./ingredientEmoji";
+export { fadeIn, fadeInRise } from "./motion";

@@ -111,6 +111,61 @@ button:disabled {
   white-space: nowrap;
 }
 
+/*
+ * Route transitions. The router wraps each navigation in
+ * `document.startViewTransition` (see app/router.tsx); these rules only paint it.
+ * Where the API is missing the page swaps instantly, so nothing here is load-bearing.
+ *
+ * The page dissolves while the new screen rises <= --shift, and scroll restoration
+ * happens before the new snapshot is taken, so old content never jumps. Both fades
+ * share one duration and easing: the browser blends the snapshots additively, so
+ * only complementary opacities keep the page from flashing brighter (mismatched
+ * timings) or dimming (a plain cross-fade).
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur);
+  animation-timing-function: var(--ease);
+}
+
+/* The rise lives on the group, so both snapshots move as one and the old page
+   never lags 8px behind the new one. */
+::view-transition-group(root) {
+  animation: vt-page-rise var(--dur-enter) var(--ease-out) both;
+}
+
+/* Leaving cook mode is a step back, not forward (typed transition, where supported). */
+:root:active-view-transition-type(from-cook)::view-transition-group(root) {
+  animation-name: vt-page-settle;
+}
+
+/*
+ * The nav is persistent chrome. Its own snapshot keeps it still across tab
+ * switches (it crossfades with itself), and makes it fade, not pop, when a
+ * screen hides it (a recipe on phones, cook mode).
+ */
+::view-transition-group(app-nav) {
+  animation-duration: var(--dur-fast);
+}
+
+::view-transition-old(app-nav),
+::view-transition-new(app-nav) {
+  animation-duration: var(--dur-fast);
+  animation-timing-function: var(--ease);
+}
+
+@keyframes vt-page-rise {
+  from {
+    transform: translateY(var(--shift));
+  }
+}
+
+@keyframes vt-page-settle {
+  from {
+    transform: translateY(calc(var(--shift) * -1));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -119,5 +174,13 @@ button:disabled {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* View-transition pseudo-elements are not matched by `*`: collapse them too. */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
   }
 }

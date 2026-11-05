@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import styles from "./Stepper.module.css";
 import { cx } from "./cx";
 import { Icon } from "./icons";
@@ -33,11 +34,18 @@ export function Stepper({
   className,
 }: StepperProps) {
   const lower = label.toLowerCase();
+  // The value fade is for user-driven changes only: the very first render must stay
+  // still so route/View-Transition snapshots never catch the number at opacity 0.
+  const firstValue = useRef(value);
+  const hasChanged = useRef(false);
+  if (value !== firstValue.current) hasChanged.current = true;
+  const valueClass = cx(styles.valueText, hasChanged.current && styles.valueChanged);
+  // Keyed so the value text remounts (and replays its tiny fade) whenever the number changes.
   const content = (
-    <>
+    <span key={String(value)} className={valueClass}>
       <b>{value}</b>
       {unit && <small> {unit}</small>}
-    </>
+    </span>
   );
   return (
     <div className={cx(styles.root, className)} role="group" aria-label={label}>

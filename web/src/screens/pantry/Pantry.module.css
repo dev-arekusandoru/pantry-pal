@@ -8,6 +8,17 @@
   padding-bottom: calc(var(--fab-size) + var(--fab-gap) + var(--sp-4));
 }
 
+/* Only when the shelves arrived after a skeleton; see PantryScreen's latch. */
+.screenIn {
+  animation: screenIn var(--dur-enter) var(--ease-out);
+}
+
+@keyframes screenIn {
+  from {
+    opacity: 0;
+  }
+}
+
 .tools {
   display: grid;
   gap: 8px;
@@ -40,7 +51,12 @@
   font-weight: var(--fw-bold);
   font-size: 15px;
   box-shadow: 0 0 0 2px var(--line);
-  transition: all var(--dur) var(--pop);
+  /* Explicit properties: `all` would also animate layout if the chip ever changes size. */
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--pop);
 }
 
 .chip[data-state="on"] {
@@ -90,6 +106,19 @@
   gap: 12px;
   min-height: 68px;
   border-top: 2px dashed var(--line);
+}
+
+/* Rows fade in where they mount (first load, a filter, a freshly added item),
+   but only once the screen has shown its skeleton: on a first paint with cached
+   data the route transition already brings the page in. */
+.screen[data-rows] .row {
+  animation: rowIn var(--dur-fast) var(--ease-out);
+}
+
+@keyframes rowIn {
+  from {
+    opacity: 0;
+  }
 }
 
 .row:first-child {
@@ -149,6 +178,8 @@
 }
 
 /* ---------- row action menu (Radix DropdownMenu) ---------- */
+/* Radix positions the content in a wrapper, so the content itself is free to
+   scale; transform-origin follows the popper so it grows out of the trigger. */
 .menu {
   z-index: var(--z-sheet);
   min-width: 210px;
@@ -158,6 +189,29 @@
   background: var(--card);
   border-radius: var(--r-md);
   box-shadow: var(--shadow), 0 0 0 2px var(--line);
+  transform-origin: var(--radix-popper-transform-origin, center);
+}
+
+.menu[data-state="open"] {
+  animation: popIn var(--dur-enter) var(--ease-out);
+}
+
+.menu[data-state="closed"] {
+  animation: popOut var(--dur-exit) var(--ease-in) forwards;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes popOut {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }
 
 .menuLabel {
@@ -265,6 +319,15 @@
   background: var(--card);
   border-radius: var(--r-md);
   box-shadow: var(--shadow), 0 0 0 2px var(--line);
+  transform-origin: var(--radix-popper-transform-origin, center);
+}
+
+.selectContent[data-state="open"] {
+  animation: popIn var(--dur-enter) var(--ease-out);
+}
+
+.selectContent[data-state="closed"] {
+  animation: popOut var(--dur-exit) var(--ease-in) forwards;
 }
 
 .selectViewport {
@@ -369,6 +432,11 @@
   animation: alertFade 0.2s;
 }
 
+/* Radix Presence holds the dialog until these end, so closing is not a hard cut. */
+.alertOverlay[data-state="closed"] {
+  animation: alertFadeOut var(--dur-exit) var(--ease-in) forwards;
+}
+
 .alertContent {
   position: fixed;
   top: 50%;
@@ -392,8 +460,18 @@
   line-height: 1.05;
 }
 
+.alertContent[data-state="closed"] {
+  animation: alertShrink var(--dur-exit) var(--ease-in) forwards;
+}
+
 @keyframes alertFade {
   from {
+    opacity: 0;
+  }
+}
+
+@keyframes alertFadeOut {
+  to {
     opacity: 0;
   }
 }
@@ -402,5 +480,13 @@
   from {
     opacity: 0;
     transform: translate(-50%, -46%) scale(0.97);
+  }
+}
+
+/* Drops back a hair as it fades; the centering translate stays in the keyframe. */
+@keyframes alertShrink {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -52%) scale(0.97);
   }
 }

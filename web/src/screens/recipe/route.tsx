@@ -17,6 +17,7 @@ function RecipePage() {
   const { cookEvent, servings } = recipeRoute.useSearch();
   return (
     <RecipeScreen
+      key={slug}
       slug={slug}
       {...(cookEvent !== undefined ? { cookEvent } : {})}
       {...(servings !== undefined ? { servings } : {})}

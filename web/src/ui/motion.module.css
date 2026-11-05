@@ -1,0 +1,21 @@
+/* Optional enter-fade utilities for screens that own their own mount animation. */
+.fadeIn {
+  animation: ui-fade-in var(--dur-enter) var(--ease-out);
+}
+
+.fadeInRise {
+  animation: ui-fade-in-rise var(--dur-enter) var(--ease-out);
+}
+
+@keyframes ui-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ui-fade-in-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift));
+  }
+}

@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import styles from "./EmptyState.module.css";
 import { cx } from "./cx";
 import { Emoji } from "./Emoji";
+import { isViewTransitionActive } from "./motion";
 import type { EmojiCode } from "./emoji";
 
 export interface EmptyStateProps {
@@ -16,8 +17,10 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({ emoji, title, children, action, className }: EmptyStateProps) {
+  // Skip the mount fade when the router's View Transition is capturing this mount.
+  const [animate] = useState(() => !isViewTransitionActive());
   return (
-    <div className={cx(styles.root, className)}>
+    <div className={cx(styles.root, animate && styles.enter, className)}>
       <Emoji code={emoji} size={54} className={styles.emoji} />
       <h2 className={styles.title}>{title}</h2>
       {children && <p className={styles.text}>{children}</p>}

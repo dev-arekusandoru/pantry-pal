@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { toast, ToastHost } from ".";
@@ -21,7 +21,8 @@ describe("Toast", () => {
     });
     expect(await screen.findByText("Saved")).toBeInTheDocument();
     act(() => toast.dismiss(id));
-    expect(screen.queryByText("Saved")).not.toBeInTheDocument();
+    // The toast stays mounted for its exit animation, then unmounts.
+    await waitFor(() => expect(screen.queryByText("Saved")).not.toBeInTheDocument());
   });
 
   it("runs an action and dismisses afterwards", async () => {
@@ -33,6 +34,6 @@ describe("Toast", () => {
     });
     await user.click(await screen.findByRole("button", { name: "Undo" }));
     expect(onClick).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Item deleted")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Item deleted")).not.toBeInTheDocument());
   });
 });

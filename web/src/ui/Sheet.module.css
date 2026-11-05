@@ -3,10 +3,19 @@
   inset: 0;
   z-index: var(--z-sheet);
   background: var(--overlay);
-  animation: fade 0.2s;
 }
 
-/* Radix portals Overlay and Content as siblings, so Content is the layout box. */
+.backdrop[data-state="open"] {
+  animation: backdrop-in var(--dur-enter) var(--ease-out);
+}
+
+.backdrop[data-state="closed"] {
+  animation: backdrop-out var(--dur-exit) var(--ease-in) forwards;
+}
+
+/* Radix portals Overlay and Content as siblings, so Content is the layout box.
+   The open/close animations live here (not on .panel) because Radix Presence
+   waits for the exit animation on the Content node itself. */
 .viewport {
   position: fixed;
   inset: 0;
@@ -15,6 +24,14 @@
   align-items: flex-end;
   justify-content: center;
   pointer-events: none;
+}
+
+.viewport[data-state="open"] {
+  animation: sheet-in var(--dur-enter) var(--ease-out);
+}
+
+.viewport[data-state="closed"] {
+  animation: sheet-out var(--dur-exit) var(--ease-in) forwards;
 }
 
 .viewport:focus,
@@ -33,7 +50,6 @@
   color: var(--ink);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   padding: 18px 18px 0;
-  animation: rise var(--dur-slow) var(--pop);
 }
 
 .panel:focus {
@@ -74,6 +90,10 @@
 @media (min-width: 700px) {
   .viewport.center {
     align-items: center;
+    animation-name: dialog-in;
+  }
+  .viewport.center[data-state="closed"] {
+    animation-name: dialog-out;
   }
   .panel.center {
     max-width: 560px;
@@ -82,15 +102,42 @@
   }
 }
 
-@keyframes fade {
+@keyframes backdrop-in {
   from {
     opacity: 0;
   }
 }
 
-@keyframes rise {
-  from {
-    transform: translateY(40px) scale(0.97);
+@keyframes backdrop-out {
+  to {
     opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift));
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--shift) / 2));
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
   }
 }

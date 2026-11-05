@@ -15,11 +15,20 @@
   place-items: center;
   background: var(--card);
   box-shadow: 0 2px 0 var(--line);
-  transition: transform var(--dur-fast) var(--pop);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 
 .step:active:not(:disabled) {
-  transform: scale(0.88);
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .step:not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--ink) 6%, var(--card));
+  }
 }
 
 .step:disabled {
@@ -37,16 +46,41 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Remounted by Stepper.tsx on every value change, so this replays as a soft fade.
+   inline-block is required for the transform to apply; the parent keeps min-width.
+   The animation class is only added after the first change, never on mount. */
+.valueText {
+  display: inline-block;
+}
+
+.valueChanged {
+  animation: value-in var(--dur-fast) var(--ease-out);
+}
+
+@keyframes value-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+
 .valueButton {
   height: 44px;
   padding: 0 6px;
   border-radius: var(--r-pill);
   text-decoration: underline dotted color-mix(in srgb, var(--ink) 35%, transparent);
   text-underline-offset: 4px;
+  transition: background-color var(--dur-fast) var(--ease);
 }
 
 .valueButton:active {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+@media (hover: hover) {
+  .valueButton:hover:not(:active) {
+    background: color-mix(in srgb, var(--ink) 5%, transparent);
+  }
 }
 
 .value b {

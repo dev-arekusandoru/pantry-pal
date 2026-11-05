@@ -3,6 +3,17 @@
   gap: 14px;
 }
 
+/* Only when the sections arrived after a skeleton; see SettingsScreen's latch. */
+.stackIn {
+  animation: stackIn var(--dur-enter) var(--ease-out);
+}
+
+@keyframes stackIn {
+  from {
+    opacity: 0;
+  }
+}
+
 .status {
   min-height: 24px;
   margin: -8px 8px 6px;
@@ -10,6 +21,7 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   color: var(--muted);
+  transition: color var(--dur) var(--ease);
 }
 
 .saved {
@@ -63,7 +75,12 @@
   font-weight: var(--fw-bold);
   font-size: 15px;
   box-shadow: 0 0 0 2px var(--line);
-  transition: all var(--dur) var(--pop);
+  /* Explicit properties: `all` would animate layout too. */
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--pop);
 }
 
 .themeOption[data-state="checked"] {

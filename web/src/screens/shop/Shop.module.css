@@ -3,6 +3,18 @@
   gap: 12px;
 }
 
+/* Content that replaces the skeleton: one soft fade, no movement, so it layers
+   under the route transition without shifting anything. */
+.enter {
+  animation: contentIn var(--dur-enter) var(--ease-out);
+}
+
+@keyframes contentIn {
+  from {
+    opacity: 0;
+  }
+}
+
 /* Keeps the end of the list clear of the floating add button. */
 .screen {
   padding-bottom: calc(var(--fab-size) + var(--fab-gap) + var(--sp-4));
@@ -38,6 +50,11 @@
   margin: 0 36px 6px 0;
 }
 
+/* Only when the list arrived after a skeleton; see ShopList's latch. */
+.countIn {
+  animation: contentIn var(--dur-enter) var(--ease-out);
+}
+
 .countN {
   font-size: 44px;
   font-weight: var(--fw-heavy);
@@ -62,13 +79,17 @@
   box-shadow: inset 0 0 0 2px var(--line);
 }
 
+/* The fill is full-width and scaled, so progress never animates layout. The
+   floor keeps a small nub visible at zero, like the old min-width did. */
 .meterFill {
   display: block;
   height: 100%;
-  min-width: 12px;
+  width: 100%;
   background: var(--pistachio);
   border-radius: var(--r-pill);
-  transition: width 0.5s var(--pop);
+  transform-origin: left center;
+  transform: scaleX(clamp(0.03, var(--pct, 0), 1));
+  transition: transform var(--dur) var(--ease);
 }
 
 /* ---------- stale banner ---------- */
@@ -151,6 +172,12 @@
   font-variation-settings: inherit;
 }
 
+.aisleMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .aisleName small {
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
@@ -159,6 +186,53 @@
   border-radius: var(--r-pill);
   font-variation-settings: var(--wdth-body);
   letter-spacing: 0;
+}
+
+/* Caret drawn by rotating the chevron: points right when the aisle is folded,
+   down when it is open. Rotation only, so the heading never reflows. */
+.aisleChev {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  transform: rotate(180deg);
+  transition: transform var(--dur) var(--ease);
+}
+
+.aisleTrigger[data-state="open"] .aisleChev {
+  transform: rotate(270deg);
+}
+
+/* Height is the one layout property we animate: Radix measures the content and
+   hands it over as --radix-collapsible-content-height, and Presence waits for
+   these animations before unmounting the panel. */
+.aisleContent {
+  overflow: hidden;
+}
+
+.aisleContent[data-state="open"] {
+  animation: aisleOpen var(--dur) var(--ease-out);
+}
+
+.aisleContent[data-state="closed"] {
+  animation: aisleClose var(--dur-exit) var(--ease-in);
+}
+
+@keyframes aisleOpen {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes aisleClose {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 .items {
@@ -170,7 +244,9 @@
   border-radius: var(--r-md);
   background: var(--card);
   box-shadow: var(--shadow);
-  transition: background 0.3s;
+  transition:
+    background-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
 }
 
 /* The whole row is the checkbox button, so the whole row is the tap target. */
@@ -208,7 +284,9 @@
   display: grid;
   place-items: center;
   background: var(--card);
-  transition: all 0.2s;
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
 }
 
 .itemCheckMark {
@@ -251,10 +329,18 @@
   min-width: 0;
 }
 
+/* The strike is drawn transparent at rest and fades its colour in when the item
+   is checked, so the line grows into view instead of snapping on. */
 .itemName {
   font-weight: var(--fw-bold);
   font-size: var(--fs-md);
   line-height: 1.2;
+  text-decoration: line-through;
+  text-decoration-thickness: 2.5px;
+  text-decoration-color: transparent;
+  transition:
+    color var(--dur) var(--ease),
+    text-decoration-color var(--dur) var(--ease);
 }
 
 .itemWhy {
@@ -276,6 +362,7 @@
   border-radius: var(--r-pill);
   padding: 4px 12px;
   white-space: nowrap;
+  transition: background-color var(--dur) var(--ease);
 }
 
 .got {
@@ -284,8 +371,6 @@
 }
 
 .got .itemName {
-  text-decoration: line-through;
-  text-decoration-thickness: 2.5px;
   text-decoration-color: color-mix(in srgb, var(--ink) 40%, transparent);
   color: var(--muted);
 }
@@ -333,6 +418,7 @@
   border-radius: var(--r-md);
   background: var(--card);
   box-shadow: 0 0 0 2px var(--line);
+  transition: box-shadow var(--dur) var(--ease);
 }
 
 .pickRow svg {
@@ -445,6 +531,11 @@
   animation: confirmFade 0.2s;
 }
 
+/* Radix Presence keeps the dialog mounted until these exit animations end. */
+.confirmBackdrop[data-state="closed"] {
+  animation: confirmFadeOut var(--dur-exit) var(--ease-in) forwards;
+}
+
 .confirmPanel {
   position: fixed;
   inset: auto 0 0;
@@ -464,6 +555,10 @@
 
 .confirmPanel:focus {
   outline: none;
+}
+
+.confirmPanel[data-state="closed"] {
+  animation: confirmSink var(--dur-exit) var(--ease-in) forwards;
 }
 
 .confirmHead {
@@ -499,9 +594,23 @@
   }
 }
 
+@keyframes confirmFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes confirmRise {
   from {
     transform: translateY(40px) scale(0.97);
+    opacity: 0;
+  }
+}
+
+/* Leaves the way it came, but shorter: a small sink instead of a full drop. */
+@keyframes confirmSink {
+  to {
+    transform: translateY(14px) scale(0.98);
     opacity: 0;
   }
 }

@@ -15,7 +15,11 @@
   text-align: center;
   white-space: nowrap;
   box-shadow: 0 0 0 2px var(--line), 0 4px 0 var(--line);
-  transition: transform var(--dur-fast) var(--pop), box-shadow var(--dur-fast);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -29,6 +33,14 @@
   height: 19px;
 }
 
+/* Pointer-only hover: a small lift, never on touch devices or while pressed. */
+@media (hover: hover) {
+  .btn:not(:disabled):hover:not(:active) {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 2px var(--line), 0 6px 0 var(--line);
+  }
+}
+
 .primary {
   background: var(--tomato-fill);
   color: var(--on-tomato);
@@ -39,6 +51,13 @@
   box-shadow: 0 1px 0 var(--tomato-d);
 }
 
+@media (hover: hover) {
+  .btn.primary:not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--tomato-fill) 91%, var(--ink));
+    box-shadow: 0 6px 0 var(--tomato-d);
+  }
+}
+
 .ghost {
   background: transparent;
   box-shadow: none;
@@ -46,9 +65,17 @@
 }
 
 .ghost:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: scale(0.97);
   box-shadow: none;
   background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+@media (hover: hover) {
+  .btn.ghost:not(:disabled):hover:not(:active) {
+    transform: none;
+    background: color-mix(in srgb, var(--ink) 5%, transparent);
+    box-shadow: none;
+  }
 }
 
 .lg {

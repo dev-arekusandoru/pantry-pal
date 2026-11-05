@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ToggleGroup, VisuallyHidden } from "radix-ui";
 import { useEffect, useId, useRef, useState } from "react";
-import { Button, Icon, Pill, SearchInput, Sheet, Skeleton, toast } from "@/ui";
+import { Button, Icon, Pill, SearchInput, Sheet, Skeleton, cx, toast } from "@/ui";
 import { monthDay, weekdayName } from "./dates";
 import { MEAL_EMOJI, pantryCoverage, slotName, swapPlanFor, type AvailabilityLine, type MealType, type PlanView, type RecipeSummary, type Slot } from "./model";
 import { Plate } from "./Plate";
@@ -114,7 +114,7 @@ function SwapSheetBody({ target, plan, onClose }: SwapSheetProps & { target: Swa
               // One tap applies the pick, so the group reports activations instead of holding a
               // checked item (a stuck check would also make a failed submit impossible to retry).
               value=""
-              className={styles.list}
+              className={cx(styles.list, styles.results)}
               aria-label={`Pick a ${mealType} recipe`}
               aria-orientation="vertical"
               disabled={swap.isPending}

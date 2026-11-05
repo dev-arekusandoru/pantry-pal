@@ -37,8 +37,11 @@ function RecipesPage() {
       meal={meal ?? "all"}
       query={q ?? ""}
       onChange={(next) =>
+        // Same page, new search: keep the scroll position and skip the page crossfade.
         void navigate({
           replace: true,
+          resetScroll: false,
+          viewTransition: false,
           search: {
             ...(next.view !== "box" ? { view: next.view } : {}),
             ...(next.meal !== "all" ? { meal: next.meal } : {}),

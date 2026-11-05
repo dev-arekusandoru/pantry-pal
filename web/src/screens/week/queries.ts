@@ -11,6 +11,10 @@ const planKey = (weekStart: string) => [...qk.plans, weekStart] as const;
 export function usePlan(weekStart: string) {
   return useQuery({
     queryKey: planKey(weekStart),
+    // Paging keeps the last week's cards on screen while the next one loads.
+    // Swapping in the loading skeleton collapsed the page from ~3000px to ~780px,
+    // which made the browser clamp the scroll position to the top.
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<PlanView | null> => {
       try {
         return await unwrap(

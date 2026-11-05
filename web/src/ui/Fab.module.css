@@ -19,7 +19,10 @@
   line-height: 1;
   white-space: nowrap;
   box-shadow: 0 5px 0 var(--tomato-d), var(--shadow);
-  transition: transform var(--dur-fast) var(--pop), box-shadow var(--dur-fast);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -31,6 +34,14 @@
 .fab:active:not(:disabled) {
   transform: translateY(3px) scale(0.97);
   box-shadow: 0 2px 0 var(--tomato-d), var(--shadow);
+}
+
+@media (hover: hover) {
+  .fab:not(:disabled):hover:not(:active) {
+    transform: translateY(-2px);
+    background: color-mix(in srgb, var(--tomato-fill) 91%, var(--ink));
+    box-shadow: 0 7px 0 var(--tomato-d), var(--shadow);
+  }
 }
 
 .fab:disabled {

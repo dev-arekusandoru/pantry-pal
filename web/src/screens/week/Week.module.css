@@ -61,6 +61,32 @@
   gap: 14px;
 }
 
+/* The plan block itself. Paging keeps the last week's cards mounted while the
+   next one loads (see usePlan), so the page cannot collapse under the scroll
+   position; the dim says the cards are not the week in the title yet. */
+.planBlock {
+  transition: opacity var(--dur) var(--ease);
+}
+
+.planBlock[data-updating] {
+  opacity: 0.55;
+  /* Stale cards: a tap here would swap a slot that belongs to the other week. */
+  pointer-events: none;
+}
+
+/* The plan's content once it lands: one soft fade for the whole block, so the
+   cards arrive together instead of in stages. Opacity only, so it layers under
+   the route transition without moving the page. */
+.enter {
+  animation: planIn var(--dur-enter) var(--ease-out);
+}
+
+@keyframes planIn {
+  from {
+    opacity: 0;
+  }
+}
+
 /* ---------- dinner tonight ---------- */
 .tonight,
 .tonightPlain {
@@ -153,6 +179,17 @@
   margin-bottom: 22px;
 }
 
+/* Only when the nudge lands after the week has painted; see PrepNudge. */
+.nudgeFade {
+  animation: nudgeIn var(--dur-enter) var(--ease-out);
+}
+
+@keyframes nudgeIn {
+  from {
+    opacity: 0;
+  }
+}
+
 .nudgeIcon {
   display: inline-flex;
   flex: none;
@@ -194,6 +231,7 @@
   border-radius: var(--r-lg);
   padding: 14px 16px 8px;
   box-shadow: var(--shadow);
+  transition: box-shadow var(--dur) var(--ease);
 }
 
 .isToday {
@@ -235,6 +273,8 @@
   align-items: center;
   gap: 4px;
   border-top: 2px dashed var(--line);
+  /* Cooked / skipped swaps the row between states in place: fade, never jump. */
+  transition: opacity var(--dur) var(--ease);
 }
 
 .slots > .slot:first-child {
@@ -281,6 +321,7 @@
   font-weight: var(--fw-bold);
   font-size: 16.5px;
   line-height: 1.2;
+  transition: color var(--dur) var(--ease);
 }
 
 .leftover .slotTitle {
@@ -313,6 +354,9 @@
   color: var(--ink);
   font-size: var(--fs-xs);
   font-weight: var(--fw-bold);
+  transition:
+    background-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
 }
 
 .done .slotTitle {

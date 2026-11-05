@@ -23,7 +23,11 @@
   font-weight: var(--fw-bold);
   font-size: 15px;
   box-shadow: 0 0 0 2px var(--line);
-  transition: all var(--dur) var(--pop);
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
 }
 
 .seg[data-state="on"] {
@@ -31,4 +35,17 @@
   color: var(--bg);
   box-shadow: none;
   transform: rotate(-2deg) scale(1.04);
+}
+
+.seg:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .seg:not([data-state="on"]):not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--ink) 5%, var(--card));
+  }
+  .seg[data-state="on"]:not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--ink) 90%, var(--bg));
+  }
 }

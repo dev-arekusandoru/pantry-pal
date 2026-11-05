@@ -1,6 +1,6 @@
 import { VisuallyHidden } from "radix-ui";
-import { useEffect, useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, toast } from "@/ui";
+import { useEffect, useRef, useState } from "react";
+import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, cx, toast } from "@/ui";
 import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
 import { DayCard } from "./DayCard";
 import { addDays, localToday, monthDay, selectedWeekStart, weekRange, weekStartFor } from "./dates";
@@ -48,6 +48,18 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   const [target, setTarget] = useState<SwapTarget | null>(null);
   // A swap target belongs to one plan's slots; drop it when the visible week changes.
   useEffect(() => setTarget(null), [selectedWeek]);
+  // One-way latch: did this screen ever show its loading skeleton? Content that
+  // replaces a skeleton fades in; a first paint that already has data is left to
+  // the route transition, which would otherwise fade the same frame twice.
+  const sawLoading = useRef(false);
+  if (plan.isPending) sawLoading.current = true;
+  // True once this screen has painted. The prep nudge arrives on its own query:
+  // when it lands after the first paint it fades in, when it is already there
+  // with the first paint the route transition owns that frame.
+  const painted = useRef(false);
+  useEffect(() => {
+    painted.current = true;
+  }, []);
 
   const browseWeek = (days: number) => {
     const next = addDays(selectedWeek, days);
@@ -90,9 +102,10 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
         {/* The live region sits outside the busy skeletons: AT defers changes inside a busy subtree. */}
         <VisuallyHidden.Root role="status">Loading the week&hellip;</VisuallyHidden.Root>
         <div className={styles.loading} aria-busy="true">
+          {/* Heights track the real cards (tonight, then a day each) so the swap to content barely moves. */}
           <Skeleton height={260} radius={34} />
-          <Skeleton height={150} radius={28} />
-          <Skeleton height={150} radius={28} />
+          <Skeleton height={240} radius={28} />
+          <Skeleton height={240} radius={28} />
         </div>
       </>
     );
@@ -163,15 +176,21 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   return (
     <>
       {header}
-      {isCurrentWeek && (
-        <TonightCard plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
-      )}
-      {isCurrentWeek && prep.data && <PrepNudge tasks={prep.data} today={today} />}
-      <ul className={styles.days}>
-        {planView.days.map((day) => (
-          <DayCard key={day.date} day={day} plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
-        ))}
-      </ul>
+      <div
+        className={cx(styles.planBlock, sawLoading.current && styles.enter)}
+        data-updating={plan.isPlaceholderData || undefined}
+        aria-busy={plan.isPlaceholderData || undefined}
+      >
+        {isCurrentWeek && (
+          <TonightCard plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
+        )}
+        {isCurrentWeek && prep.data && <PrepNudge tasks={prep.data} today={today} fadeIn={painted.current} />}
+        <ul className={styles.days}>
+          {planView.days.map((day) => (
+            <DayCard key={day.date} day={day} plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
+          ))}
+        </ul>
+      </div>
       <SwapSheet target={target} plan={planView} onClose={() => setTarget(null)} />
     </>
   );

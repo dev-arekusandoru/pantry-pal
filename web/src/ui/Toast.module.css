@@ -25,7 +25,28 @@
   border-radius: var(--r-pill);
   font-weight: var(--fw-bold);
   text-align: center;
-  animation: pop-in 0.35s var(--pop);
+  transform-origin: 50% 100%;
+  animation: toast-in var(--dur-enter) var(--ease-out);
+}
+
+.toast[data-state="closed"] {
+  animation: toast-out var(--dur-exit) var(--ease-in) forwards;
+  pointer-events: none;
+}
+
+/* Follow the finger while swiping; snap back on cancel; fade out from where it was released. */
+.toast[data-swipe="move"] {
+  transform: translateX(var(--radix-toast-swipe-move-x, 0px));
+  transition: none;
+}
+
+.toast[data-swipe="cancel"] {
+  transform: translateX(0);
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.toast[data-swipe="end"] {
+  transform: translateX(var(--radix-toast-swipe-end-x, 0px));
 }
 
 .error {
@@ -48,9 +69,15 @@
   }
 }
 
-@keyframes pop-in {
+@keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(24px) scale(0.9);
+    transform: translateY(var(--shift));
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
   }
 }

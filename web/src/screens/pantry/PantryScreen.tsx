@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { errorMessage } from "@/api";
-import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInput, Skeleton, toast } from "@/ui";
+import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInput, Skeleton, cx, toast } from "@/ui";
 import { AddSheet } from "./AddSheet";
 import { ChoiceChips } from "./ChoiceChips";
 import styles from "./Pantry.module.css";
@@ -23,6 +23,11 @@ export function PantryScreen() {
 
   const items = pantry.data;
   const groups = useMemo(() => groupByLocation(items ?? [], query, location), [items, query, location]);
+  // One-way latch: did this screen ever show its skeleton? Rows and the block
+  // fade in only when they replace a skeleton; a first paint that already has
+  // data is left to the route transition, so the two never fade the same frame.
+  const sawLoading = useRef(false);
+  if (!items) sawLoading.current = true;
 
   const addButton = (
     <Button variant="primary" icon={<Icon name="plus" />} onClick={() => setAdding(true)}>
@@ -45,7 +50,8 @@ export function PantryScreen() {
         <div className={styles.skeletons}>
           <Skeleton height={54} radius={999} />
           <Skeleton height={44} radius={999} width="70%" />
-          <Skeleton height={220} radius={30} />
+          {/* One shelf with three rows: close to the real block so content does not jump. */}
+          <Skeleton height={260} radius={30} />
         </div>
       </div>
     );
@@ -57,7 +63,7 @@ export function PantryScreen() {
 
   return (
     <>
-      <div className={styles.screen}>
+      <div className={cx(styles.screen, sawLoading.current && styles.screenIn)} data-rows={sawLoading.current || undefined}>
         <PageHeader
           title="Pantry"
           sub={items.length === 0 ? "Nothing on the shelves yet" : `${items.length} ${items.length === 1 ? "thing" : "things"} on the shelves`}

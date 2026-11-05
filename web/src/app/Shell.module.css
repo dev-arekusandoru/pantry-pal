@@ -7,6 +7,9 @@
 .nav {
   position: fixed;
   z-index: var(--z-nav);
+  /* Persistent chrome: its own view-transition snapshot keeps it still across
+     tab switches and fades it when a screen hides it (see base.css). */
+  view-transition-name: app-nav;
   left: 12px;
   right: 12px;
   bottom: calc(var(--nav-gap) + var(--safe-bottom));
@@ -41,7 +44,10 @@
   font-weight: var(--fw-bold);
   color: var(--muted);
   text-decoration: none;
-  transition: background var(--dur) var(--ease), color var(--dur), transform var(--dur) var(--pop);
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform var(--dur) var(--pop);
   -webkit-tap-highlight-color: transparent;
 }
 

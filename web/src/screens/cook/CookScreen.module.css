@@ -70,7 +70,9 @@
   height: 12px;
   border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--cook-ink) 22%, transparent);
-  transition: all 0.3s var(--pop);
+  transition:
+    background-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
 }
 
 .progress .passed {
@@ -86,6 +88,11 @@
   display: grid;
   gap: 8px;
   margin-top: 14px;
+}
+
+/* The wrapper carries the enter/exit fade; the alert itself keeps its ring. */
+.alertSlot {
+  animation: enterRise var(--dur-enter) var(--ease-out);
 }
 
 .alert {
@@ -112,6 +119,13 @@
   background: rgba(255, 255, 255, 0.22);
   font-weight: var(--fw-bold);
   white-space: nowrap;
+  transition:
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.alert button:active {
+  transform: scale(0.97);
 }
 
 @keyframes ring {
@@ -128,6 +142,10 @@
   scrollbar-width: none;
 }
 
+.chips > li {
+  animation: enterRise var(--dur-enter) var(--ease-out);
+}
+
 .chips button {
   display: inline-flex;
   align-items: center;
@@ -140,6 +158,13 @@
   font-weight: var(--fw-bold);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  transition:
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+
+.chips button:active {
+  transform: scale(0.97);
 }
 
 .main {
@@ -160,6 +185,70 @@
 
 .main > :last-child {
   margin-bottom: auto;
+}
+
+/* Step crossfade: the outgoing step leaves the layout (absolute, centred on the
+   same point) so the block never changes height mid-fade and the text does not
+   jump. Entering steps rise when moving forward and fall when moving back. */
+.stack {
+  display: grid;
+  position: relative;
+}
+
+.step {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stepNext {
+  animation: enterRise var(--dur-enter) var(--ease-out);
+}
+
+.stepPrev {
+  animation: enterFall var(--dur-enter) var(--ease-out);
+}
+
+/* Shared exit used by steps, alerts and chips. */
+.leaving {
+  animation: fadeOut var(--dur-exit) var(--ease-in) forwards;
+  pointer-events: none;
+}
+
+.step.leaving {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+@keyframes enterRise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift));
+  }
+}
+
+@keyframes enterFall {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--shift) * -1));
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Same for the alert wrappers and timer chips. */
+.alertSlot.leaving,
+.chips > li.leaving {
+  animation: fadeOut var(--dur-exit) var(--ease-in) forwards;
+  pointer-events: none;
 }
 
 .group {
@@ -200,6 +289,22 @@
   font-size: 19px;
   box-shadow: 0 5px 0 rgba(59, 34, 24, 0.15);
   font-variant-numeric: tabular-nums;
+  /* No mount animation here: this control is in the page at cook entry, so a
+     fade would be captured mid-opacity by the route view transition. */
+  transition:
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+button.timer:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(59, 34, 24, 0.15);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
 }
 
 .timer svg {
@@ -212,6 +317,8 @@
   background: var(--tomato-fill);
   color: var(--on-tomato);
   font-size: 26px;
+  /* Timers are not persisted, so the clock only ever mounts from a tap. */
+  animation: fadeIn var(--dur) var(--ease);
 }
 
 .timer.running svg {
@@ -234,6 +341,11 @@
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35);
 }
 
+/* Keep the cocoa edge on press; the shared primary edge would flash tomato. */
+.cook .next:active:not(:disabled) {
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
 .cook .foot button:not(.next) {
   color: var(--ink);
 }
@@ -248,6 +360,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  animation: fadeIn var(--dur) var(--ease);
 }
 
 .ingList > li {
@@ -284,6 +397,11 @@
   justify-content: center;
   text-align: center;
   gap: 16px;
+}
+
+/* Fade the content in, not the root: its full-viewport background stays put. */
+.done > * {
+  animation: fadeIn var(--dur-enter) var(--ease-out);
 }
 
 .doneTitle {
@@ -355,3 +473,47 @@
 .doneActions button {
   width: 100%;
 }
+
+/* The placeholder is an overlay: it fades out over the loaded screen so loading
+   crossfades into content instead of cutting, and never blocks a tap. */
+.skeletonShell {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.skeletonShell.leaving {
+  animation: skeletonOut var(--dur-exit) var(--ease-in) forwards;
+}
+
+.skeletonShell .cook {
+  height: 100%;
+}
+
+@keyframes skeletonOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Placeholder pieces that mirror the loaded header and centred step type. */
+.skTitle {
+  align-items: center;
+  gap: 6px;
+}
+
+.skBar {
+  flex: 1;
+  min-width: 0;
+}
+
+.skText {
+  display: grid;
+  gap: 0.48em;
+  justify-items: start;
+  font-size: var(--fs-cook);
+  line-height: 1.1;
+}
+

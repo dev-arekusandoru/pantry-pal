@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { AlertDialog, Checkbox, Collapsible, Label, Progress } from "radix-ui";
-import { useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Button, Card, Emoji, EmptyState, ErrorState, Fab, Icon, IconButton, PageHeader, Sheet, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
 import { aisleLabel, uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
 import { DoneSheet } from "./DoneSheet";
@@ -38,6 +38,12 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
     [detail.data],
   );
 
+  // One-way latch: did this screen ever show its skeleton? Content that replaces
+  // a skeleton fades in; a first paint that already has data is left to the
+  // route transition, so the two never fade the same frame.
+  const sawLoading = useRef(false);
+  if (!detail.data) sawLoading.current = true;
+
   if (detail.error && !detail.data) {
     return (
       <>
@@ -68,25 +74,27 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
     return (
       <>
         <PageHeader title="Shopping" sub={current.title} />
-        {switcher}
-        <EmptyState
-          emoji="1F389"
-          title="Shopping done!"
-          action={
-            <>
-              <Link to="/pantry" className={buttonClass({ variant: "primary", size: "lg" })}>
-                See the pantry
-              </Link>
-              <Button variant="ghost" onClick={onClose}>
-                Close this list
-              </Button>
-            </>
-          }
-        >
-          {counts.checked === 0
-            ? "That's the trip wrapped up."
-            : `${counts.checked} ${counts.checked === 1 ? "thing" : "things"} went into your pantry.`}
-        </EmptyState>
+        <div className={sawLoading.current ? styles.enter : undefined}>
+          {switcher}
+          <EmptyState
+            emoji="1F389"
+            title="Shopping done!"
+            action={
+              <>
+                <Link to="/pantry" className={buttonClass({ variant: "primary", size: "lg" })}>
+                  See the pantry
+                </Link>
+                <Button variant="ghost" onClick={onClose}>
+                  Close this list
+                </Button>
+              </>
+            }
+          >
+            {counts.checked === 0
+              ? "That's the trip wrapped up."
+              : `${counts.checked} ${counts.checked === 1 ? "thing" : "things"} went into your pantry.`}
+          </EmptyState>
+        </div>
       </>
     );
   }
@@ -132,73 +140,79 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         sub={counts.total === 0 ? current.title : counts.remaining === 0 ? "All in the basket" : `${counts.remaining} to go`}
         aside={
           counts.total > 0 && (
-            <div className={styles.count}>
+            <div className={cx(styles.count, sawLoading.current && styles.countIn)}>
               <span className={styles.countN}>{counts.checked}</span>
               <span className={styles.countOf}>of {counts.total}</span>
             </div>
           )
         }
       />
-      {switcher}
+      <div className={sawLoading.current ? styles.enter : undefined}>
+        {switcher}
 
-      {counts.total > 0 && (
-        <Progress.Root className={styles.meter} value={pct} aria-label="Shopping progress">
-          <Progress.Indicator className={styles.meterFill} style={{ width: `${pct}%` }} />
-        </Progress.Root>
-      )}
+        {counts.total > 0 && (
+          <Progress.Root className={styles.meter} value={pct} aria-label="Shopping progress">
+            {/* scaleX instead of width: the fill never touches layout, so the meter cannot jitter. */}
+            <Progress.Indicator className={styles.meterFill} style={{ "--pct": pct / 100 } as CSSProperties} />
+          </Progress.Root>
+        )}
 
-      {current.stale && current.mealPlanId !== null && (
-        <Card className={styles.stale} role="status">
-          <span className={styles.staleText}>
-            <b>Your plan changed.</b> Update the list to match. Things you added or checked off stay.
-          </span>
-          <Button variant="primary" icon={<Icon name="refresh" />} loading={regenerate.isPending} onClick={update}>
-            Update the list
-          </Button>
-        </Card>
-      )}
+        {current.stale && current.mealPlanId !== null && (
+          <Card className={styles.stale} role="status">
+            <span className={styles.staleText}>
+              <b>Your plan changed.</b> Update the list to match. Things you added or checked off stay.
+            </span>
+            <Button variant="primary" icon={<Icon name="refresh" />} loading={regenerate.isPending} onClick={update}>
+              Update the list
+            </Button>
+          </Card>
+        )}
 
-      {counts.total === 0 ? (
-        <EmptyState emoji="1F9FA" title="Nothing on this list" className={styles.screen}>
-          Add what you need with the plus button.
-        </EmptyState>
-      ) : (
-        <div className={styles.aisles}>
-          {groups.map((g) => {
-            const left = g.items.filter((i) => i.checkedAt === null).length;
-            const label = aisleLabel(g.category);
-            return (
-              <Collapsible.Root key={g.category} className={styles.aisle} defaultOpen>
-                <h2 className={styles.aisleName}>
-                  <Collapsible.Trigger className={styles.aisleTrigger}>
-                    <span>{label}</span>
-                    <small>{left > 0 ? `${left} left` : "all in the basket"}</small>
-                  </Collapsible.Trigger>
-                </h2>
-                <Collapsible.Content>
-                  <ul className={styles.items}>
-                    {uncheckedFirst(g.items).map((item) => (
-                      <ItemRow key={item.id} item={item} onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })} />
-                    ))}
-                  </ul>
-                </Collapsible.Content>
-              </Collapsible.Root>
-            );
-          })}
-        </div>
-      )}
+        {counts.total === 0 ? (
+          <EmptyState emoji="1F9FA" title="Nothing on this list" className={styles.screen}>
+            Add what you need with the plus button.
+          </EmptyState>
+        ) : (
+          <div className={styles.aisles}>
+            {groups.map((g) => {
+              const left = g.items.filter((i) => i.checkedAt === null).length;
+              const label = aisleLabel(g.category);
+              return (
+                <Collapsible.Root key={g.category} className={styles.aisle} defaultOpen>
+                  <h2 className={styles.aisleName}>
+                    <Collapsible.Trigger className={styles.aisleTrigger}>
+                      <span>{label}</span>
+                      <span className={styles.aisleMeta}>
+                        <small>{left > 0 ? `${left} left` : "all in the basket"}</small>
+                        <Icon name="back" className={styles.aisleChev} />
+                      </span>
+                    </Collapsible.Trigger>
+                  </h2>
+                  <Collapsible.Content className={styles.aisleContent}>
+                    <ul className={styles.items}>
+                      {uncheckedFirst(g.items).map((item) => (
+                        <ItemRow key={item.id} item={item} onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })} />
+                      ))}
+                    </ul>
+                  </Collapsible.Content>
+                </Collapsible.Root>
+              );
+            })}
+          </div>
+        )}
 
-      {counts.total > 0 && (
-        <div className={cx(styles.finish, styles.screen)}>
-          <Button variant="primary" size="lg" icon={<Icon name="check" />} onClick={() => setDoneOpen(true)}>
-            Done shopping
-          </Button>
-          <p>Checked items go into the pantry.</p>
-          <Button variant="secondary" icon={<Icon name="trash" />} className={styles.clear} onClick={() => setClearOpen(true)}>
-            Clear list
-          </Button>
-        </div>
-      )}
+        {counts.total > 0 && (
+          <div className={cx(styles.finish, styles.screen)}>
+            <Button variant="primary" size="lg" icon={<Icon name="check" />} onClick={() => setDoneOpen(true)}>
+              Done shopping
+            </Button>
+            <p>Checked items go into the pantry.</p>
+            <Button variant="secondary" icon={<Icon name="trash" />} className={styles.clear} onClick={() => setClearOpen(true)}>
+              Clear list
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Fab label="Add an item" showLabel onClick={() => setAddOpen(true)} />
 

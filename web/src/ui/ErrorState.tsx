@@ -2,6 +2,7 @@ import { useState } from "react";
 import { probeServer } from "../api/connection";
 import { errorMessage, isUnreachable } from "../api/errors";
 import { Button } from "./Button";
+import { isViewTransitionActive } from "./motion";
 import styles from "./ErrorState.module.css";
 import { cx } from "./cx";
 import { Icon } from "./icons";
@@ -20,6 +21,8 @@ export interface ErrorStateProps {
 export function ErrorState({ error, variant, title, onRetry, className }: ErrorStateProps) {
   const unreachable = (variant ?? (isUnreachable(error) ? "unreachable" : "generic")) === "unreachable";
   const [retrying, setRetrying] = useState(false);
+  // Skip the mount fade when the router's View Transition is capturing this mount.
+  const [animate] = useState(() => !isViewTransitionActive());
 
   async function retry() {
     setRetrying(true);
@@ -32,7 +35,7 @@ export function ErrorState({ error, variant, title, onRetry, className }: ErrorS
   }
 
   return (
-    <div className={cx(styles.root, className)} role="alert">
+    <div className={cx(styles.root, animate && styles.enter, className)} role="alert">
       <span className={styles.icon} aria-hidden="true">
         <Icon name={unreachable ? "offline" : "alert"} />
       </span>

@@ -15,5 +15,11 @@ export const shopRoute = createRoute({
 function ShopPage() {
   const { list } = shopRoute.useSearch();
   const navigate = shopRoute.useNavigate();
-  return <ShopScreen listId={list} onSelectList={(id) => void navigate({ search: id === undefined ? {} : { list: id }, replace: true })} />;
+  // Same page, new search: keep the scroll position and skip the page crossfade.
+  return (
+    <ShopScreen
+      listId={list}
+      onSelectList={(id) => void navigate({ search: id === undefined ? {} : { list: id }, replace: true, resetScroll: false, viewTransition: false })}
+    />
+  );
 }

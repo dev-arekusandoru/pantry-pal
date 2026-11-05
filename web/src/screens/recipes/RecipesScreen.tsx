@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { VisuallyHidden } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, PageHeader, Pill, SearchInput, SegmentedControl, Skeleton, type SegmentOption } from "@/ui";
+import { Button, EmptyState, ErrorState, Icon, PageHeader, Pill, SearchInput, SegmentedControl, Skeleton, cx, type SegmentOption } from "@/ui";
 import { formatMinutes, type MealType } from "../recipe/lib";
 import { useSetRecipeStatus } from "../recipe/queries";
 import { RecipePhoto } from "../recipe/RecipePhoto";
@@ -52,6 +52,20 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
   const items = recipes.data;
   const filtered = meal !== "all" || query.trim() !== "";
 
+  // A route transition snapshots this screen right after commit, so a cached
+  // mount must be still. Animate only cards that replace the skeleton, or that
+  // arrive after an in-place filter change (those skip the page transition).
+  const [pendingAtMount] = useState(recipes.isPending);
+  const filterKey = `${view}|${meal}|${query}`;
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  const [filtersChanged, setFiltersChanged] = useState(false);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    setFiltersChanged(true);
+  }
+  const animateCards =
+    (pendingAtMount && !recipes.isPending) || (filtersChanged && !recipes.isPlaceholderData);
+
   return (
     <div>
       <PageHeader
@@ -84,7 +98,14 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
         <div className={styles.grid} role="status">
           <VisuallyHidden.Root>Loading recipes</VisuallyHidden.Root>
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} height={230} radius={30} />
+            <div key={i} className={styles.cardSkeleton}>
+              <Skeleton className={styles.skeletonPhoto} height="auto" radius={24} />
+              <div className={styles.skeletonBody}>
+                <Skeleton height={16} width="85%" />
+                <Skeleton height={16} width="60%" />
+                <Skeleton height={13} width="45%" />
+              </div>
+            </div>
           ))}
         </div>
       ) : recipes.isError && !items ? (
@@ -105,7 +126,18 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
           {items?.map((r, i) => {
             const time = formatMinutes(r.totalMinutes ?? (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0));
             return (
-              <li key={r.id} className={styles.card} style={{ "--i": i } as React.CSSProperties}>
+              <li
+                key={r.id}
+                className={cx(styles.card, animateCards && styles.cardEnter)}
+                style={
+                  animateCards
+                    ? ({
+                        animationDelay: `${Math.min(i, 3) * 30}ms`,
+                        animationFillMode: "backwards",
+                      } as React.CSSProperties)
+                    : undefined
+                }
+              >
                 <Link to="/recipes/$slug" params={{ slug: r.slug }} className={styles.link}>
                   <RecipePhoto imageUrl={r.imageUrl} mealTypes={r.mealTypes as MealType[]} className={styles.photo} />
                   <div className={styles.body}>

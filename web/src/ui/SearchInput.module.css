@@ -25,11 +25,20 @@
   padding: 0 22px 0 50px;
   -webkit-appearance: none;
   appearance: none;
+  transition:
+    box-shadow var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
 }
 
 .root input:focus {
   outline: none;
   box-shadow: inset 0 0 0 3px var(--blue);
+}
+
+@media (hover: hover) {
+  .root input:hover:not(:focus) {
+    background: color-mix(in srgb, var(--ink) 3%, var(--card));
+  }
 }
 
 .root input::placeholder {

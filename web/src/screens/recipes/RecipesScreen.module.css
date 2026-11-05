@@ -22,6 +22,48 @@
   list-style: none;
 }
 
+/* Applied only when cards replace the skeleton or a filter changes in place.
+   A cached mount (captured by the page View Transition) stays still. */
+.cardEnter {
+  animation: card-enter var(--dur-enter) var(--ease-out);
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardEnter {
+    animation: none;
+  }
+}
+
+.cardSkeleton {
+  background: var(--card);
+  border-radius: 30px;
+  padding: 8px 8px 14px;
+  box-shadow: var(--shadow);
+}
+
+.skeletonPhoto {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 24px;
+}
+
+.skeletonBody {
+  display: grid;
+  gap: 6px;
+  padding: 10px 8px 0;
+}
+
+.skeletonBody > :nth-child(2) {
+  margin-bottom: 6px;
+}
+
 .link {
   display: block;
   height: 100%;
@@ -30,15 +72,12 @@
   padding: 8px 8px 14px;
   box-shadow: var(--shadow);
   text-decoration: none;
-  transition: transform var(--dur) var(--pop);
+  transition: transform var(--dur-fast) var(--ease);
 }
 
 @media (hover: hover) {
   .link:hover {
-    transform: rotate(-1.2deg) translateY(-2px);
-  }
-  .card:nth-child(even) .link:hover {
-    transform: rotate(1.2deg) translateY(-2px);
+    transform: translateY(-1px);
   }
 }
 

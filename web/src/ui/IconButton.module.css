@@ -8,7 +8,11 @@
   background: var(--card);
   color: var(--ink);
   box-shadow: var(--shadow);
-  transition: transform var(--dur-fast) var(--pop);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
 }
 
 .btn svg {
@@ -17,7 +21,7 @@
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.9);
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -27,4 +31,14 @@
 .plain {
   background: transparent;
   box-shadow: none;
+}
+
+@media (hover: hover) {
+  .btn:not(:disabled):hover:not(:active) {
+    transform: translateY(-1px);
+  }
+  .plain:not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+    transform: none;
+  }
 }

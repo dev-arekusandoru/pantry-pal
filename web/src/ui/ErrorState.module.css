@@ -7,6 +7,11 @@
   gap: 10px;
 }
 
+/* Added on mount outside a View Transition; see isViewTransitionActive(). */
+.enter {
+  animation: error-in var(--dur-enter) var(--ease-out);
+}
+
 .icon {
   display: grid;
   place-items: center;
@@ -34,4 +39,11 @@
   font-weight: var(--fw-semibold);
   max-width: 38ch;
   margin-bottom: 10px;
+}
+
+@keyframes error-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--shift) / 2));
+  }
 }

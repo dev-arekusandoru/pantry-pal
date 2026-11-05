@@ -54,6 +54,11 @@
   --dur-fast: 0.15s;
   --dur: 0.25s;
   --dur-slow: 0.45s;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* entrances: fast start, soft landing */
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0); /* exits */
+  --dur-enter: 0.28s;
+  --dur-exit: 0.18s; /* exits are always quicker than entrances */
+  --shift: 8px; /* max translate distance for any enter/exit; never larger */
 
   /* ----- layout ----- */
   --nav-h: 76px;

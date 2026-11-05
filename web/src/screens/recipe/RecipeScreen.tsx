@@ -1,7 +1,7 @@
 import { Link, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { VisuallyHidden } from "radix-ui";
-import { useMemo, useState } from "react";
-import { Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, SegmentedControl, Skeleton, Stepper, buttonClass, ingredientEmoji, type SegmentOption } from "@/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, SegmentedControl, Skeleton, Stepper, buttonClass, cx, ingredientEmoji, type SegmentOption } from "@/ui";
 import { formatDuration, stepSeconds } from "./duration";
 import { formatAmount, formatDay, formatMinutes, formatNumber, haveIngredient, type Have, type MealType } from "./lib";
 import { RecipePhoto } from "./RecipePhoto";
@@ -65,6 +65,21 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
   // Saved cook-mode position for this recipe; shown as a resume affordance.
   const progress = useMemo(() => readCookProgress(slug), [slug]);
 
+  // Only content that actually replaces a skeleton animates in. Mounting with
+  // cached data stays still (the route transition owns that), and a ghost copy
+  // of the skeleton fades out underneath the incoming content.
+  const [pendingAtMount] = useState(recipe.isPending);
+  const [ghostGone, setGhostGone] = useState(false);
+  const startAt = useRef(0);
+  const entering = pendingAtMount && !recipe.isPending;
+  const showGhost = entering && !ghostGone;
+  useEffect(() => {
+    if (!showGhost) return;
+    // A touch longer than --dur-exit; the ghost is aria-hidden and never catches clicks.
+    const t = setTimeout(() => setGhostGone(true), 240);
+    return () => clearTimeout(t);
+  }, [showGhost]);
+
   const rows = useMemo<Row[]>(() => {
     if (!r) return [];
     const scaledById = new Map(scaled.data?.items.map((s) => [s.recipeIngredientId, s]));
@@ -118,62 +133,65 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
   const low = rows.filter((x) => !x.optional && x.have === "some");
 
   return (
-    <article className={styles.page}>
+    <article className={cx(styles.page, entering && styles.enter)}>
+      {showGhost && <RecipeSkeleton ghost />}
       <div className={styles.hero}>
         <RecipePhoto imageUrl={r.imageUrl} mealTypes={r.mealTypes as MealType[]} className={styles.photo} priority />
         <IconButton className={styles.back} label="Back" icon={<Icon name="back" />} onClick={goBack} />
       </div>
 
       <div className={styles.body}>
-        <h1 className={styles.title}>{r.title}</h1>
-        <p className={styles.meta}>
-          {time && (
+        <div className={styles.head}>
+          <h1 className={styles.title}>{r.title}</h1>
+          <p className={styles.meta}>
+            {time && (
+              <span>
+                <Icon name="clock" /> {time}
+              </span>
+            )}
             <span>
-              <Icon name="clock" /> {time}
+              <Icon name="people" /> Makes {formatNumber(r.servings)}
             </span>
+            {r.cuisine && <span>{r.cuisine}</span>}
+          </p>
+          {r.description && <p className={styles.desc}>{r.description}</p>}
+          {r.sourceUrl !== null && /^https?:\/\//i.test(r.sourceUrl) && (
+            <a
+              className={styles.source}
+              href={r.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon name="recipes" size={17} />
+              View original recipe{r.sourceName ? ` on ${r.sourceName}` : ""}
+              <VisuallyHidden.Root> (opens in a new tab)</VisuallyHidden.Root>
+            </a>
           )}
-          <span>
-            <Icon name="people" /> Makes {formatNumber(r.servings)}
-          </span>
-          {r.cuisine && <span>{r.cuisine}</span>}
-        </p>
-        {r.description && <p className={styles.desc}>{r.description}</p>}
-        {r.sourceUrl !== null && /^https?:\/\//i.test(r.sourceUrl) && (
-          <a
-            className={styles.source}
-            href={r.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Icon name="recipes" size={17} />
-            View original recipe{r.sourceName ? ` on ${r.sourceName}` : ""}
-            <VisuallyHidden.Root> (opens in a new tab)</VisuallyHidden.Root>
-          </a>
-        )}
 
-        <div className={styles.badges}>
-          {plannedCook && (
-            <Pill tone="butter" icon={<Icon name="week" />}>
-              Planned for {formatDay(plannedCook.cookDate)}
-            </Pill>
-          )}
-          {r.tags.map((t) => (
-            <Pill key={t}>{t}</Pill>
-          ))}
-        </div>
-
-        {r.status !== "archived" && (
-          <div className={styles.status}>
-            <SegmentedControl
-              label="Recipe status"
-              options={STATUS_OPTIONS}
-              value={r.status}
-              onChange={(status) => {
-                if (status !== r.status) setStatus.mutate({ slug: r.slug, status });
-              }}
-            />
+          <div className={styles.badges}>
+            {plannedCook && (
+              <Pill tone="butter" icon={<Icon name="week" />}>
+                Planned for {formatDay(plannedCook.cookDate)}
+              </Pill>
+            )}
+            {r.tags.map((t) => (
+              <Pill key={t}>{t}</Pill>
+            ))}
           </div>
-        )}
+
+          {r.status !== "archived" && (
+            <div className={styles.status}>
+              <SegmentedControl
+                label="Recipe status"
+                options={STATUS_OPTIONS}
+                value={r.status}
+                onChange={(status) => {
+                  if (status !== r.status) setStatus.mutate({ slug: r.slug, status });
+                }}
+              />
+            </div>
+          )}
+        </div>
 
         <section className={styles.ings} aria-labelledby="ings-h">
           <div className={styles.ingsHead}>
@@ -189,7 +207,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
             />
           </div>
 
-          {availability.data && (
+          {availability.data ? (
             <div className={styles.summary} data-state={missing.length + low.length === 0 ? "ok" : "need"}>
               <b>What am I missing?</b>
               {missing.length + low.length === 0 ? (
@@ -209,7 +227,13 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
                 </>
               )}
             </div>
-          )}
+          ) : availability.isPending ? (
+            // Reserve the block's space while pantry availability loads, so the
+            // ingredient list does not jump down when it arrives.
+            <div className={styles.summaryPlaceholder} aria-hidden="true">
+              <Skeleton height={76} radius={18} />
+            </div>
+          ) : null}
 
           <ul className={styles.ingList} aria-busy={scaled.isFetching || undefined}>
             {rows.map((row, i) => (
@@ -306,7 +330,14 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
             from: "recipe",
           }}
           className={buttonClass({ variant: "primary", size: "lg", className: styles.cta })}
-          aria-disabled={servings === undefined || undefined}
+          // The planned servings are still in flight; starting now would cook with the wrong scale.
+          disabled={servings === undefined}
+          onClick={(e) => {
+            // A double tap would push two identical history entries.
+            const now = Date.now();
+            if (now - startAt.current < 400) e.preventDefault();
+            else startAt.current = now;
+          }}
         >
           <Icon name="flame" />
           Start cooking
@@ -316,17 +347,44 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
   );
 }
 
-function RecipeSkeleton() {
+/**
+ * Placeholder laid out like the real page (hero aspect ratio, title, meta,
+ * ingredients card) so the swap does not jump. `ghost` is the fading copy left
+ * underneath the content during the crossfade.
+ */
+function RecipeSkeleton({ ghost = false }: { ghost?: boolean }) {
   return (
-    <div role="status" className={styles.page}>
-      <VisuallyHidden.Root>Loading recipe</VisuallyHidden.Root>
-      <Skeleton height={280} radius={34} />
+    <div
+      className={ghost ? cx(styles.page, styles.skeletonGhost) : styles.page}
+      role={ghost ? undefined : "status"}
+      aria-hidden={ghost || undefined}
+    >
+      {!ghost && <VisuallyHidden.Root>Loading recipe</VisuallyHidden.Root>}
+      <div className={styles.hero}>
+        <Skeleton className={styles.skeletonPhoto} height="auto" radius="var(--r-xl)" />
+        <Skeleton className={styles.skeletonBack} width={48} height={48} radius={999} />
+      </div>
       <div className={styles.body}>
-        <Skeleton height={44} width="70%" />
-        <div style={{ height: 12 }} />
-        <Skeleton height={20} width="50%" />
-        <div style={{ height: 24 }} />
-        <Skeleton height={320} radius={32} />
+        <div className={styles.skeletonHead}>
+          <Skeleton height="clamp(36px, 10vw, 54px)" width="72%" />
+          <Skeleton height={18} width="46%" />
+          <div className={styles.skeletonPills}>
+            <Skeleton height={26} width={92} radius={999} />
+            <Skeleton height={26} width={64} radius={999} />
+            <Skeleton height={26} width={78} radius={999} />
+          </div>
+          <Skeleton height={44} width="min(100%, 560px)" radius={999} />
+        </div>
+        <div className={styles.skeletonCard}>
+          <div className={styles.skeletonCardHead}>
+            <Skeleton height={26} width="42%" />
+            <Skeleton height={44} width={150} radius={999} />
+          </div>
+          <Skeleton height={76} radius={18} />
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} height={18} width={`${86 - i * 10}%`} />
+          ))}
+        </div>
       </div>
     </div>
   );

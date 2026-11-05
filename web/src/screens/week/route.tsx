@@ -21,7 +21,10 @@ function WeekPage() {
   return (
     <WeekScreen
       week={week}
-      onSelectWeek={(weekStart) => void navigate({ search: weekStart === null ? {} : { week: weekStart } })}
+      onSelectWeek={(weekStart) =>
+        // Same page, new search: keep the scroll position and skip the page crossfade.
+        void navigate({ search: weekStart === null ? {} : { week: weekStart }, resetScroll: false, viewTransition: false })
+      }
     />
   );
 }
