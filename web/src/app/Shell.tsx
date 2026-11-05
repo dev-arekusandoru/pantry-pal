@@ -1,5 +1,6 @@
+import type { CSSProperties } from "react";
 import { Link, Outlet, useMatches } from "@tanstack/react-router";
-import { Emoji, Icon, cx } from "../ui";
+import { Emoji, Icon, cx, emojiSrc } from "../ui";
 import styles from "./Shell.module.css";
 import { TABS, type TabId } from "./tabs";
 
@@ -17,8 +18,13 @@ function useChrome(): { tab: TabId; hideNavOnMobile: boolean } {
 
 export function Shell() {
   const { tab, hideNavOnMobile } = useChrome();
+  const sticker = TABS.find((t) => t.id === tab)!.sticker;
   return (
-    <div className={cx(styles.shell, hideNavOnMobile && styles.hideNavOnMobile)} data-tab={tab}>
+    <div
+      className={cx(styles.shell, hideNavOnMobile && styles.hideNavOnMobile)}
+      data-tab={tab}
+      style={{ "--tab-sticker": `url("${emojiSrc(sticker)}")` } as CSSProperties}
+    >
       <nav className={styles.nav} aria-label="Main">
         <div className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">

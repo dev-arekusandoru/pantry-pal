@@ -1,6 +1,6 @@
-# PantryPal web frontend: plan
+# PantryPal web frontend
 
-Status: direction chosen (**Glaze**, with dark mode). The Glaze design is implemented in
+Design direction: **Glaze**, with dark mode. It is implemented in
 `web/src/styles/tokens.css` and the screens under `web/src/screens/`.
 
 ## What it is for
@@ -30,7 +30,7 @@ Non-goals for v1: offline support, multi-user accounts, recipe editing forms, an
 | API client | `openapi-typescript` + `openapi-fetch` generated from `/openapi.json` | Types come from the Zod routes, so there is no hand-written client to drift |
 | Styling | Plain CSS with design tokens (CSS variables), CSS modules per component | Token-driven design, so the theme is a token file. Avoids a utility framework fighting a distinctive design |
 | Icons | [Phosphor](https://phosphoricons.com) (bold weight) for UI chrome, [OpenMoji](https://openmoji.org) color SVGs for food and stickers | One consistent, self-hosted set each; only the OpenMoji files actually used are bundled (CC BY-SA 4.0, attribution in Settings and README) |
-| Tests | Vitest + Testing Library, a few Playwright smoke flows | Shop check-off, pantry adjust, cook mode |
+| Tests | Vitest + Testing Library (jsdom) | Shop check-off, pantry adjust, cook mode; Playwright smoke flows are in the backlog |
 
 Layout in the repo: `web/` as a pnpm workspace package. `pnpm build` produces `web/dist`, which the
 server serves at `/` with an SPA fallback. The Docker image stays a single container. In dev, Vite
@@ -46,17 +46,13 @@ Development:
 - Screens live in `web/src/screens/<name>/`, shared primitives in `web/src/ui/`, tokens in
   `web/src/styles/tokens.css`.
 
-## Serving and auth (v1)
+## Serving and auth
 
-- The browser calls `/api/v1/*` same-origin, so no CORS.
-- **Auth is network access.** If you can reach the app, you are in. The household reaches it over the
-  tailnet via `tailscale serve --bg 8787` on the host, which gives an `https://<box>.<tailnet>.ts.net`
-  URL. HTTPS matters: the screen wake lock in cook mode only works in a secure context. Real web auth
-  is in `BACKLOG.md`.
-- **Server change:** opt-in `PANTRYPAL_TRUST_NETWORK=1`. When on, `/api/v1/*` requests without a bearer
-  token act as the instance's single household; a token, if sent, is still verified. Default off,
-  never applies to `/mcp`. Agents keep using tokens.
-- The app shows a clear "can't reach PantryPal" state instead of a login screen.
+The built app is static files served by the same Hono process at `/`; the browser calls
+`/api/v1/*` same-origin, so there is no CORS. Run it with `PANTRYPAL_TRUST_NETWORK=1` on a private
+network (the household uses `tailscale serve`) so the UI needs no login. Details, including the
+`503` before `household init` and why HTTPS matters for cook mode, are in
+[self-hosting.md](self-hosting.md#web-app-and-network-trust).
 
 ## Screens
 
@@ -112,9 +108,6 @@ Settings (v1): light/dark/system theme toggle, household name, and all three ser
   `POST /recipes/:slug/status` (which appends a status event) and invalidates the recipe queries, so
   the detail and every list refresh.
 
-Later: fuller plan editing (drag leftovers between days, change servings per slot), dietary rules
-screen, ingredient merge, mascot.
-
 ### Meal swapping (v1)
 
 The agent plans the week, so changing one night by hand has to be easy.
@@ -165,40 +158,6 @@ Implementation: the design is expressed as tokens (color, type scale, radius, sh
 light set and a dark set, so themes stay additive. Respect
 `prefers-reduced-motion`, keep visible focus rings, and keep contrast at WCAG AA in every theme.
 
-## Gaps this design found in the backend
-
-Status for the MVP:
-
-1. **Network-trust auth** (see above). In the MVP.
-2. **Step to ingredient links.** Deferred. Cook mode hides "you need" per step (word matching is wrong
-   for things like "beef" vs "beef broth") and shows the full ingredient list in a drawer. Later plan:
-   optional `recipe_step_ingredient` join table, per-step refs in recipe create/update and MCP, a
-   server-side whole-word suggester, hand-checked backfill of the seed recipes.
-3. **Recipe images.** Deferred. Seed images stay hotlinks; caching under `/media` is a later ticket.
-4. **Shopping "done" flow.** The existing API covers it: `check` records actual quantities and
-   `complete` writes purchases for checked items. The UI adds the review sheet with editable
-   quantities.
-5. **Today summary.** Composed client-side for now.
-6. **Meal swap endpoint.** In the MVP: `POST /plans/:id/swap` (slot id, recipe, scope
-   `this | with_leftovers`) in one transaction, plus a matching MCP tool. Shopping lists expose a
-   `stale` flag (set when the plan changes after the list was generated) for the regenerate banner.
-7. **Ad-hoc cooks.** In the MVP: `POST /cook-events` creates a cook outside any plan (the schema
-   already allows a null plan).
-8. **Expiry and "use soon".** Data exists (`expiry`, `shelfLifeDays`); a "use soon" strip is the
-   obvious first feature after v1.
-
-## Milestones
-
-1. **Foundation:** `web/` package, Vite + TanStack, generated API client, tokens + chosen theme,
-   app shell with nav, Docker/static serving, network-trust auth.
-2. **Shop and pantry:** the two most-used screens, with optimistic updates. Includes the Done
-   shopping review sheet.
-3. **Recipes:** box, detail with scaling, availability and source link.
-4. **Cook mode:** step view, timers, wake lock, finish flow.
-5. **Week:** current plan view, tonight card, prep nudges, meal swap sheet (needs the swap endpoint).
-6. **Polish:** empty and error states, loading skeletons, tablet and desktop layouts, accessibility
-   pass, Playwright smoke tests, README screenshots.
-
 ## Decisions made
 
 - Direction: Glaze. Dark mode: system plus manual toggle.
@@ -214,6 +173,3 @@ Status for the MVP:
   changes write through `POST /recipes/:slug/status` from the recipe page and the post-cook prompt.
 - No offline support; everything assumes a network connection.
 
-## Open questions
-
-None blocking.

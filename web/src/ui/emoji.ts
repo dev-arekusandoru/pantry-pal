@@ -5,7 +5,8 @@
  * files lets Vite hash and copy only the icons the UI renders. To add one, add
  * its hexcode below.
  *
- * OpenMoji is licensed CC BY-SA 4.0; see `assets/openmoji/LICENSE.txt`.
+ * OpenMoji is licensed CC BY-SA 4.0; see `public/openmoji/LICENSE.txt`
+ * (served with the built app at `/openmoji/LICENSE.txt`).
  */
 import e2699 from "openmoji/color/svg/2699.svg";
 import e26A0 from "openmoji/color/svg/26A0.svg";

@@ -5,8 +5,8 @@ cook events and shopping lists. One process serves a REST API at `/api/v1` and a
 `/mcp` (Streamable HTTP), both over the same service layer, both authenticated with bearer tokens.
 The database is a single SQLite file, so the whole system is a container plus a volume.
 
-PantryPal is designed to be driven by an AI agent (a weekly planning loop over MCP) and by a web
-frontend later, without either of them re-implementing food math.
+PantryPal is driven by an AI agent (a weekly planning loop over MCP) or by the bundled web app,
+without either surface re-implementing food math.
 
 ## Features
 
@@ -35,6 +35,9 @@ frontend later, without either of them re-implementing food math.
 - **MCP server.** Same operations as the REST API, shaped for agents (compact JSON with ids and
   labels), so a client can plan a week, buy, cook and update stock without any custom code.
 - **OpenAPI.** Generated from the Zod route definitions at `/openapi.json`.
+- **Web app.** Mobile-first UI served by the same process: week plan with meal swapping, shopping
+  check-off, pantry editing, recipes with scaling and cook mode. Built with React and Vite; see
+  [docs/FRONTEND.md](docs/FRONTEND.md).
 
 ## Quick start (Docker)
 
@@ -94,16 +97,9 @@ database file.
 
 ## Configuration
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `PANTRYPAL_DB_PATH` | `./data/pantrypal.db` (image: `/data/pantrypal.db`) | SQLite file; its directory is created on start and WAL mode is enabled |
-| `PORT` | `4787` (image: `8787`) | HTTP listen port |
-| `HOST` | `0.0.0.0` | HTTP bind address |
-| `PANTRYPAL_TRUST_NETWORK` | unset (off) | `1` or `true`: `/api/v1/*` requests without an `Authorization` header act as the instance's household (see [Authentication](#authentication)) |
-| `PANTRYPAL_WEB_DIR` | `web/dist` under the app root | Directory of the built web app served at `/`; when it has no `index.html` the server only serves the API |
-
-Pending migrations run automatically at startup and in every CLI command; there is no separate
-migrate step to remember.
+`PANTRYPAL_DB_PATH`, `PORT`, `HOST`, `PANTRYPAL_TRUST_NETWORK` and `PANTRYPAL_WEB_DIR` are
+documented in [docs/self-hosting.md](docs/self-hosting.md#environment-variables). Pending
+migrations run automatically at startup and in every CLI command; there is no separate migrate step.
 
 ## Authentication
 
@@ -195,5 +191,5 @@ MIT — see [LICENSE](LICENSE).
 
 Bundled assets: all emoji art is designed by [OpenMoji](https://openmoji.org) – the open-source
 emoji and icon project. License: CC BY-SA 4.0 (full text in
-[`web/src/assets/openmoji/LICENSE.txt`](web/src/assets/openmoji/LICENSE.txt)). UI icons are
+[`web/public/openmoji/LICENSE.txt`](web/public/openmoji/LICENSE.txt)). UI icons are
 [Phosphor](https://phosphoricons.com), licensed MIT.

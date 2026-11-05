@@ -5,7 +5,8 @@
  *   1. Theme-independent: type, radii, motion, layout.
  *   2. Color sets: light (default), dark (system preference or explicit).
  *   3. Per-tab colors: `data-tab="week|shop|pantry|recipes|settings"` on any
- *      ancestor sets --tab, --tab-s, --on-tab and --tab-sticker.
+ *      ancestor sets --tab, --tab-s and --on-tab. --tab-sticker (the header
+ *      corner art) is set inline by the shell from the imported OpenMoji SVG.
  *
  * Theme selection is the `data-theme` attribute on <html>: "light" | "dark" |
  * "system" (see src/app/theme.ts). "system" and "unset" follow the OS.
@@ -183,29 +184,24 @@
   --tab: var(--butter);
   --tab-s: var(--butter-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: url("../assets/openmoji/1F373.svg");
 }
 [data-tab="shop"] {
   --tab: var(--pistachio);
   --tab-s: var(--pistachio-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: url("../assets/openmoji/1F9FA.svg");
 }
 [data-tab="pantry"] {
   --tab: var(--gum);
   --tab-s: var(--gum-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: url("../assets/openmoji/1FAD9.svg");
 }
 [data-tab="recipes"] {
   --tab: var(--blue);
   --tab-s: var(--blue-s);
   --on-tab: var(--on-blue);
-  --tab-sticker: url("../assets/openmoji/1F4D6.svg");
 }
 [data-tab="settings"] {
   --tab: var(--peach);
   --tab-s: var(--peach-s);
   --on-tab: var(--ink-fixed);
-  --tab-sticker: url("../assets/openmoji/2699.svg");
 }
