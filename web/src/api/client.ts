@@ -21,6 +21,9 @@ const trackedFetch: typeof fetch = async (input, init) => {
     connection.markUnreachable();
     throw new NetworkError("Can't reach PantryPal");
   }
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("pantrypal:unauthorized"));
+  }
   connection.markReachable();
   return res;
 };

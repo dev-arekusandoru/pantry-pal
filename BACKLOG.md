@@ -1,23 +1,26 @@
 # Backlog (post-v1)
 
 ## Frontend
-- Web app on the REST API: pantry table + stock edits
-- Week plan view: drag leftovers between days, per-slot servings (basic meal swap is in v1; see [Meal plans](docs/use/meal-plans.md))
-- Recipe browser + cooking mode (step-by-step instructions, scaled ingredients, wake lock)
-- Shopping list mobile view (check off in store)
+- Fuller plan editing beyond the swap sheet: drag leftovers between days, per-slot servings
+- Step ↔ ingredient links in cook mode (needs the backend join table below)
+- Dietary rules screen
+- Ingredient merge UI
+- Cache recipe images under `/media` instead of hotlinking seed URLs
+- "Use soon" strip from `expiry` / `shelfLifeDays`
+- Mascot / illustrated character
+- Playwright smoke flows (shop check-off, pantry adjust, cook mode)
 
 ## Platform
-- Real web auth (login + session cookie, or OAuth); v1 frontend relies on Tailscale network access
 - OAuth 2.1 for remote MCP clients
 - Multiple households per instance (users, membership, token → household scoping)
 - Postgres support
 - Backups/export (JSON dump, markdown week export)
+- Optional `recipe_step_ingredient` join table, per-step refs in recipe create/update and MCP, a
+  server-side whole-word suggester, hand-checked backfill of the seed recipes
 
 ## Features
-- Mascot / illustrated character for the web app
 - Recipe URL import (schema.org/Recipe scraping)
 - Receipt/photo → pantry bulk import
-- Expiry dates and use-soon alerts
 - Analytics: what we actually eat, waste, cost per meal
 - Price tracking per ingredient/store
 - Purchase-friendly units on shopping lists: tiny converted amounts show as "0.02 cup" sugar or "0.13 cup" flour; show them in the recipe unit or round to package sizes

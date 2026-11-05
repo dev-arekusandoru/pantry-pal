@@ -17,6 +17,7 @@ flowchart LR
 | --- | --- |
 | `web/src/` | React web app, routes, screens, and shared UI |
 | `src/api/` | Hono routes, OpenAPI, and static file serving |
+| `src/auth/` | Bearer tokens, browser sessions, and origin checks |
 | `src/mcp/` | MCP transport and tool handlers |
 | `src/services/` | Food calculations and data changes |
 | `src/schemas/` | Zod input and output schemas |

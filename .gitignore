@@ -22,5 +22,4 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# OpenMoji SVGs come from the `openmoji` devDependency; only the license is tracked.
-web/src/assets/openmoji/*.svg
+*.tar.gz

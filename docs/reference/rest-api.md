@@ -9,6 +9,7 @@ The running server's `/openapi.json` describes every endpoint, input, and respon
 | --- | --- |
 | Docker Compose | `http://localhost:8787/api/v1` |
 | Source checkout | `http://localhost:4787/api/v1` |
+| Cloudflare Tunnel | `https://pantry.example.com/api/v1` |
 
 Send a bearer token:
 
@@ -17,9 +18,47 @@ curl -sS http://localhost:8787/api/v1/household \
   -H "Authorization: Bearer $PANTRYPAL_TOKEN"
 ```
 
-See [CLI commands](cli.md) to create a token. On a trusted network, the operator
-can allow requests without a token. See [Access and security](../host/security.md).
-A token that is sent is still checked.
+See [CLI commands](cli.md) to create a token.
+
+## Authentication
+
+`/api/v1` checks credentials in this order:
+
+1. If an `Authorization` header is present, it must be a valid bearer token. An
+   invalid token returns `401`, even if the request also has a session cookie.
+2. With `PANTRYPAL_PASSWORD` configured, a valid browser session cookie
+   authenticates the request. Unsafe methods must also pass the same-origin
+   check.
+3. Without a password, `PANTRYPAL_TRUST_NETWORK=1` lets a request without an
+   authorization header act as the household.
+4. Otherwise the request returns `401`.
+
+Password mode disables anonymous network trust. `/mcp` always needs a bearer
+token; it never accepts a session cookie or network trust. See
+[Access and security](../host/security.md).
+
+### Browser session endpoints
+
+These paths are outside `/api/v1`. They are public, but login and logout require
+the app's own origin.
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /auth/session` | `{"enabled": boolean, "authenticated": boolean}`. Cache-Control is `no-store`. |
+| `POST /auth/login` | JSON body `{"password": "…"}`. `204` and a session cookie on success; `401` on a wrong password; `403` on a cross-origin request; `404` when no password is configured; `429` with `Retry-After` when throttled. |
+| `POST /auth/logout` | `204`; clears the session cookie. |
+
+The cookie is `__Host-pantrypal_session`, valid for 30 days, `HttpOnly`,
+`Secure`, `SameSite=Lax`, and scoped to `/`. Rotating `PANTRYPAL_PASSWORD`
+invalidates every session. Login accepts JSON only (`415` otherwise), limits the
+body to 4 KiB (`413`), and allows 10 failed attempts per minute per socket peer
+plus 40 per minute in total; behind a proxy, clients may share the per-peer
+limit. Safe methods need no origin check; unsafe cookie-authenticated requests
+need an `Origin` equal to `Host`, over HTTPS except for loopback development.
+`X-Forwarded-Host` is ignored and `Sec-Fetch-Site: cross-site` is rejected.
+
+A valid browser session when no household exists returns `503` with code
+`unavailable`. Create one with `household init`.
 
 `GET /health` and `GET /openapi.json` are public. `/api/v1/health` uses API auth.
 
@@ -65,11 +104,14 @@ Write and delete responses vary. Use the response schema for the endpoint.
 
 | Code | HTTP status | Meaning |
 | --- | --- | --- |
-| `validation` | 400 | Invalid body, path, or query |
-| `unauthorized` | 401 | Missing, invalid, or revoked token |
-| `not_found` | 404 | No matching record in this household |
+| `validation` | 400, 413 | Invalid body, path, or query; login body over 4 KiB |
+| `unauthorized` | 401 | Missing, invalid, or revoked token; missing or invalid browser session; wrong password |
+| `forbidden` | 403 | Cross-origin login, logout, or unsafe cookie request |
+| `not_found` | 404 | No matching record in this household, or browser login is not configured |
 | `conflict` | 409 | A conflict with current data |
+| `unsupported_media_type` | 415 | Login body is not `application/json` |
 | `unprocessable` | 422 | Valid input that cannot be applied |
+| `rate_limited` | 429 | Too many failed logins; retry after `Retry-After` seconds |
 | `unavailable` | 503 | A required resource is not ready, such as the household |
 | `internal` | 500 | Unexpected server error |
 

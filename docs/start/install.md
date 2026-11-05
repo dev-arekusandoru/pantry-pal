@@ -10,7 +10,7 @@ Use Docker Compose for a normal install. You can also run the built app with Nod
 - Node.js 22 or later and pnpm, for a source install.
 - Git.
 - A local directory for the database.
-- A VPN, tunnel, or reverse proxy if other devices will connect. See [Access and security](../host/security.md).
+- A VPN, tunnel, or reverse proxy if other devices will connect. For internet access, use the [Cloudflare Tunnel stack](../host/tunnel.md).
 
 ## Install with Docker Compose
 
@@ -38,9 +38,13 @@ Compose loads `docker-compose.yml` and `docker-compose.override.yml` together. T
 - Publishes the port on `127.0.0.1` only.
 - Sets `PANTRYPAL_TRUST_NETWORK=1`, so the web app can call the API without a token.
 
-The override replaces the base port list. It does not publish both a public and a loopback binding.
+The default stack has no browser password. It relies on network trust and a loopback port. The override replaces the base port list; it does not publish both a public and a loopback binding.
 
 Open [http://127.0.0.1:8787](http://127.0.0.1:8787). Only the host and local proxies can reach this port. If Docker runs on another machine, use an SSH tunnel or VPN; the loopback port is not open to your laptop. Do not put a public proxy in front of this mode without authentication. See [Access and security](../host/security.md).
+
+### Public access
+
+Use the standalone tunnel stack to publish PantryPal on the internet. It adds a shared browser password and a Cloudflare Tunnel, publishes no host ports, and requires both secrets. It replaces the default stack; do not run both against the same database. See [Public access with Cloudflare Tunnel](../host/tunnel.md).
 
 ### Run the base file only
 
@@ -61,6 +65,8 @@ docker compose exec pantrypal node dist/cli.js token create --name laptop
 
 The token is printed once. Copy it now. To load the sample household instead, skip the `household init` command and follow [Example data](example-data.md). The seed creates its own household.
 
+If the instance has `PANTRYPAL_PASSWORD` set, the web app asks for that shared password. The token is still needed for API and MCP clients.
+
 ### Check the install
 
 Set `PANTRYPAL_TOKEN` to the value printed by `token create`, then run:
@@ -71,6 +77,14 @@ curl -s -H "Authorization: Bearer $PANTRYPAL_TOKEN" http://127.0.0.1:8787/api/v1
 ```
 
 The health check needs no token. The household request must return the household JSON. Open the web app at [http://127.0.0.1:8787](http://127.0.0.1:8787).
+
+For a password-protected instance, check the mode and session state:
+
+```sh
+curl -s http://127.0.0.1:8787/auth/session
+```
+
+It returns `{"enabled":true,"authenticated":false}` before login.
 
 Follow the logs with:
 
@@ -104,6 +118,7 @@ Keep the process under systemd or another supervisor. The server handles `SIGTER
 
 - [Load example data](example-data.md)
 - [Connect an AI assistant](../connect/setup.md)
+- [Public access with Cloudflare Tunnel](../host/tunnel.md)
 - [Configuration](../host/configuration.md)
 - [Access and security](../host/security.md)
 - [Updates](../host/updates.md)

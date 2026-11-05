@@ -6,7 +6,7 @@ The Compose stack builds a local image from the Dockerfile. It does not pull a p
 
 ## Before you start
 
-Run the commands from the repository root. If you use the base file only, add `-f docker-compose.yml` to every Compose command.
+Run the commands from the repository root. They target the default stack. If you use the base file only, add `-f docker-compose.yml` to every Compose command. If you use the Cloudflare Tunnel stack, use `-f docker-compose.tunnel.yml` instead. Do not combine the tunnel file with the override.
 
 ```sh
 git rev-parse HEAD
@@ -24,6 +24,14 @@ Read the release notes for the version you install. Some releases may need a man
 git pull --ff-only
 docker compose up -d --build
 docker compose logs -f pantrypal
+```
+
+For the tunnel stack, select its Compose file:
+
+```sh
+git pull --ff-only
+docker compose -f docker-compose.tunnel.yml up -d --build
+docker compose -f docker-compose.tunnel.yml logs -f pantrypal
 ```
 
 Compose rebuilds the server and web app, then replaces the container. The data directory stays in place.
@@ -48,6 +56,9 @@ If the server exits during startup, read the logs. A failed migration stops the 
 If the update fails, stop the service and decide whether migrations ran.
 
 If migrations ran, restore the pre-update backup and run the previous code:
+
+For the tunnel stack, select `docker-compose.tunnel.yml` in every Compose command
+below.
 
 ```sh
 docker compose stop pantrypal

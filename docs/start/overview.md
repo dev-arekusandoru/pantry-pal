@@ -21,9 +21,13 @@ The guides mark tasks that need the API or MCP rather than the web app.
 
 - One household per instance. No separate users or access roles.
 - One server process per SQLite database. Store the database on a local disk.
-- No browser login. The web app needs a trusted network or an access proxy.
+- The web app can use one shared password. Everyone with the password has full
+  access. API and MCP clients use bearer tokens.
+- Local and private installs can run without a password on a trusted network.
+  Public installs need HTTPS and the password.
 - No built-in HTTPS or database encryption. Protect the host and network.
 - An unknown stock amount is not zero. Some amounts need a kitchen check.
 
 Start with [Install](install.md). Read [Access and security](../host/security.md)
-before you allow remote access.
+before you allow remote access. For internet access, use
+[Cloudflare Tunnel](../host/tunnel.md).

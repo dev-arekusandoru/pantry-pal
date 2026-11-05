@@ -73,6 +73,6 @@ suggest a change, or submit a pull request.
 PantryPal uses the [MIT license](LICENSE).
 
 - Emoji art: [OpenMoji](https://openmoji.org),
-  [CC BY-SA 4.0](web/src/assets/openmoji/LICENSE.txt).
+  [CC BY-SA 4.0](web/public/openmoji/LICENSE.txt).
 - UI icons: [Phosphor](https://phosphoricons.com),
   [MIT](https://github.com/phosphor-icons/react/blob/master/LICENSE).

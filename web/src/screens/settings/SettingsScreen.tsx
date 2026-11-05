@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Label, RadioGroup, Separator } from "radix-ui";
 import { useTheme, type ThemePreference } from "@/app/theme";
+import { LogoutButton } from "@/app/BrowserSession";
 import { Button, Card, ErrorState, PageHeader, Skeleton, Stepper, cx } from "@/ui";
 import styles from "./Settings.module.css";
 import { useHousehold, useServerVersion, useUpdateHousehold, type HouseholdSettings } from "./queries";
@@ -116,6 +117,8 @@ export function SettingsScreen() {
             ))}
           </div>
         </Card>
+
+        <LogoutButton />
 
         <p className={styles.about}>
           PantryPal{version.data ? ` v${version.data}` : ""}

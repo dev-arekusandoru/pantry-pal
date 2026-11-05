@@ -27,7 +27,8 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 ## Host PantryPal
 
 - [Configuration](host/configuration.md) — environment variables and storage.
-- [Access and security](host/security.md) — tokens, network trust, and HTTPS.
+- [Access and security](host/security.md) — browser login, tokens, and network trust.
+- [Public hosting](host/tunnel.md) — Cloudflare Tunnel and password login.
 - [Backups and restore](host/backups.md) — save and recover the database.
 - [Updates](host/updates.md) — build a new version and apply migrations.
 - [Troubleshooting](host/troubleshooting.md) — checks for common problems.

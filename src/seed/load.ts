@@ -36,7 +36,7 @@ export interface LoadSeedOptions {
 }
 
 /**
- * Apply a seed file (see `seed/FORMAT.md`) through the service layer in one
+ * Apply a seed file (see `docs/reference/import-format.md`) through the service layer in one
  * transaction. Ingredients resolve by declared name, recipes by seed `key`,
  * cook events by their per-plan `key`; nothing is created implicitly.
  */

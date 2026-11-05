@@ -2,9 +2,9 @@
 
 The repository includes `seed/example.json`, a synthetic household snapshot. Use it to try the web app, API, or MCP tools before you enter your own food.
 
-The file contains a household, ingredients, unit conversions, pantry stock, dietary rules, recipes, one meal plan, and one completed shopping list. The plan uses the week of 2026-02-02, so it is a sample, not the current week. See [`seed/FORMAT.md`](../../seed/FORMAT.md) for every field. This is a one-time import, not a backup or sync format.
+The file contains a household, ingredients, unit conversions, pantry stock, dietary rules, recipes, one meal plan, and one completed shopping list. The plan uses the week of 2026-02-02, so it is a sample, not the current week. See [Data import format](../reference/import-format.md) for every field. This is a one-time import, not a backup or sync format.
 
-The Compose commands below use the default stack. If you run the base file only, add `-f docker-compose.yml` to each Compose command.
+The Compose commands below use the default stack. If you run the base file only, add `-f docker-compose.yml` to each Compose command. If you run the Cloudflare Tunnel stack, prefix each Compose command with `-f docker-compose.tunnel.yml` instead. Do not combine the tunnel file with the default stack or its override.
 
 ## Before you load
 
@@ -22,13 +22,19 @@ docker compose exec pantrypal node dist/cli.js seed seed/example.json
 
 The image includes the file at `/app/seed/example.json`. The container working directory is `/app`, so the relative path works. The command prints a summary and any warnings.
 
+For the tunnel stack, select its Compose file:
+
+```sh
+docker compose -f docker-compose.tunnel.yml exec pantrypal node dist/cli.js seed seed/example.json
+```
+
 The seed creates the household but no API token. Create one for the API or MCP:
 
 ```sh
 docker compose exec pantrypal node dist/cli.js token create --name demo
 ```
 
-With the default Compose stack, open [http://127.0.0.1:8787](http://127.0.0.1:8787). Network trust lets the web app use the API. MCP always needs the token. See [Connect an AI assistant](../connect/setup.md).
+With the default Compose stack, open [http://127.0.0.1:8787](http://127.0.0.1:8787). Network trust lets the web app use the API. MCP always needs the token. If the instance has a browser password, sign in with it; the password does not replace the MCP token. See [Connect an AI assistant](../connect/setup.md).
 
 ## Load the sample from source
 
@@ -51,6 +57,8 @@ docker compose up -d --force-recreate
 ```
 
 This keeps the old directory until you decide you do not need it. Do not delete it in place. Then create a household or load another seed.
+
+For the tunnel stack, use `-f docker-compose.tunnel.yml` with each command above. Plain `docker compose` targets the local stack.
 
 ## After the sample
 

@@ -3,8 +3,7 @@
 The SQLite database holds all household data and token records. Keep it on a
 local disk, not NFS or SMB. Save backup copies off the host.
 
-Run these commands from the repository root. For a base-only setup, add
-`-f docker-compose.yml` to each Compose command.
+Run these commands from the repository root. They target the default stack. For a base-only setup, add `-f docker-compose.yml` to each Compose command. For the Cloudflare Tunnel stack, use `-f docker-compose.tunnel.yml` instead. Do not combine the tunnel file with the default stack or its override.
 
 ## Back up with a short stop
 
@@ -16,6 +15,14 @@ docker compose start pantrypal
 
 The server closes the database on shutdown. The archive keeps the database and
 any `-wal` and `-shm` files together. Do not copy just the live `.db` file.
+
+For the tunnel stack, select its Compose file:
+
+```sh
+docker compose -f docker-compose.tunnel.yml stop pantrypal
+tar -czf "pantrypal-backup-$(date +%F).tar.gz" data/
+docker compose -f docker-compose.tunnel.yml start pantrypal
+```
 
 ## Back up while running
 
@@ -44,6 +51,9 @@ sqlite3 data/pantrypal.db ".backup 'pantrypal-backup.db'"
 
 For a release rollback, use [Updates](updates.md#roll-back) instead. The code
 must match the restored schema.
+
+For the tunnel stack, select `docker-compose.tunnel.yml` in every Compose
+command below.
 
 First, stop the service and preserve the current data:
 

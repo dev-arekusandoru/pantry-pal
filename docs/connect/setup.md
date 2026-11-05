@@ -12,6 +12,8 @@ docker compose exec pantrypal node dist/cli.js token create --name assistant
 ```
 
 For a source checkout, use `pnpm cli token create --name assistant`.
+For the Cloudflare Tunnel stack, select its Compose file:
+`docker compose -f docker-compose.tunnel.yml exec pantrypal node dist/cli.js token create --name assistant`.
 Copy the secret now; it is shown only once. Use one token per client.
 See [CLI commands](../reference/cli.md) to list or revoke tokens.
 
@@ -22,10 +24,13 @@ See [CLI commands](../reference/cli.md) to list or revoke tokens.
 | Transport | Streamable HTTP |
 | URL, Docker | `http://localhost:8787/mcp` |
 | URL, source checkout | `http://localhost:4787/mcp` |
+| URL, Cloudflare Tunnel | `https://pantry.example.com/mcp` |
 | Header | `Authorization: Bearer <token>` |
 
-Use HTTPS for remote access. Keep tokens out of URLs and committed files.
-[Network trust](../host/security.md) does not remove the MCP token requirement.
+Use HTTPS for remote access. Keep tokens out of URLs and committed files. `/mcp`
+always needs a bearer token: network trust and a browser session cookie never
+apply. See [Public access with Cloudflare Tunnel](../host/tunnel.md) for a public
+URL.
 
 For clients that use this JSON format:
 

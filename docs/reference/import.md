@@ -27,8 +27,9 @@ those changes roll back. A household created before the load can remain.
 
 ## Format
 
-Use [the format reference](../../seed/FORMAT.md) for fields and allowed values.
-Use [`seed/example.json`](../../seed/example.json) as a complete example.
+Use [the format reference](import-format.md) for fields and allowed values.
+Use [`seed/example.json`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/seed/example.json)
+as a complete example.
 
 - Include all eight top-level sections, even when an array is empty.
 - Refer to ingredients by declared names, not database IDs.

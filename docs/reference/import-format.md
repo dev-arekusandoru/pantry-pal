@@ -1,10 +1,10 @@
-# PantryPal seed format (`seed/example.json`)
+# Import format
 
 This format holds a household snapshot. The example plan starts on **2026-02-02**.
 Household names, stock, and dates are sample data. After import, the database
 holds the current state. This file is not a sync or backup format.
 
-See [Data import](../docs/reference/import.md) for commands and safety checks.
+See [Data import](import.md) for commands and safety checks.
 
 ## Ground rules
 
@@ -100,7 +100,7 @@ One row per `(ingredient, location)`; the pair must be unique.
 |---|---|---|
 | `ingredient` | string | Declared ingredient name. |
 | `location` | enum `storageLocation` | `pantry`, `fridge`, `freezer`, `counter`, `other`. |
-| `qty` | number \| null | `null` = present but amount unknown ("on hand"). |
+| `qty` | number \| null | Unknown when `null`. Read `status` as well. |
 | `unit` | unit \| null | Required when `qty` is non-null; `null` with `qty: null`. |
 | `qtyApprox` | boolean | True for parsed estimates (`~2.5 lb`, `~10 cloves`). |
 | `status` | enum `pantryStatus` | Expected status after import. This seed uses `on_hand` everywhere. |
@@ -114,7 +114,7 @@ One row per `(ingredient, location)`; the pair must be unique.
 | `scope` | enum `ruleScope` | `ingredient`, `category`, `recipe`, `tag`, `keyword`. |
 | `ingredient` | string | Required for `scope: "ingredient"`; must resolve. |
 | `recipe` | string | Required for `scope: "recipe"`; recipe `key`. |
-| `targetText` | string | Required for `category` (category name), `tag`, and `keyword` (case-insensitive substring). |
+| `targetText` | string | Category name, tag, or keyword text. Keyword checks match whole words and ignore case. |
 | `severity` | enum `ruleSeverity` | `forbidden`, `avoid`, `limit`. |
 | `conditionNote` | string | Optional judgment call the agent must apply. |
 | `reason` | string | Why the rule exists. |
@@ -179,7 +179,7 @@ Top-level recipe fields:
 
 | Field | Type | Notes |
 |---|---|---|
-| `weekStart` | date | First day of the plan week (Monday); unique per household. |
+| `weekStart` | date | First day of the plan week; follows household settings. Unique per household. |
 | `title` | string \| null | |
 | `status` | enum `planStatus` | `active` here. |
 | `notes` | string \| null | |

@@ -2,6 +2,10 @@
 
 Start with the service state, logs, and health check:
 
+These commands target the default stack. For the Cloudflare Tunnel stack, use
+`-f docker-compose.tunnel.yml` in every Compose command. See
+[Public access with Cloudflare Tunnel](tunnel.md).
+
 ```sh
 docker compose ps
 docker compose logs --tail=100 pantrypal
@@ -61,18 +65,56 @@ Run `docker compose up -d` and open `http://127.0.0.1:9000`.
 
 ## The web app cannot reach the API
 
-- With the base file alone, network trust is off and the web app sends no token. Use the default stack on a trusted network, or a proxy that authenticates visitors and forwards a valid bearer token. See [Access and security](security.md).
+- Check `/auth/session`. `{"enabled":false,...}` means no browser password is
+  configured. With the base file alone, network trust is also off and the web
+  app sends no token, so API calls return `401`. Use the default stack on a
+  trusted network, set `PANTRYPAL_PASSWORD`, or use a proxy that supplies a
+  valid bearer token. See [Access and security](security.md).
+- If password mode is on, the web app shows a login screen. Sign in first. A
+  wrong or expired session returns `401`; rotate the password only when you want
+  to sign every browser out.
 - If you see `503` and a message about no household, run `household init` or load the example data:
 
   ```sh
   docker compose exec pantrypal node dist/cli.js household init --name "Our House"
   ```
 
-- If a proxy adds an `Authorization` header, it must be a valid token. Trust mode does not ignore a bad token.
+- If a proxy adds an `Authorization` header, it must be a valid token. A sent
+  token is always checked, even when a session cookie is present, and a bad token
+  returns `401`.
+- With the tunnel stack, use
+  `docker compose -f docker-compose.tunnel.yml exec pantrypal ...` for the
+  command above.
+
+## Browser login fails
+
+- `/auth/session` reports `enabled: false`: no password reached the process. Set
+  `PANTRYPAL_PASSWORD` and recreate the container with `docker compose up -d`.
+  With the tunnel stack, edit `.env` and use
+  `docker compose -f docker-compose.tunnel.yml up -d --force-recreate pantrypal`.
+- Startup exits with a message that `PANTRYPAL_PASSWORD` is required:
+  `PANTRYPAL_REQUIRE_PASSWORD` is on and the password is unset. Set the password
+  or remove the requirement.
+- Login succeeds but the next request returns `401`: the cookie is `Secure` and
+  needs HTTPS, except on `http://localhost`. Use HTTPS for a LAN address or
+  public hostname.
+- Login returns `403`: the request `Origin` host does not match `Host`, the
+  origin is not HTTPS (outside loopback), or the proxy removed `Origin`. Preserve
+  both headers. `X-Forwarded-Host` does not count.
+- Login returns `401`: wrong password. It returns `429` after 10 failures per
+  minute from one peer or 40 in total; wait for `Retry-After` instead of retrying.
+  A body over 4 KiB returns `413`; a non-JSON body returns `415`.
+- Sessions disappear after a restart only if the password changed. Sessions are
+  signed with the password, so rotating it signs out every browser. A copied
+  cookie otherwise stays valid until it expires.
+- To sign out, use **Settings → Log out**. Closing the tab does not end the
+  session.
 
 ## MCP returns 401
 
-`/mcp` always requires a token, even when network trust is on. Create a token and send it in the `Authorization: Bearer <token>` header. See [MCP setup](../connect/setup.md).
+`/mcp` always requires a token, even when network trust or a browser password is
+on. It never accepts a session cookie. Create a token and send it in the
+`Authorization: Bearer <token>` header. See [MCP setup](../connect/setup.md).
 
 A token in a query parameter does not work. A revoked token also returns `401`.
 
@@ -108,6 +150,23 @@ The seed only loads into a household with no ingredients or recipes. `--force` s
 
 The log says the web app is missing and the server is API only. For a source run, build it with `pnpm build`, not `pnpm build:server`. For a custom build, check `PANTRYPAL_WEB_DIR` and make sure the directory contains `index.html`. See [Configuration](configuration.md).
 
+## The tunnel has no connection
+
+```sh
+docker compose -f docker-compose.tunnel.yml ps
+docker compose -f docker-compose.tunnel.yml logs --tail=100 cloudflared
+```
+
+- `cloudflared` needs outbound HTTPS to Cloudflare. A blocked egress firewall
+  stops the connector.
+- A wrong or revoked tunnel token stops the connector. Copy the token again from
+  the tunnel dashboard and recreate `cloudflared`.
+- The public hostname must use service type `HTTP` and URL `pantrypal:8787`.
+- The stack publishes no host ports on purpose. Test through the public URL, not
+  `localhost:8787`, on the Docker host.
+- Do not add Cloudflare Access to this hostname. It blocks MCP bearer tokens.
+- If `pantrypal` is unhealthy, fix that first; `cloudflared` waits for it.
+
 ## Environment changes do not apply
 
 `docker compose restart` restarts the existing container and keeps its environment. Run `docker compose up -d` to recreate it with the new values. Check the merged settings with:
@@ -116,7 +175,13 @@ The log says the web app is missing and the server is API only. For a source run
 docker compose config
 ```
 
-For a source run, restart the process.
+For the tunnel stack, edit `.env`, then recreate the affected service:
+
+```sh
+docker compose -f docker-compose.tunnel.yml up -d --force-recreate pantrypal
+```
+
+For a source run, restart the process. A plain source run does not read `.env`.
 
 ## Data appears empty after a restart
 
