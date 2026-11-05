@@ -1,3 +1,9 @@
+---
+id: index
+slug: /
+sidebar_label: Documentation
+---
+
 # PantryPal documentation
 
 Plan meals, track food, and shop for what you need.
@@ -39,11 +45,14 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 - [Tests and checks](develop/checks.md) — check code and API types.
 - [Architecture](develop/architecture.md) — code layout and data rules.
 - [Contribute](develop/contributing.md) — issues and pull requests.
+- [Documentation site](develop/documentation.md) — edit, preview, and publish these guides.
 
 ## Reference
 
 - [REST API](reference/rest-api.md) — endpoints, errors, and OpenAPI.
 - [CLI commands](reference/cli.md) — household, tokens, migrations, and imports.
 - [Data import](reference/import.md) — load a household snapshot from JSON.
+- [Import format](reference/import-format.md) — fields and allowed values.
 
-[Project README](../README.md) · [License](../LICENSE)
+[Project README](https://github.com/dev-arekusandoru/pantry-pal#readme) ·
+[License](https://github.com/dev-arekusandoru/pantry-pal/blob/main/LICENSE)

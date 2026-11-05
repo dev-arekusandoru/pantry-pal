@@ -129,8 +129,8 @@ To update the committed schema and web client types from source:
 pnpm openapi
 ```
 
-This writes [`web/openapi.json`](../../web/openapi.json) and
-[`web/src/api/schema.d.ts`](../../web/src/api/schema.d.ts).
+This writes [`web/openapi.json`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/web/openapi.json) and
+[`web/src/api/schema.d.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/web/src/api/schema.d.ts).
 Do not edit those files by hand.
 
 The web client uses `openapi-fetch`. Its base URL is `/api/v1`; its generated

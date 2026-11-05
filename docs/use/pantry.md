@@ -4,7 +4,7 @@ The Pantry tab shows what you have at home. Each row is one ingredient in one
 storage location: Fridge, Pantry, Freezer, Counter, or Other. Rows are grouped
 by shelf and sorted by name.
 
-<img src="../images/pantry.png" alt="Pantry screen with shelves, search, and quantity controls" width="320" />
+![Pantry screen with shelves, search, and quantity controls](../images/pantry.png)
 
 ## Find stock
 

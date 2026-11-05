@@ -21,7 +21,7 @@ WORKDIR /app
 
 # The workspace file carries `allowBuilds` for better-sqlite3/esbuild; without
 # it pnpm refuses to run those install scripts.
-# Every workspace package manifest is needed for a frozen install.
+# Copy only app manifests. The docs workflow installs the site toolchain separately.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY web/package.json ./web/package.json
 RUN pnpm install --frozen-lockfile

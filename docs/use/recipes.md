@@ -64,7 +64,7 @@ Tap **Start cooking**. Cook mode shows one step at a time, with a progress bar
 and **Back** / **Next step** buttons. Swipe left or right on a phone. On a
 keyboard, use the arrow keys.
 
-<img src="../images/cook.png" alt="Cook mode showing one large step at a time" width="320" />
+![Cook mode showing one large step at a time](../images/cook.png)
 
 The list button opens the full ingredient list for the chosen servings. A step
 with a duration has a timer button: **Start 10 min timer**, then **Cancel** when

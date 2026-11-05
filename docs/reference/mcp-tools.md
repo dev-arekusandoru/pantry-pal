@@ -19,11 +19,11 @@ Input schemas come from these files:
 
 | Area | Tool handlers | Schemas |
 | --- | --- | --- |
-| Household | [`src/mcp/tools/household.ts`](../../src/mcp/tools/household.ts) | [`src/schemas/household.ts`](../../src/schemas/household.ts) |
-| Ingredients, units, pantry | [`src/mcp/tools/pantry.ts`](../../src/mcp/tools/pantry.ts) | [`src/schemas/ingredients.ts`](../../src/schemas/ingredients.ts), [`src/schemas/pantry.ts`](../../src/schemas/pantry.ts) |
-| Recipes and rules | [`src/mcp/tools/recipes.ts`](../../src/mcp/tools/recipes.ts) | [`src/schemas/recipes.ts`](../../src/schemas/recipes.ts), [`src/schemas/rules.ts`](../../src/schemas/rules.ts) |
-| Plans and cooking | [`src/mcp/tools/planning.ts`](../../src/mcp/tools/planning.ts) | [`src/schemas/plans.ts`](../../src/schemas/plans.ts) |
-| Shopping | [`src/mcp/tools/shopping.ts`](../../src/mcp/tools/shopping.ts) | [`src/schemas/shopping.ts`](../../src/schemas/shopping.ts) |
+| Household | [`household.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/household.ts) | [`household.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/household.ts) |
+| Ingredients, units, pantry | [`pantry.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/pantry.ts) | [`ingredients.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/ingredients.ts), [`pantry.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/pantry.ts) |
+| Recipes and rules | [`recipes.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/recipes.ts) | [`recipes.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/recipes.ts), [`rules.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/rules.ts) |
+| Plans and cooking | [`planning.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/planning.ts) | [`plans.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/plans.ts) |
+| Shopping | [`shopping.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/shopping.ts) | [`shopping.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/shopping.ts) |
 
 ## Shared rules
 

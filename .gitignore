@@ -4,6 +4,8 @@ data/
 *.db
 *.db-*
 coverage/
+site/build/
+site/.docusaurus/
 
 # Local tooling and runtime state.
 .hippo/

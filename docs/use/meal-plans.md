@@ -3,7 +3,7 @@
 The Week tab shows the current week of meals. An AI assistant usually creates
 the plan. The app shows it, starts cooks, and lets you change one meal at a time.
 
-<img src="../images/week.png" alt="Week board with meals, leftovers, and swap controls" width="320" />
+![Week board with meals, leftovers, and swap controls](../images/week.png)
 
 ## Read the week
 

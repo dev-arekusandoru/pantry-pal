@@ -4,7 +4,7 @@ The Shop tab shows a shopping list for the week. It can come from the plan or be
 a blank list you fill by hand. Check items off as they go in the cart, then
 record what you bought.
 
-<img src="../images/shop.png" alt="Shopping list grouped by aisle with large check-off rows" width="320" />
+![Shopping list grouped by aisle with large check-off rows](../images/shop.png)
 
 ## Get a list
 

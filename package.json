@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
+  "packageManager": "pnpm@12.16.1",
   "type": "module",
   "description": "Self-hosted household pantry, recipe, meal-plan and shopping backend with REST API and MCP server.",
   "engines": {
@@ -24,7 +25,10 @@
     "test:all": "vitest run && pnpm test:web",
     "openapi": "tsx scripts/openapi.ts && pnpm --filter @pantrypal/web openapi:types",
     "web:dev": "pnpm --filter @pantrypal/web dev",
-    "web:build": "pnpm --filter @pantrypal/web build"
+    "web:build": "pnpm --filter @pantrypal/web build",
+    "docs:dev": "pnpm --filter @pantrypal/docs dev",
+    "docs:build": "pnpm --filter @pantrypal/docs build",
+    "docs:serve": "pnpm --filter @pantrypal/docs serve"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
