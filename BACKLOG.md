@@ -2,7 +2,7 @@
 
 ## Frontend
 - Web app on the REST API: pantry table + stock edits
-- Week plan view: drag leftovers between days, per-slot servings (basic meal swap is in v1, see docs/FRONTEND.md)
+- Week plan view: drag leftovers between days, per-slot servings (basic meal swap is in v1; see [Meal plans](docs/use/meal-plans.md))
 - Recipe browser + cooking mode (step-by-step instructions, scaled ingredients, wake lock)
 - Shopping list mobile view (check off in store)
 

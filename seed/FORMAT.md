@@ -1,19 +1,16 @@
 # PantryPal seed format (`seed/example.json`)
 
-Example snapshot of a household's food state for the week starting **2026-02-01**. The values are
-synthetic (names, notes, dates and stock levels), but the shape is the same one `cli seed` accepts.
-The database becomes authoritative after the import; this file is not a sync format.
+This format holds a household snapshot. The example plan starts on **2026-02-02**.
+Household names, stock, and dates are sample data. After import, the database
+holds the current state. This file is not a sync or backup format.
 
-The loader (`cli seed`, milestone 6) reads this JSON and applies it **through the service layer**
-(`households`, `ingredients`, `pantry`, `rules`, `recipes`, `plans`, `shopping`), not with raw SQL.
-Anything the services would reject is a bug in the seed, not something to force in.
+See [Data import](../docs/reference/import.md) for commands and safety checks.
 
 ## Ground rules
 
-- **References are names/keys, never database ids.** Ingredients are referenced by their exact
-  `name` (the same string declared in `ingredients[]`, case-sensitive). Recipes are referenced by
-  `key` (the slug written to `recipe.slug`). Cook events are referenced by `key`, which is unique
-  within its plan.
+- **References use names or keys, not database IDs.** Ingredient references use
+  `name` from `ingredients[]`; names are normalized before lookup. Recipes use
+  `key`, which becomes `recipe.slug`. Cook-event keys are unique within a plan.
 - **Field names mirror `src/db/schema.ts` columns in camelCase** (`weekStart`, `plannedServings`,
   `prepMinutes`, `qtyApprox`, `scalingExempt`, …). Fields that only exist in the seed
   (`key`, `household.members`, `plan` on a shopping list) are marked below.
@@ -247,40 +244,20 @@ Top-level recipe fields:
 
 ## Loader semantics
 
-### Validation (before any write)
+### Validation and writes
 
-1. Parse JSON; validate all enums, unit names, date formats, positive numbers, and unique keys
-   (ingredient names, recipe `key`, `(ingredient, location)`, per-plan cook-event `key`).
-2. Resolve every ingredient reference (recipes, pantry, shopping items, conversions,
-   ingredient-scoped rules) against `ingredients[]`; every recipe/cook-event reference by key.
-   Abort with `AppError("validation", …, { unresolved })` if anything is missing.
-3. Refuse to run against a household that already has data (seed is a one-time import). Use a
-   separate `seed` subcommand, not an upsert.
+The CLI checks the JSON and schema before it creates a household.
+The loader then checks existing data and resolves references.
 
-### Create order
+Food data, household settings, and members load in one transaction through the
+service layer. A failed load rolls back that transaction. A household created
+by the CLI before the load can remain.
 
-All steps run inside one synchronous `ctx.db.transaction`:
+The load refuses a household that has ingredients or recipes. `--force` skips
+that guard; it does not replace or merge data.
 
-1. **Household** — insert `household` with `settings` and `members` (ids `hh_…`, `mem_…`).
-2. **Ingredients + aliases** — insert in array order (`ing_…`); then one alias row (`ali_…`) per
-   alias. Normalize names/aliases the same way the service does (`normalizedName`).
-3. **Unit conversions** — after ingredients exist (`uc_…`); `ingredient: null` → global row.
-4. **Pantry** — for each row call `applyMovement(ctx, { ingredientId, location, kind: "set",
-   qty, unit, reason: "import", refType: "seed", refId: null, note })`. The service upserts the
-   `pantry_item`, copies `rawText` (loader writes it on the item) and `note`, keeps `qtyApprox`,
-   writes the `stock_movement` (`mv_…`, `qtyAfter`, `statusAfter`) and recomputes status. Because
-   no row sets `parQty`, `qty > 0` → `on_hand`, `qty = 0` → `out`, `qty = null` → `on_hand`
-   per the "unknown amount" rule. Repeat the row's `status` afterward only as an assertion; a
-   mismatch is a seed bug.
-5. **Rules** — after ingredients and recipes exist (`rule_…`), so ingredient/recipe scopes resolve.
-6. **Recipes** — insert `recipe` (`rcp_…`), then its `recipe_ingredient` (`ri_…`) and
-   `recipe_step` (`rs_…`) rows with positions from array order. Also insert one
-   `recipe_status_event` (`rse_…`) carrying the recipe's `status`, note
-   `"Seeded from example.json"`. Recipes before plans because cook events reference them.
-7. **Plans** — insert `meal_plan` (`plan_…`); then `cook_event` rows (`ce_…`, status from JSON);
-   then `meal_slot` (`slot_…`, resolving cook-event keys); then `prep_task` (`prep_…`).
-8. **Shopping lists** — insert `shopping_list` (`sl_…`, resolve `plan` to the meal plan) and
-   `shopping_list_item` (`sli_…`) rows in array order.
+Ingredients load before recipes. Recipes load before rules and plans.
+Shopping lists load last.
 
 ### Pantry history
 
