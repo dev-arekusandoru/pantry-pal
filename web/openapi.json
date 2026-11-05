@@ -22,6 +22,12 @@
         "type": "http",
         "scheme": "bearer",
         "description": "API token created with `pantrypal token create --name <name>`."
+      },
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-pantrypal_session",
+        "description": "Browser session cookie set by POST /auth/login when PANTRYPAL_PASSWORD is configured. Valid for 30 days; rotating the password invalidates it. Never accepted by /mcp."
       }
     },
     "schemas": {

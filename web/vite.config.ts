@@ -13,6 +13,7 @@ export default defineConfig({
       // Override with PANTRYPAL_API_URL to point at another instance.
       "/api": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
       "/health": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
+      "/auth": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
     },
   },
   build: {

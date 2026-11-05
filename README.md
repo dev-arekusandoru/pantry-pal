@@ -3,7 +3,8 @@
 Self-hosted household food backend: pantry inventory, recipes, dietary rules, weekly meal plans,
 cook events and shopping lists. One process serves a REST API at `/api/v1` and an MCP endpoint at
 `/mcp` (Streamable HTTP), both over the same service layer, both authenticated with bearer tokens.
-The database is a single SQLite file, so the whole system is a container plus a volume.
+The browser app can additionally use a shared-password login, so it can be exposed publicly without
+a token. The database is a single SQLite file, so the whole system is a container plus a volume.
 
 PantryPal is driven by an AI agent (a weekly planning loop over MCP) or by the bundled web app,
 without either surface re-implementing food math.
@@ -61,6 +62,19 @@ curl -s -H "Authorization: Bearer $PANTRYPAL_TOKEN" http://localhost:8787/api/v1
 `PANTRYPAL_DB_PATH` points. See [docs/self-hosting.md](docs/self-hosting.md) for backups, TLS and
 upgrades, and [docs/mcp.md](docs/mcp.md) to connect an MCP client.
 
+### Public deployment
+
+For internet access, use the opt-in Cloudflare Tunnel stack with password login instead of
+publishing a port:
+
+```sh
+cp .env.example .env    # set PANTRYPAL_PASSWORD and CLOUDFLARE_TUNNEL_TOKEN
+docker compose -f docker-compose.tunnel.yml up -d --build
+```
+
+See [Cloudflare Tunnel deployment](docs/self-hosting.md#public-deployment-with-cloudflare-tunnel-and-password-login)
+for dashboard routing, TLS, initialization, verification and upgrades.
+
 ### Importing the example data set
 
 `seed/example.json` is a complete synthetic household state (ingredients, conversions, pantry,
@@ -97,23 +111,40 @@ database file.
 
 ## Configuration
 
-`PANTRYPAL_DB_PATH`, `PORT`, `HOST`, `PANTRYPAL_TRUST_NETWORK` and `PANTRYPAL_WEB_DIR` are
-documented in [docs/self-hosting.md](docs/self-hosting.md#environment-variables). Pending
-migrations run automatically at startup and in every CLI command; there is no separate migrate step.
+`PANTRYPAL_DB_PATH`, `PORT`, `HOST`, `PANTRYPAL_PASSWORD`, `PANTRYPAL_REQUIRE_PASSWORD`,
+`PANTRYPAL_TRUST_NETWORK` and `PANTRYPAL_WEB_DIR` are documented in
+[docs/self-hosting.md](docs/self-hosting.md#environment-variables). Pending migrations run
+automatically at startup and in every CLI command; there is no separate migrate step.
 
 ## Authentication
 
-All of `/api/v1/*` and `/mcp` require `Authorization: Bearer <token>`. Tokens are created with the
-CLI, stored as SHA-256 hashes with a short prefix for identification, and can be revoked at any
-time (`pnpm cli token revoke <id>`). `GET /health` is public. One token belongs to one household;
-this is a single-household-per-instance design.
+API and MCP clients use `Authorization: Bearer <token>`. Tokens are created with the CLI, stored as
+SHA-256 hashes with a short prefix for identification, and can be revoked at any time
+(`pnpm cli token revoke <id>`). `GET /health` and the auth endpoints are public. One token belongs
+to one household; this is a single-household-per-instance design.
 
-**Network trust (opt-in, for the web app).** With `PANTRYPAL_TRUST_NETWORK=1`, `/api/v1/*` requests
-that send no `Authorization` header act as the instance's single household, so the browser UI needs
-no login: anyone who can reach the port is in. A token that is sent is still verified (an invalid one
-is a 401), `/mcp` always requires a token, and the default is off. Only enable it on a private
-network, for example behind `tailscale serve`; see [docs/self-hosting.md](docs/self-hosting.md#web-app-and-network-trust).
-If the instance has no household yet, those requests get a 503 with code `unavailable`.
+**Browser login (recommended for anything public).** Set `PANTRYPAL_PASSWORD` to a shared password;
+the UI then shows a login screen at any app URL and keeps a 30-day `__Host-pantrypal_session` cookie
+(`HttpOnly`, `Secure`, `SameSite=Lax`). `GET /auth/session` reports the mode, `POST /auth/login` and
+`POST /auth/logout` manage the session, failed logins are throttled (`429`) and cookie-authenticated
+writes require a same-origin `Origin` (CSRF protection). Rotating the password invalidates every
+browser session. The cookie is only sent over HTTPS, so use the
+[Cloudflare Tunnel](docs/self-hosting.md#public-deployment-with-cloudflare-tunnel-and-password-login)
+or your own TLS proxy; browsers exempt `http://localhost`. Password mode overrides network trust;
+API/MCP bearer tokens and `/mcp` are unaffected. See
+[docs/self-hosting.md](docs/self-hosting.md#web-app-authentication) for requirements, endpoints and
+rotation.
+
+**Network trust (local/private networks only).** With `PANTRYPAL_TRUST_NETWORK=1`, `/api/v1/*`
+requests that send no `Authorization` header act as the instance's single household, so the browser
+UI needs no login: anyone who can reach the port is in. A token that is sent is still verified (an
+invalid one is a 401), `/mcp` always requires a token, and the default is off. Only enable it on a
+private network, for example behind `tailscale serve`. If the instance has no household yet, those
+requests get a 503 with code `unavailable`.
+
+Local development does not read `.env` automatically (Compose does, but `pnpm dev` does not); export
+the variables first, for example
+`PANTRYPAL_PASSWORD='…' PANTRYPAL_REQUIRE_PASSWORD=true pnpm dev`.
 
 ## REST API
 

@@ -38,8 +38,9 @@ proxies `/api` to the Hono server.
 
 Development:
 
-- `PANTRYPAL_TRUST_NETWORK=1 pnpm dev` (API) plus `pnpm web:dev` (Vite on :5173, proxies `/api` and
-  `/health` to `127.0.0.1:4787`, or `PANTRYPAL_API_URL`).
+- `PANTRYPAL_TRUST_NETWORK=1 pnpm dev` (API) plus `pnpm web:dev` (Vite on :5173, proxies `/api`,
+  `/auth` and `/health` to `127.0.0.1:4787`, or `PANTRYPAL_API_URL`). To exercise password login
+  locally, use `PANTRYPAL_PASSWORD='…' pnpm dev` instead; `pnpm dev` does not read `.env`.
 - `pnpm openapi` regenerates `web/openapi.json` and `web/src/api/schema.d.ts` after API changes.
 - `pnpm build` builds server and web; `pnpm typecheck` covers both; `pnpm test` (backend),
   `pnpm test:web`, `pnpm test:all`.
@@ -49,10 +50,13 @@ Development:
 ## Serving and auth
 
 The built app is static files served by the same Hono process at `/`; the browser calls
-`/api/v1/*` same-origin, so there is no CORS. Run it with `PANTRYPAL_TRUST_NETWORK=1` on a private
-network (the household uses `tailscale serve`) so the UI needs no login. Details, including the
-`503` before `household init` and why HTTPS matters for cook mode, are in
-[self-hosting.md](self-hosting.md#web-app-and-network-trust).
+`/api/v1/*` same-origin, so there is no CORS. With no auth configured, run it with
+`PANTRYPAL_TRUST_NETWORK=1` on a private network (the household uses `tailscale serve`) so the UI
+needs no login. For anything reachable publicly, set `PANTRYPAL_PASSWORD` instead: the app shows a
+password screen at any URL, then uses a 30-day session cookie. Password mode overrides network
+trust, and the cookie is `Secure`, so the public URL must be HTTPS (`localhost` is exempt). Details,
+including the `503` before `household init`, the auth endpoints and why HTTPS matters for cook mode,
+are in [self-hosting.md](self-hosting.md#web-app-authentication).
 
 ## Screens
 
@@ -161,7 +165,9 @@ light set and a dark set, so themes stay additive. Respect
 ## Decisions made
 
 - Direction: Glaze. Dark mode: system plus manual toggle.
-- Auth: network access is auth (`PANTRYPAL_TRUST_NETWORK=1`), reached via Tailscale Serve.
+- Auth: shared-password browser login (`PANTRYPAL_PASSWORD`, 30-day session cookie) for public
+  deployments; network access (`PANTRYPAL_TRUST_NETWORK=1`) remains for private/Tailscale setups.
+  API and MCP clients always use bearer tokens.
 - Step-ingredient links: deferred; cook mode hides "you need".
 - Done shopping: quick review sheet with editable quantities.
 - Finishing a cook: one tap, assumes the servings shown; ad-hoc cooks when not planned.

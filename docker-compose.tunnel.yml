@@ -1,0 +1,54 @@
+# Production stack behind a dashboard-managed Cloudflare Tunnel.
+#
+# This file is intentionally separate from docker-compose.yml so the local
+# stack (published loopback port, shared `rakazo` network) stays untouched:
+#
+#   docker compose -f docker-compose.tunnel.yml up -d --build
+#
+# Run from the repository root: the bind mount and `.env` are relative to it.
+# Compose auto-loads `.env` for interpolation, and only this file is used when
+# invoked with `-f` (docker-compose.override.yml is not merged in). Both secrets
+# are required; the `:?` interpolations abort the command before anything starts
+# when they are missing.
+#
+# The stack publishes no ports and joins no external networks. Normal traffic
+# reaches pantrypal only through cloudflared over the private compose network,
+# using the service name `pantrypal:8787`; the Docker host can still address the
+# container IP directly, as with any bridge network.
+services:
+  pantrypal:
+    build: .
+    image: pantrypal:prod
+    restart: unless-stopped
+    environment:
+      PANTRYPAL_DB_PATH: /data/pantrypal.db
+      PORT: "8787"
+      HOST: 0.0.0.0
+      # Browser login. Password mode takes precedence over network trust.
+      PANTRYPAL_PASSWORD: ${PANTRYPAL_PASSWORD:?Set PANTRYPAL_PASSWORD in .env (see .env.example)}
+      PANTRYPAL_REQUIRE_PASSWORD: "true"
+      PANTRYPAL_TRUST_NETWORK: "0"
+    volumes:
+      # Same host directory as the local stack, so existing data carries over.
+      - ./data:/data
+    networks:
+      - tunnel
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      # Remotely managed connector token from the Cloudflare dashboard.
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in .env (see .env.example)}
+    depends_on:
+      pantrypal:
+        condition: service_healthy
+    networks:
+      - tunnel
+
+networks:
+  # Private bridge network owned by this compose project. No `external: true`
+  # and no ports: inbound traffic arrives only through the tunnel.
+  tunnel:
+    name: pantrypal_tunnel

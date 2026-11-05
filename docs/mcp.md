@@ -25,10 +25,10 @@ The endpoint is **stateless**: no `Mcp-Session-Id` is issued and every request i
 (each POST builds a fresh server bound to the token's household, and the database is the state).
 JSON responses are enabled, so simple request/response clients work without SSE parsing.
 `Accept` must still list both `application/json` and `text/event-stream`, as the Streamable HTTP
-spec requires. `GET /health` needs no token; `/mcp` always needs one, and so does `/api/v1/*` unless the
-operator runs the web app's `PANTRYPAL_TRUST_NETWORK=1` mode (which never applies to `/mcp`). Tokens are
-created with the CLI (`token create --name <client>`) — see
-[self-hosting.md](self-hosting.md#token-management).
+spec requires. `GET /health` needs no token; `/mcp` always needs one, and so does `/api/v1/*` unless
+the request carries a valid browser session (password mode) or the operator runs the web app's
+`PANTRYPAL_TRUST_NETWORK=1` mode (which never applies to `/mcp`). Tokens are created with the CLI
+(`token create --name <client>`) — see [self-hosting.md](self-hosting.md#token-management).
 
 Smoke test without an MCP client:
 
