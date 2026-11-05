@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { VisuallyHidden } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
 import { Button, EmptyState, ErrorState, Icon, PageHeader, Pill, SearchInput, SegmentedControl, Skeleton, type SegmentOption } from "@/ui";
 import { formatMinutes, type MealType } from "../recipe/lib";
@@ -56,11 +57,13 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
       <PageHeader
         title="Recipes"
         sub={
-          items
-            ? `${items.length} ${items.length === 1 ? "recipe" : "recipes"} ${
+          items ? (
+            <span aria-live="polite">
+              {`${items.length} ${items.length === 1 ? "recipe" : "recipes"} ${
                 view === "never" ? "set aside" : filtered ? "found" : "in the box"
-              }`
-            : undefined
+              }`}
+            </span>
+          ) : undefined
         }
       />
       <SearchInput label="Search recipes" value={text} onChange={setText} />
@@ -78,7 +81,8 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
       />
 
       {recipes.isPending ? (
-        <div className={styles.grid} aria-busy="true" aria-label="Loading recipes">
+        <div className={styles.grid} role="status">
+          <VisuallyHidden.Root>Loading recipes</VisuallyHidden.Root>
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} height={230} radius={30} />
           ))}
@@ -118,7 +122,7 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
                         </span>
                       )}
                       <span>
-                        <Icon name="people" /> {r.servings}
+                        <Icon name="people" /> <VisuallyHidden.Root>Serves </VisuallyHidden.Root>{r.servings}
                       </span>
                     </p>
                   </div>

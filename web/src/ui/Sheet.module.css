@@ -3,13 +3,27 @@
   inset: 0;
   z-index: var(--z-sheet);
   background: var(--overlay);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
   animation: fade 0.2s;
 }
 
+/* Radix portals Overlay and Content as siblings, so Content is the layout box. */
+.viewport {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.viewport:focus,
+.viewport:focus-visible {
+  outline: none;
+}
+
 .panel {
+  pointer-events: auto;
   width: 100%;
   max-width: var(--content-max);
   max-height: 88dvh;
@@ -58,10 +72,10 @@
 }
 
 @media (min-width: 700px) {
-  .center {
+  .viewport.center {
     align-items: center;
   }
-  .center .panel {
+  .panel.center {
     max-width: 560px;
     border-radius: var(--r-xl);
     padding-bottom: 6px;

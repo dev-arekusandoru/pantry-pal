@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { Button, Card, Checkbox, Emoji, EmptyState, ErrorState, Fab, Icon, PageHeader, Sheet, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
+import { AlertDialog, Checkbox, Collapsible, Label, Progress } from "radix-ui";
+import { useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { Button, Card, Emoji, EmptyState, ErrorState, Fab, Icon, IconButton, PageHeader, Sheet, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
 import { aisleLabel, uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
 import { DoneSheet } from "./DoneSheet";
 import { formatAmount } from "./format";
@@ -27,6 +28,7 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
   const [addOpen, setAddOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const addFieldId = useId();
 
   const checked = useMemo(
     () =>
@@ -140,9 +142,9 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
       {switcher}
 
       {counts.total > 0 && (
-        <div className={styles.meter} role="progressbar" aria-label="Shopping progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <i style={{ width: `${pct}%` }} />
-        </div>
+        <Progress.Root className={styles.meter} value={pct} aria-label="Shopping progress">
+          <Progress.Indicator className={styles.meterFill} style={{ width: `${pct}%` }} />
+        </Progress.Root>
       )}
 
       {current.stale && current.mealPlanId !== null && (
@@ -164,18 +166,23 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         <div className={styles.aisles}>
           {groups.map((g) => {
             const left = g.items.filter((i) => i.checkedAt === null).length;
+            const label = aisleLabel(g.category);
             return (
-              <section key={g.category} className={styles.aisle} aria-label={aisleLabel(g.category)}>
+              <Collapsible.Root key={g.category} className={styles.aisle} defaultOpen>
                 <h2 className={styles.aisleName}>
-                  <span>{aisleLabel(g.category)}</span>
-                  <small>{left > 0 ? `${left} left` : "all in the basket"}</small>
+                  <Collapsible.Trigger className={styles.aisleTrigger}>
+                    <span>{label}</span>
+                    <small>{left > 0 ? `${left} left` : "all in the basket"}</small>
+                  </Collapsible.Trigger>
                 </h2>
-                <ul className={styles.items}>
-                  {uncheckedFirst(g.items).map((item) => (
-                    <ItemRow key={item.id} item={item} onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })} />
-                  ))}
-                </ul>
-              </section>
+                <Collapsible.Content>
+                  <ul className={styles.items}>
+                    {uncheckedFirst(g.items).map((item) => (
+                      <ItemRow key={item.id} item={item} onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })} />
+                    ))}
+                  </ul>
+                </Collapsible.Content>
+              </Collapsible.Root>
             );
           })}
         </div>
@@ -209,9 +216,10 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         }
       >
         <form id="shop-add" className={styles.addForm} onSubmit={submit}>
-          <label className={styles.addField}>
-            <span>What do you need?</span>
+          <div className={styles.addField}>
+            <Label.Root htmlFor={addFieldId}>What do you need?</Label.Root>
             <input
+              id={addFieldId}
               className={styles.addInput}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -220,7 +228,7 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
               enterKeyHint="done"
               autoFocus
             />
-          </label>
+          </div>
         </form>
       </Sheet>
 
@@ -236,25 +244,44 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         }}
       />
 
-      <Sheet
-        open={clearOpen}
-        onClose={() => setClearOpen(false)}
-        title="Clear the list?"
-        footer={
-          <>
-            <Button onClick={() => setClearOpen(false)}>Keep the list</Button>
-            <Button variant="primary" loading={clear.isPending} onClick={confirmClear}>
-              Clear list
-            </Button>
-          </>
-        }
-      >
-        <p className={styles.sheetNote}>
-          Every item on this list will be removed — checked off or not, added by hand or from the plan. Nothing goes into your
-          pantry.
-          {current.mealPlanId !== null && " You can rebuild the list from your plan afterwards."}
-        </p>
-      </Sheet>
+      <AlertDialog.Root open={clearOpen} onOpenChange={setClearOpen}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className={styles.confirmBackdrop} />
+          <AlertDialog.Content className={styles.confirmPanel}>
+            <header className={styles.confirmHead}>
+              <AlertDialog.Title className={styles.confirmTitle}>Clear the list?</AlertDialog.Title>
+              <AlertDialog.Cancel asChild>
+                <IconButton label="Close" icon={<Icon name="close" />} variant="plain" />
+              </AlertDialog.Cancel>
+            </header>
+            <div className={styles.confirmBody}>
+              <AlertDialog.Description className={styles.sheetNote}>
+                Every item on this list will be removed — checked off or not, added by hand or from the plan. Nothing goes into
+                your pantry.
+                {current.mealPlanId !== null && " You can rebuild the list from your plan afterwards."}
+              </AlertDialog.Description>
+            </div>
+            <div className={styles.confirmFooter}>
+              <AlertDialog.Cancel asChild>
+                <Button>Keep the list</Button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <Button
+                  variant="primary"
+                  loading={clear.isPending}
+                  onClick={(e) => {
+                    // Keep the dialog open while the request is in flight; it closes on success.
+                    e.preventDefault();
+                    confirmClear();
+                  }}
+                >
+                  Clear list
+                </Button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </>
   );
 }
@@ -265,16 +292,28 @@ function ItemRow({ item, onToggle }: { item: ShoppingItem; onToggle: (checked: b
   const why = item.note ?? item.purposeNote ?? (item.source === "manual" ? "Added by hand" : null);
   return (
     <li className={cx(styles.item, got && styles.got)}>
-      <Checkbox checked={got} onChange={onToggle} aria-label={item.name}>
-        <span className={styles.itemEmoji} aria-hidden="true">
-          <Emoji code={ingredientEmoji(item.name)} size={26} />
+      <Checkbox.Root
+        className={styles.itemCheck}
+        checked={got}
+        onCheckedChange={(next) => onToggle(next === true)}
+        aria-label={item.name}
+      >
+        <span className={styles.itemBox} aria-hidden="true">
+          <Checkbox.Indicator className={styles.itemCheckMark} forceMount>
+            <Icon name="check" />
+          </Checkbox.Indicator>
         </span>
-        <span className={styles.itemBody}>
-          <span className={styles.itemName}>{item.name}</span>
-          {why && <span className={styles.itemWhy}>{why}</span>}
+        <span className={styles.itemContent}>
+          <span className={styles.itemEmoji} aria-hidden="true">
+            <Emoji code={ingredientEmoji(item.name)} size={26} />
+          </span>
+          <span className={styles.itemBody}>
+            <span className={styles.itemName}>{item.name}</span>
+            {why && <span className={styles.itemWhy}>{why}</span>}
+          </span>
+          {qty && <span className={styles.itemQty}>{qty}</span>}
         </span>
-        {qty && <span className={styles.itemQty}>{qty}</span>}
-      </Checkbox>
+      </Checkbox.Root>
     </li>
   );
 }

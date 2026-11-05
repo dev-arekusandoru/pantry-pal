@@ -1,4 +1,5 @@
 import { Link, useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
+import { Progress } from "radix-ui";
 import { useEffect, useRef, useState, type TouchEvent } from "react";
 import { errorMessage } from "@/api";
 import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx, toast } from "@/ui";
@@ -293,7 +294,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
       <header className={styles.top}>
         <IconButton className={styles.round} label="Exit cook mode" icon={<Icon name="close" />} onClick={exit} />
         <div className={styles.title}>
-          <b>{r.title}</b>
+          <h1>{r.title}</h1>
           <span>{stepCount > 0 ? `Step ${step + 1} of ${stepCount}` : "No steps"}</span>
         </div>
         <IconButton
@@ -305,25 +306,35 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
       </header>
 
       {stepCount > 1 && (
-        <div className={styles.progress} aria-hidden="true">
+        <Progress.Root
+          className={styles.progress}
+          value={step + 1}
+          max={stepCount}
+          getValueLabel={(value, max) => `Step ${value} of ${max}`}
+          aria-label="Step progress"
+        >
           {r.steps.map((s, i) => (
-            <i key={s.id} className={cx(i < step && styles.passed, i === step && styles.now)} />
+            <i key={s.id} aria-hidden="true" className={cx(i < step && styles.passed, i === step && styles.now)} />
           ))}
-        </div>
+        </Progress.Root>
       )}
 
       {timers.ringing.length > 0 && (
-        <div className={styles.alerts} role="alert">
+        <div className={styles.alerts}>
           {timers.ringing.map((s) => (
-            <div key={s} className={styles.alert}>
+            <div key={s} className={styles.alert} role="alert">
               <Icon name="timer" />
               <span>Step {s + 1} timer is done</span>
               {s !== step && (
-                <button type="button" onClick={() => (setStep(s), timers.dismiss(s))}>
+                <button
+                  type="button"
+                  aria-label={`Go to step ${s + 1}`}
+                  onClick={() => (setStep(s), timers.dismiss(s))}
+                >
                   Go to step
                 </button>
               )}
-              <button type="button" onClick={() => timers.dismiss(s)}>
+              <button type="button" aria-label={`Dismiss step ${s + 1} timer alert`} onClick={() => timers.dismiss(s)}>
                 Dismiss
               </button>
             </div>
@@ -354,7 +365,10 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
         {current ? (
           <>
             {current.groupLabel && <p className={styles.group}>{current.groupLabel}</p>}
-            <p className={styles.text}>{current.text}</p>
+            {/* Polite live region: a screen reader hears the new step when the text changes. */}
+            <p className={styles.text} aria-live="polite">
+              {current.text}
+            </p>
             {secs !== null && (
               <div className={styles.timerRow}>
                 {timer === undefined || timer.finished ? (
@@ -364,7 +378,11 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
                   </button>
                 ) : (
                   <>
-                    <span className={cx(styles.timer, styles.running)} role="timer" aria-label="Time left">
+                    <span
+                      className={cx(styles.timer, styles.running)}
+                      role="timer"
+                      aria-label={`Time left ${formatClock(timers.remaining(step))}`}
+                    >
                       <Icon name="timer" />
                       {formatClock(timers.remaining(step))}
                     </span>

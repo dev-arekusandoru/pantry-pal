@@ -26,7 +26,7 @@
   transition: all var(--dur) var(--pop);
 }
 
-.on {
+.seg[data-state="on"] {
   background: var(--ink);
   color: var(--bg);
   box-shadow: none;

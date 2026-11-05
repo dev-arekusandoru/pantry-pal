@@ -1,6 +1,7 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useId, useState, type FormEvent } from "react";
+import { Label, RadioGroup, Separator } from "radix-ui";
 import { useTheme, type ThemePreference } from "@/app/theme";
-import { Button, Card, ErrorState, PageHeader, SegmentedControl, Skeleton, Stepper, cx } from "@/ui";
+import { Button, Card, ErrorState, PageHeader, Skeleton, Stepper, cx } from "@/ui";
 import styles from "./Settings.module.css";
 import { useHousehold, useServerVersion, useUpdateHousehold, type HouseholdSettings } from "./queries";
 
@@ -9,6 +10,10 @@ const THEME_OPTIONS = [
   { value: "dark", label: "Dark" },
   { value: "system", label: "Match device" },
 ] as const satisfies ReadonlyArray<{ value: ThemePreference; label: string }>;
+
+function isThemePreference(value: string): value is ThemePreference {
+  return THEME_OPTIONS.some((option) => option.value === value);
+}
 
 const MIN_SERVINGS = 1;
 const MAX_SERVINGS = 24;
@@ -63,7 +68,21 @@ export function SettingsScreen() {
           <h2 id="settings-look" className={styles.heading}>
             Look
           </h2>
-          <SegmentedControl label="Theme" options={THEME_OPTIONS} value={theme} onChange={setTheme} />
+          <RadioGroup.Root
+            className={styles.themeOptions}
+            aria-label="Theme"
+            orientation="horizontal"
+            value={theme}
+            onValueChange={(value) => {
+              if (isThemePreference(value)) setTheme(value);
+            }}
+          >
+            {THEME_OPTIONS.map((option) => (
+              <RadioGroup.Item key={option.value} value={option.value} className={styles.themeOption}>
+                {option.label}
+              </RadioGroup.Item>
+            ))}
+          </RadioGroup.Root>
           <p className={styles.hint}>Saved on this device only.</p>
         </Card>
 
@@ -78,17 +97,19 @@ export function SettingsScreen() {
           <h2 id="settings-servings" className={styles.heading}>
             Servings
           </h2>
-          <ul className={styles.rows}>
-            {SERVINGS_FIELDS.map(({ key, label, hint }) => (
-              <ServingsRow
-                key={key}
-                label={label}
-                hint={hint}
-                value={settings[key]}
-                onChange={(next) => update.mutate({ settings: { [key]: next } satisfies Partial<HouseholdSettings> })}
-              />
+          <div className={styles.rows} role="list">
+            {SERVINGS_FIELDS.map(({ key, label, hint }, index) => (
+              <Fragment key={key}>
+                {index > 0 && <Separator.Root decorative className={styles.sep} />}
+                <ServingsRow
+                  label={label}
+                  hint={hint}
+                  value={settings[key]}
+                  onChange={(next) => update.mutate({ settings: { [key]: next } satisfies Partial<HouseholdSettings> })}
+                />
+              </Fragment>
             ))}
-          </ul>
+          </div>
         </Card>
 
         <p className={styles.about}>
@@ -112,6 +133,7 @@ export function SettingsScreen() {
 }
 
 function NameForm({ name, saving, onSave }: { name: string; saving: boolean; onSave: (name: string) => void }) {
+  const inputId = useId();
   const [draft, setDraft] = useState(name);
   const trimmed = draft.trim();
   const dirty = trimmed !== name && trimmed !== "";
@@ -123,9 +145,12 @@ function NameForm({ name, saving, onSave }: { name: string; saving: boolean; onS
 
   return (
     <form className={styles.nameForm} onSubmit={submit}>
-      <label className={styles.field}>
-        <span className={styles.label}>Household name</span>
+      <div className={styles.field}>
+        <Label.Root className={styles.label} htmlFor={inputId}>
+          Household name
+        </Label.Root>
         <input
+          id={inputId}
           className={styles.input}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -133,7 +158,7 @@ function NameForm({ name, saving, onSave }: { name: string; saving: boolean; onS
           enterKeyHint="done"
           maxLength={80}
         />
-      </label>
+      </div>
       <Button type="submit" variant="primary" disabled={!dirty} loading={saving}>
         Save
       </Button>
@@ -150,7 +175,7 @@ interface ServingsRowProps {
 
 function ServingsRow({ label, hint, value, onChange }: ServingsRowProps) {
   return (
-    <li className={styles.row}>
+    <div role="listitem" className={styles.row}>
       <div className={styles.rowText}>
         <span className={styles.label}>{label}</span>
         <span className={styles.hint}>{hint}</span>
@@ -163,7 +188,7 @@ function ServingsRow({ label, hint, value, onChange }: ServingsRowProps) {
         disableDecrement={value <= MIN_SERVINGS}
         disableIncrement={value >= MAX_SERVINGS}
       />
-    </li>
+    </div>
   );
 }
 

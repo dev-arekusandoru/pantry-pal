@@ -1,3 +1,4 @@
+import { VisuallyHidden } from "radix-ui";
 import { useEffect, useState } from "react";
 import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, toast } from "@/ui";
 import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
@@ -86,7 +87,9 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
     return (
       <>
         {header}
-        <div className={styles.loading} aria-busy="true" aria-label="Loading the week">
+        {/* The live region sits outside the busy skeletons: AT defers changes inside a busy subtree. */}
+        <VisuallyHidden.Root role="status">Loading the week&hellip;</VisuallyHidden.Root>
+        <div className={styles.loading} aria-busy="true">
           <Skeleton height={260} radius={34} />
           <Skeleton height={150} radius={28} />
           <Skeleton height={150} radius={28} />

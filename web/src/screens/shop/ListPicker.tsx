@@ -1,4 +1,5 @@
-import { Icon, Pill, Sheet, cx } from "@/ui";
+import { RadioGroup } from "radix-ui";
+import { Icon, Pill, Sheet } from "@/ui";
 import type { ShoppingList } from "./cart";
 import styles from "./Shop.module.css";
 
@@ -18,27 +19,26 @@ function madeOn(iso: string): string {
 export function ListPicker({ open, onClose, lists, selectedId, onSelect }: ListPickerProps) {
   return (
     <Sheet open={open} onClose={onClose} title="Switch list">
-      <ul className={styles.pickList}>
+      <RadioGroup.Root
+        className={styles.pickList}
+        orientation="vertical"
+        value={selectedId}
+        onValueChange={onSelect}
+        aria-label="Shopping lists"
+      >
         {lists.map((l) => (
-          <li key={l.id}>
-            <button
-              type="button"
-              className={cx(styles.pickRow, l.id === selectedId && styles.pickOn)}
-              aria-current={l.id === selectedId ? "true" : undefined}
-              onClick={() => onSelect(l.id)}
-            >
-              <span className={styles.pickBody}>
-                <span className={styles.pickTitle}>{l.title}</span>
-                <span className={styles.pickSub}>
-                  {l.status === "shopping" ? "Shopping now" : "Draft"} · made {madeOn(l.createdAt)}
-                </span>
+          <RadioGroup.Item key={l.id} value={l.id} type="button" className={styles.pickRow}>
+            <span className={styles.pickBody}>
+              <span className={styles.pickTitle}>{l.title}</span>
+              <span className={styles.pickSub}>
+                {l.status === "shopping" ? "Shopping now" : "Draft"} · made {madeOn(l.createdAt)}
               </span>
-              {l.stale && <Pill tone="butter">Plan changed</Pill>}
-              {l.id === selectedId && <Icon name="check" />}
-            </button>
-          </li>
+            </span>
+            {l.stale && <Pill tone="butter">Plan changed</Pill>}
+            {l.id === selectedId && <Icon name="check" />}
+          </RadioGroup.Item>
         ))}
-      </ul>
+      </RadioGroup.Root>
     </Sheet>
   );
 }

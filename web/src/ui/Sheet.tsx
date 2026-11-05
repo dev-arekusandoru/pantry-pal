@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { Dialog, VisuallyHidden } from "radix-ui";
 import { IconButton } from "./IconButton";
 import styles from "./Sheet.module.css";
 import { cx } from "./cx";
@@ -19,101 +19,56 @@ export interface SheetProps {
   children: ReactNode;
 }
 
-const FOCUSABLE =
-  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
-
-let openSheets = 0;
-
-/** Lock page scroll and make the app root inert while any sheet is open. */
-function lockPage(): () => void {
-  openSheets += 1;
-  document.body.classList.add("scroll-locked");
-  const root = document.getElementById("root");
-  root?.setAttribute("inert", "");
-  return () => {
-    openSheets -= 1;
-    if (openSheets === 0) {
-      document.body.classList.remove("scroll-locked");
-      root?.removeAttribute("inert");
-    }
-  };
-}
-
 /**
- * Modal sheet / dialog. Traps focus, closes on Esc and backdrop click, restores
- * focus to the opener, locks page scroll. Rendered in a portal on <body>.
+ * Modal sheet / dialog on Radix Dialog: focus trap, scroll lock, inert
+ * background, Esc and backdrop dismissal, focus restored to the opener.
+ * Rendered in a portal on <body>.
  */
 export function Sheet({ open, onClose, title, hideTitle, variant = "bottom", footer, children }: SheetProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const titleId = useId();
+  const openerRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
+  // Runs before Radix moves focus into the dialog, so this captures the opener.
+  useLayoutEffect(() => {
     if (!open) return;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const unlock = lockPage();
-    const panel = panelRef.current;
-    // Respect `autoFocus` children; otherwise focus the panel itself.
-    if (panel && !panel.contains(document.activeElement)) panel.focus();
-    return () => {
-      unlock();
-      opener?.focus?.();
-    };
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   }, [open]);
 
-  if (!open) return null;
+  const heading = (
+    <Dialog.Title asChild>
+      <h2 className={styles.title}>{title}</h2>
+    </Dialog.Title>
+  );
 
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Escape") {
-      e.stopPropagation();
-      onClose();
-      return;
-    }
-    if (e.key !== "Tab") return;
-    const panel = panelRef.current;
-    if (!panel) return;
-    const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (!first || !last) {
-      e.preventDefault();
-      return;
-    }
-    const active = document.activeElement;
-    if (e.shiftKey && (active === first || active === panel)) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && active === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  }
-
-  return createPortal(
-    <div
-      className={cx(styles.backdrop, variant === "center" && styles.center)}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+  return (
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
       }}
     >
-      <div
-        ref={panelRef}
-        className={styles.panel}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        onKeyDown={onKeyDown}
-      >
-        <header className={styles.head}>
-          <h2 id={titleId} className={cx(styles.title, hideTitle && "sr-only")}>
-            {title}
-          </h2>
-          <IconButton label="Close" icon={<Icon name="close" />} variant="plain" onClick={onClose} />
-        </header>
-        <div className={styles.body}>{children}</div>
-        {footer && <div className={styles.footer}>{footer}</div>}
-      </div>
-    </div>,
-    document.body,
+      <Dialog.Portal>
+        <Dialog.Overlay className={styles.backdrop} />
+        <Dialog.Content
+          className={cx(styles.viewport, variant === "center" && styles.center)}
+          aria-describedby={undefined}
+          onCloseAutoFocus={(event) => {
+            // Radix would focus its Trigger; this sheet has none, so return to the opener.
+            event.preventDefault();
+            const opener = openerRef.current;
+            openerRef.current = null;
+            opener?.focus?.();
+          }}
+        >
+          <div className={cx(styles.panel, variant === "center" && styles.center)}>
+            <header className={styles.head}>
+              {hideTitle ? <VisuallyHidden.Root asChild>{heading}</VisuallyHidden.Root> : heading}
+              <IconButton label="Close" icon={<Icon name="close" />} variant="plain" onClick={onClose} />
+            </header>
+            <div className={styles.body}>{children}</div>
+            {footer && <div className={styles.footer}>{footer}</div>}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

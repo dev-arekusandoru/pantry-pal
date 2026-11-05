@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
@@ -37,6 +37,24 @@ describe("Sheet", () => {
       await user.tab();
       expect(dialog).toContainElement(document.activeElement as HTMLElement);
     }
+  });
+
+  it("closes when the backdrop is clicked", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "Open" }));
+    const backdrop = screen.getByRole("dialog").previousElementSibling as HTMLElement;
+    await user.click(backdrop);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("keeps a visually hidden title as the accessible name", () => {
+    render(
+      <Sheet open onClose={() => {}} title="Hidden title" hideTitle>
+        <p>Body</p>
+      </Sheet>,
+    );
+    expect(screen.getByRole("dialog", { name: "Hidden title" })).toBeInTheDocument();
   });
 });
 

@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from "react";
+import { Label } from "radix-ui";
 import styles from "./SearchInput.module.css";
 import { cx } from "./cx";
 import { Icon } from "./icons";
@@ -12,7 +13,7 @@ export interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElem
 
 export function SearchInput({ value, onChange, label, placeholder, className, ...rest }: SearchInputProps) {
   return (
-    <label className={cx(styles.root, className)}>
+    <Label.Root className={cx(styles.root, className)}>
       <Icon name="search" />
       <input
         type="search"
@@ -25,6 +26,6 @@ export function SearchInput({ value, onChange, label, placeholder, className, ..
         onChange={(e) => onChange(e.target.value)}
         {...rest}
       />
-    </label>
+    </Label.Root>
   );
 }

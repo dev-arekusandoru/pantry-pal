@@ -1,4 +1,5 @@
 import { Link, useCanGoBack, useRouter } from "@tanstack/react-router";
+import { VisuallyHidden } from "radix-ui";
 import { useMemo, useState } from "react";
 import { Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, SegmentedControl, Skeleton, Stepper, buttonClass, ingredientEmoji, type SegmentOption } from "@/ui";
 import { formatDuration, stepSeconds } from "./duration";
@@ -146,6 +147,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
           >
             <Icon name="recipes" size={17} />
             View original recipe{r.sourceName ? ` on ${r.sourceName}` : ""}
+            <VisuallyHidden.Root> (opens in a new tab)</VisuallyHidden.Root>
           </a>
         )}
 
@@ -259,7 +261,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
               const secs = stepSeconds(step);
               return (
                 <li key={step.id}>
-                  <span className={styles.stepNum}>{i + 1}</span>
+                  <span className={styles.stepNum} aria-hidden="true">{i + 1}</span>
                   <div>
                     {step.groupLabel && step.groupLabel !== r.steps[i - 1]?.groupLabel && <p className={styles.group}>{step.groupLabel}</p>}
                     <p>
@@ -316,7 +318,8 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
 
 function RecipeSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading recipe" className={styles.page}>
+    <div role="status" className={styles.page}>
+      <VisuallyHidden.Root>Loading recipe</VisuallyHidden.Root>
       <Skeleton height={280} radius={34} />
       <div className={styles.body}>
         <Skeleton height={44} width="70%" />

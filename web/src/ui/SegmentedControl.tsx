@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ToggleGroup } from "radix-ui";
 import styles from "./SegmentedControl.module.css";
 import { cx } from "./cx";
 
@@ -18,22 +19,29 @@ export interface SegmentedControlProps<T extends string> {
   className?: string;
 }
 
-/** Row of filter chips; exactly one is selected. Scrolls horizontally when it overflows. */
+/**
+ * Row of filter chips; exactly one is selected (Radix single ToggleGroup, so it
+ * is a radiogroup for assistive tech and arrow keys move between chips).
+ * Scrolls horizontally when it overflows.
+ */
 export function SegmentedControl<T extends string>({ options, value, onChange, label, className }: SegmentedControlProps<T>) {
   return (
-    <div className={cx(styles.root, className)} role="group" aria-label={label}>
+    <ToggleGroup.Root
+      type="single"
+      value={value}
+      // A single ToggleGroup reports "" when the active chip is clicked again; keep a chip always selected.
+      onValueChange={(next) => {
+        if (next) onChange(next as T);
+      }}
+      aria-label={label}
+      className={cx(styles.root, className)}
+    >
       {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          className={cx(styles.seg, o.value === value && styles.on)}
-          aria-pressed={o.value === value}
-          onClick={() => onChange(o.value)}
-        >
+        <ToggleGroup.Item key={o.value} value={o.value} className={styles.seg}>
           {o.icon}
           {o.label}
-        </button>
+        </ToggleGroup.Item>
       ))}
-    </div>
+    </ToggleGroup.Root>
   );
 }

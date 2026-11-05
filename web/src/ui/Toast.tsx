@@ -1,5 +1,6 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { Toast } from "radix-ui";
 import styles from "./Toast.module.css";
 import { cx } from "./cx";
 
@@ -20,7 +21,6 @@ interface ToastItem extends ToastInput {
 let items: ToastItem[] = [];
 let nextId = 1;
 const listeners = new Set<() => void>();
-const timers = new Map<number, ReturnType<typeof setTimeout>>();
 const MAX_VISIBLE = 3;
 
 function emit(next: ToastItem[]) {
@@ -29,9 +29,6 @@ function emit(next: ToastItem[]) {
 }
 
 function dismiss(id: number) {
-  const t = timers.get(id);
-  if (t) clearTimeout(t);
-  timers.delete(id);
   emit(items.filter((i) => i.id !== id));
 }
 
@@ -43,10 +40,6 @@ export const toast = {
   show(input: ToastInput): number {
     const id = nextId++;
     emit([...items, { ...input, id }].slice(-MAX_VISIBLE));
-    timers.set(
-      id,
-      setTimeout(() => dismiss(id), input.durationMs ?? (input.action ? 7000 : 4000)),
-    );
     return id;
   },
   error(message: string): number {
@@ -69,37 +62,28 @@ export function ToastHost() {
     () => items,
   );
 
-  // Drop timers for toasts evicted by the MAX_VISIBLE cap.
-  useEffect(() => {
-    const live = new Set(list.map((i) => i.id));
-    for (const [id, t] of timers) {
-      if (!live.has(id)) {
-        clearTimeout(t);
-        timers.delete(id);
-      }
-    }
-  }, [list]);
-
   return createPortal(
-    <div className={styles.host} role="region" aria-label="Notifications">
+    <Toast.Provider label="Notifications" swipeDirection="right">
       {list.map((t) => (
-        <div key={t.id} className={cx(styles.toast, t.tone === "error" && styles.error)} role={t.tone === "error" ? "alert" : "status"}>
+        <Toast.Root
+          key={t.id}
+          type={t.tone === "error" ? "foreground" : "background"}
+          duration={t.durationMs ?? (t.action ? 7000 : 4000)}
+          className={cx(styles.toast, t.tone === "error" && styles.error)}
+          onOpenChange={(open) => {
+            if (!open) dismiss(t.id);
+          }}
+        >
           <span>{t.message}</span>
           {t.action && (
-            <button
-              type="button"
-              className={styles.action}
-              onClick={() => {
-                t.action?.onClick();
-                dismiss(t.id);
-              }}
-            >
+            <Toast.Action altText={t.action.label} className={styles.action} onClick={t.action.onClick}>
               {t.action.label}
-            </button>
+            </Toast.Action>
           )}
-        </div>
+        </Toast.Root>
       ))}
-    </div>,
+      <Toast.Viewport className={styles.host} label="Notifications" />
+    </Toast.Provider>,
     document.body,
   );
 }

@@ -19,18 +19,6 @@ export function stepFor(unit: string | null): number {
   return (unit !== null ? STEPS[unit] : undefined) ?? 1;
 }
 
-/** Tap order for staples without a quantity. */
-export function nextStatus(status: PantryStatus): PantryStatus {
-  switch (status) {
-    case "on_hand":
-      return "low";
-    case "low":
-      return "out";
-    default:
-      return "on_hand";
-  }
-}
-
 /** Body for `POST /pantry/set` that re-adds a removed row where it was, with its amount. */
 export function restoreBody(item: PantryItem) {
   return {

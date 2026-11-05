@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
+import { AlertDialog, Label } from "radix-ui";
 import { Button, Icon, Sheet } from "@/ui";
 import { parseQty, qtyToInput, unitLabel } from "../shop/format";
 import styles from "./Pantry.module.css";
@@ -14,51 +15,28 @@ export interface SetQtySheetProps {
 }
 
 export function SetQtySheet({ item, onClose, onSave, onRemove }: SetQtySheetProps) {
-  const [confirming, setConfirming] = useState(false);
-  // A closed sheet (or a different item) starts from the amount form again.
-  useEffect(() => {
-    setConfirming(false);
-  }, [item?.id]);
-
   return (
     <Sheet
       open={item !== null}
       onClose={onClose}
-      title={
-        item
-          ? confirming
-            ? `Remove ${item.ingredient.name}?`
-            : `${item.ingredient.name}: how much?`
-          : "Set amount"
-      }
+      title={item ? `${item.ingredient.name}: how much?` : "Set amount"}
       footer={null}
     >
-      {item && (
-        <Form
-          key={item.id}
-          item={item}
-          confirming={confirming}
-          setConfirming={setConfirming}
-          onClose={onClose}
-          onSave={onSave}
-          onRemove={onRemove}
-        />
-      )}
+      {item && <Form key={item.id} item={item} onClose={onClose} onSave={onSave} onRemove={onRemove} />}
     </Sheet>
   );
 }
 
 interface FormProps {
   item: PantryItem;
-  confirming: boolean;
-  setConfirming: (confirming: boolean) => void;
   onClose: () => void;
   onSave: (item: PantryItem, qty: number) => void;
   onRemove: (item: PantryItem) => void;
 }
 
-function Form({ item, confirming, setConfirming, onClose, onSave, onRemove }: FormProps) {
+function Form({ item, onClose, onSave, onRemove }: FormProps) {
   const [text, setText] = useState(item.qty === null ? "" : qtyToInput(item.qty));
+  const amountId = useId();
   const qty = parseQty(text);
   const unit = unitLabel(item.unit, qty);
   const name = item.ingredient.name;
@@ -70,28 +48,14 @@ function Form({ item, confirming, setConfirming, onClose, onSave, onRemove }: Fo
     onClose();
   }
 
-  if (confirming) {
-    return (
-      <div className={styles.setForm}>
-        <p className={styles.hint}>
-          {name} leaves the {LOCATION_LABEL[item.location].toLowerCase()} shelf along with its recorded amount. Undo from the
-          toast puts it straight back.
-        </p>
-        <div className={styles.setActions}>
-          <Button onClick={() => setConfirming(false)}>Keep it</Button>
-          <Button variant="primary" icon={<Icon name="trash" />} onClick={() => { onRemove(item); onClose(); }}>
-            Remove
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <form className={styles.setForm} onSubmit={submit}>
-      <label className={styles.setField}>
-        <span className="sr-only">Amount</span>
+      <div className={styles.setField}>
+        <Label.Root className="sr-only" htmlFor={amountId}>
+          Amount
+        </Label.Root>
         <input
+          id={amountId}
           className={styles.input}
           inputMode="decimal"
           autoComplete="off"
@@ -102,21 +66,47 @@ function Form({ item, confirming, setConfirming, onClose, onSave, onRemove }: Fo
           onFocus={(e) => e.currentTarget.select()}
         />
         {unit !== "" && <span className={styles.setUnit}>{unit}</span>}
-      </label>
+      </div>
       <div className={styles.setActions}>
         <Button onClick={onClose}>Cancel</Button>
         <Button type="submit" variant="primary" disabled={qty === null}>
           Save
         </Button>
       </div>
-      <Button
-        variant="secondary"
-        icon={<Icon name="trash" />}
-        className={styles.removeTrigger}
-        onClick={() => setConfirming(true)}
-      >
-        Remove from pantry
-      </Button>
+      <AlertDialog.Root>
+        <AlertDialog.Trigger asChild>
+          <Button variant="secondary" icon={<Icon name="trash" />} className={styles.removeTrigger}>
+            Remove from pantry
+          </Button>
+        </AlertDialog.Trigger>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className={styles.alertOverlay} />
+          <AlertDialog.Content className={styles.alertContent}>
+            <AlertDialog.Title className={styles.alertTitle}>Remove {name}?</AlertDialog.Title>
+            <AlertDialog.Description className={styles.hint}>
+              {name} leaves the {LOCATION_LABEL[item.location].toLowerCase()} shelf along with its recorded amount. Undo
+              from the toast puts it straight back.
+            </AlertDialog.Description>
+            <div className={styles.setActions}>
+              <AlertDialog.Cancel asChild>
+                <Button>Keep it</Button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <Button
+                  variant="primary"
+                  icon={<Icon name="trash" />}
+                  onClick={() => {
+                    onRemove(item);
+                    onClose();
+                  }}
+                >
+                  Remove
+                </Button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </form>
   );
 }

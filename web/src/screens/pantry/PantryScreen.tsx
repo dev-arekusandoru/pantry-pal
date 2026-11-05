@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { errorMessage } from "@/api";
-import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInput, SegmentedControl, Skeleton, toast } from "@/ui";
+import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInput, Skeleton, toast } from "@/ui";
 import { AddSheet } from "./AddSheet";
+import { ChoiceChips } from "./ChoiceChips";
 import styles from "./Pantry.module.css";
 import { useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetQty, useSetStatus } from "./queries";
 import { SetQtySheet } from "./SetQtySheet";
 import { StockRow } from "./StockRow";
-import { LOCATION_LABEL, LOCATION_ORDER, groupByLocation, nextStatus, stepFor, type PantryItem, type StorageLocation } from "./stock";
+import { LOCATION_LABEL, LOCATION_ORDER, groupByLocation, stepFor, type PantryItem, type StorageLocation } from "./stock";
 
 export function PantryScreen() {
   const pantry = usePantry();
@@ -70,7 +71,7 @@ export function PantryScreen() {
             <div className={styles.tools}>
               <SearchInput label="Search the pantry" value={query} onChange={setQuery} />
               {present.length > 1 && (
-                <SegmentedControl
+                <ChoiceChips<StorageLocation | "all">
                   label="Filter by location"
                   value={activeLocation}
                   onChange={setLocation}
@@ -104,7 +105,7 @@ export function PantryScreen() {
                         item={item}
                         onStep={(it, dir) => adjust.mutate({ item: it, delta: dir > 0 ? stepFor(it.unit) : -Math.min(stepFor(it.unit), it.qty ?? 0) })}
                         onEditQty={setEditing}
-                        onCycleStatus={(it) => setStatus.mutate({ item: it, status: nextStatus(it.status) })}
+                        onSetStatus={(it, status) => setStatus.mutate({ item: it, status })}
                       />
                     ))}
                   </ul>

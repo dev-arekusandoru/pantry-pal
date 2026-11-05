@@ -37,6 +37,42 @@
   font-size: var(--fs-md);
 }
 
+/* Chip row look, matching the shared segmented control. */
+.themeOptions {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 6px 4px 10px;
+}
+
+.themeOptions::-webkit-scrollbar {
+  display: none;
+}
+
+.themeOption {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  font-weight: var(--fw-bold);
+  font-size: 15px;
+  box-shadow: 0 0 0 2px var(--line);
+  transition: all var(--dur) var(--pop);
+}
+
+.themeOption[data-state="checked"] {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: none;
+  transform: rotate(-2deg) scale(1.04);
+}
+
 .rows {
   display: grid;
 }
@@ -47,11 +83,14 @@
   justify-content: space-between;
   gap: 14px;
   padding: 12px 0;
+}
+
+.sep {
+  border: 0;
   border-top: 2px dashed var(--line);
 }
 
 .rows > .row:first-child {
-  border-top: 0;
   padding-top: 4px;
 }
 

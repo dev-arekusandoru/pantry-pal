@@ -91,6 +91,12 @@
   gap: 12px;
 }
 
+/* The option group sits where the two option cards used to be, so it keeps their stacking and gap. */
+.scopeOptions {
+  display: grid;
+  gap: 12px;
+}
+
 .scopeIntro {
   font-weight: var(--fw-semibold);
   font-size: var(--fs-md);

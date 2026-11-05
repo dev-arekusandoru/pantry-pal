@@ -26,10 +26,6 @@ body {
   min-height: 100dvh;
 }
 
-body.scroll-locked {
-  overflow: hidden;
-}
-
 h1,
 h2,
 h3 {

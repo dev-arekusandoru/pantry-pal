@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupByLocation, nextStatus, restoreBody, stepFor, type PantryItem } from "./stock";
+import { groupByLocation, restoreBody, stepFor, type PantryItem } from "./stock";
 
 const item = (name: string, location: PantryItem["location"]): PantryItem =>
   ({ id: name, ingredient: { id: name, name, category: "other" }, location }) as PantryItem;
@@ -11,15 +11,6 @@ describe("stepFor", () => {
     expect(stepFor("can")).toBe(1);
     expect(stepFor("count")).toBe(1);
     expect(stepFor(null)).toBe(1);
-  });
-});
-
-describe("nextStatus", () => {
-  it("cycles on hand, low, out and back", () => {
-    expect(nextStatus("on_hand")).toBe("low");
-    expect(nextStatus("low")).toBe("out");
-    expect(nextStatus("out")).toBe("on_hand");
-    expect(nextStatus("unknown")).toBe("on_hand");
   });
 });
 

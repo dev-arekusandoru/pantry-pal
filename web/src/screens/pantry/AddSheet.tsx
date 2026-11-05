@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from "react";
-import { Button, SegmentedControl, Sheet } from "@/ui";
+import { useId, useState, type FormEvent } from "react";
+import { Label, Select } from "radix-ui";
+import { Button, Icon, Sheet, cx } from "@/ui";
 import { aisleLabel } from "../shop/cart";
 import { parseQty } from "../shop/format";
 import styles from "./Pantry.module.css";
+import { ChoiceChips } from "./ChoiceChips";
 import { useAddStock } from "./queries";
 import { LOCATION_LABEL, LOCATION_ORDER, type PantryItem, type StorageLocation } from "./stock";
 
@@ -22,6 +24,9 @@ const CATEGORIES: readonly Category[] = [
   "beverage",
   "other",
 ];
+
+/** Radix Select reserves the empty string for "no value", so the unit-less choice gets a sentinel. */
+const NO_UNIT = "__none";
 
 const UNITS: ReadonlyArray<readonly [string, string]> = [
   ["", "No unit"],
@@ -65,6 +70,10 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
   const [location, setLocation] = useState<StorageLocation>(initialLocation);
   const [category, setCategory] = useState<Category>("other");
   const add = useAddStock();
+  const nameId = useId();
+  const qtyId = useId();
+  const unitId = useId();
+  const categoryId = useId();
 
   const qty = parseQty(qtyText);
   const qtyBad = qtyText.trim() !== "" && (qty === null || qty <= 0);
@@ -98,9 +107,12 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
       }
     >
       <form id="pantry-add" className={styles.addForm} onSubmit={submit}>
-        <label className={styles.field}>
-          <span>What is it?</span>
+        <div className={styles.field}>
+          <Label.Root className={styles.fieldLabel} htmlFor={nameId}>
+            What is it?
+          </Label.Root>
           <input
+            id={nameId}
             className={styles.input}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -108,11 +120,14 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
             autoComplete="off"
             autoFocus
           />
-        </label>
+        </div>
         <div className={styles.fieldRow}>
-          <label className={styles.field}>
-            <span>How much? (optional)</span>
+          <div className={styles.field}>
+            <Label.Root className={styles.fieldLabel} htmlFor={qtyId}>
+              How much? (optional)
+            </Label.Root>
             <input
+              id={qtyId}
               className={styles.input}
               inputMode="decimal"
               value={qtyText}
@@ -121,37 +136,72 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
               autoComplete="off"
               aria-invalid={qtyBad || undefined}
             />
-          </label>
-          <label className={styles.field}>
-            <span>Unit</span>
-            <select className={styles.input} value={unit} onChange={(e) => setUnit(e.target.value)}>
-              {UNITS.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+          </div>
+          <div className={styles.field}>
+            <Label.Root className={styles.fieldLabel} htmlFor={unitId}>
+              Unit
+            </Label.Root>
+            <Select.Root
+              value={unit === "" ? NO_UNIT : unit}
+              onValueChange={(next) => setUnit(next === NO_UNIT ? "" : next)}
+            >
+              <Select.Trigger id={unitId} className={cx(styles.input, styles.selectTrigger)}>
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Portal>
+                <Select.Content className={styles.selectContent} position="popper" sideOffset={8} collisionPadding={12}>
+                  <Select.Viewport className={styles.selectViewport}>
+                    {UNITS.map(([value, label]) => (
+                      <Select.Item
+                        key={value === "" ? NO_UNIT : value}
+                        value={value === "" ? NO_UNIT : value}
+                        className={styles.selectItem}
+                      >
+                        <Select.ItemText>{label}</Select.ItemText>
+                        <Select.ItemIndicator className={styles.selectIndicator}>
+                          <Icon name="check" />
+                        </Select.ItemIndicator>
+                      </Select.Item>
+                    ))}
+                  </Select.Viewport>
+                </Select.Content>
+              </Select.Portal>
+            </Select.Root>
+          </div>
         </div>
         <div className={styles.field}>
           <span>Where does it live?</span>
-          <SegmentedControl
+          <ChoiceChips<StorageLocation>
             label="Where does it live?"
             options={LOCATION_ORDER.map((l) => ({ value: l, label: LOCATION_LABEL[l] }))}
             value={location}
             onChange={setLocation}
           />
         </div>
-        <label className={styles.field}>
-          <span>Shopping aisle</span>
-          <select className={styles.input} value={category} onChange={(e) => setCategory(e.target.value as Category)}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {aisleLabel(c)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className={styles.field}>
+          <Label.Root className={styles.fieldLabel} htmlFor={categoryId}>
+            Shopping aisle
+          </Label.Root>
+          <Select.Root value={category} onValueChange={(next) => setCategory(next as Category)}>
+            <Select.Trigger id={categoryId} className={cx(styles.input, styles.selectTrigger)}>
+              <Select.Value />
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Content className={styles.selectContent} position="popper" sideOffset={8} collisionPadding={12}>
+                <Select.Viewport className={styles.selectViewport}>
+                  {CATEGORIES.map((c) => (
+                    <Select.Item key={c} value={c} className={styles.selectItem}>
+                      <Select.ItemText>{aisleLabel(c)}</Select.ItemText>
+                      <Select.ItemIndicator className={styles.selectIndicator}>
+                        <Icon name="check" />
+                      </Select.ItemIndicator>
+                    </Select.Item>
+                  ))}
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
+        </div>
         {duplicate && <p className={styles.hint}>That's already in this spot. Use the + and - on its row, or give an amount to add more.</p>}
       </form>
     </Sheet>

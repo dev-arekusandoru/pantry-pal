@@ -1,34 +1,37 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import { useId, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { Checkbox as RadixCheckbox, Label } from "radix-ui";
 import styles from "./Checkbox.module.css";
 import { cx } from "./cx";
 import { Icon } from "./icons";
 
-export interface CheckboxProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "onChange" | "checked" | "children"> {
+export interface CheckboxProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onChange" | "children" | "type"> {
   checked: boolean;
   onChange: (checked: boolean) => void;
   /** Visible label. Omit and pass `aria-label` for a box-only checkbox (e.g. inside a row). */
   children?: ReactNode;
 }
 
-/** Chunky checkbox on a real `<input type="checkbox">`, so keyboard and screen readers just work. */
+/**
+ * Chunky checkbox on a Radix Checkbox (a `role="checkbox"` button), labelled
+ * through Radix Label so clicking the text toggles it too.
+ */
 export function Checkbox({ checked, onChange, children, className, id, ...rest }: CheckboxProps) {
   const autoId = useId();
-  const inputId = id ?? autoId;
+  const controlId = id ?? autoId;
   return (
-    <label className={cx(styles.root, className)} htmlFor={inputId}>
-      <input
-        id={inputId}
-        type="checkbox"
-        className={styles.input}
+    <Label.Root htmlFor={controlId} className={cx(styles.root, className)}>
+      <RadixCheckbox.Root
+        id={controlId}
         checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onCheckedChange={(next) => onChange(next === true)}
+        className={styles.box}
         {...rest}
-      />
-      <span className={styles.box} aria-hidden="true">
-        <Icon name="check" />
-      </span>
+      >
+        <RadixCheckbox.Indicator className={styles.check} forceMount>
+          <Icon name="check" />
+        </RadixCheckbox.Indicator>
+      </RadixCheckbox.Root>
       {children !== undefined && <span className={styles.label}>{children}</span>}
-    </label>
+    </Label.Root>
   );
 }

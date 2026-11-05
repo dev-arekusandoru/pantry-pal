@@ -8,14 +8,6 @@
   min-width: 44px;
 }
 
-.input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  margin: 0;
-  cursor: inherit;
-}
-
 .box {
   width: 36px;
   height: 36px;
@@ -26,6 +18,10 @@
   place-items: center;
   background: var(--card);
   transition: all 0.2s;
+}
+
+.check {
+  display: contents;
 }
 
 .box svg {
@@ -39,22 +35,21 @@
   transition: all 0.3s var(--pop);
 }
 
-.input:checked + .box {
+.box[data-state="checked"] {
   background: var(--pistachio);
   border-color: var(--pistachio);
 }
 
-.input:checked + .box svg {
+.box[data-state="checked"] svg {
   opacity: 1;
   transform: none;
 }
 
-.input:focus-visible + .box {
-  outline: 3px solid var(--blue);
-  outline-offset: 3px;
+.box:focus-visible {
+  border-radius: var(--r-xs);
 }
 
-.input:disabled + .box {
+.box:disabled {
   opacity: 0.5;
 }
 

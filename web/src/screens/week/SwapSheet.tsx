@@ -1,5 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { ToggleGroup, VisuallyHidden } from "radix-ui";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button, Icon, Pill, SearchInput, Sheet, Skeleton, toast } from "@/ui";
 import { monthDay, weekdayName } from "./dates";
 import { MEAL_EMOJI, pantryCoverage, slotName, swapPlanFor, type AvailabilityLine, type MealType, type PlanView, type RecipeSummary, type Slot } from "./model";
@@ -69,6 +70,12 @@ function SwapSheetBody({ target, plan, onClose }: SwapSheetProps & { target: Swa
 
   const title = `${slot ? "Swap" : "Plan"} ${weekdayName(date)} ${mealType}`;
   const current = slot?.cookEvent?.recipeTitle ?? slot?.label;
+  // Announced politely so screen readers hear the list change as the search narrows.
+  const resultCount = recipes.isError
+    ? "Couldn't load recipes"
+    : recipes.isPending
+      ? "Loading recipes"
+      : `${recipes.data.length} ${recipes.data.length === 1 ? "recipe" : "recipes"}`;
 
   return (
     <Sheet open onClose={onClose} title={title}>
@@ -88,6 +95,7 @@ function SwapSheetBody({ target, plan, onClose }: SwapSheetProps & { target: Swa
       ) : (
         <>
           <SearchInput label={`Search ${mealType} recipes`} value={search} onChange={setSearch} className={styles.search} />
+          <VisuallyHidden.Root role="status">{resultCount}</VisuallyHidden.Root>
           {recipes.isError ? (
             <p className={styles.note} role="alert">
               Couldn't load recipes. Try again in a moment.
@@ -101,19 +109,24 @@ function SwapSheetBody({ target, plan, onClose }: SwapSheetProps & { target: Swa
           ) : recipes.data.length === 0 ? (
             <p className={styles.note}>{search.trim() ? "No recipes match that search." : `No ${mealType} recipes yet.`}</p>
           ) : (
-            <ul className={styles.list}>
+            <ToggleGroup.Root
+              type="single"
+              // One tap applies the pick, so the group reports activations instead of holding a
+              // checked item (a stuck check would also make a failed submit impossible to retry).
+              value=""
+              className={styles.list}
+              aria-label={`Pick a ${mealType} recipe`}
+              aria-orientation="vertical"
+              disabled={swap.isPending}
+              onValueChange={(value) => {
+                const recipe = recipes.data.find((r) => r.id === value);
+                if (recipe) pick(recipe);
+              }}
+            >
               {recipes.data.map((recipe) => (
-                <li key={recipe.id}>
-                  <PickerRow
-                    recipe={recipe}
-                    mealType={mealType}
-                    availability={availability.data}
-                    disabled={swap.isPending}
-                    onPick={pick}
-                  />
-                </li>
+                <PickerRow key={recipe.id} recipe={recipe} mealType={mealType} availability={availability.data} />
               ))}
-            </ul>
+            </ToggleGroup.Root>
           )}
         </>
       )}
@@ -132,19 +145,33 @@ interface ScopeChoiceProps {
 
 function ScopeChoice({ recipe, slot, fed, busy, onChoose, onBack }: ScopeChoiceProps) {
   const cookTitle = slot.cookEvent?.recipeTitle ?? "This meal";
+  const introId = useId();
   return (
     <div className={styles.scope}>
-      <p className={styles.scopeIntro}>
+      <p className={styles.scopeIntro} id={introId}>
         {cookTitle} feeds {fed.length} meals. Switch to <b>{recipe.title}</b> for&hellip;
       </p>
-      <button type="button" className={styles.option} disabled={busy} onClick={() => onChoose("this")}>
-        <b>Just this meal</b>
-        <span>{slotName(slot)} changes. The other meals keep {cookTitle}.</span>
-      </button>
-      <button type="button" className={styles.option} disabled={busy} onClick={() => onChoose("with_leftovers")}>
-        <b>This and its leftovers</b>
-        <span>{fed.map(slotName).join(", ")} all switch.</span>
-      </button>
+      <ToggleGroup.Root
+        type="single"
+        // See the picker group: activation applies the scope, it is not a stored selection.
+        value=""
+        className={styles.scopeOptions}
+        aria-labelledby={introId}
+        aria-orientation="vertical"
+        disabled={busy}
+        onValueChange={(scope) => {
+          if (scope === "this" || scope === "with_leftovers") onChoose(scope);
+        }}
+      >
+        <ToggleGroup.Item value="this" className={styles.option}>
+          <b>Just this meal</b>
+          <span>{slotName(slot)} changes. The other meals keep {cookTitle}.</span>
+        </ToggleGroup.Item>
+        <ToggleGroup.Item value="with_leftovers" className={styles.option}>
+          <b>This and its leftovers</b>
+          <span>{fed.map(slotName).join(", ")} all switch.</span>
+        </ToggleGroup.Item>
+      </ToggleGroup.Root>
       <Button variant="ghost" onClick={onBack} disabled={busy} icon={<Icon name="back" />}>
         Pick another recipe
       </Button>
@@ -175,14 +202,12 @@ interface PickerRowProps {
   recipe: RecipeSummary;
   mealType: MealType;
   availability: ReadonlyMap<string, AvailabilityLine> | undefined;
-  disabled: boolean;
-  onPick: (recipe: RecipeSummary) => void;
 }
 
-function PickerRow({ recipe, mealType, availability, disabled, onPick }: PickerRowProps) {
+function PickerRow({ recipe, mealType, availability }: PickerRowProps) {
   const [ref, seen] = useSeen<HTMLButtonElement>();
   return (
-    <button ref={ref} type="button" className={styles.row} disabled={disabled} onClick={() => onPick(recipe)}>
+    <ToggleGroup.Item ref={ref} value={recipe.id} className={styles.row}>
       <span className={styles.thumb}>
         <Plate imageUrl={recipe.imageUrl} emoji={MEAL_EMOJI[mealType]} />
       </span>
@@ -197,7 +222,7 @@ function PickerRow({ recipe, mealType, availability, disabled, onPick }: PickerR
           <PantryFit slug={recipe.slug} enabled={seen} availability={availability} />
         </span>
       </span>
-    </button>
+    </ToggleGroup.Item>
   );
 }
 

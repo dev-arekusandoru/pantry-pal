@@ -32,5 +32,8 @@
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
-  "description": "PantryPal web app. Everything is bundled by Vite, so all packages are devDependencies and `pnpm prune --prod` strips them from the runtime image."
+  "description": "PantryPal web app. Everything is bundled by Vite, so all packages are devDependencies and `pnpm prune --prod` strips them from the runtime image.",
+  "dependencies": {
+    "radix-ui": "^1.8.1"
+  }
 }

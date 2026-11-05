@@ -128,6 +128,23 @@ async function renderAt(path: string, initialEntries?: string[]) {
 beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
+describe("step progress", () => {
+  it("exposes the current step to assistive tech", async () => {
+    stubApi(defaultRoutes());
+
+    await renderAt("/recipes/skillet/cook?servings=2");
+
+    const bar = await screen.findByRole("progressbar", { name: "Step progress" });
+    expect(bar).toHaveAttribute("aria-valuenow", "1");
+    expect(bar).toHaveAttribute("aria-valuemax", "2");
+    expect(bar).toHaveAttribute("aria-valuetext", "Step 1 of 2");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next step" }));
+
+    expect(screen.getByRole("progressbar", { name: "Step progress" })).toHaveAttribute("aria-valuetext", "Step 2 of 2");
+  });
+});
+
 describe("cook mode finishing", () => {
   it("falls back to an ad-hoc cook when the cook event in the URL no longer exists", async () => {
     const calls = stubApi(
