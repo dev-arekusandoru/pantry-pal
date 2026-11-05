@@ -61,7 +61,7 @@ connect an AI assistant through MCP. Your data stays on your server.
 
 ## Documentation
 
-[Read the documentation](docs/README.md) for setup, guides, and reference.
+[Read the documentation](https://dev-arekusandoru.github.io/pantry-pal/) for setup, guides, and reference.
 
 ## Contributing
 
