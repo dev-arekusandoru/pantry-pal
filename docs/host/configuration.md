@@ -49,7 +49,7 @@ Use `docker compose config` to see the merged Compose settings, including the ov
 
 ## Ports and addresses
 
-The default stack publishes `127.0.0.1:8787` on the host. The left side is the host address and port. The right side is the container port. The tunnel stack publishes no ports; Cloudflare reaches it over a private Compose network. See [Public access with Cloudflare Tunnel](tunnel.md). To use host port 9000, edit the `ports` entry in `docker-compose.override.yml`:
+The default stack publishes `127.0.0.1:8787` on the host. The left side is the host address and port. The right side is the container port. The tunnel stack publishes no ports: Cloudflare reaches it over the private `tunnel` network. It also joins the shared `rakazo` network, so sibling containers on this host can call `http://pantrypal:8787` with a bearer token. See [Public access with Cloudflare Tunnel](tunnel.md). To use host port 9000, edit the `ports` entry in `docker-compose.override.yml`:
 
 ```yaml
 ports: !override

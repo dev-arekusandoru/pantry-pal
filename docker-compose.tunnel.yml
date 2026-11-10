@@ -11,10 +11,12 @@
 # are required; the `:?` interpolations abort the command before anything starts
 # when they are missing.
 #
-# The stack publishes no ports and joins no external networks. Normal traffic
-# reaches pantrypal only through cloudflared over the private compose network,
-# using the service name `pantrypal:8787`; the Docker host can still address the
-# container IP directly, as with any bridge network.
+# Public traffic reaches pantrypal only through cloudflared over the private
+# `tunnel` network, using the service name `pantrypal:8787`. The app also joins
+# the shared `rakazo` network (same name as the local stack), so sibling
+# containers on this host — rakazo and homehub — can call it at
+# `http://pantrypal:8787` without leaving the box or crossing Cloudflare.
+# Password mode stays on, so those clients still send a bearer token.
 services:
   pantrypal:
     build: .
@@ -33,6 +35,7 @@ services:
       - ./data:/data
     networks:
       - tunnel
+      - rakazo
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -52,3 +55,11 @@ networks:
   # and no ports: inbound traffic arrives only through the tunnel.
   tunnel:
     name: pantrypal_tunnel
+  # Shared network owned by the rakazo stack, where `pantrypal` must also
+  # resolve for the rakazo and homehub containers. Must exist before start:
+  #   docker network ls | grep -i rakazo
+  #   docker network create rakazo_app   # only if missing
+  # Override the name with RAKAZO_NETWORK if it differs.
+  rakazo:
+    name: ${RAKAZO_NETWORK:-rakazo_app}
+    external: true

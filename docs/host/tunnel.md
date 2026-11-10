@@ -5,8 +5,17 @@ opening inbound ports. Cloudflare provides HTTPS at the edge, and a shared
 password protects the browser app.
 
 `docker-compose.tunnel.yml` is standalone. It does not use
-`docker-compose.override.yml` or join the `rakazo` network. Stop the local stack
-first; do not run both against the same database.
+`docker-compose.override.yml`. Stop the local stack first; do not run both
+against the same database.
+
+PantryPal joins two networks on this host:
+
+- `tunnel` — private to this compose project, where `cloudflared` reaches
+  `pantrypal:8787`. No ports are published.
+- `rakazo` (`RAKAZO_NETWORK`, default `rakazo_app`) — shared with the rakazo and
+  homehub stacks, so sibling containers can call `http://pantrypal:8787`
+  directly. Because password mode is on, they must send a bearer token.
+  `rakazo_app` must already exist (`docker network create rakazo_app`).
 
 ## 1. Create the tunnel
 

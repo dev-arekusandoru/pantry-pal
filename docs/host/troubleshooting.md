@@ -20,7 +20,7 @@ docker inspect --format '{{.State.Health.Status}}' pantrypal
 
 ## Compose cannot find the external network
 
-The base file joins an external network named `rakazo_app`, with or without the override. If it does not exist, Compose stops with an error such as `network rakazo_app declared as external, but could not be found`.
+The base file joins an external network named `rakazo_app`, with or without the override. The tunnel stack joins it too, so sibling containers (rakazo, homehub) can reach `pantrypal:8787`. If it does not exist, Compose stops with an error such as `network rakazo_app declared as external, but could not be found`.
 
 Create it once:
 
