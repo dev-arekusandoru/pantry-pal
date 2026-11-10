@@ -10,7 +10,6 @@ import {
   type CookStatus,
   type IngredientCategory,
   type PantryStatus,
-  type StorageLocation,
 } from "../src/db/schema.js";
 import { AppError, type ErrorCode } from "../src/lib/errors.js";
 import { newId } from "../src/lib/ids.js";
@@ -36,7 +35,6 @@ function addIngredient(ctx: Ctx, options: IngredientOptions): string {
       normalizedName: normalizeName(options.name),
       category: options.category ?? "other",
       defaultUnit: options.defaultUnit ?? null,
-      defaultLocation: "pantry",
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -140,7 +138,6 @@ interface PantryOptions {
   qty: number | null;
   unit?: string | null;
   status?: PantryStatus;
-  location?: StorageLocation;
 }
 
 function addPantryItem(ctx: Ctx, item: PantryOptions): void {
@@ -151,7 +148,6 @@ function addPantryItem(ctx: Ctx, item: PantryOptions): void {
       id: newId("pi"),
       householdId: ctx.householdId,
       ingredientId: item.ingredientId,
-      location: item.location ?? "pantry",
       qty: item.qty,
       unit: item.unit ?? null,
       status: item.status ?? "on_hand",
@@ -474,14 +470,13 @@ describe("computeAvailability", () => {
     expect(line.available).toBeNull();
   });
 
-  it("sums stock across locations in the target unit", () => {
+  it("uses the stock row's unit for availability", () => {
     const { ctx } = makeTestCtx();
     const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
-    addPantryItem(ctx, { ingredientId: beef, qty: 16, unit: "oz", status: "on_hand", location: "freezer" });
-    addPantryItem(ctx, { ingredientId: beef, qty: 1, unit: "lb", status: "on_hand", location: "fridge" });
+    addPantryItem(ctx, { ingredientId: beef, qty: 16, unit: "oz", status: "on_hand" });
 
     const line = computeAvailability(ctx).find((candidate) => candidate.ingredientId === beef)!;
     expect(line.unit).toBe("oz");
-    expect(line.onHand).toBe(32);
+    expect(line.onHand).toBe(16);
   });
 });

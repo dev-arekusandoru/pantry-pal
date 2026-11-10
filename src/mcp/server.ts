@@ -20,7 +20,7 @@ export const MCP_INSTRUCTIONS = [
   "Check dietary rules before adding a recipe to a plan: rules_list, then recipe_check for a recipe or recipe_check with ingredient names for a proposed line. A violation with a conditionNote is a judgement call you must make and explain.",
   "A leftover is a meal slot that points at an earlier cook event; batch cooking is one cook event feeding several later slots. Never model leftovers as a second cook.",
   "Record cooking with cook_complete (it decrements the pantry) and shopping trips with shopping_complete (it writes purchases into stock). Do not adjust stock twice for the same event.",
-  'Unknown pantry amounts are "look in the fridge", not zero: qty null means present-but-unmeasured.',
+  'Unknown pantry amounts need a kitchen check, not zero: qty null means present-but-unmeasured.',
 ].join(" ");
 
 /** Build the MCP server for one authenticated request's context. */

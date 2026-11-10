@@ -36,22 +36,3 @@ export function pickDefaultList(lists: readonly ShoppingList[], planId: string |
     forPlan.find((l) => l.status === "done")
   );
 }
-
-const AISLE_LABELS: Record<string, string> = {
-  produce: "Produce",
-  protein: "Meat and fish",
-  dairy: "Dairy",
-  bakery: "Bakery",
-  pantry: "Pantry",
-  baking: "Baking",
-  spice: "Spices",
-  canned: "Canned",
-  condiment: "Condiments",
-  frozen: "Frozen",
-  beverage: "Drinks",
-  other: "Other",
-};
-
-export function aisleLabel(category: string): string {
-  return AISLE_LABELS[category] ?? category;
-}

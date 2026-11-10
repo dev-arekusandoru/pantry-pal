@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, client, qk, unwrap } from "@/api";
 import { toast } from "@/ui";
-import { restoreBody, type PantryItem, type PantryStatus, type StorageLocation } from "./stock";
+import { restoreBody, type PantryCategory, type PantryItem, type PantryStatus } from "./stock";
 
 const listKey = [...qk.pantry, "list"] as const;
 /** Every stock edit shares this key so the refetch waits for the last one in flight. */
@@ -51,7 +51,7 @@ export function useAdjustItem() {
     mutationFn: ({ item, delta }: { item: PantryItem; delta: number }) =>
       unwrap(
         client.POST("/pantry/adjust", {
-          body: { ingredientId: item.ingredientId, location: item.location, delta, unit: item.unit },
+          body: { ingredientId: item.ingredientId, delta, unit: item.unit },
         }),
       ),
     optimistic: ({ item, delta }) => ({
@@ -71,7 +71,7 @@ export function useSetQty() {
     mutationFn: ({ item, qty }: { item: PantryItem; qty: number }) =>
       unwrap(
         client.POST("/pantry/set", {
-          body: { ingredientId: item.ingredientId, location: item.location, qty, unit: item.unit },
+          body: { ingredientId: item.ingredientId, qty, unit: item.unit },
         }),
       ),
     optimistic: ({ item, qty }) => ({
@@ -103,6 +103,24 @@ export function useSetShelfLife() {
         client.PATCH("/ingredients/{id}", {
           params: { path: { id: ingredientId } },
           body: { shelfLifeDays },
+        }),
+      ),
+    onSettled: () => Promise.all([
+      qc.invalidateQueries({ queryKey: qk.pantry }),
+      qc.invalidateQueries({ queryKey: qk.ingredients }),
+    ]),
+  });
+}
+
+/** Change an ingredient's category, which decides the aisle it is grouped under. */
+export function useSetCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ingredientId, category }: { ingredientId: string; category: PantryCategory }) =>
+      unwrap(
+        client.PATCH("/ingredients/{id}", {
+          params: { path: { id: ingredientId } },
+          body: { category },
         }),
       ),
     onSettled: () => Promise.all([
@@ -156,8 +174,7 @@ export function useSetStatus() {
 
 export interface NewStock {
   name: string;
-  category: PantryItem["ingredient"]["category"];
-  location: StorageLocation;
+  category: PantryCategory;
   /** Amount to add; null = just note that we have it. */
   qty: number | null;
   unit: string | null;
@@ -175,12 +192,12 @@ export function useAddStock() {
         n.qty !== null
           ? await unwrap(
               client.POST("/pantry/adjust", {
-                body: { ingredient: n.name, category: n.category, location: n.location, delta: n.qty, unit: n.unit },
+                body: { ingredient: n.name, category: n.category, delta: n.qty, unit: n.unit },
               }),
             )
           : await unwrap(
               client.POST("/pantry/set", {
-                body: { ingredient: n.name, category: n.category, location: n.location, qty: null, status: "on_hand" },
+                body: { ingredient: n.name, category: n.category, qty: null, status: "on_hand" },
               }),
             );
       if (result.warning) toast.show({ message: `Added, but ${result.warning}` });

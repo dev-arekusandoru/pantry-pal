@@ -1,29 +1,13 @@
 import { useId, useState, type FormEvent } from "react";
 import { Label, Select } from "radix-ui";
 import { Button, Icon, Sheet, cx } from "@/ui";
-import { aisleLabel } from "../shop/cart";
+import { CATEGORY_ORDER, aisleLabel } from "../aisles";
 import { parseQty } from "../shop/format";
 import styles from "./Pantry.module.css";
-import { ChoiceChips } from "./ChoiceChips";
 import { useAddStock } from "./queries";
-import { LOCATION_LABEL, LOCATION_ORDER, type PantryItem, type StorageLocation } from "./stock";
+import { type PantryItem } from "./stock";
 
 type Category = PantryItem["ingredient"]["category"];
-
-const CATEGORIES: readonly Category[] = [
-  "produce",
-  "protein",
-  "dairy",
-  "bakery",
-  "pantry",
-  "baking",
-  "spice",
-  "canned",
-  "condiment",
-  "frozen",
-  "beverage",
-  "other",
-];
 
 /** Radix Select reserves the empty string for "no value", so the unit-less choice gets a sentinel. */
 const NO_UNIT = "__none";
@@ -55,7 +39,6 @@ export interface AddSheetProps {
   /** Items already in the pantry, to avoid replacing an amount by accident. */
   existing: readonly PantryItem[];
   initialName?: string;
-  initialLocation?: StorageLocation;
 }
 
 export function AddSheet(props: AddSheetProps) {
@@ -63,11 +46,10 @@ export function AddSheet(props: AddSheetProps) {
   return props.open ? <AddForm {...props} /> : null;
 }
 
-function AddForm({ onClose, existing, initialName = "", initialLocation = "pantry" }: AddSheetProps) {
+function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
   const [name, setName] = useState(initialName);
   const [qtyText, setQtyText] = useState("");
   const [unit, setUnit] = useState("");
-  const [location, setLocation] = useState<StorageLocation>(initialLocation);
   const [category, setCategory] = useState<Category>("other");
   const add = useAddStock();
   const nameId = useId();
@@ -80,14 +62,14 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
   const trimmed = name.trim();
   const duplicate =
     qtyText.trim() === "" &&
-    existing.some((i) => i.location === location && i.ingredient.name.toLowerCase() === trimmed.toLowerCase());
+    existing.some((i) => i.ingredient.name.toLowerCase() === trimmed.toLowerCase());
   const canAdd = trimmed !== "" && !qtyBad && !duplicate;
 
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!canAdd) return;
     add.mutate(
-      { name: trimmed, category, location, qty: qtyText.trim() === "" ? null : qty, unit: unit === "" ? null : unit },
+      { name: trimmed, category, qty: qtyText.trim() === "" ? null : qty, unit: unit === "" ? null : unit },
       { onSuccess: onClose },
     );
   }
@@ -170,15 +152,6 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
           </div>
         </div>
         <div className={styles.field}>
-          <span>Where does it live?</span>
-          <ChoiceChips<StorageLocation>
-            label="Where does it live?"
-            options={LOCATION_ORDER.map((l) => ({ value: l, label: LOCATION_LABEL[l] }))}
-            value={location}
-            onChange={setLocation}
-          />
-        </div>
-        <div className={styles.field}>
           <Label.Root className={styles.fieldLabel} htmlFor={categoryId}>
             Shopping aisle
           </Label.Root>
@@ -189,7 +162,7 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
             <Select.Portal>
               <Select.Content className={styles.selectContent} position="popper" sideOffset={8} collisionPadding={12}>
                 <Select.Viewport className={styles.selectViewport}>
-                  {CATEGORIES.map((c) => (
+                  {CATEGORY_ORDER.map((c) => (
                     <Select.Item key={c} value={c} className={styles.selectItem}>
                       <Select.ItemText>{aisleLabel(c)}</Select.ItemText>
                       <Select.ItemIndicator className={styles.selectIndicator}>
@@ -202,7 +175,7 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
             </Select.Portal>
           </Select.Root>
         </div>
-        {duplicate && <p className={styles.hint}>That's already in this spot. Use the + and - on its row, or give an amount to add more.</p>}
+        {duplicate && <p className={styles.hint}>That's already in the pantry. Use the + and - on its row, or give an amount to add more.</p>}
       </form>
     </Sheet>
   );

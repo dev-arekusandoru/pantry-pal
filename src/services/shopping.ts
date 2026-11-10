@@ -12,7 +12,6 @@ import {
   type IngredientCategory,
   type PantryStatus,
   type ShoppingListStatus,
-  type StorageLocation,
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
@@ -801,7 +800,6 @@ export interface ReceivedItemInput {
   /** Overrides the item's actual/planned quantity. */
   qty?: number | null;
   unit?: string | null;
-  location?: StorageLocation;
 }
 
 export interface CompleteShoppingListInput {
@@ -890,13 +888,10 @@ export function completeShoppingList(
           received !== undefined && received.unit !== undefined
             ? normalizeUnitLoose(received.unit)
             : (item.actualUnit ?? item.unit);
-        const location = received?.location;
-
         const movement =
           qty === null || qty === undefined
             ? applyMovement(scoped, {
                 ingredientId: targetIngredientId,
-                ...(location === undefined ? {} : { location }),
                 kind: "set",
                 qty: null,
                 unit: unit ?? null,
@@ -907,7 +902,6 @@ export function completeShoppingList(
               })
             : applyMovement(scoped, {
                 ingredientId: targetIngredientId,
-                ...(location === undefined ? {} : { location }),
                 kind: "delta",
                 qty,
                 unit: unit ?? null,

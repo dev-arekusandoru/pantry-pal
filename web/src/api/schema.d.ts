@@ -1811,8 +1811,6 @@ export interface paths {
                 query?: {
                     /** @description Ingredient category used for grouping and shopping aisles. */
                     category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
-                    /** @description Where stock is kept: pantry, fridge, freezer, counter or other. */
-                    location?: "pantry" | "fridge" | "freezer" | "counter" | "other";
                     /** @description on_hand = stocked, low = at/below par, out = none left, unknown = present but unmeasured. */
                     status?: "on_hand" | "low" | "out" | "unknown";
                     /** @description Only items never verified or verified more than N days ago. */
@@ -2083,7 +2081,7 @@ export interface paths {
         head?: never;
         /**
          * Update pantry metadata
-         * @description Move a row to another location, edit notes/dates/status. Quantities go through the ledger.
+         * @description Edit notes/dates/status. Quantities go through the ledger.
          */
         patch: {
             parameters: {
@@ -6324,7 +6322,7 @@ export interface components {
             category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             /** @description Unit shared by onHand, committed, available. */
             unit: string | null;
-            /** @description Stock summed across locations; null when any amount is unknown. */
+            /** @description Current stock; null when the amount is unknown. */
             onHand: number | null;
             /**
              * @description Stock status: on_hand (above par), low (below par), out (zero), unknown (amount not counted).
@@ -6531,11 +6529,6 @@ export interface components {
                 itemId: string;
                 qty?: number | null;
                 unit?: string | null;
-                /**
-                 * @description Where the purchased stock is stored.
-                 * @enum {string}
-                 */
-                location?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             }[];
             /** @description Default true: only checked items become stock. */
             onlyChecked?: boolean;
@@ -6551,7 +6544,7 @@ export interface components {
             aliases: components["schemas"]["IngredientAlias"][];
             /** @description Custom conversions for this ingredient. */
             conversions: components["schemas"]["UnitConversion"][];
-            /** @description Stock rows across locations. */
+            /** @description Stock rows for this ingredient. */
             pantry: components["schemas"]["IngredientStock"][];
         };
         IngredientAlias: {
@@ -6579,11 +6572,6 @@ export interface components {
         IngredientStock: {
             /** @description Pantry item id (pi_...). */
             id: string;
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            location: "pantry" | "fridge" | "freezer" | "counter" | "other";
             /** @description Known quantity; null = present but unknown. */
             qty: number | null;
             /** @description Normalized unit. */
@@ -6611,11 +6599,6 @@ export interface components {
             category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             /** @description Unit used for stock and shopping by default. */
             defaultUnit: string | null;
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            defaultLocation: "pantry" | "fridge" | "freezer" | "counter" | "other";
             imageUrl: string | null;
             /** @description Typical shelf life after purchase. */
             shelfLifeDays: number | null;
@@ -6641,11 +6624,6 @@ export interface components {
             aliases?: string[];
             /** @description Unit used for stock and shopping, e.g. "g" or "can". */
             defaultUnit?: string | null;
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            defaultLocation?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
             /** @description Desired minimum stock. */
@@ -6664,11 +6642,6 @@ export interface components {
              */
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             defaultUnit?: string | null;
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            defaultLocation?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
             parQty?: number | null;
@@ -6750,11 +6723,6 @@ export interface components {
                 /** @description Typical shelf life after purchase. */
                 shelfLifeDays: number | null;
             };
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            location: "pantry" | "fridge" | "freezer" | "counter" | "other";
             /** @description Cached quantity; null = present but unknown. */
             qty: number | null;
             /** @description Normalized unit. */
@@ -6785,11 +6753,6 @@ export interface components {
         StockMovementView: components["schemas"]["StockMovement"] & {
             ingredientId: string;
             ingredientName: string;
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            location: "pantry" | "fridge" | "freezer" | "counter" | "other";
         };
         MovementResult: {
             item: components["schemas"]["PantryItem"];
@@ -6811,11 +6774,6 @@ export interface components {
             qty: number | null;
             /** @description Unit, e.g. "lb", "g", "can". */
             unit?: string | null;
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            location?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             /**
              * @description Overrides the computed status for this set.
              * @enum {string}
@@ -6857,11 +6815,6 @@ export interface components {
             delta: number;
             /** @description Unit of the delta; defaults to the item unit. */
             unit?: string | null;
-            /**
-             * @description Where stock is kept: pantry, fridge, freezer, counter or other.
-             * @enum {string}
-             */
-            location?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             note?: string | null;
             /**
              * @description Defaults to "adjust".
@@ -6889,11 +6842,6 @@ export interface components {
             }))[];
         };
         UpdatePantryItem: {
-            /**
-             * @description Moving stock to another location.
-             * @enum {string}
-             */
-            location?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             note?: string | null;
             /** @description YYYY-MM-DD. */
             expiresOn?: string | null;

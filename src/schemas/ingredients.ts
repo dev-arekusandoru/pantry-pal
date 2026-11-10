@@ -1,17 +1,9 @@
 import { z } from "@hono/zod-openapi";
-import {
-  INGREDIENT_CATEGORIES,
-  PANTRY_STATUSES,
-  STORAGE_LOCATIONS,
-} from "../db/schema.js";
+import { INGREDIENT_CATEGORIES, PANTRY_STATUSES } from "../db/schema.js";
 
 export const ingredientCategorySchema = z
   .enum(INGREDIENT_CATEGORIES)
   .describe("Ingredient category used for grouping and shopping aisles.");
-
-export const storageLocationSchema = z
-  .enum(STORAGE_LOCATIONS)
-  .describe("Where stock is kept: pantry, fridge, freezer, counter or other.");
 
 export const pantryStatusSchema = z
   .enum(PANTRY_STATUSES)
@@ -32,7 +24,6 @@ export const ingredientAliasSchema = z
 export const ingredientStockSchema = z
   .object({
     id: z.string().describe("Pantry item id (pi_...)."),
-    location: storageLocationSchema,
     qty: z.number().nullable().describe("Known quantity; null = present but unknown."),
     unit: z.string().nullable().describe("Normalized unit."),
     qtyApprox: z.boolean().describe("True when the quantity is an estimate."),
@@ -63,7 +54,6 @@ export const ingredientSchema = z
     description: z.string().nullable(),
     category: ingredientCategorySchema,
     defaultUnit: z.string().nullable().describe("Unit used for stock and shopping by default."),
-    defaultLocation: storageLocationSchema,
     imageUrl: z.string().nullable(),
     shelfLifeDays: z.number().int().nullable().describe("Typical shelf life after purchase."),
     parQty: z.number().nullable().describe("Desired minimum stock."),
@@ -79,7 +69,7 @@ export const ingredientViewSchema = ingredientSchema
   .extend({
     aliases: z.array(ingredientAliasSchema),
     conversions: z.array(unitConversionSchema).describe("Custom conversions for this ingredient."),
-    pantry: z.array(ingredientStockSchema).describe("Stock rows across locations."),
+    pantry: z.array(ingredientStockSchema).describe("Stock rows for this ingredient."),
   })
   .openapi("IngredientView");
 
@@ -118,7 +108,6 @@ export const createIngredientSchema = z
       .string()
       .nullish()
       .describe('Unit used for stock and shopping, e.g. "g" or "can".'),
-    defaultLocation: storageLocationSchema.optional(),
     imageUrl: z.string().nullish(),
     shelfLifeDays: z.number().int().nonnegative().nullish(),
     parQty: z.number().nonnegative().nullish().describe("Desired minimum stock."),
@@ -133,7 +122,6 @@ export const updateIngredientSchema = z
     description: z.string().nullish(),
     category: ingredientCategorySchema.optional(),
     defaultUnit: z.string().nullish(),
-    defaultLocation: storageLocationSchema.optional(),
     imageUrl: z.string().nullish(),
     shelfLifeDays: z.number().int().nonnegative().nullish(),
     parQty: z.number().nonnegative().nullish(),

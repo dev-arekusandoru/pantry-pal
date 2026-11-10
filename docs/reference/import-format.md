@@ -69,7 +69,6 @@ All eight top-level keys are required; the arrays may be empty but are not omitt
 | `name` | string | yes | Canonical display name; must be unique (case-insensitive). Referenced everywhere else by this string. |
 | `category` | enum `ingredientCategory` | yes | |
 | `defaultUnit` | unit \| null | yes | Used for stock/shopping when nothing else is specified. |
-| `defaultLocation` | enum `storageLocation` | yes | |
 | `aliases` | string[] | yes | May be `[]`. Lowercased by the loader; must not collide with any alias or ingredient name. Each becomes an `ingredient_alias` row. |
 | `description` | string | no | Optional prose description. |
 | `shelfLifeDays` | integer | no | Typical shelf life once purchased. Shopping completion uses it to set the expiry date. |
@@ -93,12 +92,11 @@ only one direction is seeded. These rows are what make recipe units comparable t
 
 ### `pantry[]` (required)
 
-One row per `(ingredient, location)`; the pair must be unique.
+One row per ingredient; the ingredient must be unique.
 
 | Field | Type | Notes |
 |---|---|---|
 | `ingredient` | string | Declared ingredient name. |
-| `location` | enum `storageLocation` | `pantry`, `fridge`, `freezer`, `counter`, `other`. |
 | `qty` | number \| null | Unknown when `null`. Read `status` as well. |
 | `unit` | unit \| null | Required when `qty` is non-null; `null` with `qty: null`. |
 | `qtyApprox` | boolean | True for parsed estimates (`~2.5 lb`, `~10 cloves`). |
@@ -145,7 +143,7 @@ Top-level recipe fields:
 | `equipment` | string[] | |
 | `nutrition` | object \| null | `{ calories?, proteinG?, carbsG?, fatG?, fiberG?, sugarG?, sodiumMg? }`, all numbers. |
 | `storageNotes` | string \| null | Reheat/storage guidance. |
-| `leftoverDays` | integer \| null | Days leftovers keep in the fridge. |
+| `leftoverDays` | integer \| null | Days leftovers keep. |
 | `status` | enum `recipeStatus` | All recipes here are `want_to_try`. |
 | `rating` | integer (1–5) \| null | |
 | `notes` | string \| null | Household adaptations, source caveats, "ingredients reconstructed" flags. |
@@ -302,8 +300,6 @@ not encode timestamps for individual rows.
   `<ingredient> | on hand | …` for unknown amounts. It is provenance text, not parsed by the loader.
 - `on hand` → `qty: null, unit: null, status: "on_hand"`; every pantry row is `on_hand` because no
   row sets `parQty`.
-- Location rule: raw proteins, dairy, and refrigerated produce → `fridge`; onions, garlic, potatoes,
-  and shelf-stable goods → `pantry`.
 - Recipes: the lunch/dinner recipes are public blog recipes transcribed with their ingredients,
   steps, times, servings, image and nutrition. Breakfasts are authored (no source URL). Plan-level
   adaptations live in each recipe's `notes`, not in the ingredient quantities.
@@ -333,7 +329,6 @@ Copied from `src/db/schema.ts` for quick reference; the schema is the source of 
 
 - `ingredientCategory`: produce, protein, dairy, bakery, pantry, baking, spice, canned, condiment,
   frozen, beverage, other
-- `storageLocation`: pantry, fridge, freezer, counter, other
 - `pantryStatus`: on_hand, low, out, unknown
 - `movementKind`: set, delta
 - `movementReason`: purchase, cook, waste, adjust, import, verify

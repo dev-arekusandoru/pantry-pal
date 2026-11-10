@@ -11,7 +11,6 @@ import {
   SHOPPING_LIST_STATUSES,
   SLOT_KINDS,
   SPICE_LEVELS,
-  STORAGE_LOCATIONS,
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { isIsoDate } from "../lib/time.js";
@@ -60,7 +59,6 @@ export const seedIngredientSchema = z
     name: text,
     category: z.enum(INGREDIENT_CATEGORIES),
     defaultUnit: nullableUnitSchema,
-    defaultLocation: z.enum(STORAGE_LOCATIONS),
     aliases: z.array(text),
     description: z.string().optional(),
     shelfLifeDays: z.number().int().nonnegative().optional(),
@@ -82,7 +80,6 @@ export const seedUnitConversionSchema = z
 export const seedPantryRowSchema = z
   .object({
     ingredient: text,
-    location: z.enum(STORAGE_LOCATIONS),
     qty: z.number().finite().nonnegative().nullable(),
     unit: nullableUnitSchema,
     qtyApprox: z.boolean(),
@@ -389,7 +386,7 @@ export const seedSchema = z
     );
 
     addDuplicateIssues(
-      seed.pantry.map((row) => `${normalizeName(row.ingredient)}|${row.location}`),
+      seed.pantry.map((row) => normalizeName(row.ingredient)),
       ["pantry"],
       "pantry row",
     );

@@ -8,7 +8,7 @@ through MCP.
 
 | Task | Guide |
 | --- | --- |
-| Record food amounts and storage locations | [Pantry](../use/pantry.md) |
+| Record food amounts and expiry dates | [Pantry](../use/pantry.md) |
 | Scale recipes and follow cooking steps | [Recipes](../use/recipes.md) |
 | Arrange meals, leftovers, and prep tasks | [Meal plans](../use/meal-plans.md) |
 | Build a list from your plan and stock | [Shopping](../use/shopping.md) |

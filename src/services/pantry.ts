@@ -10,7 +10,6 @@ import {
   type MovementReason,
   type MovementRefType,
   type PantryStatus,
-  type StorageLocation,
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
@@ -40,13 +39,10 @@ export interface MovementResult {
 export interface StockMovementView extends StockMovement {
   ingredientId: string;
   ingredientName: string;
-  location: StorageLocation;
 }
 
 export interface ApplyMovementInput {
   ingredientId: string;
-  /** Defaults to the ingredient's `defaultLocation`. */
-  location?: StorageLocation;
   kind: MovementKind;
   qty: number | null;
   unit: string | null;
@@ -143,7 +139,6 @@ function applyMovementIn(ctx: Ctx, input: ApplyMovementInput): MovementResult {
 
   const ingredient = requireIngredient(ctx, input.ingredientId);
   const unit = normalizeUnitInput(input.unit);
-  const location = input.location ?? ingredient.defaultLocation;
   const existing = ctx.db
     .select()
     .from(pantryItems)
@@ -151,7 +146,6 @@ function applyMovementIn(ctx: Ctx, input: ApplyMovementInput): MovementResult {
       and(
         eq(pantryItems.householdId, ctx.householdId),
         eq(pantryItems.ingredientId, ingredient.id),
-        eq(pantryItems.location, location),
       ),
     )
     .get();
@@ -225,7 +219,6 @@ function applyMovementIn(ctx: Ctx, input: ApplyMovementInput): MovementResult {
         id: itemId,
         householdId: ctx.householdId,
         ingredientId: ingredient.id,
-        location,
         createdAt: timestamp,
         ...itemValues,
       })
@@ -269,7 +262,7 @@ export function applyMovement(ctx: Ctx, input: ApplyMovementInput): MovementResu
   return withTx(ctx, (tx) => applyMovementIn(tx, input));
 }
 
-/** All stock rows for an ingredient, across locations. */
+/** Stock rows for an ingredient (at most one). */
 export function getStockForIngredient(ctx: Ctx, ingredientId: string): PantryItemView[] {
   const rows = ctx.db
     .select({
@@ -289,7 +282,6 @@ export function getStockForIngredient(ctx: Ctx, ingredientId: string): PantryIte
         eq(pantryItems.ingredientId, ingredientId),
       ),
     )
-    .orderBy(asc(pantryItems.location))
     .all();
 
   return rows.map(({ item, ingredient }) => ({ ...item, ingredient }));
@@ -315,7 +307,6 @@ export interface IngredientRefInput {
 export interface SetStockInput extends IngredientRefInput {
   qty: number | null;
   unit?: string | null;
-  location?: StorageLocation;
   status?: PantryStatus;
   note?: string | null;
   expiresOn?: string | null;
@@ -331,7 +322,6 @@ export interface SetStockInput extends IngredientRefInput {
 export interface AdjustStockInput extends IngredientRefInput {
   delta: number;
   unit?: string | null;
-  location?: StorageLocation;
   note?: string | null;
   reason?: MovementReason;
   refType?: MovementRefType;
@@ -369,7 +359,6 @@ function setStockIn(ctx: Ctx, input: SetStockInput): MovementResult {
   const ingredient = resolveIngredientRef(ctx, input, true);
   const result = applyMovementIn(ctx, {
     ingredientId: ingredient.id,
-    ...(input.location === undefined ? {} : { location: input.location }),
     kind: "set",
     qty: input.qty,
     unit: input.unit ?? null,
@@ -405,7 +394,6 @@ function adjustStockIn(ctx: Ctx, input: AdjustStockInput): MovementResult {
   const ingredient = resolveIngredientRef(ctx, input, input.delta > 0);
   return applyMovementIn(ctx, {
     ingredientId: ingredient.id,
-    ...(input.location === undefined ? {} : { location: input.location }),
     kind: "delta",
     qty: input.delta,
     unit: input.unit ?? null,
@@ -442,7 +430,6 @@ export function verifyItem(ctx: Ctx, pantryItemId: string): MovementResult {
     const item = requirePantryItem(tx, pantryItemId);
     return applyMovementIn(tx, {
       ingredientId: item.ingredientId,
-      location: item.location,
       kind: "set",
       qty: item.qty,
       unit: item.unit,
@@ -457,7 +444,6 @@ export function verifyItem(ctx: Ctx, pantryItemId: string): MovementResult {
 
 export interface ListPantryOptions {
   category?: IngredientCategory;
-  location?: StorageLocation;
   status?: PantryStatus;
   /** Only rows never verified or verified more than N days ago. */
   staleDays?: number;
@@ -469,7 +455,6 @@ export interface ListPantryOptions {
 export function listPantry(ctx: Ctx, options: ListPantryOptions = {}): PantryItemView[] {
   const conditions = [eq(pantryItems.householdId, ctx.householdId)];
   if (options.category !== undefined) conditions.push(eq(ingredients.category, options.category));
-  if (options.location !== undefined) conditions.push(eq(pantryItems.location, options.location));
   if (options.status !== undefined) conditions.push(eq(pantryItems.status, options.status));
   if (options.staleDays !== undefined) {
     if (!Number.isFinite(options.staleDays) || options.staleDays < 0) {
@@ -524,7 +509,6 @@ export function listPantry(ctx: Ctx, options: ListPantryOptions = {}): PantryIte
 }
 
 export interface UpdatePantryItemInput {
-  location?: StorageLocation;
   note?: string | null;
   expiresOn?: string | null;
   openedOn?: string | null;
@@ -534,7 +518,7 @@ export interface UpdatePantryItemInput {
   qtyApprox?: boolean;
 }
 
-/** Metadata-only update (moving location, notes, dates). Quantities go through the ledger. */
+/** Metadata-only update (notes, dates, status). Quantities go through the ledger. */
 export function updatePantryItem(
   ctx: Ctx,
   pantryItemId: string,
@@ -544,26 +528,6 @@ export function updatePantryItem(
     const item = requirePantryItem(tx, pantryItemId);
     const patch: Partial<typeof pantryItems.$inferInsert> = {};
 
-    if (input.location !== undefined && input.location !== item.location) {
-      const clash = tx.db
-        .select({ id: pantryItems.id })
-        .from(pantryItems)
-        .where(
-          and(
-            eq(pantryItems.householdId, tx.householdId),
-            eq(pantryItems.ingredientId, item.ingredientId),
-            eq(pantryItems.location, input.location),
-          ),
-        )
-        .get();
-      if (clash) {
-        throw new AppError(
-          "conflict",
-          `Ingredient already has stock in ${input.location}`,
-        );
-      }
-      patch.location = input.location;
-    }
     if (input.note !== undefined) patch.note = input.note;
     if (input.expiresOn !== undefined) patch.expiresOn = input.expiresOn;
     if (input.openedOn !== undefined) patch.openedOn = input.openedOn;
@@ -644,7 +608,6 @@ export function listMovements(
       movement: stockMovements,
       ingredientId: pantryItems.ingredientId,
       ingredientName: ingredients.name,
-      location: pantryItems.location,
     })
     .from(stockMovements)
     .innerJoin(pantryItems, eq(pantryItems.id, stockMovements.pantryItemId))
@@ -654,10 +617,9 @@ export function listMovements(
     .limit(limit)
     .all();
 
-  return rows.map(({ movement, ingredientId, ingredientName, location }) => ({
+  return rows.map(({ movement, ingredientId, ingredientName }) => ({
     ...movement,
     ingredientId,
     ingredientName,
-    location,
   }));
 }

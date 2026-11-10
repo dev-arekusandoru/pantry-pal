@@ -1,13 +1,15 @@
 import { useId, useState, type FormEvent } from "react";
-import { AlertDialog, Label } from "radix-ui";
+import { AlertDialog, Label, Select } from "radix-ui";
 import { Button, Icon, Sheet } from "@/ui";
+import { CATEGORY_ORDER, aisleLabel } from "../aisles";
 import { parseQty, qtyToInput, unitLabel } from "../shop/format";
 import styles from "./Pantry.module.css";
-import { LOCATION_LABEL, type PantryItem } from "./stock";
+import { type PantryCategory, type PantryItem } from "./stock";
 
 export interface PantryChanges {
   qty: number;
   expiresOn: string | null;
+  category: PantryCategory;
   shelfLifeDays: number | null;
 }
 
@@ -43,12 +45,14 @@ interface FormProps {
 function Form({ item, onClose, onSave, onRemove }: FormProps) {
   const [text, setText] = useState(item.qty === null ? "" : qtyToInput(item.qty));
   const [expiresOn, setExpiresOn] = useState(item.expiresOn ?? "");
+  const [category, setCategory] = useState<PantryCategory>(item.ingredient.category);
   const [shelfText, setShelfText] = useState(
     item.ingredient.shelfLifeDays === null ? "" : String(item.ingredient.shelfLifeDays),
   );
   const amountId = useId();
   const expiryId = useId();
   const shelfId = useId();
+  const categoryId = useId();
   const qty = parseQty(text);
   const unit = unitLabel(item.unit, qty);
   const name = item.ingredient.name;
@@ -58,7 +62,7 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
   function submit(e: FormEvent) {
     e.preventDefault();
     if (qty === null || shelfBad) return;
-    onSave(item, { qty, expiresOn: expiresOn === "" ? null : expiresOn, shelfLifeDays });
+    onSave(item, { qty, expiresOn: expiresOn === "" ? null : expiresOn, category, shelfLifeDays });
     onClose();
   }
 
@@ -94,6 +98,30 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
         />
       </div>
       <div className={styles.field}>
+        <Label.Root className={styles.fieldLabel} htmlFor={categoryId}>
+          Category
+        </Label.Root>
+        <Select.Root value={category} onValueChange={(next) => setCategory(next as PantryCategory)}>
+          <Select.Trigger id={categoryId} className={styles.input}>
+            <Select.Value />
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content className={styles.selectContent} position="popper" sideOffset={8} collisionPadding={12}>
+              <Select.Viewport className={styles.selectViewport}>
+                {CATEGORY_ORDER.map((c) => (
+                  <Select.Item key={c} value={c} className={styles.selectItem}>
+                    <Select.ItemText>{aisleLabel(c)}</Select.ItemText>
+                    <Select.ItemIndicator className={styles.selectIndicator}>
+                      <Icon name="check" />
+                    </Select.ItemIndicator>
+                  </Select.Item>
+                ))}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
+      </div>
+      <div className={styles.field}>
         <Label.Root className={styles.fieldLabel} htmlFor={shelfId}>
           Shelf life in days
         </Label.Root>
@@ -125,8 +153,7 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
           <AlertDialog.Content className={styles.alertContent}>
             <AlertDialog.Title className={styles.alertTitle}>Remove {name}?</AlertDialog.Title>
             <AlertDialog.Description className={styles.hint}>
-              {name} leaves the {LOCATION_LABEL[item.location].toLowerCase()} shelf along with its recorded amount. Undo
-              from the toast puts it straight back.
+              {name} leaves the pantry along with its recorded amount. Undo from the toast puts it straight back.
             </AlertDialog.Description>
             <div className={styles.setActions}>
               <AlertDialog.Cancel asChild>

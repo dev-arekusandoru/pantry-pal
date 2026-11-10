@@ -1,16 +1,16 @@
 # Pantry
 
-The Pantry tab shows what you have at home. Each row is one ingredient in one
-storage location: Fridge, Pantry, Freezer, Counter, or Other. Rows are grouped
-by shelf and sorted by name.
+The Pantry tab shows what you have at home. Each row is one ingredient. Rows are
+grouped by ingredient category, in the same order as the shopping list, and
+sorted by name.
 
-![Pantry screen with shelves, search, and quantity controls](../images/pantry.png)
+![Pantry screen with category groups, search, and quantity controls](../images/pantry.png)
 
 ## Find stock
 
 Use **Search the pantry** to filter by name. The chips under the search box
-filter by shelf. **Everything** shows all shelves; the other chips appear only
-when that shelf has stock.
+filter by category. **Everything** shows all categories; the other chips appear
+only when that category has stock.
 
 ## Add stock
 
@@ -19,14 +19,13 @@ Tap the **+** button. If the pantry is empty, tap **Add**. Then fill in:
 - **What is it?**
 - **How much? (optional)**
 - **Unit**
-- **Where does it live?**
 - **Shopping aisle**
 
-The aisle is used when the app creates an ingredient. Shopping lists group items
-by ingredient category.
+The aisle is the ingredient category. It groups pantry rows and shopping items.
+It is used when the app creates an ingredient.
 
-With an amount, the app adds to the stock already on that shelf. A new name
-creates a new ingredient. Without an amount, the app records the item as
+With an amount, the app adds to the stock already recorded for that ingredient. A
+new name creates a new ingredient. Without an amount, the app records the item as
 **On hand** and leaves the quantity unknown.
 
 ## Change an amount
@@ -42,9 +41,10 @@ A measured row has **−** and **+** buttons. One tap changes the amount by:
 The amount cannot go below zero. Tap the amount or the row name to open a sheet
 and type an exact amount. Tap **Save**.
 
-The same sheet shows **Best before** and **Shelf life in days**. Change either
-value, then tap **Save**. Clear **Best before** to remove the date. Clear **Shelf
-life in days** to stop dating future purchases of this ingredient.
+The same sheet shows **Category**, **Best before**, and **Shelf life in days**.
+Change any value, then tap **Save**. Change **Category** to move the ingredient to
+another group. Clear **Best before** to remove the date. Clear **Shelf life in
+days** to stop dating future purchases of this ingredient.
 
 A row with an expiry date shows **Best before**. An item that expires in three
 days or less gets an **Expiring soon** badge. An item past its date gets an
@@ -84,18 +84,19 @@ number, without an estimate marker.
 ## Remove stock
 
 Open the item's amount sheet, tap **Remove from pantry**, then confirm with
-**Remove**. The toast offers **Undo**. Undo puts the row back with its amount and
-shelf. It does not restore the row's past stock movements.
+**Remove**. The toast offers **Undo**. Undo puts the row back with its amount. It
+does not restore the row's past stock movements.
 
 ## Through the API or MCP
 
 These tasks have no web screen:
 
-- Move stock to another shelf: `pantry_update` with `action: "move"`.
 - Mark stock as checked: `pantry_update` with `action: "verify"`.
 - Add notes, purchase dates, or open dates.
 - Read stock history: `pantry_history`.
-- Set ingredient aliases, par levels, or default units.
+- Set ingredient aliases, par levels, default units, or categories
+  (`ingredient_upsert` with `action: "update"`). The web item sheet changes the
+  category for you.
 
 See [Common MCP tasks](../connect/tasks.md) and the
 [MCP tool reference](../reference/mcp-tools.md). The REST endpoints are in the

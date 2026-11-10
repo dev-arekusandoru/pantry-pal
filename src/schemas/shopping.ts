@@ -7,7 +7,6 @@ import {
   PANTRY_STATUSES,
   SHOPPING_ITEM_SOURCES,
   SHOPPING_LIST_STATUSES,
-  STORAGE_LOCATIONS,
 } from "../db/schema.js";
 
 /** Fresh identifier schema per field. */
@@ -42,10 +41,6 @@ export const shoppingListStatusSchema = z
 export const shoppingItemSourceSchema = z
   .enum(SHOPPING_ITEM_SOURCES)
   .describe("generated = came from plan demand; manual = added by a person.");
-
-export const storageLocationSchema = z
-  .enum(STORAGE_LOCATIONS)
-  .describe("Where the purchased stock is stored.");
 
 // ---------------------------------------------------------------------------
 // Demand
@@ -108,7 +103,7 @@ export const availabilityLineSchema = z
     onHand: z
       .number()
       .nullable()
-      .describe("Stock summed across locations; null when any amount is unknown."),
+      .describe("Current stock; null when the amount is unknown."),
     onHandStatus: pantryStatusSchema,
     committed: z
       .number()
@@ -332,7 +327,6 @@ export const completeShoppingListInputSchema = z
           itemId: id(),
           qty: z.number().nonnegative().nullable().optional(),
           unit: z.string().nullable().optional(),
-          location: storageLocationSchema.optional(),
         }),
       )
       .optional()

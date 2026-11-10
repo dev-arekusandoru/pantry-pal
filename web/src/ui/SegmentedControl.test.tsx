@@ -5,7 +5,7 @@ import { SegmentedControl } from ".";
 
 const OPTIONS = [
   { value: "pantry", label: "Pantry" },
-  { value: "freezer", label: "Freezer" },
+  { value: "dairy", label: "Dairy" },
 ];
 
 describe("SegmentedControl", () => {
@@ -14,8 +14,8 @@ describe("SegmentedControl", () => {
     const onChange = vi.fn();
     render(<SegmentedControl label="Location" options={OPTIONS} value="pantry" onChange={onChange} />);
     expect(screen.getByRole("radio", { name: "Pantry" })).toHaveAttribute("aria-checked", "true");
-    await user.click(screen.getByRole("radio", { name: "Freezer" }));
-    expect(onChange).toHaveBeenCalledWith("freezer");
+    await user.click(screen.getByRole("radio", { name: "Dairy" }));
+    expect(onChange).toHaveBeenCalledWith("dairy");
   });
 
   it("does not let the selected chip be deselected", async () => {

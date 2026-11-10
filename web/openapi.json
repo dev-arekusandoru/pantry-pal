@@ -219,7 +219,7 @@
               "number",
               "null"
             ],
-            "description": "Stock summed across locations; null when any amount is unknown."
+            "description": "Current stock; null when the amount is unknown."
           },
           "onHandStatus": {
             "type": "string",
@@ -996,17 +996,6 @@
                     "string",
                     "null"
                   ]
-                },
-                "location": {
-                  "type": "string",
-                  "enum": [
-                    "pantry",
-                    "fridge",
-                    "freezer",
-                    "counter",
-                    "other"
-                  ],
-                  "description": "Where the purchased stock is stored."
                 }
               },
               "required": [
@@ -1069,7 +1058,7 @@
                 "items": {
                   "$ref": "#/components/schemas/IngredientStock"
                 },
-                "description": "Stock rows across locations."
+                "description": "Stock rows for this ingredient."
               }
             },
             "required": [
@@ -1155,17 +1144,6 @@
             "type": "string",
             "description": "Pantry item id (pi_...)."
           },
-          "location": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
-          },
           "qty": {
             "type": [
               "number",
@@ -1197,7 +1175,6 @@
         },
         "required": [
           "id",
-          "location",
           "qty",
           "unit",
           "qtyApprox",
@@ -1249,17 +1226,6 @@
               "null"
             ],
             "description": "Unit used for stock and shopping by default."
-          },
-          "defaultLocation": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
           },
           "imageUrl": {
             "type": [
@@ -1314,7 +1280,6 @@
           "description",
           "category",
           "defaultUnit",
-          "defaultLocation",
           "imageUrl",
           "shelfLifeDays",
           "parQty",
@@ -1371,17 +1336,6 @@
               "null"
             ],
             "description": "Unit used for stock and shopping, e.g. \"g\" or \"can\"."
-          },
-          "defaultLocation": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
           },
           "imageUrl": {
             "type": [
@@ -1459,17 +1413,6 @@
               "string",
               "null"
             ]
-          },
-          "defaultLocation": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
           },
           "imageUrl": {
             "type": [
@@ -1775,17 +1718,6 @@
               "shelfLifeDays"
             ]
           },
-          "location": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
-          },
           "qty": {
             "type": [
               "number",
@@ -1865,7 +1797,6 @@
           "id",
           "ingredientId",
           "ingredient",
-          "location",
           "qty",
           "unit",
           "qtyApprox",
@@ -1907,23 +1838,11 @@
               },
               "ingredientName": {
                 "type": "string"
-              },
-              "location": {
-                "type": "string",
-                "enum": [
-                  "pantry",
-                  "fridge",
-                  "freezer",
-                  "counter",
-                  "other"
-                ],
-                "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
               }
             },
             "required": [
               "ingredientId",
-              "ingredientName",
-              "location"
+              "ingredientName"
             ]
           }
         ]
@@ -1989,17 +1908,6 @@
               "null"
             ],
             "description": "Unit, e.g. \"lb\", \"g\", \"can\"."
-          },
-          "location": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
           },
           "status": {
             "type": "string",
@@ -2118,17 +2026,6 @@
             ],
             "description": "Unit of the delta; defaults to the item unit."
           },
-          "location": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
-          },
           "note": {
             "type": [
               "string",
@@ -2240,17 +2137,6 @@
       "UpdatePantryItem": {
         "type": "object",
         "properties": {
-          "location": {
-            "type": "string",
-            "enum": [
-              "pantry",
-              "fridge",
-              "freezer",
-              "counter",
-              "other"
-            ],
-            "description": "Moving stock to another location."
-          },
           "note": {
             "type": [
               "string",
@@ -7657,23 +7543,6 @@
             "schema": {
               "type": "string",
               "enum": [
-                "pantry",
-                "fridge",
-                "freezer",
-                "counter",
-                "other"
-              ],
-              "description": "Where stock is kept: pantry, fridge, freezer, counter or other."
-            },
-            "required": false,
-            "description": "Where stock is kept: pantry, fridge, freezer, counter or other.",
-            "name": "location",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
                 "on_hand",
                 "low",
                 "out",
@@ -7938,7 +7807,7 @@
           "pantry"
         ],
         "summary": "Update pantry metadata",
-        "description": "Move a row to another location, edit notes/dates/status. Quantities go through the ledger.",
+        "description": "Edit notes/dates/status. Quantities go through the ledger.",
         "parameters": [
           {
             "schema": {

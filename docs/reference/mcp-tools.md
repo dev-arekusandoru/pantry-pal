@@ -54,15 +54,15 @@ Input schemas come from these files:
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
 | `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, and conversions. | `query`, `category`, `includeArchived`. |
-| `ingredient_upsert` | Create, update, alias, or merge an ingredient. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; category and default unit or location; `aliases`; `removeAliases`; `intoId` for merge. |
+| `ingredient_upsert` | Create, update, alias, or merge an ingredient. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; category and default unit; `aliases`; `removeAliases`; `intoId` for merge. |
 | `unit_conversions` | List, create, or delete custom unit conversions such as `1 can = 15 oz`, per ingredient or household-global. | `action` `list`, `create`, or `delete`; `ingredientId`; `includeGlobal`; `conversionId`; `fromUnit`, `toUnit`, `factor`; `note`. |
 
 ## Pantry and availability
 
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
-| `pantry_query` | Read current stock. One pantry row, one ingredient's detail, or a filtered list. | `pantryItemId`; or `ingredientId` or `ingredient`; or `category`, `location`, `status`, `staleDays`, `query`. |
-| `pantry_update` | Apply stock changes or act on one pantry row. | `action` `bulk`, `verify`, `move`, or `delete`; `lines[]` for bulk with `op` `set` or `adjust`, an ingredient reference, `qty` or `delta`, `unit`, `location`, `qtyApprox`, `reason`; `pantryItemId`; `location`. |
+| `pantry_query` | Read current stock. One pantry row, one ingredient's detail, or a filtered list. | `pantryItemId`; or `ingredientId` or `ingredient`; or `category`, `status`, `staleDays`, `query`. |
+| `pantry_update` | Apply stock changes or act on one pantry row. | `action` `bulk`, `verify`, or `delete`; `lines[]` for bulk with `op` `set` or `adjust`, an ingredient reference, `qty` or `delta`, `unit`, `qtyApprox`, `reason`; `pantryItemId`. |
 | `pantry_history` | Read stock movements, newest first, with the reason and resulting quantity. | `pantryItemId`, `ingredientId` or `ingredient`, `refType`, `refId`, `limit` (maximum 200), `before`. |
 | `availability` | Compare stock on hand with demand from planned cooks. Read-only. | `mealPlanId`, `from`, `to`, `includeOptional`. |
 

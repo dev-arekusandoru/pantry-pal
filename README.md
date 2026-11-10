@@ -45,7 +45,7 @@ connect an AI assistant through MCP. Your data stays on your server.
     <th>Cook mode</th>
   </tr>
   <tr>
-    <td><img src="docs/images/pantry.png" alt="Pantry stock with amounts and storage locations" width="360"></td>
+    <td><img src="docs/images/pantry.png" alt="Pantry stock grouped by food category with amounts" width="360"></td>
     <td><img src="docs/images/cook.png" alt="Cook mode with one recipe step and large controls" width="360"></td>
   </tr>
 </table>
@@ -53,7 +53,7 @@ connect an AI assistant through MCP. Your data stays on your server.
 ## Key features
 
 - **Plan meals:** arrange meals and leftovers across the week.
-- **Track food:** record amounts, storage locations, and expiry dates.
+- **Track food:** record amounts and expiry dates, grouped by food category.
 - **Manage recipes:** scale ingredients to the number of servings.
 - **Shop with a list:** build a list from your plan and the food you have.
 - **Cook step by step:** follow a recipe and update stock when you finish.

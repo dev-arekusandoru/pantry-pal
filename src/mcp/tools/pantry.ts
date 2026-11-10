@@ -2,11 +2,7 @@ import { z } from "@hono/zod-openapi";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Ctx } from "../../context.js";
 import { AppError } from "../../lib/errors.js";
-import {
-  createIngredientSchema,
-  ingredientCategorySchema,
-  storageLocationSchema,
-} from "../../schemas/ingredients.js";
+import { createIngredientSchema, ingredientCategorySchema } from "../../schemas/ingredients.js";
 import {
   bulkStockSchema,
   listPantryQuerySchema,
@@ -27,7 +23,6 @@ import {
   getPantryItem,
   listMovements,
   listPantry,
-  updatePantryItem,
   verifyItem,
 } from "../../services/pantry.js";
 import {
@@ -72,7 +67,7 @@ const ingredientUpsertInput = z
       .describe("Target ingredient id that survives the merge (action=merge)."),
   })
   .describe(
-    "Create or update an ingredient with its category, default unit/location, aliases, shelf life, par level and notes; merge folds a duplicate into another.",
+    "Create or update an ingredient with its category, default unit, aliases, shelf life, par level and notes; merge folds a duplicate into another.",
   );
 
 const unitConversionsInput = z.object({
@@ -106,7 +101,6 @@ const pantryQueryInput = z.object({
     ),
   ingredient: z.string().optional().describe("Ingredient name (alternative to `ingredientId`)."),
   category: listPantryQuerySchema.shape.category,
-  location: listPantryQuerySchema.shape.location,
   status: listPantryQuerySchema.shape.status,
   staleDays: listPantryQuerySchema.shape.staleDays,
   query: listPantryQuerySchema.shape.query,
@@ -114,11 +108,10 @@ const pantryQueryInput = z.object({
 
 const pantryUpdateInput = z.object({
   action: z
-    .enum(["bulk", "verify", "move", "delete"])
-    .describe("bulk applies set/adjust lines; verify, move and delete act on one pantry row."),
+    .enum(["bulk", "verify", "delete"])
+    .describe("bulk applies set/adjust lines; verify and delete act on one pantry row."),
   lines: bulkStockSchema.shape.lines.optional(),
-  pantryItemId: z.string().optional().describe("Pantry row id (pi_…) for verify/move/delete."),
-  location: storageLocationSchema.optional().describe("New location for action=move."),
+  pantryItemId: z.string().optional().describe("Pantry row id (pi_…) for verify/delete."),
 });
 
 const pantryHistoryInput = z.object({
@@ -137,7 +130,7 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Search ingredients",
       description:
-        "Find ingredients by name/alias/category. Returns ids, default units and locations, aliases, custom conversions and current stock.",
+        "Find ingredients by name/alias/category. Returns ids, default units, aliases, custom conversions and current stock.",
       inputSchema: ingredientSearchInput,
       annotations: { readOnlyHint: true },
     },
@@ -242,7 +235,7 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Query pantry stock",
       description:
-        "Current stock per ingredient and location with status, approximate/unknown flags, dates and notes. Pass pantryItemId for one row, or ingredientId/ingredient for one ingredient's detail; otherwise filter the list.",
+        "Current stock per ingredient with status, approximate/unknown flags, dates and notes. Pass pantryItemId for one row, or ingredientId/ingredient for one ingredient's detail; otherwise filter the list.",
       inputSchema: pantryQueryInput,
       annotations: { readOnlyHint: true },
     },
@@ -257,7 +250,6 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
       return {
         items: listPantry(ctx, {
           ...(args.category === undefined ? {} : { category: args.category }),
-          ...(args.location === undefined ? {} : { location: args.location }),
           ...(args.status === undefined ? {} : { status: args.status }),
           ...(args.staleDays === undefined ? {} : { staleDays: args.staleDays }),
           ...(args.query === undefined ? {} : { query: args.query }),
@@ -271,7 +263,7 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Update pantry stock",
       description:
-        'action=bulk applies `set`/`adjust` lines atomically (ingredient refs accept names; unknown names on positive set/adjust are created), action=verify stamps lastVerifiedAt, action=move changes location, action=delete removes the row and its movements.',
+        'action=bulk applies `set`/`adjust` lines atomically (ingredient refs accept names; unknown names on positive set/adjust are created), action=verify stamps lastVerifiedAt, action=delete removes the row and its movements.',
       inputSchema: pantryUpdateInput,
       annotations: { destructiveHint: true },
     },
@@ -285,12 +277,6 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
         }
         case "verify":
           return verifyItem(ctx, requireArg(args.pantryItemId, "pantryItemId"));
-        case "move":
-          return {
-            item: updatePantryItem(ctx, requireArg(args.pantryItemId, "pantryItemId"), {
-              location: requireArg(args.location, "location"),
-            }),
-          };
         case "delete": {
           const id = requireArg(args.pantryItemId, "pantryItemId");
           deletePantryItem(ctx, id);

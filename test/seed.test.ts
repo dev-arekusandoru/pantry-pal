@@ -149,7 +149,6 @@ describe("loadSeed(seed/example.json)", () => {
     const stock = getStockForIngredient(test.ctx, beef!.id);
     expect(stock).toHaveLength(1);
     expect(stock[0]).toMatchObject({
-      location: "fridge",
       qty: 3,
       unit: "lb",
       status: "on_hand",

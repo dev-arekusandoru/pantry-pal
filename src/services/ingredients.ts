@@ -11,7 +11,6 @@ import {
   unitConversions,
   type IngredientCategory,
   type PantryStatus,
-  type StorageLocation,
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
@@ -152,7 +151,6 @@ export interface IngredientConversionView {
 
 export interface IngredientStockView {
   id: string;
-  location: StorageLocation;
   qty: number | null;
   unit: string | null;
   qtyApprox: boolean;
@@ -208,7 +206,6 @@ function ingredientView(ctx: Ctx, row: Ingredient): IngredientView {
   const pantry = ctx.db
     .select({
       id: pantryItems.id,
-      location: pantryItems.location,
       qty: pantryItems.qty,
       unit: pantryItems.unit,
       qtyApprox: pantryItems.qtyApprox,
@@ -218,7 +215,6 @@ function ingredientView(ctx: Ctx, row: Ingredient): IngredientView {
     .where(
       and(eq(pantryItems.householdId, ctx.householdId), eq(pantryItems.ingredientId, row.id)),
     )
-    .orderBy(asc(pantryItems.location))
     .all();
 
   return { ...rest, aliases, conversions, pantry };
@@ -360,7 +356,6 @@ export interface CreateIngredientInput {
   category?: IngredientCategory;
   aliases?: string[];
   defaultUnit?: string | null;
-  defaultLocation?: StorageLocation;
   imageUrl?: string | null;
   shelfLifeDays?: number | null;
   parQty?: number | null;
@@ -388,7 +383,6 @@ function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientV
       description: input.description ?? null,
       category: input.category ?? "other",
       defaultUnit: normalizeUnitInput(input.defaultUnit, "unit"),
-      defaultLocation: input.defaultLocation ?? "pantry",
       imageUrl: input.imageUrl ?? null,
       shelfLifeDays: input.shelfLifeDays ?? null,
       parQty: requireParQty(input.parQty),
@@ -421,7 +415,6 @@ export interface UpdateIngredientInput {
   description?: string | null;
   category?: IngredientCategory;
   defaultUnit?: string | null;
-  defaultLocation?: StorageLocation;
   imageUrl?: string | null;
   shelfLifeDays?: number | null;
   parQty?: number | null;
@@ -453,7 +446,6 @@ function updateIngredientIn(
   if (input.defaultUnit !== undefined) {
     patch.defaultUnit = normalizeUnitInput(input.defaultUnit, "unit");
   }
-  if (input.defaultLocation !== undefined) patch.defaultLocation = input.defaultLocation;
   if (input.imageUrl !== undefined) patch.imageUrl = input.imageUrl;
   if (input.shelfLifeDays !== undefined) patch.shelfLifeDays = input.shelfLifeDays;
   if (input.parQty !== undefined) patch.parQty = requireParQty(input.parQty);
@@ -569,9 +561,9 @@ export interface MergeIngredientsResult {
 
 /**
  * Fold `sourceId` into `targetId` in one transaction: recipe ingredients, pantry
- * stock (summed when the target has a row at the same location), shopping items,
- * rules and conversions move over; the source name becomes an alias of the
- * target and the source row is deleted.
+ * stock (summed when the units match), shopping items, rules and conversions
+ * move over; the source name becomes an alias of the target and the source row
+ * is deleted.
  */
 export function mergeIngredients(
   ctx: Ctx,
@@ -597,7 +589,7 @@ export function mergeIngredients(
       )
       .run().changes;
 
-    // Pantry: sum at the same location, otherwise move the row.
+    // Pantry: one row per ingredient; sum when the units match, otherwise keep the target's row.
     const sourceRows = tx.db
       .select()
       .from(pantryItems)
@@ -618,13 +610,10 @@ export function mergeIngredients(
         ),
       )
       .all();
-    const targetByLocation = new Map<StorageLocation, typeof pantryItems.$inferSelect>(
-      targetRows.map((row) => [row.location, row] as const),
-    );
+    const dst = targetRows[0];
 
     let pantryItemsMoved = 0;
     for (const src of sourceRows) {
-      const dst = targetByLocation.get(src.location);
       if (!dst) {
         tx.db
           .update(pantryItems)
@@ -651,11 +640,10 @@ export function mergeIngredients(
         if (converted === null) {
           throw new AppError(
             "unprocessable",
-            `Cannot merge ${source.name} into ${target.name}: ${src.qty} ${src.unit ?? "unit"} at ${src.location} is not convertible to ${unit ?? "unit"}`,
+            `Cannot merge ${source.name} into ${target.name}: ${src.qty} ${src.unit ?? "unit"} is not convertible to ${unit ?? "unit"}`,
             {
               ingredient: target.id,
               source: source.id,
-              location: src.location,
               fromUnit: src.unit,
               toUnit: unit,
             },
@@ -677,7 +665,6 @@ export function mergeIngredients(
         .where(eq(stockMovements.pantryItemId, src.id))
         .run();
       tx.db.delete(pantryItems).where(eq(pantryItems.id, src.id)).run();
-      targetByLocation.set(dst.location, { ...dst, qty, unit, status });
       pantryItemsMoved += 1;
     }
 

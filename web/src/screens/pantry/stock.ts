@@ -1,8 +1,9 @@
 import type { components } from "@/api";
+import { CATEGORY_ORDER } from "../aisles";
 
 export type PantryItem = components["schemas"]["PantryItem"];
 export type PantryStatus = PantryItem["status"];
-export type StorageLocation = PantryItem["location"];
+export type PantryCategory = PantryItem["ingredient"]["category"];
 
 /** How much one tap on +/- changes a measured item, by unit. Anything unlisted (cans, jars, bunches, ...) steps by 1. */
 const STEPS: Record<string, number> = {
@@ -23,7 +24,6 @@ export function stepFor(unit: string | null): number {
 export function restoreBody(item: PantryItem) {
   return {
     ingredientId: item.ingredientId,
-    location: item.location,
     qty: item.qty,
     unit: item.unit,
     qtyApprox: item.qtyApprox,
@@ -52,28 +52,22 @@ export const STATUS_LABEL: Record<PantryStatus, string> = {
   unknown: "Not sure",
 };
 
-export const LOCATION_ORDER: readonly StorageLocation[] = ["fridge", "pantry", "freezer", "counter", "other"];
-
-export const LOCATION_LABEL: Record<StorageLocation, string> = {
-  fridge: "Fridge",
-  pantry: "Pantry",
-  freezer: "Freezer",
-  counter: "Counter",
-  other: "Other",
-};
-
-/** Case-insensitive name filter, grouped by location in shelf order, each shelf sorted by name. */
-export function groupByLocation(
+/** Case-insensitive name filter, grouped by ingredient category in aisle order, each group sorted by name. */
+export function groupByCategory(
   items: readonly PantryItem[],
   query: string,
-  location: StorageLocation | "all",
-): Array<{ location: StorageLocation; items: PantryItem[] }> {
+  category: PantryCategory | "all",
+): Array<{ category: PantryCategory; items: PantryItem[] }> {
   const q = query.trim().toLowerCase();
   const shown = items.filter(
-    (i) => (location === "all" || i.location === location) && (q === "" || i.ingredient.name.toLowerCase().includes(q)),
+    (i) =>
+      (category === "all" || i.ingredient.category === category) &&
+      (q === "" || i.ingredient.name.toLowerCase().includes(q)),
   );
-  return LOCATION_ORDER.map((loc) => ({
-    location: loc,
-    items: shown.filter((i) => i.location === loc).sort((a, b) => a.ingredient.name.localeCompare(b.ingredient.name)),
+  return CATEGORY_ORDER.map((cat) => ({
+    category: cat,
+    items: shown
+      .filter((i) => i.ingredient.category === cat)
+      .sort((a, b) => a.ingredient.name.localeCompare(b.ingredient.name)),
   })).filter((g) => g.items.length > 0);
 }

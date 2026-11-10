@@ -96,7 +96,6 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
         name: input.name,
         category: input.category,
         defaultUnit: input.defaultUnit,
-        defaultLocation: input.defaultLocation,
         aliases: input.aliases,
         ...(input.description === undefined ? {} : { description: input.description }),
         ...(input.shelfLifeDays === undefined ? {} : { shelfLifeDays: input.shelfLifeDays }),
@@ -125,7 +124,6 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
     for (const row of seed.pantry) {
       const applied = applyMovement(t, {
         ingredientId: ingredientIdOf(row.ingredient),
-        location: row.location,
         kind: "set",
         qty: row.qty,
         unit: row.unit,

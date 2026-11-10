@@ -68,7 +68,7 @@ export interface AvailabilityLine {
   category: IngredientCategory;
   /** Unit used for `onHand`, `committed` and `available`. */
   unit: string | null;
-  /** Stock summed across pantry locations; null when any location's amount is unknown. */
+  /** Current stock; null when the amount is unknown. */
   onHand: number | null;
   onHandStatus: PantryStatus;
   /** Planned demand in `unit`; null when the demand has no comparable quantity. */

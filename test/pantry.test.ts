@@ -147,19 +147,6 @@ describe("applyMovement ledger", () => {
     expect(result.movement.statusAfter).toBe("unknown");
   });
 
-  it("defaults the location to the ingredient default", () => {
-    const { ctx } = makeClock();
-    const cheese = createIngredient(ctx, { name: "Cheddar", defaultLocation: "fridge" });
-    const result = applyMovement(ctx, {
-      ingredientId: cheese.id,
-      kind: "set",
-      qty: 200,
-      unit: "g",
-      reason: "purchase",
-    });
-    expect(result.item.location).toBe("fridge");
-  });
-
   it("works inside a caller's transaction", () => {
     const { ctx } = makeClock();
     const ingredient = createIngredient(ctx, { name: "Butter" });
@@ -270,29 +257,24 @@ describe("bulkUpdate", () => {
 });
 
 describe("listPantry", () => {
-  it("filters by category, location, status, query, alias and staleness", () => {
+  it("filters by category, status, query, alias and staleness", () => {
     const { ctx, advance } = makeClock();
     const carrots = setStock(ctx, {
       ingredient: "Carrots",
       category: "produce",
       qty: 2,
       unit: "lb",
-      location: "fridge",
     });
     const chicken = setStock(ctx, {
       ingredient: "Chicken thighs",
       category: "protein",
       qty: 1,
       unit: "kg",
-      location: "freezer",
     });
 
     expect(listPantry(ctx)).toHaveLength(2);
     expect(listPantry(ctx)[0]!.ingredient.category).toBe("produce");
     expect(listPantry(ctx, { category: "produce" }).map((row) => row.id)).toEqual([carrots.item.id]);
-    expect(listPantry(ctx, { location: "freezer" }).map((row) => row.id)).toEqual([
-      chicken.item.id,
-    ]);
     expect(listPantry(ctx, { status: "on_hand" })).toHaveLength(2);
     expect(listPantry(ctx, { query: "CARROT" })).toHaveLength(1);
 
@@ -327,16 +309,17 @@ describe("listPantry", () => {
     ]);
   });
 
-  it("lists all locations for an ingredient and deletes rows", () => {
+  it("keeps one row per ingredient and deletes it", () => {
     const { ctx } = makeClock();
-    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g", location: "fridge" });
-    setStock(ctx, { ingredientId: set.item.ingredientId, qty: 250, unit: "g", location: "freezer" });
+    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g" });
+    setStock(ctx, { ingredientId: set.item.ingredientId, qty: 250, unit: "g" });
 
     const stock = getStockForIngredient(ctx, set.item.ingredientId);
-    expect(stock.map((row) => row.location)).toEqual(["freezer", "fridge"]);
+    expect(stock).toHaveLength(1);
+    expect(stock[0]!.qty).toBe(250);
 
     deletePantryItem(ctx, set.item.id);
-    expect(getStockForIngredient(ctx, set.item.ingredientId)).toHaveLength(1);
+    expect(getStockForIngredient(ctx, set.item.ingredientId)).toHaveLength(0);
     expect(listPantry(ctx).map((row) => row.id)).not.toContain(set.item.id);
     expect(listMovements(ctx, { pantryItemId: set.item.id })).toHaveLength(0);
     expectAppError(() => deletePantryItem(ctx, set.item.id), "not_found");
@@ -345,7 +328,7 @@ describe("listPantry", () => {
 
   it("makes a removed row vanish from the list and availability with no movements left behind", () => {
     const { ctx } = makeClock();
-    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g", location: "fridge" });
+    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g" });
     const ingredientId = set.item.ingredientId;
 
     expect(listPantry(ctx).map((row) => row.id)).toContain(set.item.id);
@@ -429,30 +412,19 @@ describe("lastVerifiedAt", () => {
 });
 
 describe("updatePantryItem", () => {
-  it("moves a row between locations and refuses collisions", () => {
+  it("edits notes, dates and status without touching the quantity", () => {
     const { ctx } = makeClock();
-    const fridge = setStock(ctx, {
-      ingredient: "Mozzarella",
-      qty: 200,
-      unit: "g",
-      location: "fridge",
-    });
-    setStock(ctx, { ingredientId: fridge.item.ingredientId, qty: 100, unit: "g", location: "pantry" });
+    const row = setStock(ctx, { ingredient: "Mozzarella", qty: 200, unit: "g" });
 
-    const moved = updatePantryItem(ctx, fridge.item.id, {
-      location: "freezer",
+    const updated = updatePantryItem(ctx, row.item.id, {
       note: "freeze for later",
       expiresOn: "2026-12-01",
+      status: "low",
     });
-    expect(moved.location).toBe("freezer");
-    expect(moved.note).toBe("freeze for later");
-    expect(moved.expiresOn).toBe("2026-12-01");
-
-    const pantryRow = listPantry(ctx, { location: "pantry" })[0]!;
-    expectAppError(
-      () => updatePantryItem(ctx, pantryRow.id, { location: "freezer" }),
-      "conflict",
-    );
+    expect(updated.note).toBe("freeze for later");
+    expect(updated.expiresOn).toBe("2026-12-01");
+    expect(updated.status).toBe("low");
+    expect(updated.qty).toBe(200);
   });
 });
 
@@ -469,7 +441,6 @@ describe("listMovements", () => {
     expect(all).toHaveLength(3);
     expect(all[0]!.qtyAfter).toBe(5);
     expect(all.map((movement) => movement.ingredientName)).toEqual(["Apples", "Apples", "Apples"]);
-    expect(all[0]!.location).toBe("pantry");
 
     expect(listMovements(ctx, { ingredientId: set.item.ingredientId, limit: 2 })).toHaveLength(2);
 
@@ -483,7 +454,7 @@ describe("listMovements", () => {
 describe("DELETE /pantry/{id}", () => {
   it("removes the row from GET /pantry and answers 404 for an unknown id", async () => {
     const { ctx, request } = makeTestApp();
-    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g", location: "fridge" });
+    const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g" });
 
     const before = await request<{ items: { id: string }[] }>("GET", "/api/v1/pantry");
     expect(before.body.items.map((row) => row.id)).toContain(set.item.id);

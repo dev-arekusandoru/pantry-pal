@@ -173,7 +173,6 @@ export function completeCookEvent(
 
         const result = applyMovement(t, {
           ingredientId: ingredient.ingredientId,
-          location: target.location,
           kind: "delta",
           qty: -requested,
           unit: ingredient.unit,
@@ -316,7 +315,6 @@ function reverseCookMovements(
     }
     const result = applyMovement(ctx, {
       ingredientId: item.ingredientId,
-      location: item.location,
       kind: "delta",
       qty: -net,
       unit,

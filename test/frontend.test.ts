@@ -181,7 +181,6 @@ describe("POST /cook-events (ad-hoc cook)", () => {
     });
     applyMovement(test.ctx, {
       ingredientId: chicken.id,
-      location: "fridge",
       kind: "set",
       qty: 3,
       unit: "lb",

@@ -5,7 +5,7 @@
  * resource in /api/v1. Screens append their own tail, so one invalidation by root
  * covers every variant:
  *
- *   useQuery({ queryKey: [...qk.pantry, "list", { location }], queryFn })
+ *   useQuery({ queryKey: [...qk.pantry, "list", { category }], queryFn })
  *   queryClient.invalidateQueries({ queryKey: qk.pantry })      // all pantry queries
  *
  * Cross-screen effects use roots only (e.g. completing a shopping list invalidates

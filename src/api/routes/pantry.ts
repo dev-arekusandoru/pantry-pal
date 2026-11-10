@@ -49,7 +49,6 @@ const listPantryHandler: RouteHandler<typeof listPantryRoute, AppEnv> = (c) => {
   const query = c.req.valid("query");
   const items = listPantry(c.var.ctx, {
     ...(query.category === undefined ? {} : { category: query.category }),
-    ...(query.location === undefined ? {} : { location: query.location }),
     ...(query.status === undefined ? {} : { status: query.status }),
     ...(query.staleDays === undefined ? {} : { staleDays: query.staleDays }),
     ...(query.query === undefined ? {} : { query: query.query }),
@@ -178,7 +177,7 @@ const updatePantryItemRoute = createRoute({
   path: "/pantry/{id}",
   tags: ["pantry"],
   summary: "Update pantry metadata",
-  description: "Move a row to another location, edit notes/dates/status. Quantities go through the ledger.",
+  description: "Edit notes/dates/status. Quantities go through the ledger.",
   request: {
     params: pantryParamsSchema,
     body: {

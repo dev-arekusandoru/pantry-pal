@@ -11,7 +11,6 @@ import {
   type CookStatus,
   type IngredientCategory,
   type PantryStatus,
-  type StorageLocation,
 } from "../src/db/schema.js";
 import { AppError, type ErrorCode } from "../src/lib/errors.js";
 import { newId } from "../src/lib/ids.js";
@@ -53,7 +52,6 @@ function addIngredient(ctx: Ctx, options: IngredientOptions): string {
       normalizedName: normalizeName(options.name),
       category: options.category ?? "other",
       defaultUnit: options.defaultUnit ?? null,
-      defaultLocation: "pantry",
       parQty: options.parQty ?? null,
       parUnit: options.parUnit ?? null,
       shelfLifeDays: options.shelfLifeDays ?? null,
@@ -156,7 +154,6 @@ interface PantryOptions {
   qty: number | null;
   unit?: string | null;
   status?: PantryStatus;
-  location?: StorageLocation;
 }
 
 function addPantryItem(ctx: Ctx, item: PantryOptions): void {
@@ -167,7 +164,6 @@ function addPantryItem(ctx: Ctx, item: PantryOptions): void {
       id: newId("pi"),
       householdId: ctx.householdId,
       ingredientId: item.ingredientId,
-      location: item.location ?? "pantry",
       qty: item.qty,
       unit: item.unit ?? null,
       status: item.status ?? "on_hand",
@@ -180,7 +176,6 @@ function addPantryItem(ctx: Ctx, item: PantryOptions): void {
 function pantryRow(
   ctx: Ctx,
   ingredientId: string,
-  location: StorageLocation = "pantry",
 ): typeof pantryItems.$inferSelect | undefined {
   return ctx.db
     .select()
@@ -189,7 +184,6 @@ function pantryRow(
       and(
         eq(pantryItems.householdId, ctx.householdId),
         eq(pantryItems.ingredientId, ingredientId),
-        eq(pantryItems.location, location),
       ),
     )
     .get();
@@ -607,11 +601,10 @@ describe("completeShoppingList", () => {
     expect(row.status).toBe("on_hand");
   });
 
-  it("uses received overrides and stores them in the given location", () => {
+  it("uses received quantity and unit overrides", () => {
     const { ctx } = makeTestCtx();
     const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: 0, unit: "lb", status: "out" });
-    addPantryItem(ctx, { ingredientId: beef, qty: 0, unit: "lb", status: "out", location: "freezer" });
 
     const detail = createShoppingList(ctx, {
       items: [{ ingredient: "Ground beef", qty: 1, unit: "lb" }],
@@ -620,13 +613,12 @@ describe("completeShoppingList", () => {
     checkItems(ctx, detail.list.id, [{ itemId: item.id, checked: true }]);
 
     const result = completeShoppingList(ctx, detail.list.id, {
-      received: [{ itemId: item.id, qty: 3, unit: "lb", location: "freezer" }],
+      received: [{ itemId: item.id, qty: 3, unit: "lb" }],
     });
 
     expect(result.movements).toHaveLength(1);
     expect(result.movements[0]!.qty).toBe(3);
-    expect(pantryRow(ctx, beef, "freezer")!.qty).toBe(3);
-    expect(pantryRow(ctx, beef, "pantry")!.qty).toBe(0);
+    expect(pantryRow(ctx, beef)!.qty).toBe(3);
   });
 
   it("only converts checked items by default but can take every item", () => {

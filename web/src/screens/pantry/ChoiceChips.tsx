@@ -11,7 +11,7 @@ export interface ChoiceChipsProps<T extends string> {
   options: ReadonlyArray<ChoiceChipOption<T>>;
   value: T;
   onChange: (value: T) => void;
-  /** Accessible name of the group, e.g. "Filter by location". */
+  /** Accessible name of the group, e.g. "Filter by category". */
   label: string;
   className?: string;
 }

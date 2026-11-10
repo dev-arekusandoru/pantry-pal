@@ -53,7 +53,6 @@ Recount example:
       "ingredient": "Chicken breast",
       "qty": 2,
       "unit": "lb",
-      "location": "fridge",
       "qtyApprox": true,
       "reason": "adjust"
     }
@@ -72,7 +71,6 @@ Purchase example:
       "ingredient": "Chicken breast",
       "delta": 1.5,
       "unit": "lb",
-      "location": "fridge",
       "reason": "purchase"
     }
   ]

@@ -4,10 +4,11 @@ import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInpu
 import { AddSheet } from "./AddSheet";
 import { ChoiceChips } from "./ChoiceChips";
 import styles from "./Pantry.module.css";
-import { useAddToList, useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetExpiry, useSetQty, useSetShelfLife, useSetStatus } from "./queries";
+import { useAddToList, useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetExpiry, useSetQty, useSetCategory, useSetShelfLife, useSetStatus } from "./queries";
 import { SetQtySheet } from "./SetQtySheet";
 import { StockRow } from "./StockRow";
-import { LOCATION_LABEL, LOCATION_ORDER, groupByLocation, stepFor, type PantryItem, type StorageLocation } from "./stock";
+import { CATEGORY_ORDER, aisleLabel } from "../aisles";
+import { groupByCategory, stepFor, type PantryCategory, type PantryItem } from "./stock";
 
 export function PantryScreen() {
   const pantry = usePantry();
@@ -15,17 +16,18 @@ export function PantryScreen() {
   const setQty = useSetQty();
   const setExpiry = useSetExpiry();
   const setShelfLife = useSetShelfLife();
+  const setCategory = useSetCategory();
   const addToList = useAddToList();
   const setStatus = useSetStatus();
   const remove = useRemoveItem();
   const restore = useRestoreItem();
   const [query, setQuery] = useState("");
-  const [location, setLocation] = useState<StorageLocation | "all">("all");
+  const [category, setCategoryFilter] = useState<PantryCategory | "all">("all");
   const [editing, setEditing] = useState<PantryItem | null>(null);
   const [adding, setAdding] = useState(false);
 
   const items = pantry.data;
-  const groups = useMemo(() => groupByLocation(items ?? [], query, location), [items, query, location]);
+  const groups = useMemo(() => groupByCategory(items ?? [], query, category), [items, query, category]);
   // One-way latch: did this screen ever show its skeleton? Rows and the block
   // fade in only when they replace a skeleton; a first paint that already has
   // data is left to the route transition, so the two never fade the same frame.
@@ -60,16 +62,16 @@ export function PantryScreen() {
     );
   }
 
-  // Only offer shelves that hold something; a filter that empties out falls back to everything.
-  const present = LOCATION_ORDER.filter((l) => items.some((i) => i.location === l));
-  const activeLocation = location === "all" || present.includes(location) ? location : "all";
+  // Only offer categories that hold something; a filter that empties out falls back to everything.
+  const present = CATEGORY_ORDER.filter((c) => items.some((i) => i.ingredient.category === c));
+  const activeCategory = category === "all" || present.includes(category) ? category : "all";
 
   return (
     <>
       <div className={cx(styles.screen, sawLoading.current && styles.screenIn)} data-rows={sawLoading.current || undefined}>
         <PageHeader
           title="Pantry"
-          sub={items.length === 0 ? "Nothing on the shelves yet" : `${items.length} ${items.length === 1 ? "thing" : "things"} on the shelves`}
+          sub={items.length === 0 ? "Nothing in the pantry yet" : `${items.length} ${items.length === 1 ? "thing" : "things"} in the pantry`}
         />
         {items.length === 0 ? (
           <EmptyState emoji="1FAD9" title="Your pantry is empty" action={addButton}>
@@ -80,11 +82,11 @@ export function PantryScreen() {
             <div className={styles.tools}>
               <SearchInput label="Search the pantry" value={query} onChange={setQuery} />
               {present.length > 1 && (
-                <ChoiceChips<StorageLocation | "all">
-                  label="Filter by location"
-                  value={activeLocation}
-                  onChange={setLocation}
-                  options={[{ value: "all", label: "Everything" }, ...present.map((l) => ({ value: l, label: LOCATION_LABEL[l] }))]}
+                <ChoiceChips<PantryCategory | "all">
+                  label="Filter by category"
+                  value={activeCategory}
+                  onChange={setCategoryFilter}
+                  options={[{ value: "all", label: "Everything" }, ...present.map((c) => ({ value: c, label: aisleLabel(c) }))]}
                 />
               )}
             </div>
@@ -102,9 +104,9 @@ export function PantryScreen() {
               </EmptyState>
             ) : (
               groups.map((g) => (
-                <Card key={g.location} as="section" radius="xl" className={styles.shelf} data-loc={g.location} aria-label={LOCATION_LABEL[g.location]}>
+                <Card key={g.category} as="section" radius="xl" className={styles.shelf} aria-label={aisleLabel(g.category)}>
                   <h2 className={styles.shelfName}>
-                    {LOCATION_LABEL[g.location]}
+                    {aisleLabel(g.category)}
                     <small>{g.items.length}</small>
                   </h2>
                   <ul>
@@ -136,6 +138,9 @@ export function PantryScreen() {
         onSave={(item, changes) => {
           setQty.mutate({ item, qty: changes.qty });
           if (changes.expiresOn !== item.expiresOn) setExpiry.mutate({ item, expiresOn: changes.expiresOn });
+          if (changes.category !== item.ingredient.category) {
+            setCategory.mutate({ ingredientId: item.ingredient.id, category: changes.category });
+          }
           if (changes.shelfLifeDays !== item.ingredient.shelfLifeDays) {
             setShelfLife.mutate({ ingredientId: item.ingredient.id, shelfLifeDays: changes.shelfLifeDays });
           }
@@ -146,7 +151,7 @@ export function PantryScreen() {
             {
               onSuccess: () =>
                 toast.show({
-                  message: `${item.ingredient.name} removed from the ${LOCATION_LABEL[item.location].toLowerCase()} shelf`,
+                  message: `${item.ingredient.name} removed from the pantry`,
                   action: {
                     label: "Undo",
                     onClick: () => restore.mutate({ item }, { onError: (error) => toast.error(errorMessage(error)) }),
@@ -162,7 +167,6 @@ export function PantryScreen() {
         onClose={() => setAdding(false)}
         existing={items}
         initialName={query.trim()}
-        initialLocation={activeLocation === "all" ? "pantry" : activeLocation}
       />
       <Fab label="Add to the pantry" onClick={() => setAdding(true)} />
     </>

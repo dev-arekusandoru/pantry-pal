@@ -28,8 +28,8 @@ function expectAppError(fn: () => unknown, code: ErrorCode): AppError {
   throw new Error(`Expected an AppError with code ${code}`);
 }
 
-function stockAt(ctx: Ctx, ingredientId: string, location: string) {
-  return getStockForIngredient(ctx, ingredientId).find((row) => row.location === location);
+function stockAt(ctx: Ctx, ingredientId: string) {
+  return getStockForIngredient(ctx, ingredientId)[0];
 }
 
 function addCook(ctx: Ctx, recipeId: string, plannedServings = 2) {
@@ -61,7 +61,6 @@ function kitchen() {
 
   applyMovement(ctx, {
     ingredientId: chicken.id,
-    location: "fridge",
     kind: "set",
     qty: 3,
     unit: "lb",
@@ -69,7 +68,6 @@ function kitchen() {
   });
   applyMovement(ctx, {
     ingredientId: oil.id,
-    location: "pantry",
     kind: "set",
     qty: 1,
     unit: "cup",
@@ -96,10 +94,10 @@ describe("completeCookEvent", () => {
     expect(result.movements[0]!.refType).toBe("cook_event");
     expect(result.movements[0]!.refId).toBe(event.id);
     expect(result.movements[0]!.qty).toBeCloseTo(-2, 6);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(1, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(1, 6);
 
     // Optional ingredients are never decremented.
-    expect(stockAt(ctx, oil.id, "pantry")?.qty).toBeCloseTo(1, 6);
+    expect(stockAt(ctx, oil.id)?.qty).toBeCloseTo(1, 6);
 
     const warnings = result.warnings.join("\n");
     expect(warnings).toContain("not tracked in pantry");
@@ -107,7 +105,7 @@ describe("completeCookEvent", () => {
     expect(warnings).toContain("salt");
   });
 
-  it("picks the matching-unit pantry row with the most stock", () => {
+  it("decrements the single pantry row for the ingredient", () => {
     const { ctx } = makeTestCtx();
     const oil = resolveIngredient(ctx, "olive oil", { create: true });
     const recipe = createRecipe(ctx, {
@@ -117,7 +115,6 @@ describe("completeCookEvent", () => {
     });
     applyMovement(ctx, {
       ingredientId: oil.id,
-      location: "fridge",
       kind: "set",
       qty: 0.25,
       unit: "cup",
@@ -125,7 +122,6 @@ describe("completeCookEvent", () => {
     });
     applyMovement(ctx, {
       ingredientId: oil.id,
-      location: "pantry",
       kind: "set",
       qty: 1,
       unit: "cup",
@@ -135,13 +131,12 @@ describe("completeCookEvent", () => {
     const event = addCook(ctx, recipe.id, 2);
     const result = completeCookEvent(ctx, event.id);
 
-    const pantryRow = stockAt(ctx, oil.id, "pantry")!;
+    const pantryRow = stockAt(ctx, oil.id)!;
     expect(result.movements).toHaveLength(1);
     expect(result.movements[0]!.pantryItemId).toBe(pantryRow.id);
     expect(result.movements[0]!.qty).toBeCloseTo(-4, 6);
     expect(result.movements[0]!.unit).toBe("tbsp");
-    expect(stockAt(ctx, oil.id, "pantry")?.qty).toBeCloseTo(0.75, 6);
-    expect(stockAt(ctx, oil.id, "fridge")?.qty).toBeCloseTo(0.25, 6);
+    expect(stockAt(ctx, oil.id)?.qty).toBeCloseTo(0.75, 6);
   });
 
   it("completes a recipe without ingredients with a warning and no movements", () => {
@@ -165,7 +160,7 @@ describe("completeCookEvent", () => {
 
     expect(result.cookEvent.status).toBe("done");
     expect(result.movements).toHaveLength(0);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(3, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(3, 6);
   });
 
   it("rejects a second completion and completing a skipped cook", () => {
@@ -190,7 +185,6 @@ describe("completeCookEvent", () => {
     });
     applyMovement(ctx, {
       ingredientId: chicken.id,
-      location: "fridge",
       kind: "set",
       qty: 1,
       unit: "lb",
@@ -203,7 +197,7 @@ describe("completeCookEvent", () => {
     expect(result.movements).toHaveLength(1);
     expect(result.movements[0]!.qty).toBeCloseTo(-1, 6);
     expect(result.movements[0]!.qtyAfter).toBeCloseTo(0, 6);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(0, 6);
   });
 
   it("clamps the requested amount in the ingredient unit when the pantry row uses another unit", () => {
@@ -216,7 +210,6 @@ describe("completeCookEvent", () => {
     });
     applyMovement(ctx, {
       ingredientId: oil.id,
-      location: "pantry",
       kind: "set",
       qty: 0.25,
       unit: "cup",
@@ -230,7 +223,7 @@ describe("completeCookEvent", () => {
     expect(result.movements).toHaveLength(1);
     expect(result.movements[0]!.qty).toBeCloseTo(-4, 6);
     expect(result.movements[0]!.unit).toBe("tbsp");
-    expect(stockAt(ctx, oil.id, "pantry")?.qty).toBeCloseTo(0, 6);
+    expect(stockAt(ctx, oil.id)?.qty).toBeCloseTo(0, 6);
   });
 
   it("writes no movement when the chosen pantry row is already out", () => {
@@ -243,7 +236,6 @@ describe("completeCookEvent", () => {
     });
     applyMovement(ctx, {
       ingredientId: chicken.id,
-      location: "fridge",
       kind: "set",
       qty: 0,
       unit: "lb",
@@ -254,9 +246,9 @@ describe("completeCookEvent", () => {
     const result = completeCookEvent(ctx, event.id);
 
     expect(result.movements).toHaveLength(0);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(0, 6);
     expect(reopenCookEvent(ctx, event.id).movements).toHaveLength(0);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(0, 6);
   });
 });
 
@@ -281,7 +273,7 @@ describe("reopenCookEvent", () => {
     const event = addCook(ctx, recipe.id, 2);
 
     completeCookEvent(ctx, event.id, { actualServings: 4 });
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(1, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(1, 6);
 
     const reopened = reopenCookEvent(ctx, event.id);
 
@@ -291,7 +283,7 @@ describe("reopenCookEvent", () => {
     expect(reopened.movements).toHaveLength(1);
     expect(reopened.movements[0]!.reason).toBe("adjust");
     expect(reopened.movements[0]!.qty).toBeCloseTo(2, 6);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(3, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(3, 6);
 
     expectAppError(() => reopenCookEvent(ctx, event.id), "conflict");
   });
@@ -306,7 +298,6 @@ describe("reopenCookEvent", () => {
     });
     applyMovement(ctx, {
       ingredientId: chicken.id,
-      location: "fridge",
       kind: "set",
       qty: 1,
       unit: "lb",
@@ -315,13 +306,13 @@ describe("reopenCookEvent", () => {
     const event = addCook(ctx, recipe.id, 2);
 
     completeCookEvent(ctx, event.id);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(0, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(0, 6);
 
     const reopened = reopenCookEvent(ctx, event.id);
 
     expect(reopened.movements).toHaveLength(1);
     expect(reopened.movements[0]!.qty).toBeCloseTo(1, 6);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(1, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(1, 6);
   });
 });
 
@@ -330,7 +321,7 @@ describe("undoCookEvent", () => {
     const { ctx, chicken, recipe } = kitchen();
     const event = addCook(ctx, recipe.id, 2);
     completeCookEvent(ctx, event.id);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(2, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(2, 6);
 
     const undone = undoCookEvent(ctx, event.id);
 
@@ -340,7 +331,7 @@ describe("undoCookEvent", () => {
     expect(undone.cookEvent?.actualServings).toBeNull();
     expect(undone.movements).toHaveLength(1);
     expect(undone.movements[0]!.note).toContain("Undid");
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(3, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(3, 6);
 
     expectAppError(() => undoCookEvent(ctx, event.id), "conflict");
   });
@@ -353,14 +344,14 @@ describe("undoCookEvent", () => {
       cookDate: "2026-11-01",
       complete: true,
     });
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(2, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(2, 6);
 
     const undone = undoCookEvent(ctx, completed.cookEvent.id);
 
     expect(undone.deleted).toBe(true);
     expect(undone.cookEvent).toBeNull();
     expect(undone.movements).toHaveLength(1);
-    expect(stockAt(ctx, chicken.id, "fridge")?.qty).toBeCloseTo(3, 6);
+    expect(stockAt(ctx, chicken.id)?.qty).toBeCloseTo(3, 6);
     expect(listCookEvents(ctx).items).toEqual([]);
     expectAppError(() => undoCookEvent(ctx, completed.cookEvent.id), "not_found");
   });

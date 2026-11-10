@@ -176,7 +176,7 @@ const recipeScalarFields = {
   equipment: z.array(z.string()).describe('Equipment needed, e.g. ["cast iron skillet"].'),
   nutrition: nutritionSchema.nullable().describe("Per-serving nutrition estimate."),
   storageNotes: z.string().nullable().describe("Storage / reheat guidance for leftovers."),
-  leftoverDays: z.number().int().nonnegative().nullable().describe("Days leftovers keep in the fridge."),
+  leftoverDays: z.number().int().nonnegative().nullable().describe("Days leftovers keep."),
   status: recipeStatusSchema.describe("Lifecycle status."),
   rating: z.number().int().min(1).max(5).nullable().describe("Household rating 1-5."),
   notes: z.string().nullable().describe("Free-form household notes."),

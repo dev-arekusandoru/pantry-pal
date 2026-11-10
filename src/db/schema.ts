@@ -54,9 +54,6 @@ export const INGREDIENT_CATEGORIES = [
 ] as const;
 export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number];
 
-export const STORAGE_LOCATIONS = ["pantry", "fridge", "freezer", "counter", "other"] as const;
-export type StorageLocation = (typeof STORAGE_LOCATIONS)[number];
-
 export const PANTRY_STATUSES = ["on_hand", "low", "out", "unknown"] as const;
 export type PantryStatus = (typeof PANTRY_STATUSES)[number];
 
@@ -194,7 +191,6 @@ export const ingredients = sqliteTable(
     category: text("category").$type<IngredientCategory>().notNull().default("other"),
     /** Unit used for pantry stock and shopping when nothing else is specified. */
     defaultUnit: text("default_unit"),
-    defaultLocation: text("default_location").$type<StorageLocation>().notNull().default("pantry"),
     imageUrl: text("image_url"),
     /** Typical shelf life once purchased, used to set expiry dates. */
     shelfLifeDays: integer("shelf_life_days"),
@@ -256,7 +252,6 @@ export const pantryItems = sqliteTable(
     ingredientId: text("ingredient_id")
       .notNull()
       .references(() => ingredients.id, { onDelete: "cascade" }),
-    location: text("location").$type<StorageLocation>().notNull().default("pantry"),
     /** Cached projection of stock_movement. NULL = present but amount unknown. */
     qty: real("qty"),
     unit: text("unit"),
@@ -273,7 +268,7 @@ export const pantryItems = sqliteTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex("pantry_item_uq").on(t.householdId, t.ingredientId, t.location)],
+  (t) => [uniqueIndex("pantry_item_uq").on(t.householdId, t.ingredientId)],
 );
 
 export const stockMovements = sqliteTable(
@@ -335,7 +330,7 @@ export const recipes = sqliteTable(
     nutrition: json<NutritionInfo>("nutrition"),
     /** Storage/reheat guidance for leftovers. */
     storageNotes: text("storage_notes"),
-    /** How many days leftovers keep in the fridge. */
+    /** How many days leftovers keep. */
     leftoverDays: integer("leftover_days"),
     status: text("status").$type<RecipeStatus>().notNull().default("want_to_try"),
     /** 1..5 household rating. */

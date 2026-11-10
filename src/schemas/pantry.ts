@@ -4,11 +4,7 @@ import {
   MOVEMENT_REASONS,
   MOVEMENT_REF_TYPES,
 } from "../db/schema.js";
-import {
-  ingredientCategorySchema,
-  pantryStatusSchema,
-  storageLocationSchema,
-} from "./ingredients.js";
+import { ingredientCategorySchema, pantryStatusSchema } from "./ingredients.js";
 
 export const movementKindSchema = z
   .enum(MOVEMENT_KINDS)
@@ -32,7 +28,6 @@ export const pantryItemViewSchema = z
       category: ingredientCategorySchema,
       shelfLifeDays: z.number().int().nullable().describe("Typical shelf life after purchase."),
     }),
-    location: storageLocationSchema,
     qty: z.number().nullable().describe("Cached quantity; null = present but unknown."),
     unit: z.string().nullable().describe("Normalized unit."),
     qtyApprox: z.boolean(),
@@ -73,7 +68,6 @@ export const stockMovementViewSchema = stockMovementSchema
   .extend({
     ingredientId: z.string(),
     ingredientName: z.string(),
-    location: storageLocationSchema,
   })
   .openapi("StockMovementView");
 
@@ -116,7 +110,6 @@ export const setStockSchema = z
     ...ingredientRefFields,
     qty: z.number().nullable().describe("Absolute quantity; null = present but unknown."),
     unit: z.string().nullish().describe('Unit, e.g. "lb", "g", "can".'),
-    location: storageLocationSchema.optional(),
     status: pantryStatusSchema
       .optional()
       .describe("Overrides the computed status for this set."),
@@ -137,7 +130,6 @@ export const adjustStockSchema = z
     ...ingredientRefFields,
     delta: z.number().describe("Relative change (negative consumes)."),
     unit: z.string().nullish().describe("Unit of the delta; defaults to the item unit."),
-    location: storageLocationSchema.optional(),
     note: z.string().nullish(),
     reason: movementReasonSchema.optional().describe('Defaults to "adjust".'),
     refType: movementRefTypeSchema.optional(),
@@ -160,7 +152,6 @@ export const bulkStockSchema = z
 
 export const updatePantryItemSchema = z
   .object({
-    location: storageLocationSchema.optional().describe("Moving stock to another location."),
     note: z.string().nullish(),
     expiresOn: z.string().nullish().describe("YYYY-MM-DD."),
     openedOn: z.string().nullish().describe("YYYY-MM-DD."),
@@ -173,7 +164,6 @@ export const updatePantryItemSchema = z
 
 export const listPantryQuerySchema = z.object({
   category: ingredientCategorySchema.optional(),
-  location: storageLocationSchema.optional(),
   status: pantryStatusSchema.optional(),
   staleDays: z.coerce
     .number()
