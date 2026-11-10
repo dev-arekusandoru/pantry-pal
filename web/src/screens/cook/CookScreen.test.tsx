@@ -59,8 +59,8 @@ const recipe = {
     },
   ],
   steps: [
-    { id: "step_1", text: "Chop the onion.", groupLabel: null, durationMinutes: null },
-    { id: "step_2", text: "Simmer until done.", groupLabel: null, durationMinutes: null },
+    { id: "step_1", text: "Chop the onion.", groupLabel: null, durationMinutes: null, links: [] },
+    { id: "step_2", text: "Simmer until done.", groupLabel: null, durationMinutes: null, links: [] },
   ],
 };
 

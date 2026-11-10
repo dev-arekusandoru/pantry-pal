@@ -386,6 +386,113 @@ describe("recipe REST sub-routes", () => {
   });
 });
 
+describe("recipe step links", () => {
+  it("stores links by ingredient index and resolves the line name, unit and prep note", () => {
+    const { ctx } = makeTestCtx();
+    const recipe = createRecipe(ctx, {
+      title: "Linked Soup",
+      ingredients: [
+        { ingredient: "Carrot", qty: 4, unit: "each", prepNote: "diced" },
+        { ingredient: "Salt", qty: 1, unit: "tsp", scalingExempt: true },
+      ],
+      steps: [
+        {
+          text: "Cook the carrots.",
+          links: [
+            { ingredientIndex: 0, qty: 3 },
+            { ingredientIndex: 1, qty: null },
+          ],
+        },
+        { text: "Season." },
+      ],
+    });
+
+    expect(recipe.steps[0]!.links).toHaveLength(2);
+    expect(recipe.steps[0]!.links[0]).toMatchObject({
+      recipeIngredientId: recipe.ingredients[0]!.id,
+      ingredientName: "Carrot",
+      qty: 3,
+      position: 0,
+      unit: "count",
+      prepNote: "diced",
+    });
+    expect(recipe.steps[0]!.links[1]).toMatchObject({
+      recipeIngredientId: recipe.ingredients[1]!.id,
+      ingredientName: "Salt",
+      qty: null,
+      position: 1,
+      unit: "tsp",
+    });
+    expect(recipe.steps[1]!.links).toEqual([]);
+  });
+
+  it("rejects a link that points outside the ingredient list", () => {
+    const { ctx } = makeTestCtx();
+    expectAppError(
+      () =>
+        createRecipe(ctx, {
+          title: "Broken Link",
+          ingredients: [{ ingredient: "Rice", qty: 1, unit: "cup" }],
+          steps: [{ text: "Cook.", links: [{ ingredientIndex: 1, qty: null }] }],
+        }),
+      "validation",
+    );
+  });
+
+  it("rejects a negative link quantity", () => {
+    const { ctx } = makeTestCtx();
+    expectAppError(
+      () =>
+        createRecipe(ctx, {
+          title: "Negative Link",
+          ingredients: [{ ingredient: "Rice", qty: 1, unit: "cup" }],
+          steps: [{ text: "Cook.", links: [{ ingredientIndex: 0, qty: -1 }] }],
+        }),
+      "validation",
+    );
+  });
+
+  it("patches steps against the stored line order when ingredients are not replaced", () => {
+    const { ctx } = makeTestCtx();
+    const created = createRecipe(ctx, {
+      title: "Patch Links",
+      ingredients: [
+        { ingredient: "Rice", qty: 2, unit: "cup" },
+        { ingredient: "Water", qty: 4, unit: "cup" },
+      ],
+      steps: [{ text: "Boil." }],
+    });
+
+    const updated = updateRecipe(ctx, created.id, {
+      steps: [{ text: "Boil.", links: [{ ingredientIndex: 1, qty: 3 }] }],
+    });
+
+    expect(updated.steps[0]!.links).toHaveLength(1);
+    expect(updated.steps[0]!.links[0]).toMatchObject({
+      recipeIngredientId: created.ingredients[1]!.id,
+      ingredientName: "Water",
+      qty: 3,
+      unit: "cup",
+    });
+  });
+
+  it("drops links when the ingredient list is replaced without new steps", () => {
+    const { ctx } = makeTestCtx();
+    const created = createRecipe(ctx, {
+      title: "Drop Links",
+      ingredients: [{ ingredient: "Rice", qty: 1, unit: "cup" }],
+      steps: [{ text: "Cook.", links: [{ ingredientIndex: 0, qty: null }] }],
+    });
+
+    const updated = updateRecipe(ctx, created.id, {
+      ingredients: [{ ingredient: "Rice", qty: 2, unit: "cup" }],
+    });
+
+    expect(updated.steps[0]!.links).toEqual([]);
+    expect(updated.ingredients).toHaveLength(1);
+  });
+});
+
 describe("recipe stats", () => {
   it("counts done cook events and reports the latest cook", () => {
     const { ctx } = makeTestCtx();
@@ -427,6 +534,9 @@ describe("recipe stats", () => {
       timesCooked: 2,
       lastCookedAt: "2026-10-27T18:00:00.000Z",
     });
+    // All events, including planned ones, block deletion; the page uses this to
+    // choose between Delete and Archive.
+    expect(getRecipe(ctx, recipe.id).cookEventCount).toBe(3);
   });
 });
 

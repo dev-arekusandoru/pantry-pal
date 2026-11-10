@@ -461,7 +461,7 @@ export interface paths {
         put?: never;
         /**
          * Generate a shopping list from plan demand
-         * @description Adds what the plan needs on top of stock. Unknown or incomparable stock becomes a needsCheck item; low/out staples are restocked. Regenerating replaces generated, unchecked items only.
+         * @description Adds what the plan needs on top of stock. Unknown or incomparable stock becomes a needsCheck item; low or out stock with an unknown amount adds the full committed amount. Regenerating replaces generated, unchecked items only.
          */
         post: {
             parameters: {
@@ -940,93 +940,7 @@ export interface paths {
                 };
             };
         };
-        /**
-         * Clear a shopping list
-         * @description Removes every item — generated or manual, checked or not. The list itself stays (including its plan binding), so it can be regenerated later. Nothing is written to stock.
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description Shopping list id. */
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Cleared list detail */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ShoppingListDetail"];
-                    };
-                };
-                /** @description Request validation failed */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
-                                message: string;
-                            };
-                        };
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
-                                message: string;
-                            };
-                        };
-                    };
-                };
-                /** @description Conflict with the current list state */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
-                                message: string;
-                            };
-                        };
-                    };
-                };
-                /** @description Unprocessable input (for example an unresolvable ingredient) */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            error: {
-                                /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
-                                message: string;
-                            };
-                        };
-                    };
-                };
-            };
-        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5676,7 +5590,7 @@ export interface paths {
         put?: never;
         /**
          * Create a recipe
-         * @description Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized.
+         * @description Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.
          */
         post: {
             parameters: {
@@ -5775,7 +5689,7 @@ export interface paths {
         head?: never;
         /**
          * Update a recipe
-         * @description Patch scalar fields. When `ingredients` or `steps` are present they replace the FULL list in one transaction.
+         * @description Patch scalar fields. When `ingredients` or `steps` are present they replace the FULL list in one transaction. Step `links` reference lines by `ingredientIndex` in the submitted `ingredients` array, or in the stored line order when only `steps` are patched. Replacing `ingredients` without `steps` drops the step links.
          */
         patch: {
             parameters: {
@@ -6461,6 +6375,19 @@ export interface components {
                 remaining: number;
                 needsCheck: number;
             };
+            /** @description Low or out pantry ingredients that are not on this list. */
+            runningLow: {
+                /** @description Prefixed identifier. */
+                ingredientId: string;
+                name: string;
+                /**
+                 * @description Ingredient aisle/category, also used to order shopping items.
+                 * @enum {string}
+                 */
+                category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
+                /** @enum {string} */
+                status: "low" | "out";
+            }[];
         };
         ShoppingListItem: {
             /** @description Prefixed identifier. */
@@ -6479,7 +6406,7 @@ export interface components {
             category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             qty: number | null;
             unit: string | null;
-            /** @description Why it is on the list (planned cooks or "staple restock"). */
+            /** @description Why it is on the list (planned cooks, a manual add, or running low). */
             purposeNote: string | null;
             /** @description Pantry stock unknown or units incomparable: check before buying. */
             needsCheck: boolean;
@@ -6530,8 +6457,6 @@ export interface components {
             /** @description Regenerate into this existing draft/shopping list. */
             listId?: string;
             title?: string;
-            /** @description Add low/out staples as "staple restock" items (default true). */
-            includeStaples?: boolean;
         };
         UpdateShoppingListInput: {
             title?: string;
@@ -6694,8 +6619,6 @@ export interface components {
             imageUrl: string | null;
             /** @description Typical shelf life after purchase. */
             shelfLifeDays: number | null;
-            /** @description Always-stocked item (oil, salt, rice). */
-            isStaple: boolean;
             /** @description Desired minimum stock. */
             parQty: number | null;
             parUnit: string | null;
@@ -6725,8 +6648,6 @@ export interface components {
             defaultLocation?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
-            /** @description Always keep this stocked. */
-            isStaple?: boolean;
             /** @description Desired minimum stock. */
             parQty?: number | null;
             /** @description Unit of parQty. */
@@ -6750,7 +6671,6 @@ export interface components {
             defaultLocation?: "pantry" | "fridge" | "freezer" | "counter" | "other";
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
-            isStaple?: boolean;
             parQty?: number | null;
             parUnit?: string | null;
             notes?: string | null;
@@ -6827,6 +6747,8 @@ export interface components {
                  * @enum {string}
                  */
                 category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
+                /** @description Typical shelf life after purchase. */
+                shelfLifeDays: number | null;
             };
             /**
              * @description Where stock is kept: pantry, fridge, freezer, counter or other.
@@ -7118,6 +7040,8 @@ export interface components {
             /** @description Ordered by position. */
             steps: components["schemas"]["RecipeStep"][];
             stats: components["schemas"]["RecipeStats"];
+            /** @description All cook events (any status); delete conflicts when greater than zero. */
+            cookEventCount: number;
         };
         RecipeIngredient: {
             id: string;
@@ -7154,6 +7078,21 @@ export interface components {
             text: string;
             durationMinutes: number | null;
             imageUrl: string | null;
+            /** @description Ingredient lines used by this step, in order. */
+            links: components["schemas"]["RecipeStepLink"][];
+        };
+        RecipeStepLink: {
+            id: string;
+            stepId: string;
+            recipeIngredientId: string;
+            /** @description Amount in the linked line's unit; null = whole line amount. */
+            qty: number | null;
+            position: number;
+            ingredientId: string;
+            ingredientName: string;
+            /** @description Unit of the linked ingredient line. */
+            unit: string | null;
+            prepNote: string | null;
         };
         RecipeStats: {
             timesCooked: number;
@@ -7242,6 +7181,14 @@ export interface components {
             durationMinutes?: number | null;
             /** @description Illustration for this step. */
             imageUrl?: string | null;
+            /** @description Ingredient lines used by this step; positions follow array order. */
+            links?: components["schemas"]["RecipeStepLinkInput"][];
+        };
+        RecipeStepLinkInput: {
+            /** @description Zero-based position of the ingredient line in the submitted `ingredients` array (the stored line order when only `steps` are patched). The link always uses that line's unit. */
+            ingredientIndex: number;
+            /** @description Amount used by this step, in the line's unit. Null/omitted = the whole line amount. */
+            qty?: number | null;
         };
         UpdateRecipeInput: {
             /** @description Recipe title. */

@@ -1,9 +1,32 @@
 /** Pure helpers shared by the recipe box, recipe detail and cook mode. */
 
 import type { components } from "@/api/schema";
-import type { EmojiCode } from "@/ui/emoji";
+import type { EmojiCode } from "@/ui/openmoji";
 
 export type MealType = components["schemas"]["MealType"];
+
+/** Step link returned by recipe read. */
+export interface RecipeStepLink {
+  id: string;
+  stepId: string;
+  recipeIngredientId: string;
+  qty: number | null;
+  position: number;
+  ingredientId: string;
+  ingredientName: string;
+  unit: string | null;
+  prepNote: string | null;
+}
+
+export type RecipeStepWithLinks = components["schemas"]["RecipeStep"] & {
+  links: RecipeStepLink[];
+};
+
+/** Recipe read with step links and the cook-event count used by delete/archive. */
+export type RecipeDetail = Omit<components["schemas"]["RecipeView"], "steps"> & {
+  steps: RecipeStepWithLinks[];
+  cookEventCount: number;
+};
 
 const FRACTIONS: ReadonlyArray<readonly [number, string]> = [
   [1 / 8, "⅛"],

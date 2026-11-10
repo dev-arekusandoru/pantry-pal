@@ -423,3 +423,93 @@
   gap: 12px;
   margin-bottom: 4px;
 }
+
+/* Edit / delete / archive actions under the status control. */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Delete confirmation, styled like the bottom sheet. */
+.confirmBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  background: var(--overlay);
+  animation: confirmFade 0.2s;
+}
+
+.confirmBackdrop[data-state="closed"] {
+  animation: confirmFadeOut var(--dur-exit) var(--ease-in) forwards;
+}
+
+.confirmPanel {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: var(--z-sheet);
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 18px 18px 0;
+  animation: confirmRise var(--dur-slow) var(--pop);
+}
+
+.confirmPanel:focus {
+  outline: none;
+}
+
+.confirmPanel[data-state="closed"] {
+  animation: confirmSink var(--dur-exit) var(--ease-in) forwards;
+}
+
+.confirmTitle {
+  font-size: var(--fs-h2);
+  line-height: 1.05;
+  margin-bottom: 8px;
+}
+
+.confirmBody {
+  overflow-y: auto;
+  padding-bottom: 16px;
+  color: var(--muted);
+}
+
+.confirmFooter {
+  padding: 12px 0 calc(16px + var(--safe-bottom));
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+@keyframes confirmFade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes confirmFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes confirmRise {
+  from {
+    transform: translateY(40px) scale(0.97);
+    opacity: 0;
+  }
+}
+
+@keyframes confirmSink {
+  to {
+    transform: translateY(40px) scale(0.97);
+    opacity: 0;
+  }
+}

@@ -1,15 +1,17 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { client, qk, unwrap } from "@/api";
+import { client, errorMessage, qk, unwrap } from "@/api";
 import { ApiError } from "@/api/errors";
 import { toast } from "@/ui";
-import { STATUS_PHRASES, type EditableStatus } from "./status";
+import { STATUS_PHRASES, type RecipeStatus } from "./status";
 
 /** Hooks shared by the recipe screen and cook mode (same keys, so the cache is shared). */
 
-export function useRecipe(slug: string) {
+export function useRecipe(slug: string | undefined) {
   return useQuery({
-    queryKey: [...qk.recipes, "detail", slug],
-    queryFn: () => unwrap(client.GET("/recipes/{idOrSlug}", { params: { path: { idOrSlug: slug } } })),
+    queryKey: [...qk.recipes, "detail", slug ?? ""],
+    queryFn: () =>
+      unwrap(client.GET("/recipes/{idOrSlug}", { params: { path: { idOrSlug: slug ?? "" } } })),
+    enabled: slug !== undefined && slug !== "",
   });
 }
 
@@ -58,11 +60,11 @@ export function usePlannedCooks(recipeId: string | undefined, date?: string) {
   });
 }
 
-/** Move a recipe between rotation / want to try / never; lists and the detail share `qk.recipes`. */
+/** Move a recipe between statuses; lists and the detail share `qk.recipes`. */
 export function useSetRecipeStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { slug: string; status: EditableStatus }) =>
+    mutationFn: (input: { slug: string; status: RecipeStatus }) =>
       unwrap(
         client.POST("/recipes/{idOrSlug}/status", {
           params: { path: { idOrSlug: input.slug } },
@@ -73,6 +75,20 @@ export function useSetRecipeStatus() {
       void queryClient.invalidateQueries({ queryKey: qk.recipes });
       toast.show({ message: `Moved ${res.recipe.title} to ${STATUS_PHRASES[input.status]}` });
     },
+  });
+}
+
+/** Delete a recipe with no cook history. */
+export function useDeleteRecipe() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (slug: string) =>
+      unwrap(client.DELETE("/recipes/{idOrSlug}", { params: { path: { idOrSlug: slug } } })),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.recipes });
+      toast.show({ message: "Recipe deleted" });
+    },
+    onError: (error) => toast.show({ message: errorMessage(error) }),
   });
 }
 

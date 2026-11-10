@@ -1,11 +1,11 @@
 import { Link, useCanGoBack, useRouter } from "@tanstack/react-router";
-import { VisuallyHidden } from "radix-ui";
+import { AlertDialog, VisuallyHidden } from "radix-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, SegmentedControl, Skeleton, Stepper, buttonClass, cx, ingredientEmoji, type SegmentOption } from "@/ui";
+import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, SegmentedControl, Skeleton, Stepper, buttonClass, cx, ingredientEmoji, type SegmentOption } from "@/ui";
 import { formatDuration, stepSeconds } from "./duration";
 import { formatAmount, formatDay, formatMinutes, formatNumber, haveIngredient, type Have, type MealType } from "./lib";
 import { RecipePhoto } from "./RecipePhoto";
-import { isNotFound, useAvailability, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "./queries";
+import { isNotFound, useAvailability, useDeleteRecipe, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "./queries";
 import type { EditableStatus } from "./status";
 import { isResumable, readCookProgress } from "../cook/progress";
 import styles from "./RecipeScreen.module.css";
@@ -48,6 +48,15 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
   const recipe = useRecipe(slug);
   const r = recipe.data;
   const setStatus = useSetRecipeStatus();
+  const deleteRecipe = useDeleteRecipe();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  function onDelete() {
+    if (!r) return;
+    deleteRecipe.mutate(r.slug, {
+      onSuccess: () => void router.navigate({ to: "/recipes" }),
+    });
+  }
 
   const planned = usePlannedCooks(r?.id);
   const plannedCook = cookEvent !== undefined ? planned.data?.find((c) => c.id === cookEvent) : undefined;
@@ -191,6 +200,25 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
               />
             </div>
           )}
+
+          <div className={styles.tools}>
+            <Link to="/recipes/$slug/edit" params={{ slug: r.slug }} className={buttonClass()}>
+              Edit recipe
+            </Link>
+            {r.cookEventCount > 0 && r.status !== "archived" ? (
+              <Button
+                icon={<Icon name="trash" />}
+                loading={setStatus.isPending}
+                onClick={() => setStatus.mutate({ slug: r.slug, status: "archived" })}
+              >
+                Archive recipe
+              </Button>
+            ) : r.cookEventCount === 0 ? (
+              <Button icon={<Icon name="trash" />} onClick={() => setConfirmDelete(true)}>
+                Delete recipe
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         <section className={styles.ings} aria-labelledby="ings-h">
@@ -343,6 +371,36 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
           Start cooking
         </Link>
       </div>
+
+      <AlertDialog.Root open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className={styles.confirmBackdrop} />
+          <AlertDialog.Content className={styles.confirmPanel}>
+            <AlertDialog.Title className={styles.confirmTitle}>Delete this recipe?</AlertDialog.Title>
+            <AlertDialog.Description className={styles.confirmBody}>
+              {r.title} and its ingredients and steps will be removed. This cannot be undone.
+            </AlertDialog.Description>
+            <div className={styles.confirmFooter}>
+              <AlertDialog.Cancel asChild>
+                <Button>Keep recipe</Button>
+              </AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <Button
+                  variant="primary"
+                  icon={<Icon name="trash" />}
+                  loading={deleteRecipe.isPending}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onDelete();
+                  }}
+                >
+                  Delete recipe
+                </Button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </article>
   );
 }

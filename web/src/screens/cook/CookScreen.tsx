@@ -4,12 +4,13 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { errorMessage } from "@/api";
 import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx, toast } from "@/ui";
 import { formatClock, formatDuration, stepSeconds } from "../recipe/duration";
-import { formatAmount, formatNumber, localDate } from "../recipe/lib";
+import { formatAmount, formatNumber, localDate, type RecipeStepLink } from "../recipe/lib";
 import { isNotFound, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "../recipe/queries";
 import type { EditableStatus } from "../recipe/status";
 import { clearCookProgress, isResumable, readCookProgress, saveCookProgress } from "./progress";
 import { useFinishCook, useUndoCook, type FinishInput } from "./queries";
 import { useStepTimers, type StepTimer } from "./timers";
+import { stepPillRows } from "./stepPills";
 import { useWakeLock } from "./wakeLock";
 import styles from "./CookScreen.module.css";
 
@@ -466,6 +467,11 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
     return { ri, amount: s ? formatAmount(s.qty ?? null, s.qtyMax ?? null, s.unit ?? null) : "" };
   });
 
+  // Step pills scale like the ingredient lines: exempt lines stay, a null link
+  // qty follows the whole (already scaled) line.
+  const pillsFor = (links: RecipeStepLink[]) =>
+    stepPillRows(links, r.ingredients, scaled.data?.items ?? [], servings ?? r.servings, r.servings);
+
   return (
     <div className={styles.cook}>
       <header className={styles.top}>
@@ -604,6 +610,22 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
                 >
                   {s.groupLabel && <p className={styles.group}>{s.groupLabel}</p>}
                   <p className={styles.text}>{s.text}</p>
+                  {s.links.length > 0 && (
+                    <ul className={styles.stepIngs} aria-label="Ingredients for this step">
+                      {pillsFor(s.links).map((pill) => (
+                        <li key={pill.id}>
+                          <span className={styles.ingChip}>
+                            <Sticker emoji={ingredientEmoji(pill.name)} tone="butter" size={32} />
+                            <span>
+                              {pill.amount && <b>{pill.amount} </b>}
+                              {pill.name}
+                              {pill.prepNote && <small>, {pill.prepNote}</small>}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {seconds !== null && (
                     <StepTimerRow
                       seconds={seconds}

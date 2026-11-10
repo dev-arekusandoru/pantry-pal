@@ -70,10 +70,9 @@ All eight top-level keys are required; the arrays may be empty but are not omitt
 | `category` | enum `ingredientCategory` | yes | |
 | `defaultUnit` | unit \| null | yes | Used for stock/shopping when nothing else is specified. |
 | `defaultLocation` | enum `storageLocation` | yes | |
-| `isStaple` | boolean | yes | Expected to always be stocked. |
 | `aliases` | string[] | yes | May be `[]`. Lowercased by the loader; must not collide with any alias or ingredient name. Each becomes an `ingredient_alias` row. |
 | `description` | string | no | Optional prose description. |
-| `shelfLifeDays` | integer | no | Typical shelf life once purchased. |
+| `shelfLifeDays` | integer | no | Typical shelf life once purchased. Shopping completion uses it to set the expiry date. |
 | `parQty` | number | no | Desired minimum stock. **Unset in this seed** so imported quantities cannot flip a row to `low`. |
 | `parUnit` | unit | no | Unit for `parQty`. |
 
@@ -105,7 +104,7 @@ One row per `(ingredient, location)`; the pair must be unique.
 | `qtyApprox` | boolean | True for parsed estimates (`~2.5 lb`, `~10 cloves`). |
 | `status` | enum `pantryStatus` | Expected status after import. This seed uses `on_hand` everywhere. |
 | `rawText` | string | Free-text snapshot line, stored verbatim for provenance. |
-| `note` | string \| null | Parsing/context note ("staple; amount not tracked"). |
+| `note` | string \| null | Parsing/context note ("amount not tracked"). |
 
 ### `rules[]` (required)
 
@@ -174,6 +173,12 @@ Top-level recipe fields:
 | `text` | string | yes | Full instruction. |
 | `groupLabel` | string | no | Section header. |
 | `durationMinutes` | integer | no | Timer hint. |
+| `links` | array | no | Ingredient lines that this step uses. |
+| `links[].ingredientIndex` | integer | yes | Zero-based position in the recipe's `ingredients` array. Must point to a line of the same recipe. |
+| `links[].qty` | number \| null | no | Amount in the linked line's unit. `null` means the whole line. |
+
+The unit of a link is always the unit of its ingredient line. Written to
+`recipe_step_ingredient`.
 
 ### `plans[]` (required)
 
@@ -293,7 +298,7 @@ not encode timestamps for individual rows.
 - Identity fields are synthetic: household `Example Household`, members `Robin` and `Sam`, timezone
   `UTC`, and the week starting 2026-02-02. Stock levels and pantry notes are randomized; they are
   plausible but not derived from any real household.
-- `rawText` is regenerated as `<ingredient> | <qty> <unit> | <category|staple> | 2026-02-01`, or
+- `rawText` is regenerated as `<ingredient> | <qty> <unit> | <category> | 2026-02-01`, or
   `<ingredient> | on hand | …` for unknown amounts. It is provenance text, not parsed by the loader.
 - `on hand` → `qty: null, unit: null, status: "on_hand"`; every pantry row is `on_hand` because no
   row sets `parQty`.

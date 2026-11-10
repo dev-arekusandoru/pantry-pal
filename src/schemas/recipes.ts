@@ -100,6 +100,24 @@ export const recipeIngredientInputSchema = z
   })
   .openapi("RecipeIngredientInput");
 
+export const recipeStepLinkInputSchema = z
+  .object({
+    ingredientIndex: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe(
+        "Zero-based position of the ingredient line in the submitted `ingredients` array (the stored line order when only `steps` are patched). The link always uses that line's unit.",
+      ),
+    qty: z
+      .number()
+      .nonnegative()
+      .nullable()
+      .optional()
+      .describe("Amount used by this step, in the line's unit. Null/omitted = the whole line amount."),
+  })
+  .openapi("RecipeStepLinkInput");
+
 export const recipeStepInputSchema = z
   .object({
     text: z.string().min(1).describe("Instruction text."),
@@ -116,6 +134,10 @@ export const recipeStepInputSchema = z
       .optional()
       .describe("Timer hint for cooking mode."),
     imageUrl: z.string().nullable().optional().describe("Illustration for this step."),
+    links: z
+      .array(recipeStepLinkInputSchema)
+      .optional()
+      .describe("Ingredient lines used by this step; positions follow array order."),
   })
   .openapi("RecipeStepInput");
 
@@ -277,6 +299,20 @@ export const recipeIngredientSchema = z
   })
   .openapi("RecipeIngredient");
 
+export const recipeStepLinkSchema = z
+  .object({
+    id: z.string(),
+    stepId: z.string(),
+    recipeIngredientId: z.string(),
+    qty: z.number().nullable().describe("Amount in the linked line's unit; null = whole line amount."),
+    position: z.number(),
+    ingredientId: z.string(),
+    ingredientName: z.string(),
+    unit: z.string().nullable().describe("Unit of the linked ingredient line."),
+    prepNote: z.string().nullable(),
+  })
+  .openapi("RecipeStepLink");
+
 export const recipeStepSchema = z
   .object({
     id: z.string(),
@@ -287,6 +323,7 @@ export const recipeStepSchema = z
     text: z.string(),
     durationMinutes: z.number().nullable(),
     imageUrl: z.string().nullable(),
+    links: z.array(recipeStepLinkSchema).describe("Ingredient lines used by this step, in order."),
   })
   .openapi("RecipeStep");
 
@@ -302,6 +339,9 @@ export const recipeViewSchema = recipeSchema
     ingredients: z.array(recipeIngredientSchema).describe("Ordered by position."),
     steps: z.array(recipeStepSchema).describe("Ordered by position."),
     stats: recipeStatsSchema,
+    cookEventCount: z
+      .number()
+      .describe("All cook events (any status); delete conflicts when greater than zero."),
   })
   .openapi("RecipeView");
 

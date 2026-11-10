@@ -7,6 +7,7 @@ import {
   ingredients,
   recipeIngredients,
   recipeStatusEvents,
+  recipeStepIngredients,
   recipeSteps,
   recipes,
   type IngredientCategory,
@@ -24,6 +25,7 @@ import { normalizeUnit } from "./units.js";
 export type Recipe = typeof recipes.$inferSelect;
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 export type RecipeStep = typeof recipeSteps.$inferSelect;
+export type RecipeStepIngredient = typeof recipeStepIngredients.$inferSelect;
 export type RecipeStatusEvent = typeof recipeStatusEvents.$inferSelect;
 
 // ---------------------------------------------------------------------------
@@ -48,11 +50,23 @@ export interface RecipeIngredientInput {
   groupLabel?: string | null;
 }
 
+/**
+ * A step's link to an ingredient line of the same payload. `ingredientIndex`
+ * is the zero-based position in the submitted `ingredients` array (or, when
+ * only `steps` are patched, in the stored line order). `qty: null` means the
+ * whole line amount; the unit is always the line's unit.
+ */
+export interface RecipeStepLinkInput {
+  ingredientIndex: number;
+  qty?: number | null;
+}
+
 export interface RecipeStepInput {
   text: string;
   groupLabel?: string | null;
   durationMinutes?: number | null;
   imageUrl?: string | null;
+  links?: RecipeStepLinkInput[];
 }
 
 export interface CreateRecipeInput {
@@ -111,10 +125,29 @@ export interface RecipeIngredientView extends RecipeIngredient {
   ingredient: { id: string; name: string; category: IngredientCategory };
 }
 
+/** Step link with the linked line's name, unit and prep note resolved. */
+export interface RecipeStepLinkView {
+  id: string;
+  stepId: string;
+  recipeIngredientId: string;
+  qty: number | null;
+  position: number;
+  ingredientId: string;
+  ingredientName: string;
+  unit: string | null;
+  prepNote: string | null;
+}
+
+export interface RecipeStepView extends RecipeStep {
+  links: RecipeStepLinkView[];
+}
+
 export interface RecipeView extends Recipe {
   ingredients: RecipeIngredientView[];
-  steps: RecipeStep[];
+  steps: RecipeStepView[];
   stats: RecipeStats;
+  /** All cook events (any status); delete conflicts when greater than zero. */
+  cookEventCount: number;
 }
 
 export interface RecipeSummary extends Recipe, RecipeStats {
@@ -256,8 +289,12 @@ function assertQtyRange(qty: number | null, qtyMax: number | null, index: number
   }
 }
 
-function insertIngredientRows(ctx: Ctx, recipeId: string, inputs: RecipeIngredientInput[]): void {
-  if (inputs.length === 0) return;
+function insertIngredientRows(
+  ctx: Ctx,
+  recipeId: string,
+  inputs: RecipeIngredientInput[],
+): string[] {
+  if (inputs.length === 0) return [];
 
   const rows = inputs.map((input, index) => {
     const ingredient = resolveIngredientRef(ctx, input);
@@ -282,9 +319,19 @@ function insertIngredientRows(ctx: Ctx, recipeId: string, inputs: RecipeIngredie
   });
 
   ctx.db.insert(recipeIngredients).values(rows).run();
+  return rows.map((row) => row.id);
 }
 
-function insertStepRows(ctx: Ctx, recipeId: string, inputs: RecipeStepInput[]): void {
+/**
+ * Insert steps and their ingredient links. `ingredientIds` are the line ids in
+ * position order; link indexes must point into that list.
+ */
+function insertStepRows(
+  ctx: Ctx,
+  recipeId: string,
+  inputs: RecipeStepInput[],
+  ingredientIds: string[],
+): void {
   if (inputs.length === 0) return;
 
   const rows = inputs.map((input, index) => {
@@ -305,6 +352,36 @@ function insertStepRows(ctx: Ctx, recipeId: string, inputs: RecipeStepInput[]): 
   });
 
   ctx.db.insert(recipeSteps).values(rows).run();
+
+  const links = inputs.flatMap((input, stepIndex) =>
+    (input.links ?? []).map((link, linkIndex) => {
+      const { ingredientIndex } = link;
+      if (!Number.isInteger(ingredientIndex) || ingredientIndex < 0 || ingredientIndex >= ingredientIds.length) {
+        throw new AppError(
+          "validation",
+          "Step link must point to an ingredient line of the same recipe",
+          { step: stepIndex, link: linkIndex, ingredientIndex },
+        );
+      }
+      const qty = link.qty ?? null;
+      if (qty !== null && qty < 0) {
+        throw new AppError("validation", "Step link qty cannot be negative", {
+          step: stepIndex,
+          link: linkIndex,
+          qty,
+        });
+      }
+      return {
+        id: newId("rsi"),
+        stepId: rows[stepIndex]!.id,
+        recipeIngredientId: ingredientIds[ingredientIndex]!,
+        qty,
+        position: linkIndex,
+      };
+    }),
+  );
+
+  if (links.length > 0) ctx.db.insert(recipeStepIngredients).values(links).run();
 }
 
 function getStats(ctx: Ctx, recipeId: string): RecipeStats {
@@ -409,6 +486,68 @@ function getIngredientRows(ctx: Ctx, recipeId: string): RecipeIngredientView[] {
     }));
 }
 
+/** Ingredient line ids in position order (for step-link indexes). */
+function getIngredientIds(ctx: Ctx, recipeId: string): string[] {
+  return ctx.db
+    .select({ id: recipeIngredients.id })
+    .from(recipeIngredients)
+    .where(
+      and(
+        eq(recipeIngredients.householdId, ctx.householdId),
+        eq(recipeIngredients.recipeId, recipeId),
+      ),
+    )
+    .orderBy(asc(recipeIngredients.position), asc(recipeIngredients.id))
+    .all()
+    .map((row) => row.id);
+}
+
+/** Steps in position order, each with its links (line name/unit/prep note resolved). */
+function getStepRows(ctx: Ctx, recipeId: string): RecipeStepView[] {
+  const steps = ctx.db
+    .select()
+    .from(recipeSteps)
+    .where(and(eq(recipeSteps.householdId, ctx.householdId), eq(recipeSteps.recipeId, recipeId)))
+    .orderBy(asc(recipeSteps.position), asc(recipeSteps.id))
+    .all();
+  if (steps.length === 0) return [];
+
+  const links = ctx.db
+    .select({
+      id: recipeStepIngredients.id,
+      stepId: recipeStepIngredients.stepId,
+      recipeIngredientId: recipeStepIngredients.recipeIngredientId,
+      qty: recipeStepIngredients.qty,
+      position: recipeStepIngredients.position,
+      ingredientId: recipeIngredients.ingredientId,
+      ingredientName: ingredients.name,
+      unit: recipeIngredients.unit,
+      prepNote: recipeIngredients.prepNote,
+    })
+    .from(recipeStepIngredients)
+    .innerJoin(
+      recipeIngredients,
+      eq(recipeIngredients.id, recipeStepIngredients.recipeIngredientId),
+    )
+    .innerJoin(ingredients, eq(ingredients.id, recipeIngredients.ingredientId))
+    .where(
+      and(
+        eq(recipeIngredients.householdId, ctx.householdId),
+        eq(recipeIngredients.recipeId, recipeId),
+      ),
+    )
+    .orderBy(asc(recipeStepIngredients.position), asc(recipeStepIngredients.id))
+    .all();
+
+  const byStep = new Map<string, RecipeStepLinkView[]>();
+  for (const link of links) {
+    const list = byStep.get(link.stepId);
+    if (list === undefined) byStep.set(link.stepId, [link]);
+    else list.push(link);
+  }
+  return steps.map((step) => ({ ...step, links: byStep.get(step.id) ?? [] }));
+}
+
 // ---------------------------------------------------------------------------
 // CRUD
 // ---------------------------------------------------------------------------
@@ -470,8 +609,8 @@ export function createRecipe(ctx: Ctx, input: CreateRecipeInput): RecipeView {
       .returning()
       .get();
 
-    insertIngredientRows(tx, recipe.id, input.ingredients ?? []);
-    insertStepRows(tx, recipe.id, input.steps ?? []);
+    const ingredientIds = insertIngredientRows(tx, recipe.id, input.ingredients ?? []);
+    insertStepRows(tx, recipe.id, input.steps ?? [], ingredientIds);
 
     tx.db
       .insert(recipeStatusEvents)
@@ -549,18 +688,21 @@ export function updateRecipe(ctx: Ctx, id: string, patch: UpdateRecipeInput): Re
       .returning()
       .get();
 
-    if (patch.ingredients !== undefined) {
-      tx.db
-        .delete(recipeIngredients)
-        .where(
-          and(
-            eq(recipeIngredients.householdId, tx.householdId),
-            eq(recipeIngredients.recipeId, existing.id),
-          ),
-        )
-        .run();
-      insertIngredientRows(tx, existing.id, patch.ingredients);
-    }
+    const ingredientIds =
+      patch.ingredients !== undefined
+        ? (() => {
+            tx.db
+              .delete(recipeIngredients)
+              .where(
+                and(
+                  eq(recipeIngredients.householdId, tx.householdId),
+                  eq(recipeIngredients.recipeId, existing.id),
+                ),
+              )
+              .run();
+            return insertIngredientRows(tx, existing.id, patch.ingredients);
+          })()
+        : getIngredientIds(tx, existing.id);
 
     if (patch.steps !== undefined) {
       tx.db
@@ -569,7 +711,7 @@ export function updateRecipe(ctx: Ctx, id: string, patch: UpdateRecipeInput): Re
           and(eq(recipeSteps.householdId, tx.householdId), eq(recipeSteps.recipeId, existing.id)),
         )
         .run();
-      insertStepRows(tx, existing.id, patch.steps);
+      insertStepRows(tx, existing.id, patch.steps, ingredientIds);
     }
 
     const statusChanged = patch.status !== undefined && patch.status !== existing.status;
@@ -598,21 +740,23 @@ export function resolveRecipeId(ctx: Ctx, idOrSlug: string): string {
   return findRecipe(ctx, idOrSlug).id;
 }
 
-/** Recipe with ingredients (ordered, nested ingredient), steps and cook stats. */
+/** Recipe with ingredients (ordered, nested ingredient), steps (with links) and cook stats. */
 export function getRecipe(ctx: Ctx, id: string): RecipeView {
   const recipe = findRecipe(ctx, id);
+  const cookEventCount =
+    ctx.db
+      .select({ n: sql<number>`count(*)` })
+      .from(cookEvents)
+      .where(
+        and(eq(cookEvents.householdId, ctx.householdId), eq(cookEvents.recipeId, recipe.id)),
+      )
+      .get()?.n ?? 0;
   return {
     ...recipe,
     ingredients: getIngredientRows(ctx, recipe.id),
-    steps: ctx.db
-      .select()
-      .from(recipeSteps)
-      .where(
-        and(eq(recipeSteps.householdId, ctx.householdId), eq(recipeSteps.recipeId, recipe.id)),
-      )
-      .orderBy(asc(recipeSteps.position), asc(recipeSteps.id))
-      .all(),
+    steps: getStepRows(ctx, recipe.id),
     stats: getStats(ctx, recipe.id),
+    cookEventCount,
   };
 }
 

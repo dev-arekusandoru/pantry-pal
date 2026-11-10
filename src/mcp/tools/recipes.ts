@@ -133,7 +133,7 @@ export function registerRecipeTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Get recipe",
       description:
-        "One recipe by id or slug with structured ingredients (nested ingredient ids), ordered steps, times, nutrition, notes and cook stats. Pass `servings` to also get the scaled ingredient list.",
+        "One recipe by id or slug with structured ingredients (nested ingredient ids), ordered steps with their ingredient links (name, qty, unit, prep note), times, nutrition, notes, cook stats and a cook-event count. Pass `servings` to also get the scaled ingredient list.",
       inputSchema: recipeGetInput,
       annotations: { readOnlyHint: true },
     },
@@ -149,7 +149,7 @@ export function registerRecipeTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Create or update recipe",
       description:
-        "Create a recipe (no `id`; `title` required) or patch one (`id`). Ingredient names resolve through names/aliases/plurals and are created when unknown.",
+        "Create a recipe (no `id`; `title` required) or patch one (`id`). Ingredient names resolve through names/aliases/plurals and are created when unknown. A step `links` entry points to a line by `ingredientIndex` in the same payload (or the stored line order when only `steps` are patched); `qty` is in the line's unit, null means the whole line.",
       inputSchema: recipeSaveInput,
     },
     tool((args: z.infer<typeof recipeSaveInput>) => {

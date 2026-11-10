@@ -1,0 +1,249 @@
+.page {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: 28px;
+  padding: 20px 18px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 14px;
+}
+
+.heading {
+  font-size: var(--fs-h3);
+  line-height: 1.1;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fieldset {
+  border: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: var(--r-md);
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-md);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.triple {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.lineGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .triple {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .lineGrid {
+    grid-template-columns: 2fr repeat(3, 1fr);
+  }
+}
+
+.mealTypes,
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: var(--fw-semibold);
+  text-transform: capitalize;
+}
+
+.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--tomato-fill);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 12px;
+  border-radius: var(--r-pill);
+  background: var(--butter-s);
+  font-weight: var(--fw-bold);
+}
+
+.chip button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.inline {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.rows {
+  display: grid;
+  gap: 12px;
+}
+
+.row {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 20px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.rowHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rowNum {
+  font-weight: var(--fw-heavy);
+  color: var(--muted);
+}
+
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rowActions button,
+.linkRow button {
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: var(--fw-bold);
+}
+
+.links {
+  display: grid;
+  gap: 6px;
+}
+
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--r-pill);
+  background: var(--butter-s);
+}
+
+.linkName {
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--fw-semibold);
+}
+
+.qtyInput {
+  width: 96px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.warning {
+  border-radius: 22px;
+  padding: 14px 16px;
+  background: var(--peach-s);
+  box-shadow: inset 0 0 0 2px var(--line);
+  font-size: var(--fs-sm);
+  display: grid;
+  gap: 6px;
+}
+
+.warningHead {
+  font-weight: var(--fw-heavy);
+}
+
+.warning ul {
+  display: grid;
+  gap: 4px;
+  padding-left: 18px;
+  list-style: disc;
+}
+
+.error {
+  color: var(--tomato-text);
+  font-weight: var(--fw-bold);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 8px 0 0;
+}

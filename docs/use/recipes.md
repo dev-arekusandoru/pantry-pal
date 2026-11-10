@@ -3,8 +3,9 @@
 The Recipes tab is the recipe box. Tap a card to read the recipe, change its
 servings, or start cooking.
 
-Recipes are created and edited outside the app, by an AI assistant or an API
-client. The web app has no recipe editor.
+Use **New recipe** on the Recipes tab, or **Edit recipe** on a recipe page, to
+create and change recipes in the app. An AI assistant or an API client can also
+create and change recipes. See [Create and edit recipes](recipe-editor.md).
 
 ## Browse the box
 
@@ -58,6 +59,19 @@ After you cook a **Want to try** recipe, the done screen asks **How was it?**:
 - **Never again** moves it to **Never**.
 - **Not now** leaves the status unchanged.
 
+## Delete or archive a recipe
+
+The recipe page has one of two actions under the status control:
+
+- **Delete recipe** removes the recipe. It shows only when the recipe has no
+  cook events. The app asks you to confirm.
+- **Archive recipe** shows when the recipe has cook events. Archive moves the
+  recipe to the **archived** status and keeps its cook history. An archived
+  recipe does not show in any list.
+
+The API refuses `DELETE /recipes/{idOrSlug}` with a conflict when cook events
+reference the recipe. Use the **archived** status in that case.
+
 ## Cook a recipe
 
 Tap **Start cooking**. Cook mode shows one step at a time, with a progress bar
@@ -69,6 +83,10 @@ keyboard, use the arrow keys.
 The list button opens the full ingredient list for the chosen servings. A step
 with a duration has a timer button: **Start 10 min timer**, then **Cancel** when
 needed. Timers beep and vibrate where the browser allows.
+
+A step that has ingredient links shows them as pills under the instruction. A
+pill has the ingredient name, the amount in the chosen servings, and the prep
+note. See [Create and edit recipes](recipe-editor.md).
 
 The screen stays awake while you cook when the browser permits it. This needs
 HTTPS (or localhost). See [Access and security](../host/security.md).
@@ -100,9 +118,9 @@ can also undo a finished meal from the week board.
 
 ## Through the API or MCP
 
-Use these for work the app cannot do:
+Use these for bulk work and automation:
 
-- Create or edit a recipe: `recipe_save`.
+- Create or edit many recipes, or set step ingredient links: `recipe_save`.
 - Add a rating or a note about a status change: `recipe_set_status`.
 - Read status history: `GET /recipes/{idOrSlug}/status-history`.
 - Check a recipe against dietary rules: `recipe_check`. See

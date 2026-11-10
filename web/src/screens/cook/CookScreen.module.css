@@ -517,3 +517,15 @@ button.timer:active:not(:disabled) {
   line-height: 1.1;
 }
 
+
+/* Ingredients used by the current step, styled like a row in the ingredients sheet. */
+.stepIngs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.stepIngs > li {
+  display: contents;
+}

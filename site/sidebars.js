@@ -8,7 +8,7 @@ const sidebars = {
     },
     {
       type: 'category', label: 'Use PantryPal',
-      items: ['use/pantry', 'use/recipes', 'use/meal-plans', 'use/shopping', 'use/dietary-rules'],
+      items: ['use/pantry', 'use/recipes', 'use/recipe-editor', 'use/meal-plans', 'use/shopping', 'use/dietary-rules'],
     },
     {
       type: 'category', label: 'Connect an AI assistant',

@@ -72,7 +72,7 @@ Paths below are relative to `/api/v1`.
 | `/ingredients` | Find, create, update, archive, alias, and merge ingredients |
 | `/unit-conversions`, `/units/convert` | Manage conversions and convert amounts |
 | `/pantry` | Read stock, set amounts, record changes, and check availability |
-| `/recipes` | Manage recipes, scale servings, check rules, and set status |
+| `/recipes` | Manage recipes and step ingredient links, scale servings, check rules, and set status |
 | `/rules` | Manage dietary rules and check ingredient lists |
 | `/plans` | Manage week plans, meal slots, swaps, cooks, and prep tasks |
 | `/cook-events` | Create, complete, reopen, and undo cooks |
@@ -90,7 +90,24 @@ Paths below are relative to `/api/v1`.
 
 Most lists return `{"items": [...]}`. Recipes also return `total`, `limit`, and
 `offset`. Pantry movements use `limit` and `before` for older entries. Shopping
-list detail returns `list`, `items`, `groups`, and `counts`.
+list detail returns `list`, `items`, `groups`, `counts`, and `runningLow`.
+
+### Recipe step links
+
+Recipe create and update bodies accept `steps[].links`. Each link has an
+`ingredientIndex` and an optional `qty`:
+
+- `ingredientIndex` is the zero-based position in the same payload's
+  `ingredients` array. When a patch sends only `steps`, it uses the stored line
+  order.
+- `qty` uses the linked line's unit. `null` or omitted means the whole line.
+- The server rejects an index that does not point to a line of the same recipe.
+- If `ingredients` is replaced without `steps`, the links are removed.
+
+Recipe read returns the links on each step as `links[]`, with `ingredientName`,
+`qty`, `unit`, `prepNote`, and `position`. The recipe also returns
+`cookEventCount`; `DELETE /recipes/{idOrSlug}` conflicts when it is greater than
+zero.
 
 Write and delete responses vary. Use the response schema for the endpoint.
 

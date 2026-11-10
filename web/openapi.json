@@ -406,13 +406,62 @@
               "remaining",
               "needsCheck"
             ]
+          },
+          "runningLow": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ingredientId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Prefixed identifier."
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "produce",
+                    "protein",
+                    "dairy",
+                    "bakery",
+                    "pantry",
+                    "baking",
+                    "spice",
+                    "canned",
+                    "condiment",
+                    "frozen",
+                    "beverage",
+                    "other"
+                  ],
+                  "description": "Ingredient aisle/category, also used to order shopping items."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "out"
+                  ]
+                }
+              },
+              "required": [
+                "ingredientId",
+                "name",
+                "category",
+                "status"
+              ]
+            },
+            "description": "Low or out pantry ingredients that are not on this list."
           }
         },
         "required": [
           "list",
           "items",
           "groups",
-          "counts"
+          "counts",
+          "runningLow"
         ]
       },
       "ShoppingListItem": {
@@ -478,7 +527,7 @@
               "string",
               "null"
             ],
-            "description": "Why it is on the list (planned cooks or \"staple restock\")."
+            "description": "Why it is on the list (planned cooks, a manual add, or running low)."
           },
           "needsCheck": {
             "type": "boolean",
@@ -644,10 +693,6 @@
           },
           "title": {
             "type": "string"
-          },
-          "includeStaples": {
-            "type": "boolean",
-            "description": "Add low/out staples as \"staple restock\" items (default true)."
           }
         },
         "required": [
@@ -1229,10 +1274,6 @@
             ],
             "description": "Typical shelf life after purchase."
           },
-          "isStaple": {
-            "type": "boolean",
-            "description": "Always-stocked item (oil, salt, rice)."
-          },
           "parQty": {
             "type": [
               "number",
@@ -1276,7 +1317,6 @@
           "defaultLocation",
           "imageUrl",
           "shelfLifeDays",
-          "isStaple",
           "parQty",
           "parUnit",
           "notes",
@@ -1355,10 +1395,6 @@
               "null"
             ],
             "minimum": 0
-          },
-          "isStaple": {
-            "type": "boolean",
-            "description": "Always keep this stocked."
           },
           "parQty": {
             "type": [
@@ -1447,9 +1483,6 @@
               "null"
             ],
             "minimum": 0
-          },
-          "isStaple": {
-            "type": "boolean"
           },
           "parQty": {
             "type": [
@@ -1726,12 +1759,20 @@
                   "other"
                 ],
                 "description": "Ingredient category used for grouping and shopping aisles."
+              },
+              "shelfLifeDays": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Typical shelf life after purchase."
               }
             },
             "required": [
               "id",
               "name",
-              "category"
+              "category",
+              "shelfLifeDays"
             ]
           },
           "location": {
@@ -2807,12 +2848,17 @@
               },
               "stats": {
                 "$ref": "#/components/schemas/RecipeStats"
+              },
+              "cookEventCount": {
+                "type": "number",
+                "description": "All cook events (any status); delete conflicts when greater than zero."
               }
             },
             "required": [
               "ingredients",
               "steps",
-              "stats"
+              "stats",
+              "cookEventCount"
             ]
           }
         ]
@@ -2968,6 +3014,13 @@
               "string",
               "null"
             ]
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeStepLink"
+            },
+            "description": "Ingredient lines used by this step, in order."
           }
         },
         "required": [
@@ -2978,7 +3031,62 @@
           "groupLabel",
           "text",
           "durationMinutes",
-          "imageUrl"
+          "imageUrl",
+          "links"
+        ]
+      },
+      "RecipeStepLink": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stepId": {
+            "type": "string"
+          },
+          "recipeIngredientId": {
+            "type": "string"
+          },
+          "qty": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Amount in the linked line's unit; null = whole line amount."
+          },
+          "position": {
+            "type": "number"
+          },
+          "ingredientId": {
+            "type": "string"
+          },
+          "ingredientName": {
+            "type": "string"
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Unit of the linked ingredient line."
+          },
+          "prepNote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "stepId",
+          "recipeIngredientId",
+          "qty",
+          "position",
+          "ingredientId",
+          "ingredientName",
+          "unit",
+          "prepNote"
         ]
       },
       "RecipeStats": {
@@ -3294,10 +3402,38 @@
               "null"
             ],
             "description": "Illustration for this step."
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeStepLinkInput"
+            },
+            "description": "Ingredient lines used by this step; positions follow array order."
           }
         },
         "required": [
           "text"
+        ]
+      },
+      "RecipeStepLinkInput": {
+        "type": "object",
+        "properties": {
+          "ingredientIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Zero-based position of the ingredient line in the submitted `ingredients` array (the stored line order when only `steps` are patched). The link always uses that line's unit."
+          },
+          "qty": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Amount used by this step, in the line's unit. Null/omitted = the whole line amount."
+          }
+        },
+        "required": [
+          "ingredientIndex"
         ]
       },
       "UpdateRecipeInput": {
@@ -5195,7 +5331,7 @@
           "shopping"
         ],
         "summary": "Generate a shopping list from plan demand",
-        "description": "Adds what the plan needs on top of stock. Unknown or incomparable stock becomes a needsCheck item; low/out staples are restocked. Regenerating replaces generated, unchecked items only.",
+        "description": "Adds what the plan needs on top of stock. Unknown or incomparable stock becomes a needsCheck item; low or out stock with an unknown amount adds the full committed amount. Regenerating replaces generated, unchecked items only.",
         "requestBody": {
           "required": true,
           "content": {
@@ -6013,190 +6149,6 @@
                   "required": [
                     "items"
                   ]
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Request validation failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "not_found",
-                            "conflict",
-                            "validation",
-                            "unprocessable",
-                            "unauthorized",
-                            "unavailable"
-                          ]
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "not_found",
-                            "conflict",
-                            "validation",
-                            "unprocessable",
-                            "unauthorized",
-                            "unavailable"
-                          ]
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict with the current list state",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "not_found",
-                            "conflict",
-                            "validation",
-                            "unprocessable",
-                            "unauthorized",
-                            "unavailable"
-                          ]
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable input (for example an unresolvable ingredient)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "object",
-                      "properties": {
-                        "code": {
-                          "type": "string",
-                          "enum": [
-                            "not_found",
-                            "conflict",
-                            "validation",
-                            "unprocessable",
-                            "unauthorized",
-                            "unavailable"
-                          ]
-                        },
-                        "message": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "error"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "shopping"
-        ],
-        "summary": "Clear a shopping list",
-        "description": "Removes every item — generated or manual, checked or not. The list itself stays (including its plan binding), so it can be regenerated later. Nothing is written to stock.",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Shopping list id."
-            },
-            "required": true,
-            "description": "Shopping list id.",
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Cleared list detail",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ShoppingListDetail"
                 }
               }
             }
@@ -16406,7 +16358,7 @@
           "recipes"
         ],
         "summary": "Create a recipe",
-        "description": "Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized.",
+        "description": "Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.",
         "requestBody": {
           "required": true,
           "content": {
@@ -16469,7 +16421,7 @@
           "recipes"
         ],
         "summary": "Update a recipe",
-        "description": "Patch scalar fields. When `ingredients` or `steps` are present they replace the FULL list in one transaction.",
+        "description": "Patch scalar fields. When `ingredients` or `steps` are present they replace the FULL list in one transaction. Step `links` reference lines by `ingredientIndex` in the submitted `ingredients` array, or in the stored line order when only `steps` are patched. Replacing `ingredients` without `steps` drops the step links.",
         "parameters": [
           {
             "schema": {

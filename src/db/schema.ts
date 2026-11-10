@@ -196,10 +196,8 @@ export const ingredients = sqliteTable(
     defaultUnit: text("default_unit"),
     defaultLocation: text("default_location").$type<StorageLocation>().notNull().default("pantry"),
     imageUrl: text("image_url"),
-    /** Typical shelf life once purchased, used to suggest expiry dates. */
+    /** Typical shelf life once purchased, used to set expiry dates. */
     shelfLifeDays: integer("shelf_life_days"),
-    /** Staples are expected to always be stocked (oil, salt, rice). */
-    isStaple: bool("is_staple").notNull().default(false),
     /** Desired minimum stock; below it the item is "low". */
     parQty: real("par_qty"),
     parUnit: text("par_unit"),
@@ -401,6 +399,26 @@ export const recipeSteps = sqliteTable(
     imageUrl: text("image_url"),
   },
   (t) => [index("recipe_step_recipe_idx").on(t.recipeId, t.position)],
+);
+
+/**
+ * Amount of a recipe ingredient line used by one step. `qty: null` means the
+ * whole line amount. The unit is always the linked line's unit.
+ */
+export const recipeStepIngredients = sqliteTable(
+  "recipe_step_ingredient",
+  {
+    id: id(),
+    stepId: text("step_id")
+      .notNull()
+      .references(() => recipeSteps.id, { onDelete: "cascade" }),
+    recipeIngredientId: text("recipe_ingredient_id")
+      .notNull()
+      .references(() => recipeIngredients.id, { onDelete: "cascade" }),
+    qty: real("qty"),
+    position: integer("position").notNull(),
+  },
+  (t) => [index("recipe_step_ingredient_step_idx").on(t.stepId, t.position)],
 );
 
 export const recipeStatusEvents = sqliteTable(

@@ -12,7 +12,7 @@ import {
 } from "../src/services/ingredients.js";
 import { getStockForIngredient, listMovements, listPantry } from "../src/services/pantry.js";
 import { getPlan } from "../src/services/plans.js";
-import { listStatusHistory, searchRecipes } from "../src/services/recipes.js";
+import { getRecipe, listStatusHistory, searchRecipes } from "../src/services/recipes.js";
 import { checkRecipe } from "../src/services/rules.js";
 import { getShoppingList, listShoppingLists } from "../src/services/shopping.js";
 import { convert } from "../src/services/units.js";
@@ -297,6 +297,38 @@ describe("loadSeed validation", () => {
     const error = asAppError(errorFrom(() => loadSeed(test.ctx, data)));
     expect(error.code).toBe("validation");
     expect(Array.isArray(error.details?.issues)).toBe(true);
+    expect(listIngredients(test.ctx)).toHaveLength(0);
+  });
+
+  it("imports step links by ingredient index", () => {
+    const test = makeTestCtx();
+    const data = structuredClone(SEED_JSON) as SeedData;
+    const recipe = data.recipes[0]!;
+    recipe.steps[0] = { ...recipe.steps[0]!, links: [{ ingredientIndex: 0, qty: 1 }] };
+
+    loadSeed(test.ctx, data);
+
+    const view = getRecipe(test.ctx, recipe.key);
+    expect(view.steps[0]!.links).toHaveLength(1);
+    expect(view.steps[0]!.links[0]).toMatchObject({
+      recipeIngredientId: view.ingredients[0]!.id,
+      ingredientName: view.ingredients[0]!.ingredient.name,
+      qty: 1,
+      unit: view.ingredients[0]!.unit,
+    });
+  });
+
+  it("rejects a step link that points outside the recipe's ingredient list", () => {
+    const test = makeTestCtx();
+    const data = structuredClone(SEED_JSON) as SeedData;
+    const recipe = data.recipes[0]!;
+    recipe.steps[0] = {
+      ...recipe.steps[0]!,
+      links: [{ ingredientIndex: recipe.ingredients.length, qty: null }],
+    };
+
+    const error = asAppError(errorFrom(() => loadSeed(test.ctx, data)));
+    expect(error.code).toBe("validation");
     expect(listIngredients(test.ctx)).toHaveLength(0);
   });
 });

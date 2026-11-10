@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMOJI_ASSETS } from "@/ui/emoji";
+import { EMOJI_ASSETS } from "@/ui/openmoji";
 import { formatClock, parseDurationSeconds, stepSeconds } from "./duration";
 import { formatAmount, formatNumber, haveIngredient, localDate, recipeEmoji, type MealType } from "./lib";
 

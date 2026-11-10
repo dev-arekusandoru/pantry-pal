@@ -97,7 +97,6 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
         category: input.category,
         defaultUnit: input.defaultUnit,
         defaultLocation: input.defaultLocation,
-        isStaple: input.isStaple,
         aliases: input.aliases,
         ...(input.description === undefined ? {} : { description: input.description }),
         ...(input.shelfLifeDays === undefined ? {} : { shelfLifeDays: input.shelfLifeDays }),
@@ -218,6 +217,10 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
           text: step.text,
           groupLabel: step.groupLabel ?? null,
           durationMinutes: step.durationMinutes ?? null,
+          links: (step.links ?? []).map((link) => ({
+            ingredientIndex: link.ingredientIndex,
+            qty: link.qty ?? null,
+          })),
         })),
       });
       recipeIds.set(input.key, created.id);

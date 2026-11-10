@@ -1,7 +1,7 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { VisuallyHidden } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, PageHeader, Pill, SearchInput, SegmentedControl, Skeleton, cx, type SegmentOption } from "@/ui";
+import { Button, EmptyState, ErrorState, Fab, Icon, PageHeader, Pill, SearchInput, SegmentedControl, Skeleton, cx, type SegmentOption } from "@/ui";
 import { formatMinutes, type MealType } from "../recipe/lib";
 import { useSetRecipeStatus } from "../recipe/queries";
 import { RecipePhoto } from "../recipe/RecipePhoto";
@@ -49,6 +49,7 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
 
   const recipes = useRecipeBox(view, meal, query);
   const setStatus = useSetRecipeStatus();
+  const navigate = useNavigate();
   const items = recipes.data;
   const filtered = meal !== "all" || query.trim() !== "";
 
@@ -174,6 +175,12 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
           })}
         </ul>
       )}
+
+      <Fab
+        label="New recipe"
+        showLabel
+        onClick={() => void navigate({ to: "/recipes/new" })}
+      />
     </div>
   );
 }

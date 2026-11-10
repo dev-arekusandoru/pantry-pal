@@ -66,7 +66,7 @@ const createRecipeRoute = createRoute({
   tags: ["recipes"],
   summary: "Create a recipe",
   description:
-    "Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized.",
+    "Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.",
   request: {
     body: { content: json(createRecipeSchema), required: true },
   },
@@ -102,7 +102,7 @@ const updateRecipeRoute = createRoute({
   tags: ["recipes"],
   summary: "Update a recipe",
   description:
-    "Patch scalar fields. When `ingredients` or `steps` are present they replace the FULL list in one transaction.",
+    "Patch scalar fields. When `ingredients` or `steps` are present they replace the FULL list in one transaction. Step `links` reference lines by `ingredientIndex` in the submitted `ingredients` array, or in the stored line order when only `steps` are patched. Replacing `ingredients` without `steps` drops the step links.",
   request: {
     params: idOrSlugParamSchema,
     body: { content: json(updateRecipeSchema), required: true },

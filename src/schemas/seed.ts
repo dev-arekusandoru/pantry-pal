@@ -61,7 +61,6 @@ export const seedIngredientSchema = z
     category: z.enum(INGREDIENT_CATEGORIES),
     defaultUnit: nullableUnitSchema,
     defaultLocation: z.enum(STORAGE_LOCATIONS),
-    isStaple: z.boolean(),
     aliases: z.array(text),
     description: z.string().optional(),
     shelfLifeDays: z.number().int().nonnegative().optional(),
@@ -158,11 +157,23 @@ export const seedRecipeIngredientSchema = z
     }
   });
 
+export const seedRecipeStepLinkSchema = z
+  .object({
+    ingredientIndex: z
+      .number()
+      .int()
+      .nonnegative()
+      .describe("Zero-based index into the recipe's ingredients array."),
+    qty: z.number().nonnegative().nullable().optional(),
+  })
+  .strict();
+
 export const seedRecipeStepSchema = z
   .object({
     text,
     groupLabel: text.optional(),
     durationMinutes: z.number().int().nonnegative().optional(),
+    links: z.array(seedRecipeStepLinkSchema).optional(),
   })
   .strict();
 
@@ -194,7 +205,20 @@ export const seedRecipeSchema = z
     ingredients: z.array(seedRecipeIngredientSchema),
     steps: z.array(seedRecipeStepSchema),
   })
-  .strict();
+  .strict()
+  .superRefine((recipe, ctx) => {
+    recipe.steps.forEach((step, stepIndex) => {
+      (step.links ?? []).forEach((link, linkIndex) => {
+        if (link.ingredientIndex >= recipe.ingredients.length) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["steps", stepIndex, "links", linkIndex, "ingredientIndex"],
+            message: "Step link must point to an ingredient line of the same recipe",
+          });
+        }
+      });
+    });
+  });
 
 export const seedCookEventSchema = z
   .object({

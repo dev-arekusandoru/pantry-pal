@@ -53,7 +53,7 @@ Input schemas come from these files:
 
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
-| `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, conversions, and staple data. | `query`, `category`, `includeArchived`. |
+| `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, and conversions. | `query`, `category`, `includeArchived`. |
 | `ingredient_upsert` | Create, update, alias, or merge an ingredient. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; category and default unit or location; `aliases`; `removeAliases`; `intoId` for merge. |
 | `unit_conversions` | List, create, or delete custom unit conversions such as `1 can = 15 oz`, per ingredient or household-global. | `action` `list`, `create`, or `delete`; `ingredientId`; `includeGlobal`; `conversionId`; `fromUnit`, `toUnit`, `factor`; `note`. |
 
@@ -75,14 +75,17 @@ create an unknown ingredient; the other pantry tools do not create ingredients.
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
 | `recipe_search` | Search recipes without loading their steps. | `query`, `status`, `tags[]`, `mealType`, `ingredientId`, `maxTotalMinutes`, `limit`, `offset`. |
-| `recipe_get` | Read one recipe by ID or slug, including ingredients, steps, times, nutrition, notes, and cook stats. | `idOrSlug`; optional `servings` to add a scaled ingredient list. |
-| `recipe_save` | Create a recipe or patch an existing one. | `id` to update or omit to create; `title`; `servings`; `ingredients[]`; `steps[]`; optional recipe fields such as times, meal types, tags, equipment, nutrition, and notes; `statusNote`. |
+| `recipe_get` | Read one recipe by ID or slug, including ingredients, steps with their ingredient links, times, nutrition, notes, cook stats, and cook-event count. | `idOrSlug`; optional `servings` to add a scaled ingredient list. |
+| `recipe_save` | Create a recipe or patch an existing one. | `id` to update or omit to create; `title`; `servings`; `ingredients[]`; `steps[]` with optional `links[]` (`ingredientIndex`, `qty`); optional recipe fields such as times, meal types, tags, equipment, nutrition, and notes; `statusNote`. |
 | `recipe_set_status` | Move a recipe through its status values and write a history event. | `recipeId` (ID or slug); `status` `want_to_try`, `rotation`, `never`, or `archived`; `rating`; `note`. |
 | `recipe_check` | Check a stored recipe or loose ingredient names against dietary rules. | `recipeId` (ID or slug) or `ingredients[]`. |
 | `rules_list` | List dietary rules. | `scope`, `severity`, `memberId`. |
 | `rules_manage` | Create, update, or delete a dietary rule. | `action` `create`, `update`, or `delete`; `ruleId`; `scope`; `severity`; `ingredientId` or `ingredient`, `recipeId`, or `targetText`; `conditionNote`, `reason`, `memberId`. |
 
 `recipe_save` treats `ingredients` and `steps` as the full list when present.
+A step `links` entry uses `ingredientIndex` in the submitted `ingredients` array
+(or the stored line order when only `steps` are patched). `qty` is in the linked
+line's unit; `null` means the whole line.
 `recipe_check` returns `ok: false` only for an unconditional forbidden match.
 A violation with a `conditionNote` is a judgement call for the agent.
 
@@ -109,14 +112,15 @@ plan. `cook_complete` with `action: "complete"` decrements pantry stock.
 
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
-| `shopping_generate` | Create or refresh a list from plan demand minus stock on hand. | `mealPlanId`; `listId` to refresh an existing list; `title`; `includeStaples`. |
+| `shopping_generate` | Create or refresh a list from plan demand minus stock on hand. | `mealPlanId`; `listId` to refresh an existing list; `title`. |
 | `shopping_get` | Read one list with items and counts, or list summaries. | `shoppingListId`; without it, `status` and `mealPlanId`; `includeChecked`. |
-| `shopping_update` | Change list fields, items, or check-off state. | `action` `update_list`, `add_items`, `update_item`, `delete_item`, `clear_items`, or `check`; `shoppingListId`; `title`, `notes`, `status`; `items[]`; `itemId`; item fields; `checks[]`. |
+| `shopping_update` | Change list fields, items, or check-off state. | `action` `update_list`, `add_items`, `update_item`, `delete_item`, or `check`; `shoppingListId`; `title`, `notes`, `status`; `items[]`; `itemId`; item fields; `checks[]`. |
 | `shopping_complete` | Turn checked purchases into pantry movements and close the list. | `shoppingListId`; `received[]`; `onlyChecked`; `recordPurchases`; `completedAt`. |
 
 `shopping_complete` writes stock by default. Set `recordPurchases: false` only
-when the pantry already reflects that trip. `clear_items` does not change the
-pantry.
+when the pantry already reflects that trip. It also sets each received
+ingredient's purchase date and, when the ingredient has a shelf life, its expiry
+date.
 
 ## Related pages
 
