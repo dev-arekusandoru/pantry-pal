@@ -1,0 +1,1 @@
+ALTER TABLE `ingredient` DROP COLUMN `is_staple`;

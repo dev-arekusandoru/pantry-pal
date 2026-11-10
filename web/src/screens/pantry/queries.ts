@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { client, qk, unwrap } from "@/api";
+import { ApiError, client, qk, unwrap } from "@/api";
 import { toast } from "@/ui";
 import { restoreBody, type PantryItem, type PantryStatus, type StorageLocation } from "./stock";
 
@@ -82,7 +82,69 @@ export function useSetQty() {
   });
 }
 
-/** On hand / running low / out for staples without a quantity. */
+/** Set or clear the expiry date of one pantry row. */
+export function useSetExpiry() {
+  return useStockEdit({
+    mutationFn: ({ item, expiresOn }: { item: PantryItem; expiresOn: string | null }) =>
+      unwrap(
+        client.PATCH("/pantry/{id}", { params: { path: { id: item.id } }, body: { expiresOn } }),
+      ),
+    optimistic: ({ item, expiresOn }) => ({ id: item.id, apply: (i) => ({ ...i, expiresOn }) }),
+    undo: (_vars, before) => (i) => (before ? { ...i, expiresOn: before.expiresOn } : i),
+  });
+}
+
+/** Set or clear the ingredient's shelf life, used to date future purchases. */
+export function useSetShelfLife() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ingredientId, shelfLifeDays }: { ingredientId: string; shelfLifeDays: number | null }) =>
+      unwrap(
+        client.PATCH("/ingredients/{id}", {
+          params: { path: { id: ingredientId } },
+          body: { shelfLifeDays },
+        }),
+      ),
+    onSettled: () => Promise.all([
+      qc.invalidateQueries({ queryKey: qk.pantry }),
+      qc.invalidateQueries({ queryKey: qk.ingredients }),
+    ]),
+  });
+}
+
+/**
+ * Add an ingredient to the default open list: this week's plan list, else the
+ * newest open list, else a new manual list.
+ */
+export function useAddToList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (item: PantryItem) => {
+      let planId: string | null = null;
+      try {
+        planId = (await unwrap(client.GET("/plans/current"))).id;
+      } catch (e) {
+        if (!(e instanceof ApiError && e.status === 404)) throw e;
+      }
+      const lists = (await unwrap(client.GET("/shopping-lists"))).items;
+      const open = lists.filter((l) => l.status !== "done");
+      const list =
+        (planId === null ? undefined : open.find((l) => l.mealPlanId === planId)) ??
+        open[0] ??
+        (await unwrap(client.POST("/shopping-lists", { body: { title: "Shopping list" } }))).list;
+      await unwrap(
+        client.POST("/shopping-lists/{id}/items", {
+          params: { path: { id: list.id } },
+          body: { items: [{ ingredientId: item.ingredientId }] },
+        }),
+      );
+      return list;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
+  });
+}
+
+/** On hand / running low / out for items without a quantity. */
 export function useSetStatus() {
   return useStockEdit({
     mutationFn: ({ item, status }: { item: PantryItem; status: PantryStatus }) =>
@@ -103,7 +165,7 @@ export interface NewStock {
 
 /**
  * Quick add. With an amount it adds to whatever is already there (and creates the ingredient if it is new);
- * without one it records "on hand" for an unmeasured staple.
+ * without one it records "on hand" for an unmeasured item.
  */
 export function useAddStock() {
   const qc = useQueryClient();

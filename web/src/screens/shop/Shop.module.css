@@ -402,15 +402,67 @@
   color: var(--tomato-text);
 }
 
+/* ---------- running low ---------- */
+.runningLow {
+  margin-top: 8px;
+}
+
+.lowRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--butter-s);
+  box-shadow: var(--shadow);
+}
+
+.lowRow .itemBody {
+  gap: 2px;
+}
+
 /* ---------- list picker ---------- */
+.pickGroups {
+  display: grid;
+  gap: 18px;
+}
+
+.pickHead {
+  margin: 0 6px 8px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .pickList {
   display: grid;
   gap: 8px;
+  list-style: none;
+}
+
+.pickItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pickDelete {
+  flex: none;
+  color: var(--muted);
 }
 
 .pickRow {
   display: flex;
+  flex: 1;
+  min-width: 0;
   width: 100%;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  border: 0;
   align-items: center;
   gap: 10px;
   min-height: 64px;
@@ -427,7 +479,7 @@
   flex: none;
 }
 
-.pickRow[data-state="checked"] {
+.pickRow[aria-current="true"] {
   box-shadow: 0 0 0 3px var(--pistachio);
 }
 

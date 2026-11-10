@@ -6,7 +6,7 @@ import { aisleLabel, uncheckedFirst, type ShoppingItem, type ShoppingList } from
 import { DoneSheet } from "./DoneSheet";
 import { formatAmount } from "./format";
 import styles from "./Shop.module.css";
-import { useAddItem, useCheckItem, useClearList, useGenerateList, useShoppingList } from "./queries";
+import { useAddItem, useCheckItem, useDeleteList, useGenerateList, usePromoteItem, useShoppingList } from "./queries";
 
 export interface ShopListProps {
   list: ShoppingList;
@@ -22,12 +22,13 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
   const detail = useShoppingList(list.id);
   const check = useCheckItem(list.id);
   const add = useAddItem(list.id);
-  const clear = useClearList(list.id);
+  const remove = useDeleteList();
+  const promote = usePromoteItem(list.id);
   const regenerate = useGenerateList();
   const [name, setName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [doneOpen, setDoneOpen] = useState(false);
-  const [clearOpen, setClearOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const addFieldId = useId();
 
   const checked = useMemo(
@@ -124,11 +125,12 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
     );
   }
 
-  function confirmClear() {
-    clear.mutate(undefined, {
+  function confirmDelete() {
+    remove.mutate(current.id, {
       onSuccess: () => {
-        setClearOpen(false);
-        toast.show({ message: "List cleared" });
+        setDeleteOpen(false);
+        toast.show({ message: "List deleted" });
+        onClose();
       },
     });
   }
@@ -201,14 +203,36 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
           </div>
         )}
 
+        {detail.data.runningLow.length > 0 && (
+          <section className={cx(styles.runningLow, styles.screen)} aria-label="Running low">
+            <h2 className={styles.aisleName}>Running low</h2>
+            <ul className={styles.items}>
+              {detail.data.runningLow.map((row) => (
+                <li key={row.ingredientId} className={styles.lowRow}>
+                  <span className={styles.itemEmoji} aria-hidden="true">
+                    <Emoji code={ingredientEmoji(row.name)} size={26} />
+                  </span>
+                  <span className={styles.itemBody}>
+                    <span className={styles.itemName}>{row.name}</span>
+                    <span className={styles.itemWhy}>{row.status === "out" ? "Out" : "Running low"}</span>
+                  </span>
+                  <Button onClick={() => promote.mutate(row.ingredientId)}>
+                    Add
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {counts.total > 0 && (
           <div className={cx(styles.finish, styles.screen)}>
             <Button variant="primary" size="lg" icon={<Icon name="check" />} onClick={() => setDoneOpen(true)}>
               Done shopping
             </Button>
             <p>Checked items go into the pantry.</p>
-            <Button variant="secondary" icon={<Icon name="trash" />} className={styles.clear} onClick={() => setClearOpen(true)}>
-              Clear list
+            <Button variant="secondary" icon={<Icon name="trash" />} className={styles.clear} onClick={() => setDeleteOpen(true)}>
+              Delete list
             </Button>
           </div>
         )}
@@ -258,21 +282,19 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         }}
       />
 
-      <AlertDialog.Root open={clearOpen} onOpenChange={setClearOpen}>
+      <AlertDialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialog.Portal>
           <AlertDialog.Overlay className={styles.confirmBackdrop} />
           <AlertDialog.Content className={styles.confirmPanel}>
             <header className={styles.confirmHead}>
-              <AlertDialog.Title className={styles.confirmTitle}>Clear the list?</AlertDialog.Title>
+              <AlertDialog.Title className={styles.confirmTitle}>Delete this list?</AlertDialog.Title>
               <AlertDialog.Cancel asChild>
                 <IconButton label="Close" icon={<Icon name="close" />} variant="plain" />
               </AlertDialog.Cancel>
             </header>
             <div className={styles.confirmBody}>
               <AlertDialog.Description className={styles.sheetNote}>
-                Every item on this list will be removed — checked off or not, added by hand or from the plan. Nothing goes into
-                your pantry.
-                {current.mealPlanId !== null && " You can rebuild the list from your plan afterwards."}
+                {current.title} and every item on it will be removed. Purchases already added to your pantry stay.
               </AlertDialog.Description>
             </div>
             <div className={styles.confirmFooter}>
@@ -282,14 +304,15 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
               <AlertDialog.Action asChild>
                 <Button
                   variant="primary"
-                  loading={clear.isPending}
+                  icon={<Icon name="trash" />}
+                  loading={remove.isPending}
                   onClick={(e) => {
                     // Keep the dialog open while the request is in flight; it closes on success.
                     e.preventDefault();
-                    confirmClear();
+                    confirmDelete();
                   }}
                 >
-                  Clear list
+                  Delete list
                 </Button>
               </AlertDialog.Action>
             </div>

@@ -31,6 +31,20 @@ export function restoreBody(item: PantryItem) {
   };
 }
 
+/** Days before the expiry date that count as "soon". */
+const EXPIRING_SOON_DAYS = 3;
+
+/** `expired`, `soon` (0-3 days), or null when the date is missing or further away. */
+export function expiryState(expiresOn: string | null, today = new Date().toISOString().slice(0, 10)): "expired" | "soon" | null {
+  if (expiresOn === null) return null;
+  const days = Math.round(
+    (new Date(`${expiresOn}T00:00:00.000Z`).getTime() - new Date(`${today}T00:00:00.000Z`).getTime()) / 86_400_000,
+  );
+  if (days < 0) return "expired";
+  if (days <= EXPIRING_SOON_DAYS) return "soon";
+  return null;
+}
+
 export const STATUS_LABEL: Record<PantryStatus, string> = {
   on_hand: "On hand",
   low: "Running low",

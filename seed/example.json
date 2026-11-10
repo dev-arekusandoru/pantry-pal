@@ -28,7 +28,6 @@
       "category": "pantry",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": true,
       "aliases": [
         "extra virgin olive oil",
         "evoo"
@@ -41,7 +40,6 @@
       "category": "pantry",
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
-      "isStaple": true,
       "aliases": [
         "white rice",
         "long grain rice",
@@ -54,7 +52,6 @@
       "category": "pantry",
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
-      "isStaple": true,
       "aliases": [
         "chicken broth",
         "chicken soup base"
@@ -66,7 +63,6 @@
       "category": "condiment",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": true,
       "aliases": [
         "soy"
       ],
@@ -77,7 +73,6 @@
       "category": "baking",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "corn starch"
       ],
@@ -88,7 +83,6 @@
       "category": "dairy",
       "defaultUnit": "tbsp",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "unsalted butter",
         "salted butter"
@@ -100,7 +94,6 @@
       "category": "baking",
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "flour",
         "ap flour"
@@ -112,7 +105,6 @@
       "category": "pantry",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": []
     },
     {
@@ -120,7 +112,6 @@
       "category": "baking",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "cocoa powder",
         "cocoa"
@@ -132,7 +123,6 @@
       "category": "baking",
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "sugar",
         "white sugar"
@@ -144,7 +134,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "crushed red pepper"
       ],
@@ -155,7 +144,6 @@
       "category": "pantry",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "sesame oil"
       ],
@@ -166,7 +154,6 @@
       "category": "baking",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "light brown sugar",
         "dark brown sugar"
@@ -177,7 +164,6 @@
       "category": "pantry",
       "defaultUnit": "oz",
       "defaultLocation": "pantry",
-      "isStaple": true,
       "aliases": [
         "pasta",
         "penne"
@@ -189,7 +175,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "oregano"
       ]
@@ -199,7 +184,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "ginger powder",
         "ginger"
@@ -210,7 +194,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "kosher salt",
         "table salt",
@@ -222,7 +205,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "pepper",
         "ground black pepper",
@@ -234,7 +216,6 @@
       "category": "protein",
       "defaultUnit": "lb",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "lean ground beef",
         "85% lean ground beef",
@@ -249,7 +230,6 @@
       "category": "protein",
       "defaultUnit": "lb",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "boneless skinless chicken breast",
         "chicken breasts",
@@ -263,7 +243,6 @@
       "category": "protein",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "salmon",
         "skinless salmon fillets",
@@ -278,7 +257,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "red onions"
       ],
@@ -289,7 +267,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "yellow onions",
         "onion",
@@ -304,7 +281,6 @@
       "category": "produce",
       "defaultUnit": "clove",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "garlic cloves",
         "garlic clove",
@@ -319,7 +295,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "carrot"
       ],
@@ -330,7 +305,6 @@
       "category": "produce",
       "defaultUnit": "stalk",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "celery stalks",
         "celery stalk"
@@ -342,7 +316,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "turnip"
       ],
@@ -353,7 +326,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "parsnip"
       ],
@@ -364,7 +336,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "red bell peppers",
         "red pepper",
@@ -378,7 +349,6 @@
       "category": "produce",
       "defaultUnit": "head",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "broccoli",
         "broccoli floret"
@@ -391,7 +361,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "zucchinis",
         "medium zucchini"
@@ -403,7 +372,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "white potatoes",
         "potato",
@@ -418,7 +386,6 @@
       "category": "produce",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "lemons",
         "lemon wedges"
@@ -430,7 +397,6 @@
       "category": "produce",
       "defaultUnit": "bunch",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "basil",
         "basil leaves",
@@ -443,7 +409,6 @@
       "category": "produce",
       "defaultUnit": "bunch",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "dill",
         "dill sprig",
@@ -456,7 +421,6 @@
       "category": "produce",
       "defaultUnit": "sprig",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "rosemary",
         "fresh rosemary sprig"
@@ -468,7 +432,6 @@
       "category": "dairy",
       "defaultUnit": "cup",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "heavy whipping cream",
         "cream"
@@ -480,7 +443,6 @@
       "category": "dairy",
       "defaultUnit": "cup",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "parmesan",
         "grated parmesan",
@@ -495,7 +457,6 @@
       "category": "dairy",
       "defaultUnit": "bag",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "cheddar",
         "cheddar cheese",
@@ -510,7 +471,6 @@
       "category": "dairy",
       "defaultUnit": "cup",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "whole milk",
         "2% milk"
@@ -522,7 +482,6 @@
       "category": "bakery",
       "defaultUnit": "slice",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "toast",
         "sandwich bread",
@@ -535,7 +494,6 @@
       "category": "protein",
       "defaultUnit": "count",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "egg",
         "large eggs",
@@ -548,7 +506,6 @@
       "category": "pantry",
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "oats",
         "old-fashioned oats",
@@ -560,7 +517,6 @@
       "category": "pantry",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "chia"
       ]
@@ -570,7 +526,6 @@
       "category": "baking",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "vanilla"
       ]
@@ -580,7 +535,6 @@
       "category": "baking",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": []
     },
     {
@@ -588,7 +542,6 @@
       "category": "other",
       "defaultUnit": "cup",
       "defaultLocation": "other",
-      "isStaple": false,
       "aliases": [
         "cold water"
       ],
@@ -599,7 +552,6 @@
       "category": "pantry",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [],
       "description": "High-heat stir-fry oil; vegetable or olive oil can substitute."
     },
@@ -608,7 +560,6 @@
       "category": "condiment",
       "defaultUnit": "tbsp",
       "defaultLocation": "fridge",
-      "isStaple": false,
       "aliases": [
         "mayo"
       ],
@@ -619,7 +570,6 @@
       "category": "canned",
       "defaultUnit": "can",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "diced tomatoes with green chiles",
         "canned tomatoes with green chilies",
@@ -633,7 +583,6 @@
       "category": "canned",
       "defaultUnit": "can",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "canned tomato sauce"
       ],
@@ -644,7 +593,6 @@
       "category": "canned",
       "defaultUnit": "can",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "dark kidney beans"
       ],
@@ -655,7 +603,6 @@
       "category": "canned",
       "defaultUnit": "can",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "light kidney beans"
       ],
@@ -666,7 +613,6 @@
       "category": "canned",
       "defaultUnit": "jar",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "sun-dried tomatoes",
         "sundried tomatoes",
@@ -679,7 +625,6 @@
       "category": "canned",
       "defaultUnit": "jar",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "mixed olives",
         "pitted olives",
@@ -692,7 +637,6 @@
       "category": "canned",
       "defaultUnit": "cup",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "beef stock"
       ],
@@ -703,7 +647,6 @@
       "category": "spice",
       "defaultUnit": "tbsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "ground chili powder"
       ]
@@ -713,7 +656,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "cumin"
       ]
@@ -723,7 +665,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "ground paprika"
       ]
@@ -733,7 +674,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [],
       "description": "Sweet (not smoked) paprika for the salmon."
     },
@@ -742,7 +682,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "coriander"
       ]
@@ -752,7 +691,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": []
     },
     {
@@ -760,7 +698,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "parsley flakes"
       ]
@@ -770,7 +707,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "dried italian seasoning",
         "italian herb seasoning"
@@ -781,7 +717,6 @@
       "category": "spice",
       "defaultUnit": "tsp",
       "defaultLocation": "pantry",
-      "isStaple": false,
       "aliases": [
         "ground white pepper"
       ]
@@ -909,8 +844,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Olive oil | on hand | staple | 2026-02-01",
-      "note": "Staple; amount not tracked."
+      "rawText": "Olive oil | on hand | pantry | 2026-02-01",
+      "note": "Amount not tracked."
     },
     {
       "ingredient": "Rice",
@@ -919,8 +854,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Rice | on hand | staple | 2026-02-01",
-      "note": "Staple; amount not tracked."
+      "rawText": "Rice | on hand | pantry | 2026-02-01",
+      "note": "Amount not tracked."
     },
     {
       "ingredient": "Chicken stock",
@@ -929,8 +864,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Chicken stock | on hand | staple | 2026-02-01",
-      "note": "Staple; amount not tracked."
+      "rawText": "Chicken stock | on hand | pantry | 2026-02-01",
+      "note": "Amount not tracked."
     },
     {
       "ingredient": "Soy sauce",
@@ -939,8 +874,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Soy sauce | on hand | staple | 2026-02-01",
-      "note": "Staple; amount not tracked."
+      "rawText": "Soy sauce | on hand | pantry | 2026-02-01",
+      "note": "Amount not tracked."
     },
     {
       "ingredient": "Cornstarch",
@@ -1039,8 +974,8 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Penne pasta | on hand | staple | 2026-02-01",
-      "note": "Staple; amount not tracked."
+      "rawText": "Penne pasta | on hand | pantry | 2026-02-01",
+      "note": "Amount not tracked."
     },
     {
       "ingredient": "Dried oregano",
@@ -2782,7 +2717,7 @@
     {
       "key": "pancakes",
       "title": "Pancakes",
-      "description": "Fluffy everyday pancakes made from pantry staples.",
+      "description": "Fluffy everyday pancakes made from pantry ingredients.",
       "sourceUrl": null,
       "sourceName": null,
       "author": null,

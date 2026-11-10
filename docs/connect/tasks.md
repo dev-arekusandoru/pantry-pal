@@ -108,7 +108,7 @@ Check the result with `pantry_history` and `refType: "cook_event"`.
    purchase movements.
 
 If the plan changed after the list was generated, call `shopping_generate`
-again. `clear_items` removes the list items but does not change the pantry.
+again. `delete_item` removes one item; it does not change the pantry.
 
 ## Add a recipe
 
@@ -130,8 +130,8 @@ duplicates. Pass `statusNote` to record why a status or rating changed.
 Some tools that can delete or overwrite data have a destructive annotation.
 Read tools have a read-only annotation. Check annotations with `tools/list`.
 
-- Confirm destructive actions with the user first. This includes delete, merge,
-  `clear_items`, `undo`, and deleting a cook or plan.
+- Confirm destructive actions with the user first. This includes delete, merge, `undo`,
+  and deleting a cook or plan.
 - A timeout does not tell you whether a write reached the server. Read the
   current state or history before you retry. Repeating an `adjust` line doubles
   the change; a `set` line is safer for a recount.

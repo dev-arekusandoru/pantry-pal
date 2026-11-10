@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleared, pickDefaultList, setChecked, uncheckedFirst, type ShoppingDetail, type ShoppingItem, type ShoppingList } from "./cart";
+import { pickDefaultList, setChecked, uncheckedFirst, type ShoppingDetail, type ShoppingItem, type ShoppingList } from "./cart";
 
 const item = (id: string, checkedAt: string | null = null): ShoppingItem => ({
   id,
@@ -42,6 +42,7 @@ describe("setChecked", () => {
     items,
     groups: [{ category: "produce", items }],
     counts: { total: 2, checked: 1, remaining: 1, needsCheck: 0 },
+    runningLow: [],
   };
 
   it("checks an item in items and groups and recomputes counts", () => {
@@ -54,25 +55,6 @@ describe("setChecked", () => {
 
   it("unchecks", () => {
     expect(setChecked(detail, "b", null).counts.checked).toBe(0);
-  });
-});
-
-describe("cleared", () => {
-  const items = [item("a"), item("b", "t")];
-  const detail: ShoppingDetail = {
-    list: list("l", "shopping", "p1"),
-    items,
-    groups: [{ category: "produce", items }],
-    counts: { total: 2, checked: 1, remaining: 1, needsCheck: 0 },
-  };
-
-  it("empties items, groups and counts but keeps the list untouched", () => {
-    const next = cleared(detail);
-    expect(next.items).toEqual([]);
-    expect(next.groups).toEqual([]);
-    expect(next.counts).toEqual({ total: 0, checked: 0, remaining: 0, needsCheck: 0 });
-    expect(next.list).toBe(detail.list);
-    expect(detail.items).toHaveLength(2);
   });
 });
 
@@ -93,8 +75,11 @@ describe("pickDefaultList", () => {
     expect(pickDefaultList(lists, "p1")?.id).toBe("plan-shop");
     expect(pickDefaultList(lists.filter((l) => l.id !== "plan-shop"), "p1")?.id).toBe("plan-draft");
   });
-  it("falls back to the newest open list, ignoring done ones", () => {
+  it("uses the newest open list only when there is no plan", () => {
     expect(pickDefaultList(lists, null)?.id).toBe("newest");
-    expect(pickDefaultList([list("d", "done", "p1")], "p1")).toBeUndefined();
+    expect(pickDefaultList([list("d", "done", "p1")], "p1")?.id).toBe("d");
+  });
+  it("never falls back to another plan's list", () => {
+    expect(pickDefaultList([list("old", "draft", "p0")], "p1")).toBeUndefined();
   });
 });

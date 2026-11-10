@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupByLocation, restoreBody, stepFor, type PantryItem } from "./stock";
+import { expiryState, groupByLocation, restoreBody, stepFor, type PantryItem } from "./stock";
 
 const item = (name: string, location: PantryItem["location"]): PantryItem =>
   ({ id: name, ingredient: { id: name, name, category: "other" }, location }) as PantryItem;
@@ -27,6 +27,16 @@ describe("groupByLocation", () => {
   });
 });
 
+describe("expiryState", () => {
+  it("flags expired and three-day dates, not later ones", () => {
+    expect(expiryState("2026-11-08", "2026-11-09")).toBe("expired");
+    expect(expiryState("2026-11-09", "2026-11-09")).toBe("soon");
+    expect(expiryState("2026-11-12", "2026-11-09")).toBe("soon");
+    expect(expiryState("2026-11-13", "2026-11-09")).toBeNull();
+    expect(expiryState(null, "2026-11-09")).toBeNull();
+  });
+});
+
 describe("restoreBody", () => {
   it("re-adds a measured row with its amount, unit and place", () => {
     const yogurt = { ...item("Yogurt", "fridge"), ingredientId: "ing_yogurt", qty: 500, unit: "g", qtyApprox: true, status: "on_hand" } as PantryItem;
@@ -40,7 +50,7 @@ describe("restoreBody", () => {
     });
   });
 
-  it("keeps an unmeasured staple unmeasured with its status", () => {
+  it("keeps an unmeasured item unmeasured with its status", () => {
     const rice = { ...item("Rice", "pantry"), ingredientId: "ing_rice", qty: null, unit: null, qtyApprox: false, status: "unknown" } as PantryItem;
     expect(restoreBody(rice)).toEqual({
       ingredientId: "ing_rice",

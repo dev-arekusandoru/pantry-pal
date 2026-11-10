@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
+import { errorMessage } from "@/api";
 import { useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, PageHeader, Skeleton, buttonClass } from "@/ui";
+import { Button, EmptyState, ErrorState, Icon, PageHeader, Skeleton, buttonClass, toast } from "@/ui";
 import { pickDefaultList } from "./cart";
 import { ListPicker } from "./ListPicker";
 import { ShopList } from "./ShopList";
 import styles from "./Shop.module.css";
-import { useCreateList, useCurrentPlanId, useGenerateList, useShoppingLists } from "./queries";
+import { useCreateList, useCurrentPlanId, useDeleteList, useGenerateList, useShoppingLists } from "./queries";
 
 export interface ShopScreenProps {
   /** List named in the URL (`?list=`), if any. */
@@ -20,6 +21,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const generate = useGenerateList();
   const create = useCreateList();
+  const remove = useDeleteList();
 
   const error = lists.error ?? plan.error;
   if (error) {
@@ -51,37 +53,72 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
   }
 
   const planId = plan.data;
-  const open = lists.data.filter((l) => l.status !== "done");
   const selected = lists.data.find((l) => l.id === listId) ?? pickDefaultList(lists.data, planId);
 
+  const picker = (
+    <ListPicker
+      open={pickerOpen}
+      onClose={() => setPickerOpen(false)}
+      lists={lists.data}
+      selectedId={selected?.id ?? ""}
+      onSelect={(id) => {
+        setPickerOpen(false);
+        onSelectList(id);
+      }}
+      onCreate={() =>
+        create.mutate(undefined, {
+          onSuccess: (d) => {
+            setPickerOpen(false);
+            onSelectList(d.list.id);
+          },
+        })
+      }
+      onDelete={async (id) => {
+        try {
+          await remove.mutateAsync(id);
+          if (id === selected?.id) onSelectList(undefined);
+        } catch (error) {
+          toast.error(errorMessage(error));
+          throw error;
+        }
+      }}
+      creating={create.isPending}
+      deleting={remove.isPending}
+    />
+  );
+
   if (!selected) {
-    const hasDoneThisWeek = planId !== null && lists.data.some((l) => l.mealPlanId === planId);
     return (
       <>
         <PageHeader title="Shopping" sub="Nothing on the list" />
         {planId !== null ? (
           <EmptyState
             emoji="1F6D2"
-            title={hasDoneThisWeek ? "This week's shopping is done" : "No shopping list yet"}
+            title="No shopping list yet"
             action={
-              <Button
-                variant="primary"
-                size="lg"
-                loading={generate.isPending}
-                onClick={() =>
-                  generate.mutate(
-                    { mealPlanId: planId },
-                    { onSuccess: (d) => onSelectList(d.list.id) },
-                  )
-                }
-              >
-                Make the shopping list
-              </Button>
+              <>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  loading={generate.isPending}
+                  onClick={() =>
+                    generate.mutate(
+                      { mealPlanId: planId },
+                      { onSuccess: (d) => onSelectList(d.list.id) },
+                    )
+                  }
+                >
+                  Make the shopping list
+                </Button>
+                {lists.data.length > 0 && (
+                  <Button variant="ghost" icon={<Icon name="list" />} onClick={() => setPickerOpen(true)}>
+                    All lists
+                  </Button>
+                )}
+              </>
             }
           >
-            {hasDoneThisWeek
-              ? "Need more? Make a fresh list from this week's plan."
-              : "We'll work out what this week's plan needs and leave out what you already have."}
+            We'll work out what this week's plan needs and leave out what you already have.
           </EmptyState>
         ) : (
           <EmptyState
@@ -101,6 +138,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
             Plan the week and we'll build the list for you, or start a blank one and add things by hand.
           </EmptyState>
         )}
+        {picker}
       </>
     );
   }
@@ -111,28 +149,17 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
         key={selected.id}
         list={selected}
         switcher={
-          open.length > 1 || (selected.status === "done" && open.length > 0) ? (
-            <div className={styles.switchRow}>
-              <span className={styles.switchTitle}>{selected.title}</span>
-              <Button variant="ghost" icon={<Icon name="list" />} onClick={() => setPickerOpen(true)}>
-                Switch list
-              </Button>
-            </div>
-          ) : null
+          <div className={styles.switchRow}>
+            <span className={styles.switchTitle}>{selected.title}</span>
+            <Button variant="ghost" icon={<Icon name="list" />} onClick={() => setPickerOpen(true)}>
+              All lists
+            </Button>
+          </div>
         }
         onClose={() => onSelectList(undefined)}
         onCompleted={() => onSelectList(selected.id)}
       />
-      <ListPicker
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        lists={open}
-        selectedId={selected.id}
-        onSelect={(id) => {
-          setPickerOpen(false);
-          onSelectList(id);
-        }}
-      />
+      {picker}
     </>
   );
 }

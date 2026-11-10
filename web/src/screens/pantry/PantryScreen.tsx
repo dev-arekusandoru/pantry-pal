@@ -4,7 +4,7 @@ import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInpu
 import { AddSheet } from "./AddSheet";
 import { ChoiceChips } from "./ChoiceChips";
 import styles from "./Pantry.module.css";
-import { useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetQty, useSetStatus } from "./queries";
+import { useAddToList, useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetExpiry, useSetQty, useSetShelfLife, useSetStatus } from "./queries";
 import { SetQtySheet } from "./SetQtySheet";
 import { StockRow } from "./StockRow";
 import { LOCATION_LABEL, LOCATION_ORDER, groupByLocation, stepFor, type PantryItem, type StorageLocation } from "./stock";
@@ -13,6 +13,9 @@ export function PantryScreen() {
   const pantry = usePantry();
   const adjust = useAdjustItem();
   const setQty = useSetQty();
+  const setExpiry = useSetExpiry();
+  const setShelfLife = useSetShelfLife();
+  const addToList = useAddToList();
   const setStatus = useSetStatus();
   const remove = useRemoveItem();
   const restore = useRestoreItem();
@@ -112,6 +115,12 @@ export function PantryScreen() {
                         onStep={(it, dir) => adjust.mutate({ item: it, delta: dir > 0 ? stepFor(it.unit) : -Math.min(stepFor(it.unit), it.qty ?? 0) })}
                         onEditQty={setEditing}
                         onSetStatus={(it, status) => setStatus.mutate({ item: it, status })}
+                        onAddToList={(it) =>
+                          addToList.mutate(it, {
+                            onSuccess: (list) => toast.show({ message: `${it.ingredient.name} added to ${list.title}` }),
+                            onError: (error) => toast.error(errorMessage(error)),
+                          })
+                        }
                       />
                     ))}
                   </ul>
@@ -124,7 +133,13 @@ export function PantryScreen() {
       <SetQtySheet
         item={editing}
         onClose={() => setEditing(null)}
-        onSave={(item, qty) => setQty.mutate({ item, qty })}
+        onSave={(item, changes) => {
+          setQty.mutate({ item, qty: changes.qty });
+          if (changes.expiresOn !== item.expiresOn) setExpiry.mutate({ item, expiresOn: changes.expiresOn });
+          if (changes.shelfLifeDays !== item.ingredient.shelfLifeDays) {
+            setShelfLife.mutate({ ingredientId: item.ingredient.id, shelfLifeDays: changes.shelfLifeDays });
+          }
+        }}
         onRemove={(item) =>
           remove.mutate(
             { item },

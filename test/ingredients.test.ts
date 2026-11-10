@@ -162,13 +162,13 @@ describe("updateIngredient", () => {
       parQty: 2,
       parUnit: "liters",
       defaultUnit: "ml",
-      isStaple: true,
+      shelfLifeDays: 365,
       description: "Extra virgin",
     });
     expect(updated.parQty).toBe(2);
     expect(updated.parUnit).toBe("l");
     expect(updated.defaultUnit).toBe("ml");
-    expect(updated.isStaple).toBe(true);
+    expect(updated.shelfLifeDays).toBe(365);
   });
 });
 

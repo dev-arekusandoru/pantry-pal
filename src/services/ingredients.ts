@@ -363,7 +363,6 @@ export interface CreateIngredientInput {
   defaultLocation?: StorageLocation;
   imageUrl?: string | null;
   shelfLifeDays?: number | null;
-  isStaple?: boolean;
   parQty?: number | null;
   parUnit?: string | null;
   notes?: string | null;
@@ -392,7 +391,6 @@ function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientV
       defaultLocation: input.defaultLocation ?? "pantry",
       imageUrl: input.imageUrl ?? null,
       shelfLifeDays: input.shelfLifeDays ?? null,
-      isStaple: input.isStaple ?? false,
       parQty: requireParQty(input.parQty),
       parUnit: normalizeUnitInput(input.parUnit, "unit"),
       notes: input.notes ?? null,
@@ -426,7 +424,6 @@ export interface UpdateIngredientInput {
   defaultLocation?: StorageLocation;
   imageUrl?: string | null;
   shelfLifeDays?: number | null;
-  isStaple?: boolean;
   parQty?: number | null;
   parUnit?: string | null;
   notes?: string | null;
@@ -459,7 +456,6 @@ function updateIngredientIn(
   if (input.defaultLocation !== undefined) patch.defaultLocation = input.defaultLocation;
   if (input.imageUrl !== undefined) patch.imageUrl = input.imageUrl;
   if (input.shelfLifeDays !== undefined) patch.shelfLifeDays = input.shelfLifeDays;
-  if (input.isStaple !== undefined) patch.isStaple = input.isStaple;
   if (input.parQty !== undefined) patch.parQty = requireParQty(input.parQty);
   if (input.parUnit !== undefined) {
     patch.parUnit = normalizeUnitInput(input.parUnit, "unit");

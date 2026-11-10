@@ -12,7 +12,6 @@ import {
 import {
   addItems,
   checkItems,
-  clearItems,
   completeShoppingList,
   deleteItem,
   generateShoppingList,
@@ -36,7 +35,7 @@ const shoppingGetInput = z.object({
 const shoppingUpdateInput = z
   .object({
     action: z
-      .enum(["update_list", "add_items", "update_item", "delete_item", "clear_items", "check"])
+      .enum(["update_list", "add_items", "update_item", "delete_item", "check"])
       .describe("Manage a shopping list: its fields, its items, or their check-off state."),
     shoppingListId: z.string().min(1).describe("List id (sl_…)."),
     title: z.string().optional().describe("New list title (action=update_list)."),
@@ -59,7 +58,7 @@ const shoppingUpdateInput = z
       .describe("Check/uncheck items, optionally recording what was actually taken (action=check)."),
   })
   .describe(
-    "Update list fields, add/update/delete items, clear every item off the list, or check items off. Manual items survive regeneration; completed lists are immutable.",
+    "Update list fields, add/update/delete items, or check items off. Manual items survive regeneration; completed lists are immutable.",
   );
 
 const shoppingCompleteInput = z.object({
@@ -73,7 +72,7 @@ export function registerShoppingTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Generate shopping list",
       description:
-        "Create or refresh a shopping list for a plan: plan demand minus stock on hand, rounded to buyable amounts, with a needsCheck bucket for unknown/incomparable stock and low/out staples restocked.",
+        "Create or refresh a shopping list for a plan: plan demand minus stock on hand, rounded to buyable amounts, with a needsCheck bucket for unknown/incomparable stock.",
       inputSchema: generateShoppingListInputSchema,
       annotations: { destructiveHint: true },
     },
@@ -109,7 +108,7 @@ export function registerShoppingTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Update shopping list",
       description:
-        "action=update_list (title/notes/status), add_items (resolves ingredient names; unknown names become free-text items), update_item, delete_item, clear_items (removes every item; the list itself and the pantry stay) or check (records actual quantities and substitutes).",
+        "action=update_list (title/notes/status), add_items (resolves ingredient names; unknown names become free-text items), update_item, delete_item, or check (records actual quantities and substitutes).",
       inputSchema: shoppingUpdateInput,
       annotations: { destructiveHint: true },
     },
@@ -128,8 +127,6 @@ export function registerShoppingTools(server: McpServer, ctx: Ctx): void {
           return { item: updateItem(ctx, listId, requireArg(args.itemId, "itemId"), args) };
         case "delete_item":
           return deleteItem(ctx, listId, requireArg(args.itemId, "itemId"));
-        case "clear_items":
-          return clearItems(ctx, listId);
         case "check":
           return checkItems(ctx, listId, requireArg(args.checks, "checks"));
       }

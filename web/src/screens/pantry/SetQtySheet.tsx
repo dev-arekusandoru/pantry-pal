@@ -5,11 +5,17 @@ import { parseQty, qtyToInput, unitLabel } from "../shop/format";
 import styles from "./Pantry.module.css";
 import { LOCATION_LABEL, type PantryItem } from "./stock";
 
+export interface PantryChanges {
+  qty: number;
+  expiresOn: string | null;
+  shelfLifeDays: number | null;
+}
+
 export interface SetQtySheetProps {
   /** The item being edited; null closes the sheet. */
   item: PantryItem | null;
   onClose: () => void;
-  onSave: (item: PantryItem, qty: number) => void;
+  onSave: (item: PantryItem, changes: PantryChanges) => void;
   /** Remove the row from the pantry entirely; the caller confirms with an Undo toast. */
   onRemove: (item: PantryItem) => void;
 }
@@ -30,21 +36,29 @@ export function SetQtySheet({ item, onClose, onSave, onRemove }: SetQtySheetProp
 interface FormProps {
   item: PantryItem;
   onClose: () => void;
-  onSave: (item: PantryItem, qty: number) => void;
+  onSave: (item: PantryItem, changes: PantryChanges) => void;
   onRemove: (item: PantryItem) => void;
 }
 
 function Form({ item, onClose, onSave, onRemove }: FormProps) {
   const [text, setText] = useState(item.qty === null ? "" : qtyToInput(item.qty));
+  const [expiresOn, setExpiresOn] = useState(item.expiresOn ?? "");
+  const [shelfText, setShelfText] = useState(
+    item.ingredient.shelfLifeDays === null ? "" : String(item.ingredient.shelfLifeDays),
+  );
   const amountId = useId();
+  const expiryId = useId();
+  const shelfId = useId();
   const qty = parseQty(text);
   const unit = unitLabel(item.unit, qty);
   const name = item.ingredient.name;
+  const shelfLifeDays = shelfText.trim() === "" ? null : Number(shelfText);
+  const shelfBad = shelfLifeDays !== null && (!Number.isInteger(shelfLifeDays) || shelfLifeDays < 0);
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (qty === null) return;
-    onSave(item, qty);
+    if (qty === null || shelfBad) return;
+    onSave(item, { qty, expiresOn: expiresOn === "" ? null : expiresOn, shelfLifeDays });
     onClose();
   }
 
@@ -67,9 +81,36 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
         />
         {unit !== "" && <span className={styles.setUnit}>{unit}</span>}
       </div>
+      <div className={styles.field}>
+        <Label.Root className={styles.fieldLabel} htmlFor={expiryId}>
+          Best before
+        </Label.Root>
+        <input
+          id={expiryId}
+          type="date"
+          className={styles.input}
+          value={expiresOn}
+          onChange={(e) => setExpiresOn(e.target.value)}
+        />
+      </div>
+      <div className={styles.field}>
+        <Label.Root className={styles.fieldLabel} htmlFor={shelfId}>
+          Shelf life in days
+        </Label.Root>
+        <input
+          id={shelfId}
+          className={styles.input}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="No shelf life"
+          value={shelfText}
+          aria-invalid={shelfBad || undefined}
+          onChange={(e) => setShelfText(e.target.value)}
+        />
+      </div>
       <div className={styles.setActions}>
         <Button onClick={onClose}>Cancel</Button>
-        <Button type="submit" variant="primary" disabled={qty === null}>
+        <Button type="submit" variant="primary" disabled={qty === null || shelfBad}>
           Save
         </Button>
       </div>

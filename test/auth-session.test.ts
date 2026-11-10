@@ -4,7 +4,7 @@ import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "../src/auth/session.js
 import { households } from "../src/db/schema.js";
 import { makeTestCtx } from "./helpers.js";
 
-const PASSWORD = "correct horse battery staple";
+const PASSWORD = "correct horse battery candle";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ORIGIN = "http://localhost";
 
@@ -262,7 +262,7 @@ describe("session CSRF protection", () => {
     const response = await app.request("/auth/login", {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded", origin: ORIGIN },
-      body: "password=correct%20horse%20battery%20staple",
+      body: "password=correct%20horse%20battery%20candle",
     });
     expect(response.status).toBe(415);
   });

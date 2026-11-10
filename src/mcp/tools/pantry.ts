@@ -137,7 +137,7 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Search ingredients",
       description:
-        "Find ingredients by name/alias/category. Returns ids, default units and locations, staple flags, aliases, custom conversions and current stock.",
+        "Find ingredients by name/alias/category. Returns ids, default units and locations, aliases, custom conversions and current stock.",
       inputSchema: ingredientSearchInput,
       annotations: { readOnlyHint: true },
     },

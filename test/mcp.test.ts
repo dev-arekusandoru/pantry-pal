@@ -323,24 +323,6 @@ describe("MCP endpoint", () => {
     });
   });
 
-  it("clears every item through shopping_update clear_items", async () => {
-    const { app, token, ctx } = makeTestApp();
-    const list = createShoppingList(ctx, {
-      title: "Market",
-      items: [{ name: "Candles" }, { name: "Milk" }],
-    });
-
-    const { result, payload } = await callTool(app, token, "shopping_update", {
-      action: "clear_items",
-      shoppingListId: list.list.id,
-    });
-
-    expect(result.isError).toBeUndefined();
-    const detail = payload as { items: unknown[]; counts: { total: number; checked: number } };
-    expect(detail.items).toEqual([]);
-    expect(detail.counts).toEqual({ total: 0, checked: 0, remaining: 0, needsCheck: 0 });
-  });
-
   it("rejects unauthenticated requests and non-POST methods", async () => {
     const { app, token } = makeTestApp();
 

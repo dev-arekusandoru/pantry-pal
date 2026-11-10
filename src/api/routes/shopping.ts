@@ -28,7 +28,6 @@ import {
 import {
   addItems,
   checkItems,
-  clearItems,
   completeShoppingList,
   createShoppingList,
   deleteItem,
@@ -183,7 +182,7 @@ export const generateShoppingListRoute = createRoute({
   tags: [TAG],
   summary: "Generate a shopping list from plan demand",
   description:
-    "Adds what the plan needs on top of stock. Unknown or incomparable stock becomes a needsCheck item; low/out staples are restocked. Regenerating replaces generated, unchecked items only.",
+    "Adds what the plan needs on top of stock. Unknown or incomparable stock becomes a needsCheck item; low or out stock with an unknown amount adds the full committed amount. Regenerating replaces generated, unchecked items only.",
   request: {
     body: {
       required: true,
@@ -309,28 +308,6 @@ const addItemsHandler: RouteHandler<typeof addItemsRoute, AppEnv> = (c) => {
   return c.json(addItems(c.get("ctx"), id, body.items), 201);
 };
 
-export const clearItemsRoute = createRoute({
-  method: "delete",
-  path: "/shopping-lists/{id}/items",
-  tags: [TAG],
-  summary: "Clear a shopping list",
-  description:
-    "Removes every item — generated or manual, checked or not. The list itself stays (including its plan binding), so it can be regenerated later. Nothing is written to stock.",
-  request: { params: shoppingListParamsSchema },
-  responses: {
-    200: {
-      description: "Cleared list detail",
-      content: { "application/json": { schema: shoppingListDetailSchema } },
-    },
-    ...errorResponses,
-  },
-});
-
-const clearItemsHandler: RouteHandler<typeof clearItemsRoute, AppEnv> = (c) => {
-  const { id } = c.req.valid("param");
-  return c.json(clearItems(c.get("ctx"), id), 200);
-};
-
 export const updateItemRoute = createRoute({
   method: "patch",
   path: "/shopping-lists/{id}/items/{itemId}",
@@ -449,7 +426,6 @@ export function registerShoppingRoutes(app: OpenAPIHono<AppEnv>): void {
   app.openapi(updateShoppingListRoute, updateShoppingListHandler);
   app.openapi(deleteShoppingListRoute, deleteShoppingListHandler);
   app.openapi(addItemsRoute, addItemsHandler);
-  app.openapi(clearItemsRoute, clearItemsHandler);
   app.openapi(updateItemRoute, updateItemHandler);
   app.openapi(deleteItemRoute, deleteItemHandler);
   app.openapi(checkItemsRoute, checkItemsHandler);

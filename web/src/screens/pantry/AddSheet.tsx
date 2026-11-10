@@ -132,7 +132,7 @@ function AddForm({ onClose, existing, initialName = "", initialLocation = "pantr
               inputMode="decimal"
               value={qtyText}
               onChange={(e) => setQtyText(e.target.value)}
-              placeholder="Just a staple"
+              placeholder="Just note it"
               autoComplete="off"
               aria-invalid={qtyBad || undefined}
             />

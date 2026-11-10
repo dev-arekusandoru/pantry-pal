@@ -20,7 +20,6 @@ import { listMovements } from "../src/services/pantry.js";
 import {
   addItems,
   checkItems,
-  clearItems,
   completeShoppingList,
   createShoppingList,
   deleteItem,
@@ -37,9 +36,9 @@ interface IngredientOptions {
   name: string;
   category?: IngredientCategory;
   defaultUnit?: string | null;
-  isStaple?: boolean;
   parQty?: number | null;
   parUnit?: string | null;
+  shelfLifeDays?: number | null;
 }
 
 function addIngredient(ctx: Ctx, options: IngredientOptions): string {
@@ -55,9 +54,9 @@ function addIngredient(ctx: Ctx, options: IngredientOptions): string {
       category: options.category ?? "other",
       defaultUnit: options.defaultUnit ?? null,
       defaultLocation: "pantry",
-      isStaple: options.isStaple ?? false,
       parQty: options.parQty ?? null,
       parUnit: options.parUnit ?? null,
+      shelfLifeDays: options.shelfLifeDays ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -312,42 +311,36 @@ describe("generateShoppingList", () => {
     expect(detail.items[0]!.unit).toBe("count");
   });
 
-  it("adds low and out staples as restock items unless disabled", () => {
+  it("lists low or out demand at the full committed amount when stock is unmeasured", () => {
     const { ctx } = makeTestCtx();
-    const planId = addPlan(ctx, "2026-11-02");
-    const rice = addIngredient(ctx, {
-      name: "Rice",
-      category: "pantry",
-      defaultUnit: "lb",
-      isStaple: true,
-      parQty: 3,
-      parUnit: "lb",
+    const { ingredientId, planId } = plannedNeed(ctx, {
+      ingredient: { name: "Rice", category: "pantry", defaultUnit: "lb" },
+      recipeTitle: "Chili",
+      qty: 2,
+      unit: "lb",
     });
-    addPantryItem(ctx, { ingredientId: rice, qty: 1, unit: "lb", status: "low" });
-    const oil = addIngredient(ctx, {
-      name: "Olive oil",
-      category: "pantry",
-      defaultUnit: "bottle",
-      isStaple: true,
-    });
-    addPantryItem(ctx, { ingredientId: oil, qty: 0, unit: "bottle", status: "out" });
+    addPantryItem(ctx, { ingredientId, qty: null, unit: null, status: "low" });
 
     const detail = generateShoppingList(ctx, { mealPlanId: planId });
-    expect(detail.items).toHaveLength(2);
+    expect(detail.items).toHaveLength(1);
+    expect(detail.items[0]!.qty).toBe(2);
+    expect(detail.items[0]!.needsCheck).toBe(false);
+    expect(detail.items[0]!.purposeNote).toBe("Chili 2 lb; running low");
+  });
 
-    const riceItem = detail.items.find((item) => item.ingredientId === rice)!;
-    expect(riceItem.qty).toBe(2);
-    expect(riceItem.unit).toBe("lb");
-    expect(riceItem.purposeNote).toBe("staple restock");
-    expect(riceItem.needsCheck).toBe(false);
+  it("nets known low stock against demand", () => {
+    const { ctx } = makeTestCtx();
+    const { ingredientId, planId } = plannedNeed(ctx, {
+      ingredient: { name: "Rice", category: "pantry", defaultUnit: "lb" },
+      qty: 2,
+      unit: "lb",
+    });
+    addPantryItem(ctx, { ingredientId, qty: 1, unit: "lb", status: "low" });
 
-    const oilItem = detail.items.find((item) => item.ingredientId === oil)!;
-    expect(oilItem.qty).toBeNull();
-    expect(oilItem.unit).toBe("bottle");
-    expect(oilItem.purposeNote).toBe("staple restock");
-
-    const withoutStaples = generateShoppingList(ctx, { mealPlanId: planId, includeStaples: false });
-    expect(withoutStaples.items).toEqual([]);
+    const detail = generateShoppingList(ctx, { mealPlanId: planId });
+    expect(detail.items).toHaveLength(1);
+    expect(detail.items[0]!.qty).toBe(1);
+    expect(detail.items[0]!.needsCheck).toBe(false);
   });
 
   it("regenerates without duplicating manual or checked ingredients", () => {
@@ -466,30 +459,8 @@ describe("shopping list CRUD", () => {
   });
 });
 
-describe("clearItems", () => {
-  it("removes generated, manual and checked items but keeps the list", () => {
-    const { ctx } = makeTestCtx();
-    const { ingredientId, planId } = plannedNeed(ctx, {
-      ingredient: { name: "Ground beef", category: "protein", defaultUnit: "lb" },
-      qty: 2,
-      unit: "lb",
-    });
-    const generated = generateShoppingList(ctx, { mealPlanId: planId });
-    const listId = generated.list.id;
-    addItems(ctx, listId, [{ name: "Birthday candles", qty: 1, unit: "package" }]);
-    const beefItem = generated.items.find((item) => item.ingredientId === ingredientId)!;
-    checkItems(ctx, listId, [{ itemId: beefItem.id, checked: true }]);
-
-    const cleared = clearItems(ctx, listId);
-
-    expect(cleared.items).toEqual([]);
-    expect(cleared.groups).toEqual([]);
-    expect(cleared.counts).toEqual({ total: 0, checked: 0, remaining: 0, needsCheck: 0 });
-    expect(cleared.list.id).toBe(listId);
-    expect(getShoppingList(ctx, listId).items).toEqual([]);
-  });
-
-  it("keeps the stale flag honest and lets a later regenerate repopulate", () => {
+describe("list staleness", () => {
+  it("keeps the stale flag honest and lets a later regenerate clear it", () => {
     const { ctx } = makeTestCtx();
     const beef = addIngredient(ctx, { name: "Ground beef", category: "protein", defaultUnit: "lb" });
     const recipeId = addRecipe(ctx, { title: "Chili", servings: 4 });
@@ -503,48 +474,25 @@ describe("clearItems", () => {
     addCookEvent(ctx, { mealPlanId: planId, recipeId, cookDate: "2026-11-03", plannedServings: 4 });
     expect(getShoppingList(ctx, list.list.id).list.stale).toBe(true);
 
-    clearItems(ctx, list.list.id);
-    // Clearing says nothing about the plan, so the banner still tells the truth.
-    expect(getShoppingList(ctx, list.list.id).list.stale).toBe(true);
-
     const regenerated = generateShoppingList(ctx, { mealPlanId: planId, listId: list.list.id });
     expect(regenerated.items).toHaveLength(1);
     expect(regenerated.list.stale).toBe(false);
     expect(getShoppingList(ctx, list.list.id).list.stale).toBe(false);
   });
 
-  it("refuses to clear a completed list", () => {
+  it("surfaces low and out pantry items that are not on the list", () => {
     const { ctx } = makeTestCtx();
-    const created = createShoppingList(ctx, {
-      title: "Done list",
-      items: [{ name: "Birthday candles" }],
-    });
-    completeShoppingList(ctx, created.list.id);
-    expectAppError(() => clearItems(ctx, created.list.id), "conflict");
-    expect(getShoppingList(ctx, created.list.id).items).toHaveLength(1);
-  });
+    const rice = addIngredient(ctx, { name: "Rice", category: "pantry" });
+    const oil = addIngredient(ctx, { name: "Olive oil", category: "pantry" });
+    const milk = addIngredient(ctx, { name: "Milk", category: "dairy" });
+    addPantryItem(ctx, { ingredientId: rice, qty: 0, unit: "cup", status: "out" });
+    addPantryItem(ctx, { ingredientId: oil, qty: 1, unit: "bottle", status: "low" });
+    addPantryItem(ctx, { ingredientId: milk, qty: 2, unit: "l", status: "on_hand" });
 
-  it("clears through DELETE /shopping-lists/:id/items", async () => {
-    const { ctx, request } = makeTestApp();
-    const created = await request<{ list: { id: string } }>(
-      "POST",
-      "/api/v1/shopping-lists",
-      { title: "Market", items: [{ name: "Candles" }, { name: "Milk" }] },
-    );
-    expect(created.status).toBe(201);
-    const listId = created.body.list.id;
-
-    const cleared = await request<{ items: unknown[]; counts: { total: number } }>(
-      "DELETE",
-      `/api/v1/shopping-lists/${listId}/items`,
-    );
-    expect(cleared.status).toBe(200);
-    expect(cleared.body.items).toEqual([]);
-    expect(cleared.body.counts.total).toBe(0);
-    expect(getShoppingList(ctx, listId).items).toEqual([]);
-
-    const missing = await request("DELETE", "/api/v1/shopping-lists/sl_missing/items");
-    expect(missing.status).toBe(404);
+    const list = createShoppingList(ctx, { items: [{ ingredient: "Rice" }] });
+    expect(list.runningLow).toEqual([
+      { ingredientId: oil, name: "Olive oil", category: "pantry", status: "low" },
+    ]);
   });
 });
 
@@ -607,6 +555,29 @@ describe("completeShoppingList", () => {
 
     expectAppError(() => completeShoppingList(ctx, listId), "conflict");
     expectAppError(() => updateShoppingList(ctx, listId, { title: "Nope" }), "conflict");
+  });
+
+  it("dates received ingredients from their shelf life", () => {
+    const { ctx } = makeTestCtx();
+    const yogurt = addIngredient(ctx, { name: "Yogurt", defaultUnit: "g", shelfLifeDays: 10 });
+    const pasta = addIngredient(ctx, { name: "Pasta", defaultUnit: "g" });
+    const detail = createShoppingList(ctx, {
+      items: [
+        { ingredient: "Yogurt", qty: 500, unit: "g" },
+        { ingredient: "Pasta", qty: 500, unit: "g" },
+      ],
+    });
+    checkItems(ctx, detail.list.id, [
+      { itemId: detail.items[0]!.id, checked: true },
+      { itemId: detail.items[1]!.id, checked: true },
+    ]);
+
+    completeShoppingList(ctx, detail.list.id);
+
+    expect(pantryRow(ctx, yogurt)?.purchasedOn).toBe("2026-11-01");
+    expect(pantryRow(ctx, yogurt)?.expiresOn).toBe("2026-11-11");
+    expect(pantryRow(ctx, pasta)?.purchasedOn).toBe("2026-11-01");
+    expect(pantryRow(ctx, pasta)?.expiresOn).toBeNull();
   });
 
   it("stocks checked items for ingredients that have no pantry row yet", () => {

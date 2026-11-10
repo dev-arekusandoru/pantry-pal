@@ -337,10 +337,15 @@ export function computeDemand(ctx: Ctx, input: DemandInput = {}): DemandLine[] {
 }
 
 function onHandStatusFor(onHand: number | null, rows: PantryRow[]): PantryStatus {
-  if (onHand === null) return "unknown";
-  if (onHand <= 0) return "out";
+  if (onHand !== null) {
+    if (onHand <= 0) return "out";
+    if (rows.some((row) => row.status === "low")) return "low";
+    return "on_hand";
+  }
+  // Unmeasured stock keeps a status someone set by hand.
+  if (rows.length > 0 && rows.every((row) => row.status === "out")) return "out";
   if (rows.some((row) => row.status === "low")) return "low";
-  return "on_hand";
+  return "unknown";
 }
 
 /**

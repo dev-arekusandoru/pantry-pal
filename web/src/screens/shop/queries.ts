@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { ApiError, client, qk, unwrap } from "@/api";
-import { cleared, setChecked, type ShoppingDetail } from "./cart";
+import { setChecked, type ShoppingDetail } from "./cart";
 
 const keys = {
   /** This week's plan as the shop screen needs it: id only, null when there is none. */
@@ -25,7 +25,7 @@ export function useCurrentPlanId() {
   });
 }
 
-/** Every list, newest first; the screen filters to open ones. */
+/** Every list, newest first. */
 export function useShoppingLists() {
   return useQuery({
     queryKey: keys.lists,
@@ -75,28 +75,6 @@ export function useCheckItem(listId: string) {
   });
 }
 
-/** Optimistic clear: empties the detail at once, rolls back on failure, refetches when it lands. */
-export function useClearList(listId: string) {
-  const qc = useQueryClient();
-  const detailKey = keys.detail(listId);
-  return useMutation({
-    mutationKey: ["shop-clear", listId] as const,
-    mutationFn: () =>
-      unwrap(client.DELETE("/shopping-lists/{id}/items", { params: { path: { id: listId } } })),
-    onMutate: async () => {
-      await qc.cancelQueries({ queryKey: detailKey });
-      const previous = qc.getQueryData<ShoppingDetail>(detailKey);
-      qc.setQueryData<ShoppingDetail>(detailKey, (d) => d && cleared(d));
-      return { previous };
-    },
-    onError: (_error, _vars, context) => {
-      if (context?.previous) qc.setQueryData(detailKey, context.previous);
-    },
-    onSuccess: (detail) => qc.setQueryData(detailKey, detail),
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
-  });
-}
-
 export function useAddItem(listId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -136,6 +114,31 @@ export function useCreateList() {
   return useMutation({
     mutationFn: () => unwrap(client.POST("/shopping-lists", { body: { title: "Shopping list" } })),
     onSuccess: (detail) => refreshAfterGenerate(qc, detail),
+  });
+}
+
+/** Delete a list and its items. Stock already recorded by a completed trip stays. */
+export function useDeleteList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      unwrap(client.DELETE("/shopping-lists/{id}", { params: { path: { id } } })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
+  });
+}
+
+/** Move a low/out pantry ingredient onto the list as a normal item. */
+export function usePromoteItem(listId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ingredientId: string) =>
+      unwrap(
+        client.POST("/shopping-lists/{id}/items", {
+          params: { path: { id: listId } },
+          body: { items: [{ ingredientId }] },
+        }),
+      ),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
   });
 }
 

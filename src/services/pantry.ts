@@ -23,7 +23,12 @@ export type StockMovement = typeof stockMovements.$inferSelect;
 
 /** Pantry row plus the ingredient it belongs to. */
 export interface PantryItemView extends PantryItem {
-  ingredient: { id: string; name: string; category: IngredientCategory };
+  ingredient: {
+    id: string;
+    name: string;
+    category: IngredientCategory;
+    shelfLifeDays: number | null;
+  };
 }
 
 export interface MovementResult {
@@ -86,7 +91,12 @@ function requirePantryItem(ctx: Ctx, id: string): PantryItem {
 
 function pantryItemView(ctx: Ctx, item: PantryItem): PantryItemView {
   const ingredient = ctx.db
-    .select({ id: ingredients.id, name: ingredients.name, category: ingredients.category })
+    .select({
+      id: ingredients.id,
+      name: ingredients.name,
+      category: ingredients.category,
+      shelfLifeDays: ingredients.shelfLifeDays,
+    })
     .from(ingredients)
     .where(
       and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.id, item.ingredientId)),
@@ -262,11 +272,15 @@ export function applyMovement(ctx: Ctx, input: ApplyMovementInput): MovementResu
 /** All stock rows for an ingredient, across locations. */
 export function getStockForIngredient(ctx: Ctx, ingredientId: string): PantryItemView[] {
   const rows = ctx.db
-    .select({ item: pantryItems, ingredient: {
-      id: ingredients.id,
-      name: ingredients.name,
-      category: ingredients.category,
-    } })
+    .select({
+      item: pantryItems,
+      ingredient: {
+        id: ingredients.id,
+        name: ingredients.name,
+        category: ingredients.category,
+        shelfLifeDays: ingredients.shelfLifeDays,
+      },
+    })
     .from(pantryItems)
     .innerJoin(ingredients, eq(ingredients.id, pantryItems.ingredientId))
     .where(
@@ -497,6 +511,7 @@ export function listPantry(ctx: Ctx, options: ListPantryOptions = {}): PantryIte
         id: ingredients.id,
         name: ingredients.name,
         category: ingredients.category,
+        shelfLifeDays: ingredients.shelfLifeDays,
       },
     })
     .from(pantryItems)

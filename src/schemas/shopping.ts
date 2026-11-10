@@ -196,7 +196,7 @@ export const shoppingItemSchema = z
     purposeNote: z
       .string()
       .nullable()
-      .describe('Why it is on the list (planned cooks or "staple restock").'),
+      .describe("Why it is on the list (planned cooks, a manual add, or running low)."),
     needsCheck: z
       .boolean()
       .describe("Pantry stock unknown or units incomparable: check before buying."),
@@ -224,6 +224,16 @@ export const shoppingListDetailSchema = z
       remaining: z.number().int(),
       needsCheck: z.number().int(),
     }),
+    runningLow: z
+      .array(
+        z.object({
+          ingredientId: id(),
+          name: z.string(),
+          category: ingredientCategorySchema,
+          status: z.enum(["low", "out"]),
+        }),
+      )
+      .describe("Low or out pantry ingredients that are not on this list."),
   })
   .openapi("ShoppingListDetail");
 
@@ -277,10 +287,6 @@ export const generateShoppingListInputSchema = z
       .optional()
       .describe("Regenerate into this existing draft/shopping list."),
     title: z.string().optional(),
-    includeStaples: z
-      .boolean()
-      .optional()
-      .describe('Add low/out staples as "staple restock" items (default true).'),
   })
   .openapi("GenerateShoppingListInput");
 

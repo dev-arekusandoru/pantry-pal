@@ -5,16 +5,18 @@ import {
   cookEvents,
   ingredients,
   mealPlans,
+  pantryItems,
   shoppingListItems,
   shoppingLists,
   stockMovements,
   type IngredientCategory,
+  type PantryStatus,
   type ShoppingListStatus,
   type StorageLocation,
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
-import { nowIso } from "../lib/time.js";
+import { addDays, nowIso, todayIn } from "../lib/time.js";
 import {
   availabilityFor,
   categoryRank,
@@ -61,6 +63,15 @@ export interface ShoppingListDetail {
   groups: ShoppingListGroup[];
   /** Counts always cover every item on the list. */
   counts: ShoppingListCounts;
+  /** Low or out pantry ingredients that are not on this list. */
+  runningLow: RunningLowItem[];
+}
+
+export interface RunningLowItem {
+  ingredientId: string;
+  name: string;
+  category: IngredientCategory;
+  status: "low" | "out";
 }
 
 /** Units that are bought as whole things; needs are rounded up to an integer. */
@@ -277,6 +288,41 @@ export function planHasStaleShoppingList(ctx: Ctx, planId: string): boolean {
   return rows.some((row) => toListView(ctx, row, cache).stale);
 }
 
+function runningLowFor(ctx: Ctx, items: ShoppingListItem[]): RunningLowItem[] {
+  const onList = new Set(items.flatMap((item) => (item.ingredientId === null ? [] : [item.ingredientId])));
+  const rows = ctx.db
+    .select({
+      ingredientId: pantryItems.ingredientId,
+      status: pantryItems.status,
+      name: ingredients.name,
+      category: ingredients.category,
+    })
+    .from(pantryItems)
+    .innerJoin(ingredients, eq(ingredients.id, pantryItems.ingredientId))
+    .where(eq(pantryItems.householdId, ctx.householdId))
+    .all();
+
+  const grouped = new Map<string, { name: string; category: IngredientCategory; statuses: PantryStatus[] }>();
+  for (const row of rows) {
+    const entry = grouped.get(row.ingredientId);
+    if (entry) entry.statuses.push(row.status);
+    else grouped.set(row.ingredientId, { name: row.name, category: row.category, statuses: [row.status] });
+  }
+
+  const low: RunningLowItem[] = [];
+  for (const [ingredientId, entry] of grouped) {
+    if (onList.has(ingredientId)) continue;
+    if (!entry.statuses.every((status) => status === "low" || status === "out")) continue;
+    low.push({
+      ingredientId,
+      name: entry.name,
+      category: entry.category,
+      status: entry.statuses.every((status) => status === "out") ? "out" : "low",
+    });
+  }
+  return low.sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || a.name.localeCompare(b.name));
+}
+
 function buildDetail(ctx: Ctx, listId: string, includeChecked: boolean): ShoppingListDetail {
   const list = toListView(ctx, loadList(ctx, listId));
   const all = listItems(ctx, listId);
@@ -300,7 +346,7 @@ function buildDetail(ctx: Ctx, listId: string, includeChecked: boolean): Shoppin
     needsCheck: all.filter((item) => item.needsCheck).length,
   };
 
-  return { list, items, groups, counts };
+  return { list, items, groups, counts, runningLow: runningLowFor(ctx, all) };
 }
 
 /** Renumber positions so items read in aisle → name order. */
@@ -673,37 +719,6 @@ export function deleteItem(
   return { deleted: true, id: itemId };
 }
 
-/**
- * Remove every item from an open list — generated or manual, checked or not.
- * The list itself survives with its plan binding and fingerprint untouched, so
- * the `stale` flag keeps telling the truth (a later regenerate repopulates it
- * from current demand either way). Nothing is written to stock.
- */
-export function clearItems(ctx: Ctx, listId: string): ShoppingListDetail {
-  const list = loadList(ctx, listId);
-  assertMutable(list);
-
-  ctx.db.transaction((tx) => {
-    const scoped = txCtx(ctx, tx);
-    scoped.db
-      .delete(shoppingListItems)
-      .where(
-        and(
-          eq(shoppingListItems.householdId, ctx.householdId),
-          eq(shoppingListItems.shoppingListId, listId),
-        ),
-      )
-      .run();
-    scoped.db
-      .update(shoppingLists)
-      .set({ updatedAt: nowIso(scoped) })
-      .where(eq(shoppingLists.id, listId))
-      .run();
-  });
-
-  return getShoppingList(ctx, listId);
-}
-
 export interface CheckItemInput {
   itemId: string;
   checked: boolean;
@@ -905,6 +920,25 @@ export function completeShoppingList(
           warnings.push(`${item.name}: ${movement.warning}`);
         }
 
+        // A purchase sets the dates: bought today, best before today + shelf life.
+        const shelfLife = scoped.db
+          .select({ shelfLifeDays: ingredients.shelfLifeDays })
+          .from(ingredients)
+          .where(eq(ingredients.id, targetIngredientId))
+          .get()?.shelfLifeDays;
+        const today = todayIn(scoped);
+        scoped.db
+          .update(pantryItems)
+          .set({
+            purchasedOn: today,
+            ...(shelfLife === null || shelfLife === undefined
+              ? {}
+              : { expiresOn: addDays(today, shelfLife) }),
+            updatedAt: timestamp,
+          })
+          .where(eq(pantryItems.id, movement.item.id))
+          .run();
+
         const patch: Partial<typeof shoppingListItems.$inferInsert> = {
           checkedAt: item.checkedAt ?? timestamp,
         };
@@ -943,65 +977,6 @@ interface ShoppingCandidate {
   needsCheck: boolean;
 }
 
-function stapleCandidate(
-  ctx: Ctx,
-  ingredient: Ingredient,
-  line: AvailabilityLine,
-): ShoppingCandidate | null {
-  const parQty = ingredient.parQty;
-  const parUnit = normalizeUnitLoose(ingredient.parUnit);
-  const baseUnit = parUnit ?? line.unit;
-
-  if (parQty === null) {
-    return {
-      ingredientId: ingredient.id,
-      name: ingredient.name,
-      category: ingredient.category,
-      qty: null,
-      unit: baseUnit,
-      purposeNote: "staple restock",
-      needsCheck: false,
-    };
-  }
-
-  if (line.onHand === null) {
-    return {
-      ingredientId: ingredient.id,
-      name: ingredient.name,
-      category: ingredient.category,
-      qty: roundQty(parQty),
-      unit: baseUnit,
-      purposeNote: "staple restock",
-      needsCheck: false,
-    };
-  }
-
-  const onHandInPar = convert(ctx, line.onHand, line.unit, baseUnit, ingredient.id);
-  if (onHandInPar === null) {
-    return {
-      ingredientId: ingredient.id,
-      name: ingredient.name,
-      category: ingredient.category,
-      qty: roundQty(parQty),
-      unit: baseUnit,
-      purposeNote: "staple restock",
-      needsCheck: true,
-    };
-  }
-
-  const need = parQty - onHandInPar;
-  if (need <= 0) return null;
-  return {
-    ingredientId: ingredient.id,
-    name: ingredient.name,
-    category: ingredient.category,
-    qty: roundNeed(need, baseUnit),
-    unit: baseUnit,
-    purposeNote: "staple restock",
-    needsCheck: false,
-  };
-}
-
 function mergeNote(existing: string | null, addition: string | null): string | null {
   if (addition === null) return existing;
   if (existing === null || existing === "") return addition;
@@ -1014,8 +989,6 @@ export interface GenerateShoppingListInput {
   /** Regenerate into an existing draft/shopping list instead of creating one. */
   listId?: string;
   title?: string;
-  /** Add low/out staples with a "staple restock" note (default true). */
-  includeStaples?: boolean;
 }
 
 /**
@@ -1030,7 +1003,6 @@ export function generateShoppingList(
     throw new AppError("validation", "mealPlanId is required");
   }
   const plan = loadPlan(ctx, input.mealPlanId);
-  const includeStaples = input.includeStaples ?? true;
 
   const fingerprint = planFingerprint(ctx, plan.id);
   const demand = computeDemand(ctx, { mealPlanId: plan.id });
@@ -1067,6 +1039,21 @@ export function generateShoppingList(
     const note = purposeNoteFor(demandLine.uses);
 
     if (line.onHand === null) {
+      // Low or out with an unmeasured amount: buy the full committed amount.
+      const lowOrOut = line.onHandStatus === "low" || line.onHandStatus === "out";
+      if (lowOrOut && line.committed !== null && !hasUnconvertible) {
+        candidates.push({
+          ingredientId: ingredient.id,
+          name: ingredient.name,
+          category: ingredient.category,
+          qty: roundNeed(line.committed, line.unit),
+          unit: line.unit,
+          purposeNote: mergeNote(note, "running low"),
+          needsCheck: false,
+        });
+        candidateIds.add(ingredient.id);
+        continue;
+      }
       // Stock present but amount unknown → check the pantry, don't trust the number.
       if (line.committed === null && !hasUnconvertible) continue;
       candidates.push({
@@ -1125,20 +1112,6 @@ export function generateShoppingList(
         needsCheck: false,
       });
       candidateIds.add(ingredient.id);
-    }
-  }
-
-  if (includeStaples) {
-    for (const line of availability) {
-      if (candidateIds.has(line.ingredientId)) continue;
-      if (line.onHandStatus !== "low" && line.onHandStatus !== "out") continue;
-      const ingredient = ingredientById.get(line.ingredientId);
-      if (!ingredient || !ingredient.isStaple) continue;
-      const candidate = stapleCandidate(ctx, ingredient, line);
-      if (candidate !== null) {
-        candidates.push(candidate);
-        candidateIds.add(ingredient.id);
-      }
     }
   }
 

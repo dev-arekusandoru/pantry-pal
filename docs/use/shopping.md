@@ -8,22 +8,32 @@ record what you bought.
 
 ## Get a list
 
-The app opens the current week's open plan list when one exists. Otherwise it
-opens another open list, or offers:
+The app opens the current week's plan list when one exists. If the week has a
+plan but no list, it offers **Make the shopping list**. It does not show an older
+week's list.
 
-- **Make the shopping list** when the week has a plan.
-- **Start a blank list** when there is no plan.
+When there is no plan, the app opens the newest open list, or offers **Start a
+blank list**.
 
-Use **Switch list** to move between open lists. Finished lists do not appear in
-the picker.
+Tap **All lists** to open any open or done list, start a new list, or delete one.
 
-A plan list is built from planned meals minus stock on hand. Low or out items
-marked as staples are added as **staple restock**. An item whose amount is
-unknown, or whose units do not convert, gets a **check the pantry** note instead
-of a guessed amount.
+A plan list is built from planned meals minus stock on hand. Stock that is known
+and covers a need is left off. An item whose amount is unknown, or whose units do
+not convert, gets a **check the pantry** note instead of a guessed amount. If the
+pantry marks the item as **Running low** or **Out** and the amount is unknown,
+the list gets the full committed amount.
 
 A blank list is not linked to a plan. It has no update banner and no regenerate
 control.
+
+## Running low
+
+Under the aisles, a **Running low** section lists pantry ingredients marked
+**Running low** or **Out** that are not already on the list. The app reads the
+pantry each time you open the list, so a change there shows at once.
+
+Tap **Add** on a row to put it on the main list. The row becomes a normal item
+you can check off.
 
 ## Shop
 
@@ -44,12 +54,11 @@ If the plan changes what must be bought, a banner says **Your plan changed.**
 **Update the list to match.** Tap **Update the list**. The app replaces generated
 items that are not checked yet. Items you added and items already checked stay.
 
-### Clear the list
+### Delete the list
 
-**Clear list** removes every item, checked or not, from the plan or added by
-hand. It does not change the pantry. Confirm with **Clear list**; **Keep the
-list** cancels. Add items again by hand, or ask the assistant to regenerate the
-list.
+**Delete list** removes the list and every item on it, checked or not. Purchases
+already added to the pantry stay. Confirm with **Delete list**; **Keep the list**
+cancels. You can also delete a list with **All lists**.
 
 ## Finish the trip
 
@@ -58,8 +67,10 @@ actually got. Edit a quantity if it differs from the plan. An item that is not
 tracked in the pantry shows **Skipped**.
 
 **Add to pantry** is disabled until at least one item is checked. Checked items
-become pantry purchase movements, and the list closes as done. The result screen
-says **Shopping done!** and links to **See the pantry**.
+become pantry purchase movements, and the list closes as done. Each received
+ingredient gets today's date as its purchase date. If the ingredient has a shelf
+life, the app also sets its expiry date. The result screen says **Shopping
+done!** and links to **See the pantry**.
 
 Items left unchecked stay on the finished list and do not carry over to the next
 one. The app has no undo for finishing a list. If an amount is wrong, correct it
@@ -69,7 +80,6 @@ on the [Pantry](pantry.md) tab.
 
 The app covers the normal trip. These tasks are API or MCP only:
 
-- Choose whether list generation includes staples: `shopping_generate`.
 - Substitute an ingredient, edit an item, or check items with actual amounts:
   `shopping_update`.
 - Complete a list with received quantities, or without writing stock:

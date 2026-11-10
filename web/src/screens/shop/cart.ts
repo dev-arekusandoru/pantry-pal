@@ -17,26 +17,24 @@ export function setChecked(detail: ShoppingDetail, itemId: string, checkedAt: st
   };
 }
 
-/** `detail` with every item removed: counts zeroed, groups empty, the list itself untouched. */
-export function cleared(detail: ShoppingDetail): ShoppingDetail {
-  return {
-    ...detail,
-    items: [],
-    groups: [],
-    counts: { total: 0, checked: 0, remaining: 0, needsCheck: 0 },
-  };
-}
-
 /** Still-to-get items first, then the ones in the cart; server order kept within each. */
 export function uncheckedFirst(items: readonly ShoppingItem[]): ShoppingItem[] {
   return [...items.filter((i) => i.checkedAt === null), ...items.filter((i) => i.checkedAt !== null)];
 }
 
-/** The list to show when the URL doesn't name one: this week's plan list, else the newest open list. */
+/**
+ * The list to show when the URL doesn't name one: this week's plan list, else
+ * (without a plan) the newest open list. A plan never falls back to another
+ * week's list; the screen offers to generate one instead.
+ */
 export function pickDefaultList(lists: readonly ShoppingList[], planId: string | null): ShoppingList | undefined {
-  const open = lists.filter((l) => l.status !== "done");
-  const forPlan = planId === null ? [] : open.filter((l) => l.mealPlanId === planId);
-  return forPlan.find((l) => l.status === "shopping") ?? forPlan[0] ?? open[0];
+  if (planId === null) return lists.find((l) => l.status !== "done");
+  const forPlan = lists.filter((l) => l.mealPlanId === planId);
+  return (
+    forPlan.find((l) => l.status === "shopping") ??
+    forPlan.find((l) => l.status === "draft") ??
+    forPlan.find((l) => l.status === "done")
+  );
 }
 
 const AISLE_LABELS: Record<string, string> = {

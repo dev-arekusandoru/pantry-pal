@@ -63,7 +63,6 @@
   background: var(--ink);
   color: var(--bg);
   box-shadow: none;
-  transform: rotate(-2deg) scale(1.04);
 }
 
 /* ---------- shelves ---------- */
@@ -160,6 +159,26 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.expiry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.expiryText {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.addToList {
+  flex: none;
 }
 
 .statusBtn {

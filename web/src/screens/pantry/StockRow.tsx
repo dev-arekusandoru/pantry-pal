@@ -1,8 +1,8 @@
 import { DropdownMenu } from "radix-ui";
-import { Icon, Pill, Stepper, Sticker, ingredientEmoji, type PillTone } from "@/ui";
+import { Icon, IconButton, Pill, Stepper, Sticker, ingredientEmoji, type PillTone } from "@/ui";
 import { formatQty, unitLabel } from "../shop/format";
 import styles from "./Pantry.module.css";
-import { STATUS_LABEL, type PantryItem, type PantryStatus } from "./stock";
+import { STATUS_LABEL, expiryState, type PantryItem, type PantryStatus } from "./stock";
 
 const STATUS_TONE: Record<PantryStatus, PillTone> = {
   on_hand: "pistachio",
@@ -19,19 +19,37 @@ export interface StockRowProps {
   onStep: (item: PantryItem, direction: 1 | -1) => void;
   onEditQty: (item: PantryItem) => void;
   onSetStatus: (item: PantryItem, status: PantryStatus) => void;
+  onAddToList: (item: PantryItem) => void;
 }
 
-export function StockRow({ item, onStep, onEditQty, onSetStatus }: StockRowProps) {
+export function StockRow({ item, onStep, onEditQty, onSetStatus, onAddToList }: StockRowProps) {
   const name = item.ingredient.name;
   const measured = item.qty !== null;
   const note = measured ? (item.status === "on_hand" ? null : STATUS_LABEL[item.status]) : item.note;
+  const expiry = expiryState(item.expiresOn);
   return (
     <li className={styles.row}>
       <Sticker emoji={ingredientEmoji(name)} tone="plain" size={46} />
       <button type="button" className={styles.body} onClick={() => onEditQty(item)}>
         <span className={styles.name}>{name}</span>
         {note && <span className={styles.note}>{note}</span>}
+        {item.expiresOn !== null && (
+          <span className={styles.expiry}>
+            <span className={styles.expiryText}>
+              Best before {new Date(`${item.expiresOn}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+            {expiry !== null && <Pill tone={expiry === "expired" ? "tomato" : "butter"}>{expiry === "expired" ? "Expired" : "Expiring soon"}</Pill>}
+          </span>
+        )}
       </button>
+      {expiry !== null && (
+        <IconButton
+          className={styles.addToList}
+          label={`Add ${name} to the list`}
+          icon={<Icon name="list" />}
+          onClick={() => onAddToList(item)}
+        />
+      )}
       {item.qty !== null ? (
         <Stepper
           label={name}
