@@ -2,7 +2,11 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import styles from "./Button.module.css";
 import { cx } from "./cx";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost";
+/**
+ * `primary` is the one affirmative action of a view. `danger` (solid) confirms a
+ * destructive action; `dangerGhost` (tomato outline) triggers one.
+ */
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "dangerGhost";
 export type ButtonSize = "md" | "lg";
 
 /** Class names for a button look, for styling links: `<Link className={buttonClass({ variant: "primary" })}>`. */

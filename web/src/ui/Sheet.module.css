@@ -79,23 +79,37 @@
 .footer {
   padding: 12px 0 calc(16px + var(--safe-bottom));
   display: flex;
+  align-items: center;
   gap: 10px;
-  justify-content: center;
+  /* Secondary first, primary last, hard to the trailing edge. */
+  justify-content: flex-end;
+}
+
+.footer > * {
+  min-width: 0;
+}
+
+/* Phones: a two-button footer spans the sheet instead of floating mid-panel. */
+@media (max-width: 399px) {
+  .footer > * {
+    flex: 1 1 0;
+  }
 }
 
 .panel:not(:has(.footer)) .body {
   padding-bottom: calc(24px + var(--safe-bottom));
 }
 
+/* Wide screens: no full-width bottom slab; a 560px dialog in the middle. */
 @media (min-width: 700px) {
-  .viewport.center {
+  .viewport {
     align-items: center;
     animation-name: dialog-in;
   }
-  .viewport.center[data-state="closed"] {
+  .viewport[data-state="closed"] {
     animation-name: dialog-out;
   }
-  .panel.center {
+  .panel {
     max-width: 560px;
     border-radius: var(--r-xl);
     padding-bottom: 6px;

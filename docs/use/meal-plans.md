@@ -21,8 +21,9 @@ Each day lists its meals:
 - Today carries a **Today** flag.
 
 On the current week, **Dinner tonight** appears above the days. Tap the card to
-open the recipe. Its buttons depend on the meal: **Start cooking**, **Swap**, and
-**Undo** for a finished meal.
+open the recipe. **Start cooking** shows when the meal is still planned. **Undo**
+shows for a finished meal. The swap button sits next to **Dinner tonight** at the
+top of the card.
 
 The next prep task also appears, with its due date and **Done**. It picks the
 soonest task due today or later, then the most recently overdue one. The app
@@ -30,7 +31,8 @@ cannot add or edit prep tasks.
 
 ## Change one meal
 
-Tap the swap button on a meal, or **Plan something** on an empty one. The sheet
+Tap the swap button on a meal, or **Plan something** on an empty one. A meal
+without a recipe opens the sheet when you tap the row. The sheet
 lists recipes for that meal type. Use the search field to narrow the list. Each
 choice shows its time and how much the pantry covers:
 

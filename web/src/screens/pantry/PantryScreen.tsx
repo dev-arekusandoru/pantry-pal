@@ -1,8 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { errorMessage } from "@/api";
-import { Button, Card, EmptyState, ErrorState, Fab, Icon, PageHeader, SearchInput, Skeleton, cx, toast } from "@/ui";
+import { Button, Card, EmptyState, ErrorState, Icon, PageHeader, SearchInput, SegmentedControl, Skeleton, cx, toast } from "@/ui";
 import { AddSheet } from "./AddSheet";
-import { ChoiceChips } from "./ChoiceChips";
 import styles from "./Pantry.module.css";
 import { useAddToList, useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetExpiry, useSetQty, useSetCategory, useSetShelfLife, useSetStatus } from "./queries";
 import { SetQtySheet } from "./SetQtySheet";
@@ -72,6 +71,7 @@ export function PantryScreen() {
         <PageHeader
           title="Pantry"
           sub={items.length === 0 ? "Nothing in the pantry yet" : `${items.length} ${items.length === 1 ? "thing" : "things"} in the pantry`}
+          aside={items.length > 0 ? addButton : undefined}
         />
         {items.length === 0 ? (
           <EmptyState emoji="1FAD9" title="Your pantry is empty" action={addButton}>
@@ -82,7 +82,7 @@ export function PantryScreen() {
             <div className={styles.tools}>
               <SearchInput label="Search the pantry" value={query} onChange={setQuery} />
               {present.length > 1 && (
-                <ChoiceChips<PantryCategory | "all">
+                <SegmentedControl<PantryCategory | "all">
                   label="Filter by category"
                   value={activeCategory}
                   onChange={setCategoryFilter}
@@ -168,7 +168,6 @@ export function PantryScreen() {
         existing={items}
         initialName={query.trim()}
       />
-      <Fab label="Add to the pantry" onClick={() => setAdding(true)} />
     </>
   );
 }

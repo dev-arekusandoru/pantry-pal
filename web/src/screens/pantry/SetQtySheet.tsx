@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
-import { AlertDialog, Label, Select } from "radix-ui";
+import { Label, Select } from "radix-ui";
 import { Button, Icon, Sheet } from "@/ui";
+import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { CATEGORY_ORDER, aisleLabel } from "../aisles";
 import { parseQty, qtyToInput, unitLabel } from "../shop/format";
 import styles from "./Pantry.module.css";
@@ -28,7 +29,14 @@ export function SetQtySheet({ item, onClose, onSave, onRemove }: SetQtySheetProp
       open={item !== null}
       onClose={onClose}
       title={item ? `${item.ingredient.name}: how much?` : "Set amount"}
-      footer={null}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button type="submit" form="pantry-set" variant="primary" disabled={item === null}>
+            Save
+          </Button>
+        </>
+      }
     >
       {item && <Form key={item.id} item={item} onClose={onClose} onSave={onSave} onRemove={onRemove} />}
     </Sheet>
@@ -49,6 +57,7 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
   const [shelfText, setShelfText] = useState(
     item.ingredient.shelfLifeDays === null ? "" : String(item.ingredient.shelfLifeDays),
   );
+  const [confirming, setConfirming] = useState(false);
   const amountId = useId();
   const expiryId = useId();
   const shelfId = useId();
@@ -67,7 +76,7 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
   }
 
   return (
-    <form className={styles.setForm} onSubmit={submit}>
+    <form id="pantry-set" className={styles.setForm} onSubmit={submit}>
       <div className={styles.setField}>
         <Label.Root className="sr-only" htmlFor={amountId}>
           Amount
@@ -136,45 +145,24 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
           onChange={(e) => setShelfText(e.target.value)}
         />
       </div>
-      <div className={styles.setActions}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button type="submit" variant="primary" disabled={qty === null || shelfBad}>
-          Save
+      <div className={styles.removeRow}>
+        <Button variant="dangerGhost" icon={<Icon name="trash" />} onClick={() => setConfirming(true)}>
+          Remove from pantry
         </Button>
       </div>
-      <AlertDialog.Root>
-        <AlertDialog.Trigger asChild>
-          <Button variant="secondary" icon={<Icon name="trash" />} className={styles.removeTrigger}>
-            Remove from pantry
-          </Button>
-        </AlertDialog.Trigger>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className={styles.alertOverlay} />
-          <AlertDialog.Content className={styles.alertContent}>
-            <AlertDialog.Title className={styles.alertTitle}>Remove {name}?</AlertDialog.Title>
-            <AlertDialog.Description className={styles.hint}>
-              {name} leaves the pantry along with its recorded amount. Undo from the toast puts it straight back.
-            </AlertDialog.Description>
-            <div className={styles.setActions}>
-              <AlertDialog.Cancel asChild>
-                <Button>Keep it</Button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <Button
-                  variant="primary"
-                  icon={<Icon name="trash" />}
-                  onClick={() => {
-                    onRemove(item);
-                    onClose();
-                  }}
-                >
-                  Remove
-                </Button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+      <ConfirmDialog
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        title={`Remove ${name}?`}
+        confirmLabel="Remove"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          onRemove(item);
+          onClose();
+        }}
+      >
+        {name} leaves the pantry along with its recorded amount. Undo from the toast puts it straight back.
+      </ConfirmDialog>
     </form>
   );
 }

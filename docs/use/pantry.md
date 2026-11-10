@@ -14,7 +14,8 @@ only when that category has stock.
 
 ## Add stock
 
-Tap the **+** button. If the pantry is empty, tap **Add**. Then fill in:
+Tap **Add** in the header. If the pantry is empty, tap **Add** in the middle of
+the screen. Then fill in:
 
 - **What is it?**
 - **How much? (optional)**

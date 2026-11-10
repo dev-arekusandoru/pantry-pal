@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Button, Icon, Pill, buttonClass, toast } from "@/ui";
+import { Button, Icon, IconButton, Pill, buttonClass, toast } from "@/ui";
 import { useUndoCook } from "../cook/queries";
 import { recipeSlug } from "./DayCard";
 import { weekdayName } from "./dates";
@@ -51,7 +51,18 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
     <section className={styles.tonight} aria-label="Dinner tonight">
       <Plate imageUrl={recipe?.imageUrl} emoji={MEAL_EMOJI.dinner} className={styles.tonightPlate} />
       <div className={styles.tonightBody}>
-        <p className={styles.kicker}>Dinner tonight</p>
+        <div className={styles.tonightTop}>
+          <p className={styles.kicker}>Dinner tonight</p>
+          {canSwap && (
+            <IconButton
+              variant="plain"
+              className={styles.tonightSwap}
+              label={`Swap ${slotName(slot)}`}
+              icon={<Icon name="swap" />}
+              onClick={() => onSwap(target)}
+            />
+          )}
+        </div>
         <h2 className={styles.tonightTitle}>
           <Link
             to="/recipes/$slug"
@@ -107,11 +118,6 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
               <Icon name="flame" />
               Start cooking
             </Link>
-          )}
-          {canSwap && (
-            <Button variant="ghost" icon={<Icon name="swap" />} onClick={() => onSwap(target)} aria-label={`Swap ${slotName(slot)}`}>
-              Swap
-            </Button>
           )}
           {state === "done" && (
             <Button

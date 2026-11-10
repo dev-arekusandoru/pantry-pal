@@ -1,6 +1,6 @@
 import { VisuallyHidden } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, cx, toast } from "@/ui";
+import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, cx } from "@/ui";
 import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
 import { DayCard } from "./DayCard";
 import { addDays, localToday, monthDay, selectedWeekStart, weekRange, weekStartFor } from "./dates";
@@ -69,7 +69,7 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   const title = isCurrentWeek ? "This week" : `Week of ${monthDay(selectedWeek)}`;
   const rangeLabel = weekRange(selectedWeek);
   const navRow = (
-    <span className={styles.weekNav}>
+    <nav className={styles.weekNav} aria-label="Week navigation">
       <IconButton
         className={styles.weekNavBtn}
         variant="plain"
@@ -90,10 +90,16 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
           This week
         </Button>
       )}
-    </span>
+    </nav>
   );
 
-  const header = <PageHeader className={styles.weekHead} title={title} sub={navRow} />;
+  // Own row under the header: at 320px the header's content box cannot hold it.
+  const header = (
+    <>
+      <PageHeader className={styles.weekHead} title={title} />
+      <div className={styles.weekNavRow}>{navRow}</div>
+    </>
+  );
 
   if (plan.isPending) {
     return (
@@ -127,20 +133,8 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
         <>
           {header}
           {selectedWeek > currentWeek ? (
-            <EmptyState
-              emoji="1F5D3"
-              title="Nothing planned for this week yet"
-              action={
-                <Button
-                  variant="primary"
-                  icon={<Icon name="plus" />}
-                  onClick={() => toast.show({ message: "Coming soon — weekly planning is on the way" })}
-                >
-                  Plan this week
-                </Button>
-              }
-            >
-              Plan it here when weekly planning arrives, or ask your AI assistant to plan these days over MCP.
+            <EmptyState emoji="1F5D3" title="Nothing planned for this week yet">
+              Ask your AI assistant to plan these days over MCP. Planning inside the app is coming soon.
             </EmptyState>
           ) : (
             <EmptyState emoji="1F4ED" title="Nothing was planned that week" />

@@ -40,11 +40,24 @@
   transform: scale(0.97);
 }
 
+/* A destructive choice never looks like a neutral filter. */
+.seg.danger {
+  color: var(--tomato-text);
+}
+
+.seg.danger[data-state="on"] {
+  background: var(--tomato-fill);
+  color: var(--on-tomato);
+}
+
 @media (hover: hover) {
   .seg:not([data-state="on"]):not(:disabled):hover:not(:active) {
     background: color-mix(in srgb, var(--ink) 5%, var(--card));
   }
   .seg[data-state="on"]:not(:disabled):hover:not(:active) {
     background: color-mix(in srgb, var(--ink) 90%, var(--bg));
+  }
+  .seg.danger[data-state="on"]:not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--tomato-fill) 88%, #000);
   }
 }

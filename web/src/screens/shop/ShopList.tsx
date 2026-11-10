@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { AlertDialog, Checkbox, Collapsible, Label, Progress } from "radix-ui";
-import { useId, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
-import { Button, Card, Emoji, EmptyState, ErrorState, Fab, Icon, IconButton, PageHeader, Sheet, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
+import { Checkbox, Collapsible, Label, Progress } from "radix-ui";
+import { useId, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { Button, Card, Emoji, EmptyState, ErrorState, Icon, PageHeader, Sheet, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
+import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { aisleLabel } from "../aisles";
 import { uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
 import { DoneSheet } from "./DoneSheet";
@@ -11,15 +12,15 @@ import { useAddItem, useCheckItem, useDeleteList, useGenerateList, usePromoteIte
 
 export interface ShopListProps {
   list: ShoppingList;
-  /** Rendered under the header (the list switcher). */
-  switcher: ReactNode;
+  /** Open the list picker. */
+  onOpenLists: () => void;
   /** Leave a finished list. */
   onClose: () => void;
   /** The trip was completed; keep the list in the URL so the done state stays up. */
   onCompleted: () => void;
 }
 
-export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps) {
+export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListProps) {
   const detail = useShoppingList(list.id);
   const check = useCheckItem(list.id);
   const add = useAddItem(list.id);
@@ -71,13 +72,26 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
   const { counts, groups } = detail.data;
   const current = detail.data.list;
   const pct = counts.total === 0 ? 0 : Math.round((counts.checked / counts.total) * 100);
+  // List management and adding share one toolbar row, so neither floats over the list.
+  const toolbar = (
+    <div className={styles.toolbar}>
+      <Button variant="ghost" icon={<Icon name="list" />} onClick={onOpenLists}>
+        All lists
+      </Button>
+      {current.status !== "done" && counts.total > 0 && (
+        <Button icon={<Icon name="plus" />} onClick={() => setAddOpen(true)}>
+          Add item
+        </Button>
+      )}
+    </div>
+  );
 
   if (current.status === "done") {
     return (
       <>
         <PageHeader title="Shopping" sub={current.title} />
         <div className={sawLoading.current ? styles.enter : undefined}>
-          {switcher}
+          {toolbar}
           <EmptyState
             emoji="1F389"
             title="Shopping done!"
@@ -151,7 +165,7 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         }
       />
       <div className={sawLoading.current ? styles.enter : undefined}>
-        {switcher}
+        {toolbar}
 
         {counts.total > 0 && (
           <Progress.Root className={styles.meter} value={pct} aria-label="Shopping progress">
@@ -172,8 +186,16 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         )}
 
         {counts.total === 0 ? (
-          <EmptyState emoji="1F9FA" title="Nothing on this list" className={styles.screen}>
-            Add what you need with the plus button.
+          <EmptyState
+            emoji="1F9FA"
+            title="Nothing on this list"
+            action={
+              <Button variant="primary" icon={<Icon name="plus" />} onClick={() => setAddOpen(true)}>
+                Add an item
+              </Button>
+            }
+          >
+            Add what you need for this trip.
           </EmptyState>
         ) : (
           <div className={styles.aisles}>
@@ -205,7 +227,7 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         )}
 
         {detail.data.runningLow.length > 0 && (
-          <section className={cx(styles.runningLow, styles.screen)} aria-label="Running low">
+          <section className={styles.runningLow} aria-label="Running low">
             <h2 className={styles.aisleName}>Running low</h2>
             <ul className={styles.items}>
               {detail.data.runningLow.map((row) => (
@@ -227,19 +249,17 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         )}
 
         {counts.total > 0 && (
-          <div className={cx(styles.finish, styles.screen)}>
+          <div className={styles.finish}>
             <Button variant="primary" size="lg" icon={<Icon name="check" />} onClick={() => setDoneOpen(true)}>
               Done shopping
             </Button>
             <p>Checked items go into the pantry.</p>
-            <Button variant="secondary" icon={<Icon name="trash" />} className={styles.clear} onClick={() => setDeleteOpen(true)}>
+            <Button variant="dangerGhost" icon={<Icon name="trash" />} onClick={() => setDeleteOpen(true)}>
               Delete list
             </Button>
           </div>
         )}
       </div>
-
-      <Fab label="Add an item" showLabel onClick={() => setAddOpen(true)} />
 
       <Sheet
         open={addOpen}
@@ -283,43 +303,17 @@ export function ShopList({ list, switcher, onClose, onCompleted }: ShopListProps
         }}
       />
 
-      <AlertDialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className={styles.confirmBackdrop} />
-          <AlertDialog.Content className={styles.confirmPanel}>
-            <header className={styles.confirmHead}>
-              <AlertDialog.Title className={styles.confirmTitle}>Delete this list?</AlertDialog.Title>
-              <AlertDialog.Cancel asChild>
-                <IconButton label="Close" icon={<Icon name="close" />} variant="plain" />
-              </AlertDialog.Cancel>
-            </header>
-            <div className={styles.confirmBody}>
-              <AlertDialog.Description className={styles.sheetNote}>
-                {current.title} and every item on it will be removed. Purchases already added to your pantry stay.
-              </AlertDialog.Description>
-            </div>
-            <div className={styles.confirmFooter}>
-              <AlertDialog.Cancel asChild>
-                <Button>Keep the list</Button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <Button
-                  variant="primary"
-                  icon={<Icon name="trash" />}
-                  loading={remove.isPending}
-                  onClick={(e) => {
-                    // Keep the dialog open while the request is in flight; it closes on success.
-                    e.preventDefault();
-                    confirmDelete();
-                  }}
-                >
-                  Delete list
-                </Button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+      <ConfirmDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete this list?"
+        confirmLabel="Delete list"
+        cancelLabel="Keep the list"
+        pending={remove.isPending}
+        onConfirm={confirmDelete}
+      >
+        {current.title} and every item on it will be removed. Purchases already added to your pantry stay.
+      </ConfirmDialog>
     </>
   );
 }

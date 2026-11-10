@@ -49,9 +49,10 @@ check those in the [pantry](pantry.md).
 
 ## Set a recipe status
 
-Use **Rotation**, **Want to try**, or **Never** on the recipe page. The change
-saves at once. **Never** recipes are hidden from the default box and from the
-week's swap picker.
+Use **Rotation**, **Want to try**, or **Never** in the **Keep in rotation?** row
+on the recipe page. **Rotation** and **Want to try** save at once. **Never** asks
+first: tap **Never cook it again** to confirm, or **Keep it** to stop. **Never**
+recipes are hidden from the default box and from the week's swap picker.
 
 After you cook a **Want to try** recipe, the done screen asks **How was it?**:
 
@@ -61,7 +62,8 @@ After you cook a **Want to try** recipe, the done screen asks **How was it?**:
 
 ## Delete or archive a recipe
 
-The recipe page has one of two actions under the status control:
+The recipe page has one of two actions under the status control. Both have a red
+outline, because both remove the recipe from your box:
 
 - **Delete recipe** removes the recipe. It shows only when the recipe has no
   cook events. The app asks you to confirm.

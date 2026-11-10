@@ -49,44 +49,11 @@
   font-size: var(--fs-md);
 }
 
-/* Chip row look, matching the shared segmented control. */
+/* The shared segmented control already carries the chip look. Keep it in the
+   card's padding and stop it scrolling the page. */
 .themeOptions {
-  display: flex;
-  gap: 8px;
+  padding: 6px 0 10px;
   overflow-x: auto;
-  scrollbar-width: none;
-  padding: 6px 4px 10px;
-}
-
-.themeOptions::-webkit-scrollbar {
-  display: none;
-}
-
-.themeOption {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: var(--r-pill);
-  background: var(--card);
-  font-weight: var(--fw-bold);
-  font-size: 15px;
-  box-shadow: 0 0 0 2px var(--line);
-  /* Explicit properties: `all` would animate layout too. */
-  transition:
-    background-color var(--dur) var(--ease),
-    color var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease),
-    transform var(--dur) var(--pop);
-}
-
-.themeOption[data-state="checked"] {
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: none;
 }
 
 .rows {
@@ -160,5 +127,15 @@
   .nameForm {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+/* Below 420px the stepper squeezes the hint to three or four lines; give it
+   its own line and keep the text column full width. */
+@media (max-width: 420px) {
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 }

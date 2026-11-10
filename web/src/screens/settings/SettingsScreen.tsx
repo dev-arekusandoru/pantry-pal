@@ -1,16 +1,16 @@
 import { Fragment, useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Label, RadioGroup, Separator } from "radix-ui";
+import { Label, Separator } from "radix-ui";
 import { useTheme, type ThemePreference } from "@/app/theme";
 import { LogoutButton } from "@/app/BrowserSession";
-import { Button, Card, ErrorState, PageHeader, Skeleton, Stepper, cx } from "@/ui";
+import { Button, Card, ErrorState, PageHeader, SegmentedControl, Skeleton, Stepper, cx, type SegmentOption } from "@/ui";
 import styles from "./Settings.module.css";
 import { useHousehold, useServerVersion, useUpdateHousehold, type HouseholdSettings } from "./queries";
 
-const THEME_OPTIONS = [
+const THEME_OPTIONS: ReadonlyArray<SegmentOption<ThemePreference>> = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
   { value: "system", label: "Match device" },
-] as const satisfies ReadonlyArray<{ value: ThemePreference; label: string }>;
+];
 
 function isThemePreference(value: string): value is ThemePreference {
   return THEME_OPTIONS.some((option) => option.value === value);
@@ -74,21 +74,15 @@ export function SettingsScreen() {
           <h2 id="settings-look" className={styles.heading}>
             Look
           </h2>
-          <RadioGroup.Root
+          <SegmentedControl
+            label="Theme"
             className={styles.themeOptions}
-            aria-label="Theme"
-            orientation="horizontal"
+            options={THEME_OPTIONS}
             value={theme}
-            onValueChange={(value) => {
+            onChange={(value) => {
               if (isThemePreference(value)) setTheme(value);
             }}
-          >
-            {THEME_OPTIONS.map((option) => (
-              <RadioGroup.Item key={option.value} value={option.value} className={styles.themeOption}>
-                {option.label}
-              </RadioGroup.Item>
-            ))}
-          </RadioGroup.Root>
+          />
           <p className={styles.hint}>Saved on this device only.</p>
         </Card>
 

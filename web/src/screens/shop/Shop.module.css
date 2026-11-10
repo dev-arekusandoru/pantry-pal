@@ -15,26 +15,13 @@
   }
 }
 
-/* Keeps the end of the list clear of the floating add button. */
-.screen {
-  padding-bottom: calc(var(--fab-size) + var(--fab-gap) + var(--sp-4));
-}
-
-.switchRow {
+/* List management and add sit in one toolbar row under the header. */
+.toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: -6px 0 14px 6px;
-}
-
-.switchTitle {
-  min-width: 0;
-  font-weight: var(--fw-bold);
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: -6px 0 14px;
 }
 
 /* ---------- header count + meter ---------- */
@@ -396,12 +383,6 @@
   font-weight: var(--fw-semibold);
 }
 
-/* Destructive action under the trip buttons: secondary shape, tomato label. */
-.finish .clear {
-  margin-top: 14px;
-  color: var(--tomato-text);
-}
-
 /* ---------- running low ---------- */
 .runningLow {
   margin-top: 8px;
@@ -572,97 +553,4 @@
   color: var(--muted);
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
-}
-
-/* ---------- clear-list confirm (AlertDialog, styled like the bottom sheet) ---------- */
-.confirmBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-sheet);
-  background: var(--overlay);
-  animation: confirmFade 0.2s;
-}
-
-/* Radix Presence keeps the dialog mounted until these exit animations end. */
-.confirmBackdrop[data-state="closed"] {
-  animation: confirmFadeOut var(--dur-exit) var(--ease-in) forwards;
-}
-
-.confirmPanel {
-  position: fixed;
-  inset: auto 0 0;
-  z-index: var(--z-sheet);
-  width: 100%;
-  max-width: var(--content-max);
-  margin-inline: auto;
-  max-height: 88dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  color: var(--ink);
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
-  padding: 18px 18px 0;
-  animation: confirmRise var(--dur-slow) var(--pop);
-}
-
-.confirmPanel:focus {
-  outline: none;
-}
-
-.confirmPanel[data-state="closed"] {
-  animation: confirmSink var(--dur-exit) var(--ease-in) forwards;
-}
-
-.confirmHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.confirmTitle {
-  font-size: var(--fs-h2);
-  line-height: 1.05;
-}
-
-.confirmBody {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-bottom: 16px;
-}
-
-.confirmFooter {
-  padding: 12px 0 calc(16px + var(--safe-bottom));
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-@keyframes confirmFade {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes confirmFadeOut {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes confirmRise {
-  from {
-    transform: translateY(40px) scale(0.97);
-    opacity: 0;
-  }
-}
-
-/* Leaves the way it came, but shorter: a small sink instead of a full drop. */
-@keyframes confirmSink {
-  to {
-    transform: translateY(14px) scale(0.98);
-    opacity: 0;
-  }
 }

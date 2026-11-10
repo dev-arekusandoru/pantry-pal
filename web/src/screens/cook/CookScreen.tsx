@@ -689,7 +689,6 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
         open={resumePending && promptReady && saved !== null}
         onClose={resumeAt}
         title="Pick up where you left off?"
-        variant="center"
         footer={
           <>
             <Button onClick={startOver}>Start over</Button>
@@ -709,7 +708,6 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
         open={askPlanned}
         onClose={() => setAskPlanned(false)}
         title="Cooking tonight's planned meal?"
-        variant="center"
         footer={
           <>
             <Button onClick={() => servings !== undefined && complete({ kind: "adhoc", recipeId: r.id, servings })}>
@@ -797,6 +795,7 @@ function DoneScreen({
             </Button>
             <Button
               size="lg"
+              variant="dangerGhost"
               icon={<Emoji code="1F44E" size={20} />}
               loading={setStatus.isPending && setStatus.variables?.status === "never"}
               onClick={() => rate("never")}

@@ -148,14 +148,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
       <ShopList
         key={selected.id}
         list={selected}
-        switcher={
-          <div className={styles.switchRow}>
-            <span className={styles.switchTitle}>{selected.title}</span>
-            <Button variant="ghost" icon={<Icon name="list" />} onClick={() => setPickerOpen(true)}>
-              All lists
-            </Button>
-          </div>
-        }
+        onOpenLists={() => setPickerOpen(true)}
         onClose={() => onSelectList(undefined)}
         onCompleted={() => onSelectList(selected.id)}
       />

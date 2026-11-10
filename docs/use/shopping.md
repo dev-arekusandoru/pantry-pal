@@ -15,7 +15,8 @@ week's list.
 When there is no plan, the app opens the newest open list, or offers **Start a
 blank list**.
 
-Tap **All lists** to open any open or done list, start a new list, or delete one.
+Tap **All lists** above the aisles to open any open or done list, start a new
+list, or delete one.
 
 A plan list is built from planned meals minus stock on hand. Stock that is known
 and covers a need is left off. An item whose amount is unknown, or whose units do
@@ -44,9 +45,12 @@ row to check it off; tap again to clear the check.
 Most items show why they are there, for example the planned recipe and its
 amount. An item added by hand says **Added by hand**.
 
-Tap **Add an item**, type a name, and tap **Add**. The app matches the name to an
-ingredient when it can. A name with no match stays as free text and is skipped
-when you finish the list.
+Tap **Add item** above the aisles, type a name, and tap **Add**. The app matches
+the name to an ingredient when it can. A name with no match stays as free text
+and is skipped when you finish the list.
+
+An empty list shows **Add an item** in the middle of the screen. Both buttons
+open the same sheet.
 
 ### When the plan changes
 

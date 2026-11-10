@@ -8,6 +8,8 @@ export interface SegmentOption<T extends string> {
   label: string;
   /** Optional decorative icon before the label. */
   icon?: ReactNode;
+  /** Marks a destructive choice, e.g. "Never": tomato ink, tomato fill when chosen. */
+  danger?: boolean;
 }
 
 export interface SegmentedControlProps<T extends string> {
@@ -37,7 +39,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
       className={cx(styles.root, className)}
     >
       {options.map((o) => (
-        <ToggleGroup.Item key={o.value} value={o.value} className={styles.seg}>
+        <ToggleGroup.Item key={o.value} value={o.value} className={cx(styles.seg, o.danger && styles.danger)}>
           {o.icon}
           {o.label}
         </ToggleGroup.Item>

@@ -68,6 +68,7 @@ export function StockRow({ item, onStep, onEditQty, onSetStatus, onAddToList }: 
             aria-label={`${name}: ${STATUS_LABEL[item.status].toLowerCase()}. Change status`}
           >
             <Pill tone={STATUS_TONE[item.status]}>{STATUS_LABEL[item.status]}</Pill>
+            <Icon name="caret" className={styles.statusCaret} />
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content className={styles.menu} sideOffset={6} align="end" collisionPadding={12}>

@@ -1,7 +1,8 @@
 import { Link, useCanGoBack, useRouter } from "@tanstack/react-router";
-import { AlertDialog, VisuallyHidden } from "radix-ui";
+import { VisuallyHidden } from "radix-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, SegmentedControl, Skeleton, Stepper, buttonClass, cx, ingredientEmoji, type SegmentOption } from "@/ui";
+import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { formatDuration, stepSeconds } from "./duration";
 import { formatAmount, formatDay, formatMinutes, formatNumber, haveIngredient, type Have, type MealType } from "./lib";
 import { RecipePhoto } from "./RecipePhoto";
@@ -10,11 +11,14 @@ import type { EditableStatus } from "./status";
 import { isResumable, readCookProgress } from "../cook/progress";
 import styles from "./RecipeScreen.module.css";
 
-/** The permanent thumbs control: up keeps it in rotation, down never cooks it again. */
+/**
+ * The permanent thumbs control: up keeps it in rotation, down never cooks it
+ * again. "Never" is destructive, so it is styled as such and asks first.
+ */
 const STATUS_OPTIONS: ReadonlyArray<SegmentOption<EditableStatus>> = [
   { value: "rotation", label: "Rotation", icon: <Emoji code="1F44D" size={16} /> },
   { value: "want_to_try", label: "Want to try" },
-  { value: "never", label: "Never", icon: <Emoji code="1F44E" size={16} /> },
+  { value: "never", label: "Never", icon: <Emoji code="1F44E" size={16} />, danger: true },
 ];
 
 export interface RecipeScreenProps {
@@ -50,6 +54,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
   const setStatus = useSetRecipeStatus();
   const deleteRecipe = useDeleteRecipe();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmNever, setConfirmNever] = useState(false);
 
   function onDelete() {
     if (!r) return;
@@ -190,12 +195,16 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
 
           {r.status !== "archived" && (
             <div className={styles.status}>
+              <p className={styles.statusLabel}>Keep in rotation?</p>
               <SegmentedControl
-                label="Recipe status"
+                label="Keep this recipe in rotation"
                 options={STATUS_OPTIONS}
                 value={r.status}
                 onChange={(status) => {
-                  if (status !== r.status) setStatus.mutate({ slug: r.slug, status });
+                  if (status === r.status) return;
+                  // "Never" is permanent until changed back, so it asks first.
+                  if (status === "never") setConfirmNever(true);
+                  else setStatus.mutate({ slug: r.slug, status });
                 }}
               />
             </div>
@@ -207,6 +216,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
             </Link>
             {r.cookEventCount > 0 && r.status !== "archived" ? (
               <Button
+                variant="dangerGhost"
                 icon={<Icon name="trash" />}
                 loading={setStatus.isPending}
                 onClick={() => setStatus.mutate({ slug: r.slug, status: "archived" })}
@@ -214,7 +224,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
                 Archive recipe
               </Button>
             ) : r.cookEventCount === 0 ? (
-              <Button icon={<Icon name="trash" />} onClick={() => setConfirmDelete(true)}>
+              <Button variant="dangerGhost" icon={<Icon name="trash" />} onClick={() => setConfirmDelete(true)}>
                 Delete recipe
               </Button>
             ) : null}
@@ -372,35 +382,33 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
         </Link>
       </div>
 
-      <AlertDialog.Root open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className={styles.confirmBackdrop} />
-          <AlertDialog.Content className={styles.confirmPanel}>
-            <AlertDialog.Title className={styles.confirmTitle}>Delete this recipe?</AlertDialog.Title>
-            <AlertDialog.Description className={styles.confirmBody}>
-              {r.title} and its ingredients and steps will be removed. This cannot be undone.
-            </AlertDialog.Description>
-            <div className={styles.confirmFooter}>
-              <AlertDialog.Cancel asChild>
-                <Button>Keep recipe</Button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <Button
-                  variant="primary"
-                  icon={<Icon name="trash" />}
-                  loading={deleteRecipe.isPending}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onDelete();
-                  }}
-                >
-                  Delete recipe
-                </Button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+      <ConfirmDialog
+        open={confirmNever}
+        onClose={() => setConfirmNever(false)}
+        title="Stop cooking this recipe?"
+        confirmLabel="Never cook it again"
+        cancelLabel="Keep it"
+        icon="alert"
+        pending={setStatus.isPending}
+        onConfirm={() =>
+          setStatus.mutate({ slug: r.slug, status: "never" }, { onSuccess: () => setConfirmNever(false) })
+        }
+      >
+        {r.title} moves out of your rotation, and planning skips it. Put it back in rotation from the Recipes page
+        when you change your mind.
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title="Delete this recipe?"
+        confirmLabel="Delete recipe"
+        cancelLabel="Keep recipe"
+        pending={deleteRecipe.isPending}
+        onConfirm={onDelete}
+      >
+        {r.title} and its ingredients and steps will be removed. This cannot be undone.
+      </ConfirmDialog>
     </article>
   );
 }

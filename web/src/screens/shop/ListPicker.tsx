@@ -1,6 +1,6 @@
-import { AlertDialog } from "radix-ui";
 import { useState } from "react";
 import { Button, Icon, IconButton, Pill, Sheet } from "@/ui";
+import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import type { ShoppingList } from "./cart";
 import styles from "./Shop.module.css";
 
@@ -88,48 +88,24 @@ export function ListPicker({ open, onClose, lists, selectedId, onSelect, onCreat
         </div>
       )}
 
-      <AlertDialog.Root open={pendingDelete !== null} onOpenChange={(next) => !next && setPendingDelete(null)}>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className={styles.confirmBackdrop} />
-          <AlertDialog.Content className={styles.confirmPanel}>
-            <header className={styles.confirmHead}>
-              <AlertDialog.Title className={styles.confirmTitle}>Delete this list?</AlertDialog.Title>
-              <AlertDialog.Cancel asChild>
-                <IconButton label="Close" icon={<Icon name="close" />} variant="plain" />
-              </AlertDialog.Cancel>
-            </header>
-            <div className={styles.confirmBody}>
-              <AlertDialog.Description className={styles.sheetNote}>
-                {pendingDelete?.title} and its items will be removed. Purchases already added to the pantry stay.
-              </AlertDialog.Description>
-            </div>
-            <div className={styles.confirmFooter}>
-              <AlertDialog.Cancel asChild>
-                <Button>Keep the list</Button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <Button
-                  variant="primary"
-                  icon={<Icon name="trash" />}
-                  loading={deleting}
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    if (!pendingDelete) return;
-                    try {
-                      await onDelete(pendingDelete.id);
-                      setPendingDelete(null);
-                    } catch {
-                      // The parent reports the error; keep the dialog open to retry.
-                    }
-                  }}
-                >
-                  Delete list
-                </Button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onClose={() => setPendingDelete(null)}
+        title="Delete this list?"
+        confirmLabel="Delete list"
+        cancelLabel="Keep the list"
+        pending={deleting}
+        onConfirm={() => {
+          const id = pendingDelete?.id;
+          if (id === undefined) return;
+          void onDelete(id)
+            .then(() => setPendingDelete(null))
+            // The parent reports the error; keep the dialog open to retry.
+            .catch(() => undefined);
+        }}
+      >
+        {pendingDelete?.title} and its items will be removed. Purchases already added to the pantry stay.
+      </ConfirmDialog>
     </Sheet>
   );
 }

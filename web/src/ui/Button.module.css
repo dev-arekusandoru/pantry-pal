@@ -64,6 +64,42 @@
   padding: 0 14px;
 }
 
+/* Solid destructive fill for a confirm: deeper than the tomato primary. */
+.danger {
+  background: var(--tomato-d);
+  color: var(--on-tomato);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--tomato-d) 70%, #000);
+}
+
+.danger:active:not(:disabled) {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--tomato-d) 70%, #000);
+}
+
+@media (hover: hover) {
+  .btn.danger:not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--tomato-d) 88%, #000);
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--tomato-d) 70%, #000);
+  }
+}
+
+/* Destructive trigger: the secondary shape with tomato ink. */
+.dangerGhost {
+  background: var(--card);
+  color: var(--tomato-text);
+  box-shadow: 0 0 0 2px var(--tomato-text), 0 4px 0 color-mix(in srgb, var(--tomato-text) 35%, transparent);
+}
+
+.dangerGhost:active:not(:disabled) {
+  box-shadow: 0 0 0 2px var(--tomato-text), 0 1px 0 color-mix(in srgb, var(--tomato-text) 35%, transparent);
+}
+
+@media (hover: hover) {
+  .btn.dangerGhost:not(:disabled):hover:not(:active) {
+    background: color-mix(in srgb, var(--tomato-text) 8%, var(--card));
+    box-shadow: 0 0 0 2px var(--tomato-text), 0 6px 0 color-mix(in srgb, var(--tomato-text) 35%, transparent);
+  }
+}
+
 .ghost:active:not(:disabled) {
   transform: scale(0.97);
   box-shadow: none;
@@ -93,3 +129,14 @@
 .btn[aria-busy="true"] {
   opacity: 0.7;
 }
+
+/* A disabled primary keeps its shape but drops the tomato fill: a washed-out
+   filled button still reads as the strongest thing on screen. */
+.primary:disabled,
+.primary[aria-disabled="true"] {
+  opacity: 1;
+  background: var(--card);
+  color: var(--muted);
+  box-shadow: 0 0 0 2px var(--line), 0 4px 0 var(--line);
+}
+

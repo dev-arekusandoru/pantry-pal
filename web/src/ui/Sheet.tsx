@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { Dialog, VisuallyHidden } from "radix-ui";
 import { IconButton } from "./IconButton";
 import styles from "./Sheet.module.css";
-import { cx } from "./cx";
 import { Icon } from "./icons";
 
 export interface SheetProps {
@@ -12,19 +11,22 @@ export interface SheetProps {
   title: string;
   /** Visually hide the title (it stays the accessible name). */
   hideTitle?: boolean;
-  /** `bottom` slides up from the bottom edge (default); `center` is a centered dialog on wide screens. */
-  variant?: "bottom" | "center";
   /** Sticky area under the scrolling body, for the primary action. */
   footer?: ReactNode;
   children: ReactNode;
 }
 
 /**
- * Modal sheet / dialog on Radix Dialog: focus trap, scroll lock, inert
- * background, Esc and backdrop dismissal, focus restored to the opener.
- * Rendered in a portal on <body>.
+ * Modal sheet: a bottom sheet on phones, a centered dialog from 700px up. On
+ * Radix Dialog, so it has a focus trap, scroll lock, an inert background, Esc
+ * and backdrop dismissal, and focus restored to the opener. Rendered in a
+ * portal on <body>.
+ *
+ * Footer contract: secondary actions first, the primary last. Each button
+ * stretches to an equal share below 400px, so a two-button footer fills the
+ * sheet instead of floating in the middle.
  */
-export function Sheet({ open, onClose, title, hideTitle, variant = "bottom", footer, children }: SheetProps) {
+export function Sheet({ open, onClose, title, hideTitle, footer, children }: SheetProps) {
   const openerRef = useRef<HTMLElement | null>(null);
 
   // Runs before Radix moves focus into the dialog, so this captures the opener.
@@ -49,7 +51,7 @@ export function Sheet({ open, onClose, title, hideTitle, variant = "bottom", foo
       <Dialog.Portal>
         <Dialog.Overlay className={styles.backdrop} />
         <Dialog.Content
-          className={cx(styles.viewport, variant === "center" && styles.center)}
+          className={styles.viewport}
           aria-describedby={undefined}
           onCloseAutoFocus={(event) => {
             // Radix would focus its Trigger; this sheet has none, so return to the opener.
@@ -59,7 +61,7 @@ export function Sheet({ open, onClose, title, hideTitle, variant = "bottom", foo
             opener?.focus?.();
           }}
         >
-          <div className={cx(styles.panel, variant === "center" && styles.center)}>
+          <div className={styles.panel}>
             <header className={styles.head}>
               {hideTitle ? <VisuallyHidden.Root asChild>{heading}</VisuallyHidden.Root> : heading}
               <IconButton label="Close" icon={<Icon name="close" />} variant="plain" onClick={onClose} />

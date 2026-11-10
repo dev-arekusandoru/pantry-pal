@@ -3,9 +3,8 @@
   gap: 12px;
 }
 
-/* Keeps the last shelf clear of the floating add button. */
 .screen {
-  padding-bottom: calc(var(--fab-size) + var(--fab-gap) + var(--sp-4));
+  padding-bottom: var(--sp-4);
 }
 
 /* Only when the shelves arrived after a skeleton; see PantryScreen's latch. */
@@ -23,46 +22,6 @@
   display: grid;
   gap: 8px;
   margin-bottom: 14px;
-}
-
-/* ---------- choice chips (Radix ToggleGroup) ---------- */
-.chips {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 6px 4px 10px;
-}
-
-.chips::-webkit-scrollbar {
-  display: none;
-}
-
-.chip {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: var(--r-pill);
-  background: var(--card);
-  font-weight: var(--fw-bold);
-  font-size: 15px;
-  box-shadow: 0 0 0 2px var(--line);
-  /* Explicit properties: `all` would also animate layout if the chip ever changes size. */
-  transition:
-    background-color var(--dur) var(--ease),
-    color var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease),
-    transform var(--dur) var(--pop);
-}
-
-.chip[data-state="on"] {
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: none;
 }
 
 /* ---------- shelves ---------- */
@@ -187,9 +146,16 @@
   min-width: 48px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 2px;
   border-radius: var(--r-pill);
   transition: transform var(--dur-fast) var(--pop);
+}
+
+/* The pill is a menu trigger; the caret says so. */
+.statusCaret {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
 }
 
 .statusBtn:active {
@@ -432,80 +398,10 @@
   min-width: 48px;
 }
 
-.setActions {
+/* Destructive action, kept apart from the sheet footer's Cancel and Save. */
+.removeRow {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 2px dashed var(--line);
   display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-.removeTrigger {
-  width: 100%;
-}
-
-/* ---------- remove confirmation (Radix AlertDialog) ---------- */
-.alertOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: calc(var(--z-sheet) + 1);
-  background: var(--overlay);
-  animation: alertFade 0.2s;
-}
-
-/* Radix Presence holds the dialog until these end, so closing is not a hard cut. */
-.alertOverlay[data-state="closed"] {
-  animation: alertFadeOut var(--dur-exit) var(--ease-in) forwards;
-}
-
-.alertContent {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  z-index: calc(var(--z-sheet) + 1);
-  width: calc(100% - 40px);
-  max-width: 440px;
-  display: grid;
-  gap: 16px;
-  padding: 22px;
-  background: var(--bg);
-  color: var(--ink);
-  border-radius: var(--r-xl);
-  box-shadow: var(--shadow);
-  transform: translate(-50%, -50%);
-  animation: alertPop var(--dur-slow) var(--pop);
-}
-
-.alertTitle {
-  font-size: var(--fs-h2);
-  line-height: 1.05;
-}
-
-.alertContent[data-state="closed"] {
-  animation: alertShrink var(--dur-exit) var(--ease-in) forwards;
-}
-
-@keyframes alertFade {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes alertFadeOut {
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes alertPop {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -46%) scale(0.97);
-  }
-}
-
-/* Drops back a hair as it fades; the centering translate stays in the keyframe. */
-@keyframes alertShrink {
-  to {
-    opacity: 0;
-    transform: translate(-50%, -52%) scale(0.97);
-  }
 }

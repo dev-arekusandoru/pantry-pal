@@ -3,14 +3,19 @@
   font-size: var(--fs-h3);
 }
 
-.weekHead p {
-  white-space: nowrap;
+/* The nav owns a full-width row under the header, so it can wrap at 320px
+   instead of being clipped by the header's bounds. */
+.weekNavRow {
+  display: flex;
+  justify-content: center;
+  margin: -4px 0 16px;
 }
 
 .weekNav {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 4px;
 }
 
@@ -114,6 +119,28 @@
 
 .tonightBody {
   padding: 0 12px;
+}
+
+/* Kicker and the swap icon share one row; the row sits above the card's
+   stretched recipe link so the icon stays tappable. */
+.tonightTop {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tonightTop .kicker {
+  margin-bottom: 0;
+}
+
+.tonightSwap {
+  width: 40px;
+  height: 40px;
+  margin: -8px -8px -8px 0;
 }
 
 .kicker {

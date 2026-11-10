@@ -152,7 +152,8 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
           onClick={undoCook}
         />
       )}
-      {canSwap && (
+      {/* A row without a cook already opens the swap sheet; only linked rows need the icon. */}
+      {canSwap && cook && (
         <IconButton
           variant="plain"
           label={`Swap ${slotName(slot)}`}

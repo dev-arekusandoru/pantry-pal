@@ -3,6 +3,8 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
   margin-top: 6px;
+  /* Keeps the last row clear of the floating add button. */
+  padding-bottom: calc(var(--fab-size) + var(--fab-gap) + var(--sp-4));
 }
 
 @media (min-width: 768px) {
