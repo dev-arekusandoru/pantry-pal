@@ -97,6 +97,7 @@
 }
 
 .tonight {
+  position: relative;
   padding: 10px 10px 22px;
   display: grid;
   gap: 16px;
@@ -137,6 +138,23 @@
   margin-bottom: 16px;
 }
 
+.tonightLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The title's overlay covers the card, so a tap anywhere but the buttons opens the recipe. */
+.tonightLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.tonightLink:focus-visible {
+  outline-offset: 5px;
+}
+
 .tonightMeta {
   display: flex;
   align-items: center;
@@ -158,6 +176,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+/* Action buttons sit above the card's stretched link. */
+.actions > * {
+  position: relative;
+  z-index: 1;
 }
 
 @media (min-width: 700px) {

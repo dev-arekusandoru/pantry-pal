@@ -52,7 +52,16 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
       <Plate imageUrl={recipe?.imageUrl} emoji={MEAL_EMOJI.dinner} className={styles.tonightPlate} />
       <div className={styles.tonightBody}>
         <p className={styles.kicker}>Dinner tonight</p>
-        <h2 className={styles.tonightTitle}>{cook.recipeTitle}</h2>
+        <h2 className={styles.tonightTitle}>
+          <Link
+            to="/recipes/$slug"
+            params={{ slug }}
+            search={planned ? { cookEvent: cook.id } : {}}
+            className={styles.tonightLink}
+          >
+            {cook.recipeTitle}
+          </Link>
+        </h2>
         <p className={styles.tonightMeta}>
           {recipe?.totalMinutes != null && (
             <span className={styles.metaItem}>
@@ -99,14 +108,6 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
               Start cooking
             </Link>
           )}
-          <Link
-            to="/recipes/$slug"
-            params={{ slug }}
-            search={planned ? { cookEvent: cook.id } : {}}
-            className={buttonClass()}
-          >
-            View recipe
-          </Link>
           {canSwap && (
             <Button variant="ghost" icon={<Icon name="swap" />} onClick={() => onSwap(target)} aria-label={`Swap ${slotName(slot)}`}>
               Swap

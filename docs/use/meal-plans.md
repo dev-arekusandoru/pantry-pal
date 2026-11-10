@@ -20,9 +20,9 @@ Each day lists its meals:
   Tue dinner**. These come from one cook feeding several meals.
 - Today carries a **Today** flag.
 
-On the current week, **Dinner tonight** appears above the days. Its actions
-depend on the meal: **Start cooking**, **View recipe**, **Swap**, and **Undo** for
-a finished meal.
+On the current week, **Dinner tonight** appears above the days. Tap the card to
+open the recipe. Its buttons depend on the meal: **Start cooking**, **Swap**, and
+**Undo** for a finished meal.
 
 The next prep task also appears, with its due date and **Done**. It picks the
 soonest task due today or later, then the most recently overdue one. The app

@@ -34,7 +34,6 @@
   background: var(--ink);
   color: var(--bg);
   box-shadow: none;
-  transform: rotate(-2deg) scale(1.04);
 }
 
 .seg:active:not(:disabled) {
