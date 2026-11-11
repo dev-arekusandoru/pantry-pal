@@ -68,7 +68,7 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
 
   const title = isCurrentWeek ? "This week" : `Week of ${monthDay(selectedWeek)}`;
   const rangeLabel = weekRange(selectedWeek);
-  const navRow = (
+  const nav = (
     <nav className={styles.weekNav} aria-label="Week navigation">
       <IconButton
         className={styles.weekNavBtn}
@@ -77,7 +77,6 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
         icon={<Icon name="back" />}
         onClick={() => browseWeek(-7)}
       />
-      <span className={styles.weekRange}>{rangeLabel}</span>
       <IconButton
         className={styles.weekNavBtn}
         variant="plain"
@@ -92,13 +91,13 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
       )}
     </nav>
   );
-
-  // Own row under the header: at 320px the header's content box cannot hold it.
   const header = (
-    <>
-      <PageHeader className={styles.weekHead} title={title} />
-      <div className={styles.weekNavRow}>{navRow}</div>
-    </>
+    <PageHeader
+      className={styles.weekHead}
+      title={title}
+      sub={rangeLabel}
+      aside={nav}
+    />
   );
 
   if (plan.isPending) {

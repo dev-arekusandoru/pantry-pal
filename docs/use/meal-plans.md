@@ -7,9 +7,10 @@ the plan. The app shows it, starts cooks, and lets you change one meal at a time
 
 ## Read the week
 
-The header says **This week** or **Week of Nov 2**. The arrows move back and
-forward one week. **This week** returns to the current week. The selected week is
-in the page URL, so Back and deep links work.
+The header says **This week** or **Week of Nov 2**, with the date range below.
+The arrows beside the title move back and forward one week. **This week** returns
+to the current week. The selected week is in the page URL, so Back and deep
+links work.
 
 Each day lists its meals:
 

@@ -1,26 +1,32 @@
 /* ---------- week header navigation ---------- */
+.weekHead {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 0;
+  padding: 20px 18px;
+}
+
 .weekHead h1 {
   font-size: var(--fs-h3);
 }
 
-/* The nav owns a full-width row under the header, so it can wrap at 320px
-   instead of being clipped by the header's bounds. */
-.weekNavRow {
-  display: flex;
-  justify-content: center;
-  margin: -4px 0 16px;
+.weekHead > :global(div:first-child) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.weekHead > :global(div:nth-child(2)) {
+  margin-inline-start: auto;
+  padding-inline-end: 48px;
 }
 
 .weekNav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 4px;
-}
-
-.weekRange {
-  font-size: 14px;
 }
 
 .weekNav .weekNavBtn {
@@ -40,24 +46,28 @@
   font-size: var(--fs-sm);
 }
 
-/* Stretch the pill's hit area to 44px without growing the header. */
 .weekJump::after {
   content: "";
   position: absolute;
   inset: -4px 0;
 }
 
-/* Shrink the sticker on phones so the nav row stays clear of it. */
 @media (max-width: 440px) {
-  header.weekHead::after {
+  .weekHead::after {
     font-size: 56px;
     top: -6px;
   }
 }
 
 @media (min-width: 600px) {
+  .weekHead {
+    padding: 26px 24px 22px;
+  }
   .weekHead h1 {
     font-size: var(--fs-title);
+  }
+  .weekHead > :global(div:nth-child(2)) {
+    padding-inline-end: 136px;
   }
 }
 
