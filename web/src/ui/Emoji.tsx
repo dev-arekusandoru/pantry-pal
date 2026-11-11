@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { emojiSrc, type EmojiCode } from "./emoji";
+import { emojiSrc, type EmojiCode } from "./openmoji";
 import { cx } from "./cx";
 import styles from "./Emoji.module.css";
 

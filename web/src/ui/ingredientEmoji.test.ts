@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMOJI_ASSETS } from "./emoji";
+import { EMOJI_ASSETS } from "./openmoji";
 import { ingredientEmoji } from "./ingredientEmoji";
 
 describe("ingredientEmoji", () => {

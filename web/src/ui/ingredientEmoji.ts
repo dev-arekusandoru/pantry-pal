@@ -1,4 +1,4 @@
-import type { EmojiCode } from "./emoji";
+import type { EmojiCode } from "./openmoji";
 
 /**
  * OpenMoji hexcode for an ingredient, by keyword. First match wins, so specific

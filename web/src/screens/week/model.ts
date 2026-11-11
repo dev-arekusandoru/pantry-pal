@@ -1,5 +1,5 @@
 import type { components, paths } from "@/api";
-import type { EmojiCode } from "@/ui/emoji";
+import type { EmojiCode } from "@/ui/openmoji";
 import { addDays, daysBetween, weekdayName } from "./dates";
 
 export type PlanView = paths["/plans/current"]["get"]["responses"][200]["content"]["application/json"];

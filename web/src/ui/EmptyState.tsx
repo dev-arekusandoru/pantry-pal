@@ -3,7 +3,7 @@ import styles from "./EmptyState.module.css";
 import { cx } from "./cx";
 import { Emoji } from "./Emoji";
 import { isViewTransitionActive } from "./motion";
-import type { EmojiCode } from "./emoji";
+import type { EmojiCode } from "./openmoji";
 
 export interface EmptyStateProps {
   /** Big sticker icon (OpenMoji code). */

@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import styles from "./Sticker.module.css";
 import { cx } from "./cx";
 import { Emoji } from "./Emoji";
-import type { EmojiCode } from "./emoji";
+import type { EmojiCode } from "./openmoji";
 
 export interface StickerProps {
   /** OpenMoji code. */
