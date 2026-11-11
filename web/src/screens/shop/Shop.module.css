@@ -473,6 +473,7 @@
 
 .pickTitle {
   font-weight: var(--fw-bold);
+  overflow-wrap: anywhere;
 }
 
 .pickSub {

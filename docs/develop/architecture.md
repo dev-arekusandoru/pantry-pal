@@ -50,6 +50,9 @@ confirmation. `Button` has these variants:
 - Sheets: `Sheet` is a bottom sheet on phones and a centered 560 px dialog from
   700 px. The `footer` holds the secondary action first and the primary last.
   Keep destructive actions out of the footer.
+- Sheet panels shrink within the viewport; keep long content in the scrolling
+  body, and give flex/grid children `min-width: 0` so narrow sheets do not clip
+  controls horizontally.
 - Add actions: one entry point per state. An empty screen carries the primary in
   `EmptyState`. A filled screen carries one add button in the header or in a
   toolbar row above the list. Do not stack a `Fab` with another add action.

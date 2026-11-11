@@ -381,9 +381,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .setField .input {
+  flex: 1 1 0;
   font-size: var(--fs-h3);
   font-weight: var(--fw-heavy);
   text-align: center;
@@ -392,10 +394,12 @@
 }
 
 .setUnit {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-weight: var(--fw-bold);
   color: var(--muted);
   font-size: var(--fs-lg);
-  min-width: 48px;
 }
 
 /* Destructive action, kept apart from the sheet footer's Cancel and Save. */
