@@ -211,7 +211,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
           )}
 
           <div className={styles.tools}>
-            <Link to="/recipes/$slug/edit" params={{ slug: r.slug }} className={buttonClass()}>
+            <Link to="/recipes/$slug/edit" params={{ slug: r.slug }} replace className={buttonClass()}>
               Edit recipe
             </Link>
             {r.cookEventCount > 0 && r.status !== "archived" ? (

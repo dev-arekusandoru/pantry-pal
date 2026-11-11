@@ -319,7 +319,7 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
     save.mutate(input, {
       onSuccess: (saved) => {
         toast.show({ message: recipe === undefined ? "Recipe created" : "Recipe saved" });
-        void navigate({ to: "/recipes/$slug", params: { slug: saved.slug } });
+        void navigate({ to: "/recipes/$slug", params: { slug: saved.slug }, replace: recipe !== undefined });
       },
       onError: (error) => setFormError(errorMessage(error)),
     });
@@ -581,10 +581,38 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
                 <label className={styles.field}>
                   <span className={styles.label}>Instruction</span>
                   <textarea
-                    className={styles.textarea}
+                    className={`${styles.textarea} ${styles.instruction}`}
                     rows={2}
                     value={step.text}
                     onChange={(e) => patchStep(step.key, { text: e.target.value })}
+                    ref={(node) => {
+                      if (!node) return;
+                      const resize = () => {
+                        node.style.height = "auto";
+                        const style = getComputedStyle(node);
+                        const lineHeight = parseFloat(style.lineHeight);
+                        const verticalInsets =
+                          parseFloat(style.paddingTop) +
+                          parseFloat(style.paddingBottom) +
+                          parseFloat(style.borderTopWidth) +
+                          parseFloat(style.borderBottomWidth);
+                        const maxHeight = lineHeight * 5 + verticalInsets;
+                        node.style.height = `${Math.min(node.scrollHeight + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth), maxHeight)}px`;
+                        node.style.overflowY =
+                          node.scrollHeight + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth) > maxHeight
+                            ? "auto"
+                            : "hidden";
+                      };
+                      resize();
+                      let width = node.getBoundingClientRect().width;
+                      const observer = new ResizeObserver(([entry]) => {
+                        if (!entry || entry.contentRect.width === width) return;
+                        width = entry.contentRect.width;
+                        resize();
+                      });
+                      observer.observe(node);
+                      return () => observer.disconnect();
+                    }}
                   />
                 </label>
                 <div className={styles.pair}>
@@ -670,6 +698,7 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
         <Link
           to={recipe === undefined ? "/recipes" : "/recipes/$slug"}
           {...(recipe === undefined ? {} : { params: { slug: recipe.slug } })}
+          replace={recipe !== undefined}
           className={buttonClass({ size: "lg" })}
         >
           Cancel

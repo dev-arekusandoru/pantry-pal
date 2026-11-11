@@ -44,7 +44,8 @@ Use the arrows to reorder a line. Use the trash button to remove it.
 ## Add steps and step ingredients
 
 Use **Add step** to add a step. Write the instruction and an optional duration
-and group.
+and group. Instruction fields grow to five lines; longer text scrolls within
+the field.
 
 To link an ingredient to a step:
 
