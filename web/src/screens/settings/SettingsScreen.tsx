@@ -1,10 +1,35 @@
 import { Fragment, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Label, Separator } from "radix-ui";
+import { errorMessage } from "@/api";
 import { useTheme, type ThemePreference } from "@/app/theme";
 import { LogoutButton } from "@/app/BrowserSession";
-import { Button, Card, ErrorState, PageHeader, SegmentedControl, Skeleton, Stepper, cx, type SegmentOption } from "@/ui";
+import {
+  Button,
+  Card,
+  ErrorState,
+  Icon,
+  IconButton,
+  PageHeader,
+  SegmentedControl,
+  Sheet,
+  Skeleton,
+  Stepper,
+  cx,
+  toast,
+  type SegmentOption,
+} from "@/ui";
 import styles from "./Settings.module.css";
-import { useHousehold, useServerVersion, useUpdateHousehold, type HouseholdSettings } from "./queries";
+import {
+  useCreateMember,
+  useDeleteMember,
+  useHousehold,
+  useMembers,
+  useRenameMember,
+  useServerVersion,
+  useUpdateHousehold,
+  type HouseholdMember,
+  type HouseholdSettings,
+} from "./queries";
 
 const THEME_OPTIONS: ReadonlyArray<SegmentOption<ThemePreference>> = [
   { value: "light", label: "Light" },
@@ -93,6 +118,13 @@ export function SettingsScreen() {
           <NameForm key={name} name={name} saving={update.isPending} onSave={(next) => update.mutate({ name: next })} />
         </Card>
 
+        <Card as="section" aria-labelledby="settings-people" className={styles.section}>
+          <h2 id="settings-people" className={styles.heading}>
+            People
+          </h2>
+          <PeopleSection />
+        </Card>
+
         <Card as="section" aria-labelledby="settings-servings" className={styles.section}>
           <h2 id="settings-servings" className={styles.heading}>
             Servings
@@ -163,6 +195,165 @@ function NameForm({ name, saving, onSave }: { name: string; saving: boolean; onS
       </div>
       <Button type="submit" variant="primary" disabled={!dirty} loading={saving}>
         Save
+      </Button>
+    </form>
+  );
+}
+
+function PeopleSection() {
+  const members = useMembers();
+  const create = useCreateMember();
+  const remove = useDeleteMember();
+  const [pending, setPending] = useState<HouseholdMember | null>(null);
+
+  return (
+    <>
+      <p className={cx(styles.hint, styles.sectionHint)}>Pick these people as cooks in cook mode to split a recipe's steps.</p>
+
+      {members.isPending ? (
+        <div className={styles.rows} aria-busy="true" aria-label="Loading people">
+          <Skeleton height={44} radius={999} />
+        </div>
+      ) : members.isError ? (
+        <p className={cx(styles.hint, styles.error)} role="alert">
+          {errorMessage(members.error)}
+        </p>
+      ) : members.data.length === 0 ? (
+        <p className={styles.hint}>No people yet. Add everyone who cooks here.</p>
+      ) : (
+        <div className={styles.rows} role="list">
+          {members.data.map((member, index) => (
+            <Fragment key={member.id}>
+              {index > 0 && <Separator.Root decorative className={styles.sep} />}
+              <MemberRow member={member} onRemove={() => setPending(member)} />
+            </Fragment>
+          ))}
+        </div>
+      )}
+
+      <AddPersonForm
+        adding={create.isPending}
+        onAdd={(name) => create.mutate(name, { onError: (error) => toast.error(errorMessage(error)) })}
+      />
+
+      <Sheet
+        open={pending !== null}
+        onClose={() => setPending(null)}
+        title={`Remove ${pending?.name ?? ""}?`}
+        variant="center"
+        footer={
+          <>
+            <Button onClick={() => setPending(null)}>Cancel</Button>
+            <Button
+              variant="primary"
+              loading={remove.isPending}
+              onClick={() => {
+                if (!pending) return;
+                remove.mutate(pending.id, {
+                  onError: (error) => toast.error(errorMessage(error)),
+                  onSettled: () => setPending(null),
+                });
+              }}
+            >
+              Remove
+            </Button>
+          </>
+        }
+      >
+        <p>Dietary rules for {pending?.name ?? ""} are removed too.</p>
+      </Sheet>
+    </>
+  );
+}
+
+interface MemberRowProps {
+  member: HouseholdMember;
+  onRemove: () => void;
+}
+
+function MemberRow({ member, onRemove }: MemberRowProps) {
+  const rename = useRenameMember();
+  const [draft, setDraft] = useState(member.name);
+  // Follow server renames (e.g. from another device) without clobbering a draft
+  // this row did not produce.
+  const [serverName, setServerName] = useState(member.name);
+  if (member.name !== serverName) {
+    setServerName(member.name);
+    setDraft(member.name);
+  }
+  const trimmed = draft.trim();
+  const dirty = trimmed !== "" && trimmed !== member.name;
+
+  function commit() {
+    if (!dirty) {
+      setDraft(member.name);
+      return;
+    }
+    rename.mutate(
+      { id: member.id, name: trimmed },
+      {
+        onError: (error) => {
+          setDraft(member.name);
+          toast.error(errorMessage(error));
+        },
+      },
+    );
+  }
+
+  return (
+    <div role="listitem" className={styles.row}>
+      <input
+        className={styles.memberName}
+        aria-label={`Name for ${member.name}`}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          // Blur commits once; Enter and blur must not fire two renames.
+          e.currentTarget.blur();
+        }}
+        autoComplete="off"
+        enterKeyHint="done"
+        maxLength={80}
+      />
+      <IconButton label={`Remove ${member.name}`} icon={<Icon name="trash" />} variant="plain" onClick={onRemove} />
+    </div>
+  );
+}
+
+function AddPersonForm({ adding, onAdd }: { adding: boolean; onAdd: (name: string) => void }) {
+  const inputId = useId();
+  const [draft, setDraft] = useState("");
+  const trimmed = draft.trim();
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!trimmed) return;
+    onAdd(trimmed);
+    setDraft("");
+  }
+
+  return (
+    <form className={cx(styles.nameForm, styles.addPerson)} onSubmit={submit}>
+      <div className={styles.field}>
+        <Label.Root className={styles.label} htmlFor={inputId}>
+          Name
+        </Label.Root>
+        <input
+          id={inputId}
+          className={styles.input}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Add a person"
+          autoComplete="off"
+          enterKeyHint="done"
+          maxLength={80}
+        />
+      </div>
+      <Button type="submit" variant="primary" disabled={!trimmed} loading={adding}>
+        Add
       </Button>
     </form>
   );

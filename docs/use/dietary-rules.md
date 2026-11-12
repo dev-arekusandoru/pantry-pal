@@ -18,7 +18,7 @@ Rules are guidance, not an allergy guarantee. See [Limits](#limits).
 | `severity` | `forbidden`, `avoid`, or `limit`. |
 | `conditionNote` | An exception the assistant must judge, such as "ok if a minor ingredient". |
 | `reason` | Why the rule exists, such as "allergy" or "dislike". |
-| `memberId` | The household member it applies to. Null means the whole household. |
+| `memberId` | The household member it applies to. Null means the whole household. Add, rename, or remove members in **Settings** > **People**. Removing a member also deletes their rules. |
 
 An ingredient rule can name an ingredient that does not exist yet. The server
 creates the ingredient, so a ban can be recorded before the food is used.

@@ -70,6 +70,48 @@ export function useUpdateHousehold() {
   });
 }
 
+export type HouseholdMember = paths["/household/members"]["get"]["responses"][200]["content"]["application/json"]["items"][number];
+
+const MEMBERS_KEY = [...qk.household, "members"] as const;
+
+/** Household members: the people who can be picked as cooks in cook mode. */
+export function useMembers() {
+  return useQuery({
+    queryKey: MEMBERS_KEY,
+    queryFn: async () => (await unwrap(client.GET("/household/members"))).items,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useCreateMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => unwrap(client.POST("/household/members", { body: { name } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: MEMBERS_KEY }),
+  });
+}
+
+export function useRenameMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      unwrap(client.PATCH("/household/members/{id}", { params: { path: { id } }, body: { name } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: MEMBERS_KEY }),
+  });
+}
+
+/** Deleting a member also deletes the dietary rules scoped to them (server side). */
+export function useDeleteMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unwrap(client.DELETE("/household/members/{id}", { params: { path: { id } } })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: MEMBERS_KEY });
+      void queryClient.invalidateQueries({ queryKey: qk.rules });
+    },
+  });
+}
+
 /** Server version from the public /health endpoint (outside /api/v1, so plain fetch). */
 export function useServerVersion() {
   return useQuery({
