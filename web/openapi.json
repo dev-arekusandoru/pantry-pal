@@ -438,6 +438,13 @@
                   ],
                   "description": "Ingredient aisle/category, also used to order shopping items."
                 },
+                "imageUrl": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Bundled icon name or http(s) URL; null = automatic icon."
+                },
                 "status": {
                   "type": "string",
                   "enum": [
@@ -450,6 +457,7 @@
                 "ingredientId",
                 "name",
                 "category",
+                "imageUrl",
                 "status"
               ]
             },
@@ -509,6 +517,13 @@
               "other"
             ],
             "description": "Ingredient aisle/category, also used to order shopping items."
+          },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Linked ingredient icon name or http(s) URL; null for free-text items."
           },
           "qty": {
             "type": [
@@ -585,6 +600,7 @@
           "ingredientId",
           "name",
           "category",
+          "imageUrl",
           "qty",
           "unit",
           "purposeNote",
@@ -1231,7 +1247,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Bundled ingredient icon name (e.g. \"garlic\", see list_icons) or http(s) image URL; null = automatic icon."
           },
           "shelfLifeDays": {
             "type": [
@@ -1341,7 +1358,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Icon: null/empty = automatic, a bundled icon name (e.g. \"garlic\", see list_icons), or an http(s) image URL."
           },
           "shelfLifeDays": {
             "type": [
@@ -1418,7 +1436,8 @@
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Icon: null/empty = automatic, a bundled icon name (e.g. \"garlic\", see list_icons), or an http(s) image URL."
           },
           "shelfLifeDays": {
             "type": [
@@ -1703,6 +1722,13 @@
                 ],
                 "description": "Ingredient category used for grouping and shopping aisles."
               },
+              "imageUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Bundled icon name or http(s) URL; null = automatic icon."
+              },
               "shelfLifeDays": {
                 "type": [
                   "integer",
@@ -1715,6 +1741,7 @@
               "id",
               "name",
               "category",
+              "imageUrl",
               "shelfLifeDays"
             ]
           },
@@ -2775,12 +2802,20 @@
               },
               "category": {
                 "$ref": "#/components/schemas/IngredientCategory"
+              },
+              "imageUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Bundled icon name or http(s) URL; null = automatic icon."
               }
             },
             "required": [
               "id",
               "name",
-              "category"
+              "category",
+              "imageUrl"
             ],
             "description": "Referenced ingredient."
           },
@@ -2949,6 +2984,13 @@
           "ingredientName": {
             "type": "string"
           },
+          "imageUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Bundled icon name or http(s) URL; null = automatic icon."
+          },
           "unit": {
             "type": [
               "string",
@@ -2971,6 +3013,7 @@
           "position",
           "ingredientId",
           "ingredientName",
+          "imageUrl",
           "unit",
           "prepNote"
         ]

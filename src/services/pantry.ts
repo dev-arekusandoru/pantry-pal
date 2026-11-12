@@ -26,6 +26,7 @@ export interface PantryItemView extends PantryItem {
     id: string;
     name: string;
     category: IngredientCategory;
+    imageUrl: string | null;
     shelfLifeDays: number | null;
   };
 }
@@ -91,6 +92,7 @@ function pantryItemView(ctx: Ctx, item: PantryItem): PantryItemView {
       id: ingredients.id,
       name: ingredients.name,
       category: ingredients.category,
+      imageUrl: ingredients.imageUrl,
       shelfLifeDays: ingredients.shelfLifeDays,
     })
     .from(ingredients)
@@ -271,6 +273,7 @@ export function getStockForIngredient(ctx: Ctx, ingredientId: string): PantryIte
         id: ingredients.id,
         name: ingredients.name,
         category: ingredients.category,
+        imageUrl: ingredients.imageUrl,
         shelfLifeDays: ingredients.shelfLifeDays,
       },
     })
@@ -496,6 +499,7 @@ export function listPantry(ctx: Ctx, options: ListPantryOptions = {}): PantryIte
         id: ingredients.id,
         name: ingredients.name,
         category: ingredients.category,
+        imageUrl: ingredients.imageUrl,
         shelfLifeDays: ingredients.shelfLifeDays,
       },
     })

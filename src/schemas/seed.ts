@@ -61,6 +61,7 @@ export const seedIngredientSchema = z
     defaultUnit: nullableUnitSchema,
     aliases: z.array(text),
     description: z.string().optional(),
+    imageUrl: nullableText.optional(),
     shelfLifeDays: z.number().int().nonnegative().optional(),
     parQty: z.number().finite().nonnegative().optional(),
     parUnit: unitSchema.optional(),

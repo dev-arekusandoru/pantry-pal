@@ -38,6 +38,7 @@ interface IngredientOptions {
   parQty?: number | null;
   parUnit?: string | null;
   shelfLifeDays?: number | null;
+  imageUrl?: string | null;
 }
 
 function addIngredient(ctx: Ctx, options: IngredientOptions): string {
@@ -55,6 +56,7 @@ function addIngredient(ctx: Ctx, options: IngredientOptions): string {
       parQty: options.parQty ?? null,
       parUnit: options.parUnit ?? null,
       shelfLifeDays: options.shelfLifeDays ?? null,
+      imageUrl: options.imageUrl ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -451,6 +453,19 @@ describe("shopping list CRUD", () => {
     const created = createShoppingList(ctx, { title: "List" });
     expectAppError(() => updateShoppingList(ctx, created.list.id, { title: "  " }), "validation");
   });
+
+  it("exposes the ingredient icon on linked items only", () => {
+    const { ctx } = makeTestCtx();
+    addIngredient(ctx, { name: "Garlic", imageUrl: "garlic" });
+    const created = createShoppingList(ctx, {
+      items: [{ ingredient: "Garlic" }, { name: "Birthday candles" }],
+    });
+    const detail = getShoppingList(ctx, created.list.id);
+    const garlic = detail.items.find((item) => item.name === "Garlic")!;
+    const candles = detail.items.find((item) => item.name === "Birthday candles")!;
+    expect(garlic.imageUrl).toBe("garlic");
+    expect(candles.imageUrl).toBeNull();
+  });
 });
 
 describe("list staleness", () => {
@@ -485,7 +500,7 @@ describe("list staleness", () => {
 
     const list = createShoppingList(ctx, { items: [{ ingredient: "Rice" }] });
     expect(list.runningLow).toEqual([
-      { ingredientId: oil, name: "Olive oil", category: "pantry", status: "low" },
+      { ingredientId: oil, name: "Olive oil", category: "pantry", imageUrl: null, status: "low" },
     ]);
   });
 });

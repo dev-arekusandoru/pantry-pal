@@ -122,7 +122,7 @@ export interface RecipeStats {
 }
 
 export interface RecipeIngredientView extends RecipeIngredient {
-  ingredient: { id: string; name: string; category: IngredientCategory };
+  ingredient: { id: string; name: string; category: IngredientCategory; imageUrl: string | null };
 }
 
 /** Step link with the linked line's name, unit and prep note resolved. */
@@ -134,6 +134,7 @@ export interface RecipeStepLinkView {
   position: number;
   ingredientId: string;
   ingredientName: string;
+  imageUrl: string | null;
   unit: string | null;
   prepNote: string | null;
 }
@@ -469,6 +470,7 @@ function getIngredientRows(ctx: Ctx, recipeId: string): RecipeIngredientView[] {
       },
       ingredientName: ingredients.name,
       ingredientCategory: ingredients.category,
+      ingredientImageUrl: ingredients.imageUrl,
     })
     .from(recipeIngredients)
     .innerJoin(ingredients, eq(ingredients.id, recipeIngredients.ingredientId))
@@ -480,9 +482,14 @@ function getIngredientRows(ctx: Ctx, recipeId: string): RecipeIngredientView[] {
     )
     .orderBy(asc(recipeIngredients.position), asc(recipeIngredients.id))
     .all()
-    .map(({ ri, ingredientName, ingredientCategory }) => ({
+    .map(({ ri, ingredientName, ingredientCategory, ingredientImageUrl }) => ({
       ...ri,
-      ingredient: { id: ri.ingredientId, name: ingredientName, category: ingredientCategory },
+      ingredient: {
+        id: ri.ingredientId,
+        name: ingredientName,
+        category: ingredientCategory,
+        imageUrl: ingredientImageUrl,
+      },
     }));
 }
 
@@ -521,6 +528,7 @@ function getStepRows(ctx: Ctx, recipeId: string): RecipeStepView[] {
       position: recipeStepIngredients.position,
       ingredientId: recipeIngredients.ingredientId,
       ingredientName: ingredients.name,
+      imageUrl: ingredients.imageUrl,
       unit: recipeIngredients.unit,
       prepNote: recipeIngredients.prepNote,
     })

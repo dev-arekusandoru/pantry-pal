@@ -98,6 +98,7 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
         defaultUnit: input.defaultUnit,
         aliases: input.aliases,
         ...(input.description === undefined ? {} : { description: input.description }),
+        ...(input.imageUrl === undefined ? {} : { imageUrl: input.imageUrl }),
         ...(input.shelfLifeDays === undefined ? {} : { shelfLifeDays: input.shelfLifeDays }),
         ...(input.parQty === undefined ? {} : { parQty: input.parQty }),
         ...(input.parUnit === undefined ? {} : { parUnit: input.parUnit }),

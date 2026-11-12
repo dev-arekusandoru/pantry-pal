@@ -54,7 +54,12 @@ export const ingredientSchema = z
     description: z.string().nullable(),
     category: ingredientCategorySchema,
     defaultUnit: z.string().nullable().describe("Unit used for stock and shopping by default."),
-    imageUrl: z.string().nullable(),
+    imageUrl: z
+      .string()
+      .nullable()
+      .describe(
+        'Bundled ingredient icon name (e.g. "garlic", see list_icons) or http(s) image URL; null = automatic icon.',
+      ),
     shelfLifeDays: z.number().int().nullable().describe("Typical shelf life after purchase."),
     parQty: z.number().nullable().describe("Desired minimum stock."),
     parUnit: z.string().nullable(),
@@ -108,7 +113,12 @@ export const createIngredientSchema = z
       .string()
       .nullish()
       .describe('Unit used for stock and shopping, e.g. "g" or "can".'),
-    imageUrl: z.string().nullish(),
+    imageUrl: z
+      .string()
+      .nullish()
+      .describe(
+        'Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL.',
+      ),
     shelfLifeDays: z.number().int().nonnegative().nullish(),
     parQty: z.number().nonnegative().nullish().describe("Desired minimum stock."),
     parUnit: z.string().nullish().describe("Unit of parQty."),
@@ -122,7 +132,12 @@ export const updateIngredientSchema = z
     description: z.string().nullish(),
     category: ingredientCategorySchema.optional(),
     defaultUnit: z.string().nullish(),
-    imageUrl: z.string().nullish(),
+    imageUrl: z
+      .string()
+      .nullish()
+      .describe(
+        'Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL.',
+      ),
     shelfLifeDays: z.number().int().nonnegative().nullish(),
     parQty: z.number().nonnegative().nullish(),
     parUnit: z.string().nullish(),

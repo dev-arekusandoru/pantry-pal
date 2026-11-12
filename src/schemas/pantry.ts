@@ -26,6 +26,10 @@ export const pantryItemViewSchema = z
       id: z.string(),
       name: z.string(),
       category: ingredientCategorySchema,
+      imageUrl: z
+        .string()
+        .nullable()
+        .describe("Bundled icon name or http(s) URL; null = automatic icon."),
       shelfLifeDays: z.number().int().nullable().describe("Typical shelf life after purchase."),
     }),
     qty: z.number().nullable().describe("Cached quantity; null = present but unknown."),

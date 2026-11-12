@@ -2,6 +2,7 @@ import { z } from "@hono/zod-openapi";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Ctx } from "../../context.js";
 import { AppError } from "../../lib/errors.js";
+import { ICON_NAMES } from "../../lib/icons.js";
 import { createIngredientSchema, ingredientCategorySchema } from "../../schemas/ingredients.js";
 import {
   bulkStockSchema,
@@ -45,6 +46,20 @@ const ingredientSearchInput = z.object({
   includeArchived: z.boolean().optional().describe("Include archived ingredients (default false)."),
 });
 
+const iconListInput = z.object({
+  query: z
+    .string()
+    .optional()
+    .describe("Case-insensitive substring matched against icon names, e.g. \"tomato\"."),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .max(500)
+    .optional()
+    .describe("Maximum icon names to return (default 100)."),
+});
+
 const ingredientUpsertInput = z
   .object({
     action: z
@@ -67,7 +82,7 @@ const ingredientUpsertInput = z
       .describe("Target ingredient id that survives the merge (action=merge)."),
   })
   .describe(
-    "Create or update an ingredient with its category, default unit, aliases, shelf life, par level and notes; merge folds a duplicate into another.",
+    'Create or update an ingredient with its category, icon (`imageUrl`: a bundled icon name from list_icons, an http(s) URL, or null for automatic), default unit, aliases, shelf life, par level and notes; merge folds a duplicate into another.',
   );
 
 const unitConversionsInput = z.object({
@@ -143,6 +158,22 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
         }),
       }),
     ),
+  );
+
+  server.registerTool(
+    "list_icons",
+    {
+      title: "List bundled ingredient icons",
+      description:
+        "Names accepted in an ingredient's `imageUrl`. Use one for a bundled icon, an http(s) URL for a custom image, or null for automatic matching.",
+      inputSchema: iconListInput,
+      annotations: { readOnlyHint: true },
+    },
+    tool((args: z.infer<typeof iconListInput>) => {
+      const query = args.query?.trim().toLowerCase() ?? "";
+      const names = query === "" ? ICON_NAMES : ICON_NAMES.filter((name) => name.includes(query));
+      return { total: names.length, items: names.slice(0, args.limit ?? 100) };
+    }),
   );
 
   server.registerTool(

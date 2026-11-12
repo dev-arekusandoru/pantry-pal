@@ -285,6 +285,10 @@ export const recipeIngredientSchema = z
         id: z.string(),
         name: z.string(),
         category: ingredientCategorySchema,
+        imageUrl: z
+          .string()
+          .nullable()
+          .describe("Bundled icon name or http(s) URL; null = automatic icon."),
       })
       .describe("Referenced ingredient."),
     qty: z.number().nullable(),
@@ -308,6 +312,10 @@ export const recipeStepLinkSchema = z
     position: z.number(),
     ingredientId: z.string(),
     ingredientName: z.string(),
+    imageUrl: z
+      .string()
+      .nullable()
+      .describe("Bundled icon name or http(s) URL; null = automatic icon."),
     unit: z.string().nullable().describe("Unit of the linked ingredient line."),
     prepNote: z.string().nullable(),
   })

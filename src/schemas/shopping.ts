@@ -186,6 +186,10 @@ export const shoppingItemSchema = z
     ingredientId: z.string().nullable().describe("Linked ingredient; null for free-text items."),
     name: z.string(),
     category: ingredientCategorySchema,
+    imageUrl: z
+      .string()
+      .nullable()
+      .describe("Linked ingredient icon name or http(s) URL; null for free-text items."),
     qty: z.number().nullable(),
     unit: z.string().nullable(),
     purposeNote: z
@@ -225,6 +229,10 @@ export const shoppingListDetailSchema = z
           ingredientId: id(),
           name: z.string(),
           category: ingredientCategorySchema,
+          imageUrl: z
+            .string()
+            .nullable()
+            .describe("Bundled icon name or http(s) URL; null = automatic icon."),
           status: z.enum(["low", "out"]),
         }),
       )

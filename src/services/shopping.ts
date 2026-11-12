@@ -39,7 +39,9 @@ export type ShoppingList = Omit<ShoppingListRow, "planFingerprint"> & {
    */
   stale: boolean;
 };
-export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
+export type ShoppingListItemRow = typeof shoppingListItems.$inferSelect;
+/** Item plus the linked ingredient's icon; null for free-text items. */
+export type ShoppingListItem = ShoppingListItemRow & { imageUrl: string | null };
 export type StockMovement = typeof stockMovements.$inferSelect;
 type Ingredient = typeof ingredients.$inferSelect;
 
@@ -70,6 +72,7 @@ export interface RunningLowItem {
   ingredientId: string;
   name: string;
   category: IngredientCategory;
+  imageUrl: string | null;
   status: "low" | "out";
 }
 
@@ -136,7 +139,7 @@ export function purposeNoteFor(uses: DemandUse[]): string | null {
   return rendered.length === 0 ? null : rendered.join(" + ");
 }
 
-function compareItems(a: ShoppingListItem, b: ShoppingListItem): number {
+function compareItems(a: ShoppingListItemRow, b: ShoppingListItemRow): number {
   const byCategory = categoryRank(a.category) - categoryRank(b.category);
   if (byCategory !== 0) return byCategory;
   const byName = a.name.localeCompare(b.name);
@@ -187,7 +190,7 @@ function loadList(ctx: Ctx, listId: string): ShoppingListRow {
   return list;
 }
 
-function loadItem(ctx: Ctx, listId: string, itemId: string): ShoppingListItem {
+function loadItem(ctx: Ctx, listId: string, itemId: string): ShoppingListItemRow {
   const item = ctx.db
     .select()
     .from(shoppingListItems)
@@ -205,7 +208,7 @@ function loadItem(ctx: Ctx, listId: string, itemId: string): ShoppingListItem {
   return item;
 }
 
-function listItems(ctx: Ctx, listId: string): ShoppingListItem[] {
+function listItems(ctx: Ctx, listId: string): ShoppingListItemRow[] {
   return ctx.db
     .select()
     .from(shoppingListItems)
@@ -217,6 +220,29 @@ function listItems(ctx: Ctx, listId: string): ShoppingListItem[] {
     )
     .orderBy(asc(shoppingListItems.position), asc(shoppingListItems.name))
     .all();
+}
+
+/** Attach each item's ingredient icon in one query (no per-item lookup). */
+function itemViews(ctx: Ctx, rows: ShoppingListItemRow[]): ShoppingListItem[] {
+  const ids = [
+    ...new Set(rows.flatMap((row) => (row.ingredientId === null ? [] : [row.ingredientId]))),
+  ];
+  const images = new Map(
+    ids.length === 0
+      ? []
+      : ctx.db
+          .select({ id: ingredients.id, imageUrl: ingredients.imageUrl })
+          .from(ingredients)
+          .where(
+            and(eq(ingredients.householdId, ctx.householdId), inArray(ingredients.id, ids)),
+          )
+          .all()
+          .map((row) => [row.id, row.imageUrl] as const),
+  );
+  return rows.map((row) => ({
+    ...row,
+    imageUrl: row.ingredientId === null ? null : (images.get(row.ingredientId) ?? null),
+  }));
 }
 
 function assertMutable(list: ShoppingListRow): void {
@@ -287,7 +313,7 @@ export function planHasStaleShoppingList(ctx: Ctx, planId: string): boolean {
   return rows.some((row) => toListView(ctx, row, cache).stale);
 }
 
-function runningLowFor(ctx: Ctx, items: ShoppingListItem[]): RunningLowItem[] {
+function runningLowFor(ctx: Ctx, items: ShoppingListItemRow[]): RunningLowItem[] {
   const onList = new Set(items.flatMap((item) => (item.ingredientId === null ? [] : [item.ingredientId])));
   const rows = ctx.db
     .select({
@@ -295,17 +321,27 @@ function runningLowFor(ctx: Ctx, items: ShoppingListItem[]): RunningLowItem[] {
       status: pantryItems.status,
       name: ingredients.name,
       category: ingredients.category,
+      imageUrl: ingredients.imageUrl,
     })
     .from(pantryItems)
     .innerJoin(ingredients, eq(ingredients.id, pantryItems.ingredientId))
     .where(eq(pantryItems.householdId, ctx.householdId))
     .all();
 
-  const grouped = new Map<string, { name: string; category: IngredientCategory; statuses: PantryStatus[] }>();
+  const grouped = new Map<
+    string,
+    { name: string; category: IngredientCategory; imageUrl: string | null; statuses: PantryStatus[] }
+  >();
   for (const row of rows) {
     const entry = grouped.get(row.ingredientId);
     if (entry) entry.statuses.push(row.status);
-    else grouped.set(row.ingredientId, { name: row.name, category: row.category, statuses: [row.status] });
+    else
+      grouped.set(row.ingredientId, {
+        name: row.name,
+        category: row.category,
+        imageUrl: row.imageUrl,
+        statuses: [row.status],
+      });
   }
 
   const low: RunningLowItem[] = [];
@@ -316,6 +352,7 @@ function runningLowFor(ctx: Ctx, items: ShoppingListItem[]): RunningLowItem[] {
       ingredientId,
       name: entry.name,
       category: entry.category,
+      imageUrl: entry.imageUrl,
       status: entry.statuses.every((status) => status === "out") ? "out" : "low",
     });
   }
@@ -324,7 +361,8 @@ function runningLowFor(ctx: Ctx, items: ShoppingListItem[]): RunningLowItem[] {
 
 function buildDetail(ctx: Ctx, listId: string, includeChecked: boolean): ShoppingListDetail {
   const list = toListView(ctx, loadList(ctx, listId));
-  const all = listItems(ctx, listId);
+  const allRows = listItems(ctx, listId);
+  const all = itemViews(ctx, allRows);
   const items = includeChecked ? all : all.filter((item) => item.checkedAt === null);
 
   const groupsById = new Map<IngredientCategory, ShoppingListItem[]>();
@@ -345,7 +383,7 @@ function buildDetail(ctx: Ctx, listId: string, includeChecked: boolean): Shoppin
     needsCheck: all.filter((item) => item.needsCheck).length,
   };
 
-  return { list, items, groups, counts, runningLow: runningLowFor(ctx, all) };
+  return { list, items, groups, counts, runningLow: runningLowFor(ctx, allRows) };
 }
 
 /** Renumber positions so items read in aisle → name order. */
@@ -471,7 +509,7 @@ function resolveItemTarget(ctx: Ctx, input: AddItemInput): ResolvedItemTarget {
   };
 }
 
-function nextPosition(items: ShoppingListItem[]): number {
+function nextPosition(items: ShoppingListItemRow[]): number {
   return items.reduce((max, item) => Math.max(max, item.position + 1), 0);
 }
 
@@ -481,7 +519,7 @@ function insertItem(
   input: AddItemInput,
   position: number,
   timestamp: string,
-): ShoppingListItem {
+): ShoppingListItemRow {
   const target = resolveItemTarget(ctx, input);
   const qty = input.qty ?? null;
   const unit =
@@ -619,7 +657,7 @@ export function addItems(
     const scoped = txCtx(ctx, tx);
     const timestamp = nowIso(scoped);
     let position = nextPosition(listItems(scoped, listId));
-    const rows: ShoppingListItem[] = [];
+    const rows: ShoppingListItemRow[] = [];
     for (const input of items) {
       rows.push(insertItem(scoped, listId, input, position, timestamp));
       position += 1;
@@ -627,7 +665,7 @@ export function addItems(
     return rows;
   });
 
-  return { items: inserted };
+  return { items: itemViews(ctx, inserted) };
 }
 
 export interface UpdateItemInput {
@@ -696,14 +734,17 @@ export function updateItem(
         : resolveIngredientRef(ctx, input.substituteIngredient).id;
   }
 
-  if (Object.keys(patch).length === 0) return loadItem(ctx, listId, itemId);
+  if (Object.keys(patch).length === 0) return itemViews(ctx, [loadItem(ctx, listId, itemId)])[0]!;
 
-  return ctx.db
-    .update(shoppingListItems)
-    .set(patch)
-    .where(eq(shoppingListItems.id, itemId))
-    .returning()
-    .get();
+  return itemViews(
+    ctx,
+    ctx.db
+      .update(shoppingListItems)
+      .set(patch)
+      .where(eq(shoppingListItems.id, itemId))
+      .returning()
+      .all(),
+  )[0]!;
 }
 
 export function deleteItem(
@@ -741,7 +782,7 @@ export function checkItems(
   const updated = ctx.db.transaction((tx) => {
     const scoped = txCtx(ctx, tx);
     const timestamp = nowIso(scoped);
-    const rows: ShoppingListItem[] = [];
+    const rows: ShoppingListItemRow[] = [];
 
     for (const change of items) {
       const item = loadItem(scoped, listId, change.itemId);
@@ -792,7 +833,7 @@ export function checkItems(
     return rows;
   });
 
-  return { items: updated };
+  return { items: itemViews(ctx, updated) };
 }
 
 export interface ReceivedItemInput {
@@ -1165,7 +1206,7 @@ export function generateShoppingList(
       .run();
 
     const existing = listItems(scoped, listId);
-    const existingByIngredient = new Map<string, ShoppingListItem>();
+    const existingByIngredient = new Map<string, ShoppingListItemRow>();
     for (const item of existing) {
       if (item.ingredientId !== null) existingByIngredient.set(item.ingredientId, item);
     }

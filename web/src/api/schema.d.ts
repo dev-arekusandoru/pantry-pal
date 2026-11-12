@@ -7155,6 +7155,8 @@ export interface components {
                  * @enum {string}
                  */
                 category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
+                /** @description Bundled icon name or http(s) URL; null = automatic icon. */
+                imageUrl: string | null;
                 /** @enum {string} */
                 status: "low" | "out";
             }[];
@@ -7174,6 +7176,8 @@ export interface components {
              * @enum {string}
              */
             category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
+            /** @description Linked ingredient icon name or http(s) URL; null for free-text items. */
+            imageUrl: string | null;
             qty: number | null;
             unit: string | null;
             /** @description Why it is on the list (planned cooks, a manual add, or running low). */
@@ -7371,6 +7375,7 @@ export interface components {
             category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             /** @description Unit used for stock and shopping by default. */
             defaultUnit: string | null;
+            /** @description Bundled ingredient icon name (e.g. "garlic", see list_icons) or http(s) image URL; null = automatic icon. */
             imageUrl: string | null;
             /** @description Typical shelf life after purchase. */
             shelfLifeDays: number | null;
@@ -7396,6 +7401,7 @@ export interface components {
             aliases?: string[];
             /** @description Unit used for stock and shopping, e.g. "g" or "can". */
             defaultUnit?: string | null;
+            /** @description Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL. */
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
             /** @description Desired minimum stock. */
@@ -7414,6 +7420,7 @@ export interface components {
              */
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             defaultUnit?: string | null;
+            /** @description Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL. */
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
             parQty?: number | null;
@@ -7492,6 +7499,8 @@ export interface components {
                  * @enum {string}
                  */
                 category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
+                /** @description Bundled icon name or http(s) URL; null = automatic icon. */
+                imageUrl: string | null;
                 /** @description Typical shelf life after purchase. */
                 shelfLifeDays: number | null;
             };
@@ -7773,6 +7782,8 @@ export interface components {
                 id: string;
                 name: string;
                 category: components["schemas"]["IngredientCategory"];
+                /** @description Bundled icon name or http(s) URL; null = automatic icon. */
+                imageUrl: string | null;
             };
             qty: number | null;
             qtyMax: number | null;
@@ -7810,6 +7821,8 @@ export interface components {
             position: number;
             ingredientId: string;
             ingredientName: string;
+            /** @description Bundled icon name or http(s) URL; null = automatic icon. */
+            imageUrl: string | null;
             /** @description Unit of the linked ingredient line. */
             unit: string | null;
             prepNote: string | null;

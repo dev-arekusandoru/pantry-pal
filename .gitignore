@@ -25,3 +25,6 @@ site/.docusaurus/
 Thumbs.db
 
 *.tar.gz
+
+# Source art for ingredient icons; shipped icons live in web/src/assets/ingredients.
+new-icons/

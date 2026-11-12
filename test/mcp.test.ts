@@ -15,6 +15,7 @@ const TOOL_NAMES = [
   "household_update",
   "ingredient_search",
   "ingredient_upsert",
+  "list_icons",
   "unit_conversions",
   "pantry_query",
   "pantry_update",

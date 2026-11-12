@@ -13,6 +13,7 @@ import {
   type PantryStatus,
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
+import { normalizeImageUrl } from "../lib/icons.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
 import { convert, normalizeUnit } from "./units.js";
@@ -383,7 +384,7 @@ function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientV
       description: input.description ?? null,
       category: input.category ?? "other",
       defaultUnit: normalizeUnitInput(input.defaultUnit, "unit"),
-      imageUrl: input.imageUrl ?? null,
+      imageUrl: normalizeImageUrl(input.imageUrl),
       shelfLifeDays: input.shelfLifeDays ?? null,
       parQty: requireParQty(input.parQty),
       parUnit: normalizeUnitInput(input.parUnit, "unit"),
@@ -446,7 +447,7 @@ function updateIngredientIn(
   if (input.defaultUnit !== undefined) {
     patch.defaultUnit = normalizeUnitInput(input.defaultUnit, "unit");
   }
-  if (input.imageUrl !== undefined) patch.imageUrl = input.imageUrl;
+  if (input.imageUrl !== undefined) patch.imageUrl = normalizeImageUrl(input.imageUrl);
   if (input.shelfLifeDays !== undefined) patch.shelfLifeDays = input.shelfLifeDays;
   if (input.parQty !== undefined) patch.parQty = requireParQty(input.parQty);
   if (input.parUnit !== undefined) {

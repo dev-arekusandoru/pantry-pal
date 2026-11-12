@@ -20,6 +20,7 @@
     "typecheck": "tsc --noEmit && pnpm --filter @pantrypal/web typecheck",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
+    "icons:manifest": "tsx scripts/icons-manifest.ts",
     "build:server": "tsc -p tsconfig.build.json",
     "test:web": "pnpm --filter @pantrypal/web test",
     "test:all": "vitest run && pnpm test:web",

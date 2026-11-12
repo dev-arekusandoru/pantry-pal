@@ -76,6 +76,24 @@ describe("createIngredient", () => {
     const { ctx } = makeTestCtx();
     expectAppError(() => createIngredient(ctx, { name: "Mystery", defaultUnit: "smidgen" }), "validation");
   });
+
+  it("validates and clears the ingredient icon", () => {
+    const { ctx } = makeTestCtx();
+    const icon = createIngredient(ctx, { name: "Garlic", imageUrl: "garlic" });
+    expect(icon.imageUrl).toBe("garlic");
+    expect(
+      createIngredient(ctx, { name: "Chili", imageUrl: "https://example.com/chili.webp" }).imageUrl,
+    ).toBe("https://example.com/chili.webp");
+
+    expectAppError(
+      () => createIngredient(ctx, { name: "Mystery", imageUrl: "not-an-icon" }),
+      "validation",
+    );
+    expect(listIngredients(ctx).map((row) => row.name)).toEqual(["Chili", "Garlic"]);
+
+    expect(updateIngredient(ctx, icon.id, { imageUrl: null }).imageUrl).toBeNull();
+    expect(updateIngredient(ctx, icon.id, { imageUrl: "tomato" }).imageUrl).toBe("tomato");
+  });
 });
 
 describe("listIngredients / getIngredient", () => {
