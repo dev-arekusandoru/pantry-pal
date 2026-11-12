@@ -31,11 +31,14 @@ setup, see [MCP setup](setup.md).
 6. Call `plan_create` with `weekStart`, cook events, slots, and prep tasks. Give
    each new cook a `key`, then point slots at it with `cookEventKey`. This makes
    one cook feed several later meals as leftovers.
-7. For a change after the plan exists, call `plan_swap_meal`. Read the returned
+7. For a change after the plan exists, call `plan_swap_meal`. To add a side to
+   a meal or remove one dish, call `plan_dishes`. Read the returned
    `shoppingListStale` value and regenerate an open list when it is `true`.
 
 `weekStart` must be the household's week start day. Use `plan_set_slots` to
-replace one or more date and meal groups.
+replace one or more date and meal groups. To put a main and a side on one meal,
+give `spec` an array, for example
+`[{"kind": "cook", "recipe": "grilled-chicken"}, {"kind": "cook", "recipe": "rice"}]`.
 
 ## Change pantry stock
 

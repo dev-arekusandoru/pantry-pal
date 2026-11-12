@@ -103,10 +103,28 @@ export function swapPlanFor(slot: Slot, plan: PlanView): SwapPlan {
   return { canSwap: true, askScope: cook.status === "planned" && (view?.fedSlots ?? fed.length) > 1, fed };
 }
 
-/** Today's dinner: a planned meal first, then whatever else is there. */
-export function tonightSlot(plan: PlanView, today: string): Slot | null {
+/** Mirrors the server: the cook night of a done or skipped cook stays on the plan. */
+export function canRemoveDish(slot: Slot): boolean {
+  const cook = slot.cookEvent;
+  return !cook || cook.status === "planned" || slot.isLeftover;
+}
+
+/** A planned meal takes more dishes (a side next to a main); a skipped one is swapped instead. */
+export function canAddDish(slots: readonly Slot[]): boolean {
+  return slots.length > 0 && slots.every((s) => s.kind !== "skip");
+}
+
+/** "Rice and Green beans": the other dishes of a meal, for "with …" lines. */
+export function dishTitles(slots: readonly Slot[]): string {
+  const titles = slots.map((s) => s.cookEvent?.recipeTitle ?? s.label ?? "Something simple");
+  return titles.length <= 1 ? (titles[0] ?? "") : `${titles.slice(0, -1).join(", ")} and ${titles.at(-1)}`;
+}
+
+/** Every dish of today's dinner: a planned meal first (the featured one), then the rest. */
+export function tonightDinner(plan: PlanView, today: string): Slot[] {
   const dinners = plan.days.find((d) => d.date === today)?.meals.dinner ?? [];
-  return dinners.find((s) => s.kind === "meal") ?? dinners[0] ?? null;
+  const main = dinners.find((s) => s.kind === "meal") ?? dinners[0];
+  return main ? [main, ...dinners.filter((s) => s !== main)] : [];
 }
 
 const NUDGE_WINDOW_PAST_DAYS = 3;

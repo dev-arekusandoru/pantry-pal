@@ -3714,10 +3714,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Set meal slots for date+mealType groups
-         * @description Replaces existing slots for each (date, mealType). Cook specs create a cook event dated that day; leftover specs link an existing cook; freeform/skip need no cook; clear removes the slots. Planned cook events left without slots are deleted and reported.
-         */
+        /** @description Replaces existing slots for each (date, mealType). `spec` is one spec, or an array for several dishes at the same meal (e.g. a main and a side). Cook specs create a cook event dated that day; leftover specs link an existing cook; freeform/skip need no cook; clear removes the slots. Planned cook events left without slots are deleted and reported. */
         post: {
             parameters: {
                 query?: never;
@@ -3744,7 +3741,7 @@ export interface paths {
                              * @enum {string}
                              */
                             mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
-                            /** @description Replacement spec for one date+mealType group. */
+                            /** @description One spec, or an array for several dishes at the same meal (e.g. a main and a side), in display order. `clear` must stand alone. */
                             spec: {
                                 /** @enum {string} */
                                 kind: "cook";
@@ -3778,7 +3775,40 @@ export interface paths {
                             } | {
                                 /** @enum {string} */
                                 kind: "clear";
-                            };
+                            } | ({
+                                /** @enum {string} */
+                                kind: "cook";
+                                /** @description Recipe id. Takes precedence over `recipe`. */
+                                recipeId?: string;
+                                /** @description Recipe slug or title, used when `recipeId` is not given. */
+                                recipe?: string;
+                                /** @description Servings eaten in this slot. */
+                                servings?: number;
+                                /** @description Servings the new cook yields; defaults to `servings` or the meal-type default. */
+                                cookServings?: number;
+                                /** @description Label for the new cook event. */
+                                label?: string | null;
+                            } | {
+                                /** @enum {string} */
+                                kind: "leftover";
+                                /** @description Existing cook event to eat from. */
+                                cookEventId: string;
+                                /** @description Servings eaten from that cook. */
+                                servings?: number;
+                            } | {
+                                /** @enum {string} */
+                                kind: "freeform";
+                                /** @description What is being eaten, e.g. "Fridge clean-out". */
+                                label: string;
+                            } | {
+                                /** @enum {string} */
+                                kind: "skip";
+                                /** @description Optional reason, e.g. "Eating out". */
+                                label?: string | null;
+                            } | {
+                                /** @enum {string} */
+                                kind: "clear";
+                            })[];
                         }[];
                     };
                 };
@@ -4405,6 +4435,748 @@ export interface paths {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plans/{id}/dishes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a dish to a meal
+         * @description Adds one more recipe (e.g. a side next to a main) to a date+mealType: a new planned cook dated that day and a slot after the meal's other dishes. A skip slot at that meal is replaced. Returns the updated plan and whether an open shopping list for it is now stale.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Plan id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Meal date inside the plan week.
+                         * @example 2026-11-02
+                         */
+                        date: string;
+                        /**
+                         * @description Eating occasion.
+                         * @example dinner
+                         * @enum {string}
+                         */
+                        mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                        /** @description Recipe id. Takes precedence over `recipe`. */
+                        recipeId?: string;
+                        /** @description Recipe slug or title, used when `recipeId` is not given. */
+                        recipe?: string;
+                        /** @description Servings the new cook yields; defaults to the meal-type default. */
+                        servings?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            plan: {
+                                id: string;
+                                householdId: string;
+                                /**
+                                 * @description Calendar date (YYYY-MM-DD).
+                                 * @example 2026-11-02
+                                 */
+                                weekStart: string;
+                                title: string | null;
+                                /**
+                                 * @description Plan lifecycle status.
+                                 * @example active
+                                 * @enum {string}
+                                 */
+                                status: "draft" | "active" | "archived";
+                                notes: string | null;
+                                createdAt: string;
+                                updatedAt: string;
+                                /** @description Seven days starting at weekStart. */
+                                days: {
+                                    /**
+                                     * @description Calendar date (YYYY-MM-DD).
+                                     * @example 2026-11-02
+                                     */
+                                    date: string;
+                                    meals: {
+                                        breakfast: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        lunch: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        dinner: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        snack: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        dessert: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                    };
+                                }[];
+                                cookEvents: {
+                                    id: string;
+                                    householdId: string;
+                                    mealPlanId: string | null;
+                                    recipeId: string;
+                                    recipeTitle: string;
+                                    /**
+                                     * @description Calendar date (YYYY-MM-DD).
+                                     * @example 2026-11-02
+                                     */
+                                    cookDate: string;
+                                    plannedServings: number;
+                                    actualServings: number | null;
+                                    label: string | null;
+                                    /**
+                                     * @description Cook lifecycle status.
+                                     * @example planned
+                                     * @enum {string}
+                                     */
+                                    status: "planned" | "done" | "skipped";
+                                    completedAt: string | null;
+                                    rating: number | null;
+                                    notes: string | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    fedSlots: number;
+                                    servingsAllocated: number;
+                                    servingsRemaining: number;
+                                }[];
+                                prepTasks: {
+                                    id: string;
+                                    householdId: string;
+                                    mealPlanId: string;
+                                    /**
+                                     * @description Calendar date (YYYY-MM-DD).
+                                     * @example 2026-11-02
+                                     */
+                                    dueDate: string;
+                                    description: string;
+                                    cookEventId: string | null;
+                                    doneAt: string | null;
+                                    position: number;
+                                    done: boolean;
+                                }[];
+                                /** @description Human-readable planning warnings. */
+                                warnings: string[];
+                            };
+                            /** @description True when an open shopping list generated from this plan is now out of date. */
+                            shoppingListStale: boolean;
+                        };
+                    };
+                };
+                /** @description Invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Plan or recipe not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plans/{id}/dishes/{slotId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a dish from a meal
+         * @description Deletes the slot. Its cook is deleted too when it is planned and feeds no other slot. The cook night of a done or skipped cook can't be removed. Returns the updated plan and whether an open shopping list for it is now stale.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Plan id. */
+                    id: string;
+                    /** @description Slot id. */
+                    slotId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            plan: {
+                                id: string;
+                                householdId: string;
+                                /**
+                                 * @description Calendar date (YYYY-MM-DD).
+                                 * @example 2026-11-02
+                                 */
+                                weekStart: string;
+                                title: string | null;
+                                /**
+                                 * @description Plan lifecycle status.
+                                 * @example active
+                                 * @enum {string}
+                                 */
+                                status: "draft" | "active" | "archived";
+                                notes: string | null;
+                                createdAt: string;
+                                updatedAt: string;
+                                /** @description Seven days starting at weekStart. */
+                                days: {
+                                    /**
+                                     * @description Calendar date (YYYY-MM-DD).
+                                     * @example 2026-11-02
+                                     */
+                                    date: string;
+                                    meals: {
+                                        breakfast: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        lunch: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        dinner: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        snack: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                        dessert: {
+                                            id: string;
+                                            householdId: string;
+                                            mealPlanId: string;
+                                            /**
+                                             * @description Calendar date (YYYY-MM-DD).
+                                             * @example 2026-11-02
+                                             */
+                                            date: string;
+                                            /**
+                                             * @description Eating occasion.
+                                             * @example dinner
+                                             * @enum {string}
+                                             */
+                                            mealType: "breakfast" | "lunch" | "dinner" | "snack" | "dessert";
+                                            /**
+                                             * @description meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.
+                                             * @example meal
+                                             * @enum {string}
+                                             */
+                                            kind: "meal" | "freeform" | "skip";
+                                            cookEventId: string | null;
+                                            cookEvent: {
+                                                id: string;
+                                                recipeId: string;
+                                                recipeTitle: string;
+                                                /**
+                                                 * @description Calendar date (YYYY-MM-DD).
+                                                 * @example 2026-11-02
+                                                 */
+                                                cookDate: string;
+                                                /**
+                                                 * @description Cook lifecycle status.
+                                                 * @example planned
+                                                 * @enum {string}
+                                                 */
+                                                status: "planned" | "done" | "skipped";
+                                            } | null;
+                                            servings: number | null;
+                                            label: string | null;
+                                            notes: string | null;
+                                            position: number;
+                                            /** @description True when the slot is dated after the cook that feeds it. */
+                                            isLeftover: boolean;
+                                        }[];
+                                    };
+                                }[];
+                                cookEvents: {
+                                    id: string;
+                                    householdId: string;
+                                    mealPlanId: string | null;
+                                    recipeId: string;
+                                    recipeTitle: string;
+                                    /**
+                                     * @description Calendar date (YYYY-MM-DD).
+                                     * @example 2026-11-02
+                                     */
+                                    cookDate: string;
+                                    plannedServings: number;
+                                    actualServings: number | null;
+                                    label: string | null;
+                                    /**
+                                     * @description Cook lifecycle status.
+                                     * @example planned
+                                     * @enum {string}
+                                     */
+                                    status: "planned" | "done" | "skipped";
+                                    completedAt: string | null;
+                                    rating: number | null;
+                                    notes: string | null;
+                                    createdAt: string;
+                                    updatedAt: string;
+                                    fedSlots: number;
+                                    servingsAllocated: number;
+                                    servingsRemaining: number;
+                                }[];
+                                prepTasks: {
+                                    id: string;
+                                    householdId: string;
+                                    mealPlanId: string;
+                                    /**
+                                     * @description Calendar date (YYYY-MM-DD).
+                                     * @example 2026-11-02
+                                     */
+                                    dueDate: string;
+                                    description: string;
+                                    cookEventId: string | null;
+                                    doneAt: string | null;
+                                    position: number;
+                                    done: boolean;
+                                }[];
+                                /** @description Human-readable planning warnings. */
+                                warnings: string[];
+                            };
+                            /** @description True when an open shopping list generated from this plan is now out of date. */
+                            shoppingListStale: boolean;
+                        };
+                    };
+                };
+                /** @description The dish's cook is already done or skipped */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Plan or slot not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -7083,7 +7855,7 @@ export interface components {
             nutrition?: components["schemas"]["NutritionInfo"];
             /** @description Storage / reheat guidance for leftovers. */
             storageNotes?: string | null;
-            /** @description Days leftovers keep in the fridge. */
+            /** @description Days leftovers keep. */
             leftoverDays?: number | null;
             status?: components["schemas"]["RecipeStatus"] & unknown;
             /** @description Household rating 1-5. */
@@ -7175,7 +7947,7 @@ export interface components {
             nutrition?: components["schemas"]["NutritionInfo"];
             /** @description Storage / reheat guidance for leftovers. */
             storageNotes?: string | null;
-            /** @description Days leftovers keep in the fridge. */
+            /** @description Days leftovers keep. */
             leftoverDays?: number | null;
             status?: components["schemas"]["RecipeStatus"] & unknown;
             /** @description Household rating 1-5. */

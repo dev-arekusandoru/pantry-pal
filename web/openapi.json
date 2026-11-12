@@ -3131,7 +3131,7 @@
               "null"
             ],
             "minimum": 0,
-            "description": "Days leftovers keep in the fridge."
+            "description": "Days leftovers keep."
           },
           "status": {
             "allOf": [
@@ -3460,7 +3460,7 @@
               "null"
             ],
             "minimum": 0,
-            "description": "Days leftovers keep in the fridge."
+            "description": "Days leftovers keep."
           },
           "status": {
             "allOf": [
@@ -12092,8 +12092,7 @@
         "tags": [
           "plans"
         ],
-        "summary": "Set meal slots for date+mealType groups",
-        "description": "Replaces existing slots for each (date, mealType). Cook specs create a cook event dated that day; leftover specs link an existing cook; freeform/skip need no cook; clear removes the slots. Planned cook events left without slots are deleted and reported.",
+        "description": "Replaces existing slots for each (date, mealType). `spec` is one spec, or an array for several dishes at the same meal (e.g. a main and a side). Cook specs create a cook event dated that day; leftover specs link an existing cook; freeform/skip need no cook; clear removes the slots. Planned cook events left without slots are deleted and reported.",
         "parameters": [
           {
             "schema": {
@@ -12136,7 +12135,7 @@
                           "example": "dinner"
                         },
                         "spec": {
-                          "oneOf": [
+                          "anyOf": [
                             {
                               "type": "object",
                               "properties": {
@@ -12262,9 +12261,144 @@
                                 "kind"
                               ],
                               "description": "Remove the slots at this date+mealType."
+                            },
+                            {
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "cook"
+                                        ]
+                                      },
+                                      "recipeId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Recipe id. Takes precedence over `recipe`."
+                                      },
+                                      "recipe": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Recipe slug or title, used when `recipeId` is not given."
+                                      },
+                                      "servings": {
+                                        "type": "number",
+                                        "exclusiveMinimum": 0,
+                                        "description": "Servings eaten in this slot."
+                                      },
+                                      "cookServings": {
+                                        "type": "number",
+                                        "exclusiveMinimum": 0,
+                                        "description": "Servings the new cook yields; defaults to `servings` or the meal-type default."
+                                      },
+                                      "label": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "Label for the new cook event."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "description": "Create a cook dated the same day and let it feed this slot."
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "leftover"
+                                        ]
+                                      },
+                                      "cookEventId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "Existing cook event to eat from."
+                                      },
+                                      "servings": {
+                                        "type": "number",
+                                        "exclusiveMinimum": 0,
+                                        "description": "Servings eaten from that cook."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "cookEventId"
+                                    ],
+                                    "description": "Eat leftovers from an existing cook event."
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "freeform"
+                                        ]
+                                      },
+                                      "label": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "description": "What is being eaten, e.g. \"Fridge clean-out\"."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind",
+                                      "label"
+                                    ],
+                                    "description": "Ad-hoc meal without a cook event."
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "skip"
+                                        ]
+                                      },
+                                      "label": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "description": "Optional reason, e.g. \"Eating out\"."
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "description": "Intentionally no meal."
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "clear"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "kind"
+                                    ],
+                                    "description": "Remove the slots at this date+mealType."
+                                  }
+                                ],
+                                "description": "Replacement spec for one date+mealType group."
+                              },
+                              "minItems": 1
                             }
                           ],
-                          "description": "Replacement spec for one date+mealType group."
+                          "description": "One spec, or an array for several dishes at the same meal (e.g. a main and a side), in display order. `clear` must stand alone."
                         }
                       },
                       "required": [
@@ -13762,6 +13896,1997 @@
           },
           "404": {
             "description": "Plan, slot or recipe not found"
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/dishes": {
+      "post": {
+        "tags": [
+          "plans"
+        ],
+        "summary": "Add a dish to a meal",
+        "description": "Adds one more recipe (e.g. a side next to a main) to a date+mealType: a new planned cook dated that day and a slot after the meal's other dishes. A skip slot at that meal is replaced. Returns the updated plan and whether an open shopping list for it is now stale.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Plan id."
+            },
+            "required": true,
+            "description": "Plan id.",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "Meal date inside the plan week.",
+                    "example": "2026-11-02"
+                  },
+                  "mealType": {
+                    "type": "string",
+                    "enum": [
+                      "breakfast",
+                      "lunch",
+                      "dinner",
+                      "snack",
+                      "dessert"
+                    ],
+                    "description": "Eating occasion.",
+                    "example": "dinner"
+                  },
+                  "recipeId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Recipe id. Takes precedence over `recipe`."
+                  },
+                  "recipe": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Recipe slug or title, used when `recipeId` is not given."
+                  },
+                  "servings": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Servings the new cook yields; defaults to the meal-type default."
+                  }
+                },
+                "required": [
+                  "date",
+                  "mealType"
+                ],
+                "description": "Add one more dish (e.g. a side) to a meal."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "householdId": {
+                          "type": "string"
+                        },
+                        "weekStart": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "description": "Calendar date (YYYY-MM-DD).",
+                          "example": "2026-11-02"
+                        },
+                        "title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "active",
+                            "archived"
+                          ],
+                          "description": "Plan lifecycle status.",
+                          "example": "active"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "days": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "description": "Calendar date (YYYY-MM-DD).",
+                                "example": "2026-11-02"
+                              },
+                              "meals": {
+                                "type": "object",
+                                "properties": {
+                                  "breakfast": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "lunch": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "dinner": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "snack": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "dessert": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "breakfast",
+                                  "lunch",
+                                  "dinner",
+                                  "snack",
+                                  "dessert"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "date",
+                              "meals"
+                            ]
+                          },
+                          "description": "Seven days starting at weekStart."
+                        },
+                        "cookEvents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "householdId": {
+                                "type": "string"
+                              },
+                              "mealPlanId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "recipeId": {
+                                "type": "string"
+                              },
+                              "recipeTitle": {
+                                "type": "string"
+                              },
+                              "cookDate": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "description": "Calendar date (YYYY-MM-DD).",
+                                "example": "2026-11-02"
+                              },
+                              "plannedServings": {
+                                "type": "number"
+                              },
+                              "actualServings": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "label": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "planned",
+                                  "done",
+                                  "skipped"
+                                ],
+                                "description": "Cook lifecycle status.",
+                                "example": "planned"
+                              },
+                              "completedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "rating": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "notes": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string"
+                              },
+                              "fedSlots": {
+                                "type": "integer"
+                              },
+                              "servingsAllocated": {
+                                "type": "number"
+                              },
+                              "servingsRemaining": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "householdId",
+                              "mealPlanId",
+                              "recipeId",
+                              "recipeTitle",
+                              "cookDate",
+                              "plannedServings",
+                              "actualServings",
+                              "label",
+                              "status",
+                              "completedAt",
+                              "rating",
+                              "notes",
+                              "createdAt",
+                              "updatedAt",
+                              "fedSlots",
+                              "servingsAllocated",
+                              "servingsRemaining"
+                            ]
+                          }
+                        },
+                        "prepTasks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "householdId": {
+                                "type": "string"
+                              },
+                              "mealPlanId": {
+                                "type": "string"
+                              },
+                              "dueDate": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "description": "Calendar date (YYYY-MM-DD).",
+                                "example": "2026-11-02"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "cookEventId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "doneAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "position": {
+                                "type": "integer"
+                              },
+                              "done": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "householdId",
+                              "mealPlanId",
+                              "dueDate",
+                              "description",
+                              "cookEventId",
+                              "doneAt",
+                              "position",
+                              "done"
+                            ]
+                          }
+                        },
+                        "warnings": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Human-readable planning warnings."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "householdId",
+                        "weekStart",
+                        "title",
+                        "status",
+                        "notes",
+                        "createdAt",
+                        "updatedAt",
+                        "days",
+                        "cookEvents",
+                        "prepTasks",
+                        "warnings"
+                      ]
+                    },
+                    "shoppingListStale": {
+                      "type": "boolean",
+                      "description": "True when an open shopping list generated from this plan is now out of date."
+                    }
+                  },
+                  "required": [
+                    "plan",
+                    "shoppingListStale"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "404": {
+            "description": "Plan or recipe not found"
+          }
+        }
+      }
+    },
+    "/api/v1/plans/{id}/dishes/{slotId}": {
+      "delete": {
+        "tags": [
+          "plans"
+        ],
+        "summary": "Remove a dish from a meal",
+        "description": "Deletes the slot. Its cook is deleted too when it is planned and feeds no other slot. The cook night of a done or skipped cook can't be removed. Returns the updated plan and whether an open shopping list for it is now stale.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "Plan id."
+            },
+            "required": true,
+            "description": "Plan id.",
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Slot id."
+            },
+            "required": true,
+            "description": "Slot id.",
+            "name": "slotId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "householdId": {
+                          "type": "string"
+                        },
+                        "weekStart": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "description": "Calendar date (YYYY-MM-DD).",
+                          "example": "2026-11-02"
+                        },
+                        "title": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft",
+                            "active",
+                            "archived"
+                          ],
+                          "description": "Plan lifecycle status.",
+                          "example": "active"
+                        },
+                        "notes": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "days": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "description": "Calendar date (YYYY-MM-DD).",
+                                "example": "2026-11-02"
+                              },
+                              "meals": {
+                                "type": "object",
+                                "properties": {
+                                  "breakfast": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "lunch": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "dinner": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "snack": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  },
+                                  "dessert": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "householdId": {
+                                          "type": "string"
+                                        },
+                                        "mealPlanId": {
+                                          "type": "string"
+                                        },
+                                        "date": {
+                                          "type": "string",
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                          "description": "Calendar date (YYYY-MM-DD).",
+                                          "example": "2026-11-02"
+                                        },
+                                        "mealType": {
+                                          "type": "string",
+                                          "enum": [
+                                            "breakfast",
+                                            "lunch",
+                                            "dinner",
+                                            "snack",
+                                            "dessert"
+                                          ],
+                                          "description": "Eating occasion.",
+                                          "example": "dinner"
+                                        },
+                                        "kind": {
+                                          "type": "string",
+                                          "enum": [
+                                            "meal",
+                                            "freeform",
+                                            "skip"
+                                          ],
+                                          "description": "meal = fed by a cook event; freeform = ad-hoc eating with a label; skip = intentionally no meal.",
+                                          "example": "meal"
+                                        },
+                                        "cookEventId": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "cookEvent": {
+                                          "type": [
+                                            "object",
+                                            "null"
+                                          ],
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "recipeId": {
+                                              "type": "string"
+                                            },
+                                            "recipeTitle": {
+                                              "type": "string"
+                                            },
+                                            "cookDate": {
+                                              "type": "string",
+                                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                              "description": "Calendar date (YYYY-MM-DD).",
+                                              "example": "2026-11-02"
+                                            },
+                                            "status": {
+                                              "type": "string",
+                                              "enum": [
+                                                "planned",
+                                                "done",
+                                                "skipped"
+                                              ],
+                                              "description": "Cook lifecycle status.",
+                                              "example": "planned"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "recipeId",
+                                            "recipeTitle",
+                                            "cookDate",
+                                            "status"
+                                          ]
+                                        },
+                                        "servings": {
+                                          "type": [
+                                            "number",
+                                            "null"
+                                          ]
+                                        },
+                                        "label": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "notes": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "position": {
+                                          "type": "integer"
+                                        },
+                                        "isLeftover": {
+                                          "type": "boolean",
+                                          "description": "True when the slot is dated after the cook that feeds it."
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "householdId",
+                                        "mealPlanId",
+                                        "date",
+                                        "mealType",
+                                        "kind",
+                                        "cookEventId",
+                                        "cookEvent",
+                                        "servings",
+                                        "label",
+                                        "notes",
+                                        "position",
+                                        "isLeftover"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "breakfast",
+                                  "lunch",
+                                  "dinner",
+                                  "snack",
+                                  "dessert"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "date",
+                              "meals"
+                            ]
+                          },
+                          "description": "Seven days starting at weekStart."
+                        },
+                        "cookEvents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "householdId": {
+                                "type": "string"
+                              },
+                              "mealPlanId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "recipeId": {
+                                "type": "string"
+                              },
+                              "recipeTitle": {
+                                "type": "string"
+                              },
+                              "cookDate": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "description": "Calendar date (YYYY-MM-DD).",
+                                "example": "2026-11-02"
+                              },
+                              "plannedServings": {
+                                "type": "number"
+                              },
+                              "actualServings": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "label": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "planned",
+                                  "done",
+                                  "skipped"
+                                ],
+                                "description": "Cook lifecycle status.",
+                                "example": "planned"
+                              },
+                              "completedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "rating": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "notes": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string"
+                              },
+                              "fedSlots": {
+                                "type": "integer"
+                              },
+                              "servingsAllocated": {
+                                "type": "number"
+                              },
+                              "servingsRemaining": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "householdId",
+                              "mealPlanId",
+                              "recipeId",
+                              "recipeTitle",
+                              "cookDate",
+                              "plannedServings",
+                              "actualServings",
+                              "label",
+                              "status",
+                              "completedAt",
+                              "rating",
+                              "notes",
+                              "createdAt",
+                              "updatedAt",
+                              "fedSlots",
+                              "servingsAllocated",
+                              "servingsRemaining"
+                            ]
+                          }
+                        },
+                        "prepTasks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "householdId": {
+                                "type": "string"
+                              },
+                              "mealPlanId": {
+                                "type": "string"
+                              },
+                              "dueDate": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                                "description": "Calendar date (YYYY-MM-DD).",
+                                "example": "2026-11-02"
+                              },
+                              "description": {
+                                "type": "string"
+                              },
+                              "cookEventId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "doneAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "position": {
+                                "type": "integer"
+                              },
+                              "done": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "householdId",
+                              "mealPlanId",
+                              "dueDate",
+                              "description",
+                              "cookEventId",
+                              "doneAt",
+                              "position",
+                              "done"
+                            ]
+                          }
+                        },
+                        "warnings": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Human-readable planning warnings."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "householdId",
+                        "weekStart",
+                        "title",
+                        "status",
+                        "notes",
+                        "createdAt",
+                        "updatedAt",
+                        "days",
+                        "cookEvents",
+                        "prepTasks",
+                        "warnings"
+                      ]
+                    },
+                    "shoppingListStale": {
+                      "type": "boolean",
+                      "description": "True when an open shopping list generated from this plan is now out of date."
+                    }
+                  },
+                  "required": [
+                    "plan",
+                    "shoppingListStale"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The dish's cook is already done or skipped"
+          },
+          "404": {
+            "description": "Plan or slot not found"
           }
         }
       }

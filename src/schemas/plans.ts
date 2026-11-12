@@ -219,7 +219,11 @@ export const setSlotsOpSchema = z
   .object({
     date: isoDateSchema.describe("Slot date inside the plan week."),
     mealType: mealTypeSchema,
-    spec: slotSpecSchema,
+    spec: z
+      .union([slotSpecSchema, z.array(slotSpecSchema).min(1)])
+      .describe(
+        "One spec, or an array for several dishes at the same meal (e.g. a main and a side), in display order. `clear` must stand alone.",
+      ),
   })
   .openapi({ description: "Replace the slots at one date+mealType." });
 
@@ -524,7 +528,20 @@ export const swapMealSchema = z
   })
   .openapi({ description: "Put a different recipe on one meal slot." });
 
-export const swapMealResultSchema = z.object({
+export const addDishSchema = z
+  .object({
+    date: isoDateSchema.describe("Meal date inside the plan week."),
+    mealType: mealTypeSchema,
+    ...recipeRefShape,
+    servings: z
+      .number()
+      .positive()
+      .optional()
+      .describe("Servings the new cook yields; defaults to the meal-type default."),
+  })
+  .openapi({ description: "Add one more dish (e.g. a side) to a meal." });
+
+export const planChangeResultSchema = z.object({
   plan: planViewSchema,
   shoppingListStale: z
     .boolean()

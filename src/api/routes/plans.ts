@@ -2,6 +2,7 @@ import { createRoute, z, type OpenAPIHono } from "@hono/zod-openapi";
 import type { AppEnv } from "../../auth/middleware.js";
 import { AppError } from "../../lib/errors.js";
 import {
+  addDishSchema,
   addCookEventSchema,
   addPrepTaskSchema,
   completeCookEventSchema,
@@ -19,13 +20,13 @@ import {
   listPlansResponseSchema,
   listPrepTasksQuerySchema,
   listPrepTasksResponseSchema,
+  planChangeResultSchema,
   planViewSchema,
   prepTaskViewSchema,
   setSlotsResultSchema,
   setSlotsSchema,
   skipCookEventSchema,
   slotViewSchema,
-  swapMealResultSchema,
   swapMealSchema,
   updateCookEventSchema,
   updatePlanSchema,
@@ -34,6 +35,7 @@ import {
 } from "../../schemas/plans.js";
 import {
   addCookEvent,
+  addDish,
   addPrepTask,
   completePrepTask,
   createPlan,
@@ -45,6 +47,7 @@ import {
   getPlan,
   listPlans,
   listPrepTasks,
+  removeDish,
   setSlots,
   swapMeal,
   updateCookEvent,
@@ -154,9 +157,8 @@ const setSlotsRoute = createRoute({
   method: "post",
   path: "/plans/{id}/slots",
   tags: ["plans"],
-  summary: "Set meal slots for date+mealType groups",
   description:
-    "Replaces existing slots for each (date, mealType). Cook specs create a cook event dated that day; leftover specs link an existing cook; freeform/skip need no cook; clear removes the slots. Planned cook events left without slots are deleted and reported.",
+    "Replaces existing slots for each (date, mealType). `spec` is one spec, or an array for several dishes at the same meal (e.g. a main and a side). Cook specs create a cook event dated that day; leftover specs link an existing cook; freeform/skip need no cook; clear removes the slots. Planned cook events left without slots are deleted and reported.",
   request: {
     params: planIdParam,
     body: { content: { "application/json": { schema: setSlotsSchema } } },
@@ -205,9 +207,42 @@ const swapMealRoute = createRoute({
     body: { content: { "application/json": { schema: swapMealSchema } } },
   },
   responses: {
-    200: jsonResponse(swapMealResultSchema),
+    200: jsonResponse(planChangeResultSchema),
     400: { description: "Invalid swap (e.g. the cook is already done)" },
     404: { description: "Plan, slot or recipe not found" },
+  },
+});
+
+const addDishRoute = createRoute({
+  method: "post",
+  path: "/plans/{id}/dishes",
+  tags: ["plans"],
+  summary: "Add a dish to a meal",
+  description:
+    "Adds one more recipe (e.g. a side next to a main) to a date+mealType: a new planned cook dated that day and a slot after the meal's other dishes. A skip slot at that meal is replaced. Returns the updated plan and whether an open shopping list for it is now stale.",
+  request: {
+    params: planIdParam,
+    body: { content: { "application/json": { schema: addDishSchema } } },
+  },
+  responses: {
+    200: jsonResponse(planChangeResultSchema),
+    400: { description: "Invalid input" },
+    404: { description: "Plan or recipe not found" },
+  },
+});
+
+const removeDishRoute = createRoute({
+  method: "delete",
+  path: "/plans/{id}/dishes/{slotId}",
+  tags: ["plans"],
+  summary: "Remove a dish from a meal",
+  description:
+    "Deletes the slot. Its cook is deleted too when it is planned and feeds no other slot. The cook night of a done or skipped cook can't be removed. Returns the updated plan and whether an open shopping list for it is now stale.",
+  request: { params: slotParam },
+  responses: {
+    200: jsonResponse(planChangeResultSchema),
+    400: { description: "The dish's cook is already done or skipped" },
+    404: { description: "Plan or slot not found" },
   },
 });
 
@@ -444,6 +479,13 @@ export function registerPlansRoutes(app: OpenAPIHono<AppEnv>): void {
   app.openapi(swapMealRoute, (c) => {
     const { id: planId } = c.req.valid("param");
     return c.json(swapMeal(c.var.ctx, planId, c.req.valid("json")), 200);
+  });
+  app.openapi(addDishRoute, (c) =>
+    c.json(addDish(c.var.ctx, c.req.valid("param").id, c.req.valid("json")), 200),
+  );
+  app.openapi(removeDishRoute, (c) => {
+    const { id: planId, slotId } = c.req.valid("param");
+    return c.json(removeDish(c.var.ctx, planId, slotId), 200);
   });
 
   app.openapi(addCookEventRoute, (c) =>

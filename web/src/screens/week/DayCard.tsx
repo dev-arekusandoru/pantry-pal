@@ -1,10 +1,12 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Icon, IconButton, Sticker, cx, toast } from "@/ui";
 import { useUndoCook } from "../cook/queries";
 import { monthDay, weekdayName } from "./dates";
 import {
   MEAL_EMOJI,
   MEAL_LABEL,
+  canAddDish,
+  canRemoveDish,
   mealGroups,
   slotName,
   slotNote,
@@ -16,7 +18,8 @@ import {
   type RecipeSummary,
   type Slot,
 } from "./model";
-import type { SwapTarget } from "./SwapSheet";
+import { useRemoveDish } from "./queries";
+import { showStaleListToast, type SwapTarget } from "./SwapSheet";
 import styles from "./Week.module.css";
 
 const MEAL_STICKER: Record<MealType, { tone: "peach" | "pistachio" | "blue" | "gum" | "butter"; tilt: number }> = {
@@ -66,8 +69,17 @@ export function DayCard({ day, plan, today, recipes, onSwap }: DayCardProps) {
               </button>
             </li>
           ) : (
-            slots.map((slot) => (
-              <SlotRow key={slot.id} slot={slot} plan={plan} recipes={recipes} onSwap={onSwap} />
+            slots.map((slot, i) => (
+              <SlotRow
+                key={slot.id}
+                slot={slot}
+                plan={plan}
+                recipes={recipes}
+                onSwap={onSwap}
+                isSide={i > 0}
+                canRemove={slots.length > 1 && canRemoveDish(slot)}
+                canAdd={i === slots.length - 1 && canAddDish(slots)}
+              />
             ))
           ),
         )}
@@ -81,9 +93,14 @@ interface SlotRowProps {
   plan: PlanView;
   recipes: ReadonlyMap<string, RecipeSummary> | undefined;
   onSwap: (target: SwapTarget) => void;
+  /** A later dish of the same meal (e.g. a side): no sticker or meal name of its own. */
+  isSide: boolean;
+  canRemove: boolean;
+  /** The meal's last dish carries the button that adds another one. */
+  canAdd: boolean;
 }
 
-function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
+function SlotRow({ slot, plan, recipes, onSwap, isSide, canRemove, canAdd }: SlotRowProps) {
   const { mealType, date } = slot;
   const cook = slot.cookEvent;
   const state = slotState(slot);
@@ -92,6 +109,9 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
   const { tone, tilt } = MEAL_STICKER[mealType];
   const openSwap = () => onSwap({ date, mealType, slot });
   const undo = useUndoCook();
+  const remove = useRemoveDish(plan.id);
+  const navigate = useNavigate();
+  const title = cook?.recipeTitle ?? slot.label ?? (slot.kind === "skip" ? "No meal planned" : "Something simple");
 
   function undoCook() {
     if (!cook) return;
@@ -100,12 +120,25 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
     });
   }
 
+  function removeDish() {
+    remove.mutate(slot.id, {
+      onSuccess: ({ shoppingListStale }) => {
+        if (shoppingListStale) showStaleListToast(() => void navigate({ to: "/shop" }));
+        else toast.show({ message: `${title} removed from ${slotName(slot)}.` });
+      },
+    });
+  }
+
   const label = (
     <>
-      <Sticker emoji={MEAL_EMOJI[mealType]} tone={tone} tilt={tilt} />
+      {isSide ? (
+        <span aria-hidden="true" className={styles.sideMark} />
+      ) : (
+        <Sticker emoji={MEAL_EMOJI[mealType]} tone={tone} tilt={tilt} />
+      )}
       <span className={styles.slotBody}>
         <span className={styles.slotMeal}>
-          {MEAL_LABEL[mealType]}
+          {isSide ? "With" : MEAL_LABEL[mealType]}
           {state === "done" && (
             <span className={styles.stateTag}>
               <Icon name="check" size={13} /> Cooked
@@ -113,9 +146,7 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
           )}
           {state === "skipped" && <span className={styles.stateTag}>Skipped</span>}
         </span>
-        <span className={styles.slotTitle}>
-          {cook?.recipeTitle ?? slot.label ?? (slot.kind === "skip" ? "No meal planned" : "Something simple")}
-        </span>
+        <span className={styles.slotTitle}>{title}</span>
         {note && (
           <span className={styles.slotNote}>
             {slot.isLeftover && <Icon name="leftover" />}
@@ -128,7 +159,14 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
   );
 
   return (
-    <li className={cx(styles.slot, slot.isLeftover && styles.leftover, state !== "planned" && styles[state])}>
+    <li
+      className={cx(
+        styles.slot,
+        isSide && styles.side,
+        slot.isLeftover && styles.leftover,
+        state !== "planned" && styles[state],
+      )}
+    >
       {cook ? (
         <Link
           to="/recipes/$slug"
@@ -152,13 +190,30 @@ function SlotRow({ slot, plan, recipes, onSwap }: SlotRowProps) {
           onClick={undoCook}
         />
       )}
+      {canRemove && (
+        <IconButton
+          variant="plain"
+          label={`Remove ${title} from ${slotName(slot)}`}
+          icon={<Icon name="trash" />}
+          disabled={remove.isPending}
+          onClick={removeDish}
+        />
+      )}
       {/* A row without a cook already opens the swap sheet; only linked rows need the icon. */}
       {canSwap && cook && (
         <IconButton
           variant="plain"
-          label={`Swap ${slotName(slot)}`}
+          label={`Swap ${isSide ? title : slotName(slot)}`}
           icon={<Icon name="swap" />}
           onClick={openSwap}
+        />
+      )}
+      {canAdd && (
+        <IconButton
+          variant="plain"
+          label={`Add a dish to ${slotName(slot)}`}
+          icon={<Icon name="plus" />}
+          onClick={() => onSwap({ date, mealType, slot: null, add: true })}
         />
       )}
     </li>

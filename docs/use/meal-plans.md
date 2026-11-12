@@ -3,7 +3,7 @@
 The Week tab shows the current week of meals. An AI assistant usually creates
 the plan. The app shows it, starts cooks, and lets you change one meal at a time.
 
-![Week board with meals, leftovers, and swap controls](../images/week.png)
+![Week board with meals, leftovers, and swap and add controls](../images/week.png)
 
 ## Read the week
 
@@ -17,6 +17,8 @@ Each day lists its meals:
 - Breakfast, lunch, and dinner always show. An empty one offers **Plan
   something**.
 - Snacks and dessert appear only when planned.
+- A meal can hold more than one dish, for example a protein and a side. The
+  first dish shows the meal name; each other dish shows **With**.
 - A note can say **Made Sunday**, **Leftovers from Sunday**, or **Also feeds
   Tue dinner**. These come from one cook feeding several meals.
 - Today carries a **Today** flag.
@@ -25,6 +27,8 @@ On the current week, **Dinner tonight** appears above the days. Tap the card to
 open the recipe. **Start cooking** shows when the meal is still planned. **Undo**
 shows for a finished meal. The swap button sits next to **Dinner tonight** at the
 top of the card.
+When dinner has more than one dish, the card shows the first one and names the
+others under its title.
 
 The next prep task also appears, with its due date and **Done**. It picks the
 soonest task due today or later, then the most recently overdue one. The app
@@ -53,9 +57,25 @@ not the recipe.
 A cook that is already done cannot be swapped. Its leftover meals can still be
 swapped; each one becomes its own meal.
 
-When a swap changes what must be bought, the app shows **Your plan changed.
+When a swap, an added dish, or a removed dish changes what must be bought, the
+app shows **Your plan changed.
 Update the shopping list** with an **Update** action. Open [Shopping](shopping.md)
 and use **Update the list**.
+
+## Add a side to a meal
+
+1. Tap the add button (**+**) on the meal's last dish.
+2. Pick a recipe. The sheet lists recipes for that meal type.
+
+The recipe becomes one more dish on the meal, with its own cook. It cooks the
+household's default servings for that meal. The other dishes do not change.
+Swap each dish on its own with its swap button.
+
+To take a dish off a meal that has more than one, tap its remove button (trash).
+The app also removes the dish's planned cook when no other meal eats from it.
+You cannot remove a dish that is already cooked; undo the cook first.
+
+A skipped meal has no add button. Swap it to plan a recipe.
 
 ## Leftovers
 
@@ -80,18 +100,19 @@ plan; they are still to be eaten.
 ## Empty weeks and limits
 
 If the current week has no plan, the page offers **Start an empty week**. Empty
-meals then let you plan one recipe at a time.
+meals then let you plan one recipe at a time, and add more dishes to a meal.
 
 A future week with no plan has a **Plan this week** button, but weekly planning
 is not in the app yet. The button shows a **Coming soon** message. Ask the
 assistant to create the plan. A past week with no plan says nothing was planned.
 
-The app can change one meal, start a cook, finish it, undo it, and mark prep
-tasks done. It cannot:
+The app can change one meal, add or remove a dish, start a cook, finish it, undo
+it, and mark prep tasks done. It cannot:
 
 - Generate a complete weekly plan in one action.
 - Add snack or dessert slots.
-- Add, move, or delete cook events.
+- Move cook events, or add or delete them other than by adding or removing a
+  dish.
 - Change planned servings.
 - Mark a meal skipped or add a free-text meal.
 - Edit plan notes or prep tasks.
@@ -101,8 +122,10 @@ Use the API or MCP for those tasks.
 ## Through the API or MCP
 
 - Create a plan: `plan_create`.
-- Replace meal slots: `plan_set_slots`.
+- Replace meal slots: `plan_set_slots`. Pass an array of specs to put several
+  dishes on one meal.
 - Swap a meal: `plan_swap_meal`.
+- Add or remove one dish: `plan_dishes`.
 - Change cooks, servings, or plan fields: `plan_update`.
 - Add, edit, or complete prep tasks: `prep_tasks`.
 - Complete, skip, reopen, or undo a cook: `cook_complete`.

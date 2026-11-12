@@ -95,18 +95,27 @@ A violation with a `conditionNote` is a judgement call for the agent.
 | --- | --- | --- |
 | `plan_get` | Read a week plan with cooks, slots, prep tasks, warnings, and status. | `plan`: plan ID, `weekStart` date, or `current` (default). |
 | `plan_create` | Create a plan with cooks, slots, and prep tasks in one transaction. | `weekStart`; `title`, `status`, `notes`; `cookEvents[]` with optional `key`; `slots[]` with `cookEventKey` or `cookEventId`; `prepTasks[]`. |
-| `plan_set_slots` | Replace slots for one or more date and meal groups. | `planId`; `ops[]` with `date`, `mealType`, and `spec.kind` `cook`, `leftover`, `freeform`, `skip`, or `clear`. |
+| `plan_set_slots` | Replace slots for one or more date and meal groups. | `planId`; `ops[]` with `date`, `mealType`, and `spec`: one spec, or an array for several dishes at one meal. `spec.kind` is `cook`, `leftover`, `freeform`, `skip`, or `clear`. |
 | `plan_swap_meal` | Put a different recipe on one meal slot. | `planId`; `slotId` or `date` and `mealType`; `recipeId` or `recipe`; `scope` `this` or `with_leftovers`. |
+| `plan_dishes` | Add a dish to a meal, or remove one dish. | `action` `add` or `remove`; `planId`; for add: `date`, `mealType`, `recipeId` or `recipe`, optional `servings`; for remove: `slotId`. |
 | `plan_update` | Change plan fields, or add, update, or delete a cook event. | `action` `update`, `add_cook`, `update_cook`, or `delete_cook`; `planId`; `cookEventId`; `title`, `status`, `notes`; `recipeId` or `recipe`; `cookDate`; `plannedServings`; `actualServings`; `label`; `rating`; `force`. |
 | `prep_tasks` | List, add, update, complete, or delete prep tasks. | `action` `list`, `add`, `update`, `complete`, or `delete`; `planId`; `prepTaskId`; `dueDate`; `description`; `cookEventId`; `position`; `from`, `to`, `includeDone`. |
 | `cook_complete` | Complete, skip, reopen, or undo a cook. | `action` `complete`, `skip`, `reopen`, or `undo`; `cookEventId`; `actualServings`; `rating`; `notes`; `decrementPantry`; `note` for skip. |
 | `cook_history` | Read recent cooks with their recipe, servings, rating, notes, and pantry movements. | `planId`, `from`, `to`, `status`, `recipeId`, `limit`. |
 
-`plan_swap_meal` returns `shoppingListStale`. `scope: "this"` changes only the
-target meal; `scope: "with_leftovers"` changes the cook and every slot it feeds.
-When `shoppingListStale` is `true`, regenerate an open shopping list for that
-plan. `cook_complete` with `action: "complete"` decrements pantry stock.
-`reopen` and `undo` restore stock.
+`plan_swap_meal` and `plan_dishes` return `shoppingListStale`. `scope: "this"`
+changes only the target meal; `scope: "with_leftovers"` changes the cook and
+every slot it feeds. When `shoppingListStale` is `true`, regenerate an open
+shopping list for that plan.
+
+A meal can hold several dishes, for example a protein and a side. Each dish has
+its own cook. `plan_dishes` with `action: "add"` keeps the other dishes and
+replaces a `skip` slot. `action: "remove"` also deletes the dish's planned cook
+when no other meal uses it. It cannot remove the cook night of a done or skipped
+cook. When a meal has more than one dish, `plan_swap_meal` needs `slotId`.
+
+`cook_complete` with `action: "complete"` decrements pantry stock. `reopen` and
+`undo` restore stock.
 
 ## Shopping
 

@@ -3,7 +3,17 @@ import { Button, Icon, IconButton, Pill, buttonClass, toast } from "@/ui";
 import { useUndoCook } from "../cook/queries";
 import { recipeSlug } from "./DayCard";
 import { weekdayName } from "./dates";
-import { MEAL_EMOJI, slotName, slotNote, slotState, swapPlanFor, tonightSlot, type PlanView, type RecipeSummary } from "./model";
+import {
+  MEAL_EMOJI,
+  dishTitles,
+  slotName,
+  slotNote,
+  slotState,
+  swapPlanFor,
+  tonightDinner,
+  type PlanView,
+  type RecipeSummary,
+} from "./model";
 import { Plate } from "./Plate";
 import type { SwapTarget } from "./SwapSheet";
 import styles from "./Week.module.css";
@@ -18,7 +28,7 @@ interface TonightCardProps {
 /** Null when today is outside the plan week. */
 export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) {
   if (!plan.days.some((d) => d.date === today)) return null;
-  const slot = tonightSlot(plan, today);
+  const [slot = null, ...sides] = tonightDinner(plan, today);
   const target: SwapTarget = { date: today, mealType: "dinner", slot };
 
   const cook = slot?.cookEvent;
@@ -73,6 +83,7 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
             {cook.recipeTitle}
           </Link>
         </h2>
+        {sides.length > 0 && <p className={styles.tonightSides}>with {dishTitles(sides)}</p>}
         <p className={styles.tonightMeta}>
           {recipe?.totalMinutes != null && (
             <span className={styles.metaItem}>

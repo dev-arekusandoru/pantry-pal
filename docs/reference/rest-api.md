@@ -74,7 +74,7 @@ Paths below are relative to `/api/v1`.
 | `/pantry` | Read stock, set amounts, record changes, and check availability |
 | `/recipes` | Manage recipes and step ingredient links, scale servings, check rules, and set status |
 | `/rules` | Manage dietary rules and check ingredient lists |
-| `/plans` | Manage week plans, meal slots, swaps, cooks, and prep tasks |
+| `/plans` | Manage week plans, meal slots, dishes, swaps, cooks, and prep tasks |
 | `/cook-events` | Create, complete, reopen, and undo cooks |
 | `/prep-tasks` | Update or complete prep tasks |
 | `/shopping-lists` | Generate lists, check items, and record purchases |

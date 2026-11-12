@@ -2,9 +2,11 @@ import { z } from "@hono/zod-openapi";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Ctx } from "../../context.js";
 import {
+  addDishSchema,
   cookStatusSchema,
   createPlanSchema,
   isoDateSchema,
+  mealTypeSchema,
   planStatusSchema,
   setSlotsSchema,
   swapMealSchema,
@@ -13,6 +15,7 @@ import { completeCookEvent, listCookEvents, reopenCookEvent, skipCookEvent, undo
 import { computeAvailability, computeDemand } from "../../services/demand.js";
 import {
   addCookEvent,
+  addDish,
   addPrepTask,
   completePrepTask,
   createPlan,
@@ -21,6 +24,7 @@ import {
   getCurrentPlan,
   getPlan,
   listPrepTasks,
+  removeDish,
   setSlots,
   swapMeal,
   updateCookEvent,
@@ -44,6 +48,17 @@ const planSetSlotsInput = z.object({
 const planSwapMealInput = z.object({
   planId: z.string().min(1).describe("Plan id (plan_…)."),
   ...swapMealSchema.shape,
+});
+
+const planDishesInput = z.object({
+  action: z.enum(["add", "remove"]).describe("Add a dish to a meal, or remove one dish."),
+  planId: z.string().min(1).describe("Plan id (plan_…)."),
+  date: isoDateSchema.optional().describe("add: meal date inside the plan week."),
+  mealType: mealTypeSchema.optional().describe("add: the meal."),
+  recipeId: addDishSchema.shape.recipeId,
+  recipe: addDishSchema.shape.recipe,
+  servings: addDishSchema.shape.servings,
+  slotId: z.string().optional().describe("remove: slot id (slot_…) of the dish."),
 });
 
 const planUpdateInput = z
@@ -148,7 +163,7 @@ export function registerPlanningTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Set meal slots",
       description:
-        "Replace the slots at one or more date+mealType groups. spec.kind=cook creates a cook that day, leftover links an existing cook, freeform/skip need no cook, clear removes the slots.",
+        "Replace the slots at one or more date+mealType groups. spec.kind=cook creates a cook that day, leftover links an existing cook, freeform/skip need no cook, clear removes the slots. Pass an array of specs for several dishes at one meal (e.g. a protein and a side).",
       inputSchema: planSetSlotsInput,
     },
     tool((args: z.infer<typeof planSetSlotsInput>) => setSlots(ctx, args.planId, args.ops)),
@@ -165,6 +180,27 @@ export function registerPlanningTools(server: McpServer, ctx: Ctx): void {
     tool((args: z.infer<typeof planSwapMealInput>) => {
       const { planId, ...input } = args;
       return swapMeal(ctx, planId, input);
+    }),
+  );
+
+  server.registerTool(
+    "plan_dishes",
+    {
+      title: "Add or remove a dish",
+      description:
+        "A meal can hold several dishes, e.g. a protein and a side. action=add (date+mealType+recipe) puts one more recipe on the meal with its own planned cook and keeps the other dishes; a skip slot there is replaced. action=remove (slotId) deletes one dish and its planned cook when nothing else uses it; a done or skipped cook night can't be removed. Returns the plan and shoppingListStale (regenerate the list when true).",
+      inputSchema: planDishesInput,
+      annotations: { destructiveHint: true },
+    },
+    tool((args: z.infer<typeof planDishesInput>) => {
+      if (args.action === "remove") return removeDish(ctx, args.planId, requireArg(args.slotId, "slotId"));
+      return addDish(ctx, args.planId, {
+        date: requireArg(args.date, "date"),
+        mealType: requireArg(args.mealType, "mealType"),
+        ...(args.recipeId === undefined ? {} : { recipeId: args.recipeId }),
+        ...(args.recipe === undefined ? {} : { recipe: args.recipe }),
+        ...(args.servings === undefined ? {} : { servings: args.servings }),
+      });
     }),
   );
 

@@ -212,6 +212,39 @@ describe("setSlots", () => {
     expect(leftovers.slots[0]!.isLeftover).toBe(true);
     expect(leftovers.slots[0]!.servings).toBe(1);
   });
+
+  it("puts several dishes on one meal in order and rejects clear mixed with others", () => {
+    const { ctx } = makeTestCtx();
+    const chicken = emptyRecipe(ctx, "Chicken");
+    const rice = emptyRecipe(ctx, "Rice");
+    const plan = createPlan(ctx, { weekStart: "2026-11-02" });
+
+    const result = setSlots(ctx, plan.id, [
+      {
+        date: "2026-11-02",
+        mealType: "dinner",
+        spec: [
+          { kind: "cook", recipeId: chicken.id },
+          { kind: "cook", recipeId: rice.id },
+        ],
+      },
+    ]);
+    expect(result.slots.map((s) => s.cookEvent?.recipeTitle)).toEqual(["Chicken", "Rice"]);
+    expect(new Set(result.slots.map((s) => s.cookEventId)).size).toBe(2);
+    expect(getPlan(ctx, plan.id).days[0]!.meals.dinner.map((s) => s.cookEvent?.recipeTitle)).toEqual([
+      "Chicken",
+      "Rice",
+    ]);
+
+    expectAppError(
+      () =>
+        setSlots(ctx, plan.id, [
+          { date: "2026-11-02", mealType: "dinner", spec: [{ kind: "clear" }, { kind: "skip" }] },
+        ]),
+      "validation",
+    );
+    expect(getPlan(ctx, plan.id).days[0]!.meals.dinner).toHaveLength(2);
+  });
 });
 
 describe("getPlan warnings", () => {

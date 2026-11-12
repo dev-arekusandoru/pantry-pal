@@ -8,7 +8,16 @@ import { AppError, type ErrorCode } from "../src/lib/errors.js";
 import { completeCookEvent } from "../src/services/cooking.js";
 import { resolveIngredient } from "../src/services/ingredients.js";
 import { applyMovement, getStockForIngredient } from "../src/services/pantry.js";
-import { createPlan, getPlan, swapMeal, type PlanView, type SlotView } from "../src/services/plans.js";
+import {
+  addDish,
+  createPlan,
+  getPlan,
+  removeDish,
+  setSlots,
+  swapMeal,
+  type PlanView,
+  type SlotView,
+} from "../src/services/plans.js";
 import { createRecipe } from "../src/services/recipes.js";
 import {
   completeShoppingList,
@@ -531,6 +540,83 @@ describe("swapMeal", () => {
 
     expect((await send(plan.id, { slotId, recipe: "stew", scope: "sideways" })).status).toBe(400);
     expect((await send("plan_nope", { slotId, recipe: "stew", scope: "this" })).status).toBe(404);
+  });
+});
+
+describe("meal dishes", () => {
+  it("adds a side next to a main with its own cook and default servings", () => {
+    const { ctx, plan, soup, stew } = week();
+    const result = addDish(ctx, plan.id, { date: "2026-11-04", mealType: "dinner", recipe: "Stew" });
+
+    const dinner = result.plan.days.find((d) => d.date === "2026-11-04")!.meals.dinner;
+    expect(dinner.map((s) => s.cookEvent?.recipeId)).toEqual([soup.id, stew.id]);
+    const side = result.plan.cookEvents.find((e) => e.recipeId === stew.id)!;
+    expect(side).toMatchObject({ cookDate: "2026-11-04", plannedServings: 3, status: "planned" });
+  });
+
+  it("replaces a skip slot and fills an empty meal", () => {
+    const { ctx, plan, stew } = week();
+    setSlots(ctx, plan.id, [{ date: "2026-11-06", mealType: "dinner", spec: { kind: "skip", label: "Out" } }]);
+    const result = addDish(ctx, plan.id, { date: "2026-11-06", mealType: "dinner", recipeId: stew.id, servings: 5 });
+    const dinner = result.plan.days.find((d) => d.date === "2026-11-06")!.meals.dinner;
+    expect(dinner).toHaveLength(1);
+    expect(dinner[0]).toMatchObject({ kind: "meal", cookEvent: { recipeTitle: "Stew" } });
+    expect(result.plan.cookEvents.find((e) => e.recipeId === stew.id)!.plannedServings).toBe(5);
+  });
+
+  it("removes a dish and its now-unused planned cook, but keeps a cook that feeds leftovers", () => {
+    const { ctx, plan, stew } = week();
+    const added = addDish(ctx, plan.id, { date: "2026-11-02", mealType: "dinner", recipeId: stew.id });
+    const [main, side] = added.plan.days[0]!.meals.dinner;
+
+    const afterSide = removeDish(ctx, plan.id, side!.id);
+    expect(afterSide.plan.days[0]!.meals.dinner.map((s) => s.id)).toEqual([main!.id]);
+    expect(afterSide.plan.cookEvents.some((e) => e.recipeId === stew.id)).toBe(false);
+
+    const afterMain = removeDish(ctx, plan.id, main!.id);
+    expect(afterMain.plan.days[0]!.meals.dinner).toEqual([]);
+    // The chili cook still feeds Tue lunch.
+    expect(afterMain.plan.cookEvents.map((e) => e.id)).toContain(main!.cookEventId);
+  });
+
+  it("refuses to remove the cook night of a done cook, and a slot from another plan", () => {
+    const { ctx, plan } = week();
+    const cookNight = slotAt(plan, "2026-11-02", "dinner");
+    completeCookEvent(ctx, cookNight.cookEventId!, { decrementPantry: false });
+    expectAppError(() => removeDish(ctx, plan.id, cookNight.id), "validation");
+    // Its leftover meal can still go.
+    expect(removeDish(ctx, plan.id, slotAt(plan, "2026-11-03", "lunch").id).plan.days[1]!.meals.lunch).toEqual([]);
+
+    const other = createPlan(ctx, { weekStart: "2026-11-09" });
+    expectAppError(() => removeDish(ctx, other.id, cookNight.id), "not_found");
+  });
+
+  it("serves POST and DELETE /plans/{id}/dishes", async () => {
+    const { db, token, ctx } = makeTestApp();
+    const chili = createRecipe(ctx, { title: "Chili", servings: 4 });
+    createRecipe(ctx, { title: "Rice", servings: 4 });
+    const plan = createPlan(ctx, {
+      weekStart: "2026-11-02",
+      cookEvents: [{ key: "c", recipeId: chili.id, cookDate: "2026-11-02" }],
+      slots: [{ date: "2026-11-02", mealType: "dinner", kind: "meal", cookEventKey: "c" }],
+    });
+    const app = createApp({ db, now: ctx.now });
+    const headers = { authorization: `Bearer ${token}`, "content-type": "application/json" };
+
+    const added = await app.request(`/api/v1/plans/${plan.id}/dishes`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ date: "2026-11-02", mealType: "dinner", recipe: "rice" }),
+    });
+    expect(added.status).toBe(200);
+    const body = (await added.json()) as { plan: PlanView };
+    const dinner = body.plan.days[0]!.meals.dinner;
+    expect(dinner.map((s) => s.cookEvent?.recipeTitle)).toEqual(["Chili", "Rice"]);
+
+    const removed = await app.request(`/api/v1/plans/${plan.id}/dishes/${dinner[1]!.id}`, { method: "DELETE", headers });
+    expect(removed.status).toBe(200);
+    const afterRemove = (await removed.json()) as { plan: PlanView };
+    expect(afterRemove.plan.days[0]!.meals.dinner).toHaveLength(1);
   });
 });
 

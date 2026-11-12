@@ -30,6 +30,7 @@ const TOOL_NAMES = [
   "plan_create",
   "plan_set_slots",
   "plan_swap_meal",
+  "plan_dishes",
   "plan_update",
   "prep_tasks",
   "cook_complete",

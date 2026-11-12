@@ -65,16 +65,13 @@ export interface SwapInput {
   scope: "this" | "with_leftovers";
 }
 
-export function useSwapMeal(planId: string) {
+type PlanChangeResult = { plan: PlanView; shoppingListStale: boolean };
+
+/** A week-board edit: the answer is the whole updated plan, which replaces the cached one. */
+function usePlanChange<T>(mutationFn: (input: T) => Promise<PlanChangeResult>) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ slot, recipeId, scope }: SwapInput) =>
-      unwrap(
-        client.POST("/plans/{id}/swap", {
-          params: { path: { id: planId } },
-          body: "id" in slot ? { slotId: slot.id, recipeId, scope } : { ...slot, recipeId, scope },
-        }),
-      ),
+    mutationFn,
     onSuccess: ({ plan }) => {
       queryClient.setQueryData(planKey(plan.weekStart), plan);
       // Shopping lists carry the stale flag; availability counts planned demand; cooks changed.
@@ -83,6 +80,37 @@ export function useSwapMeal(planId: string) {
       }
     },
   });
+}
+
+export function useSwapMeal(planId: string) {
+  return usePlanChange(({ slot, recipeId, scope }: SwapInput) =>
+    unwrap(
+      client.POST("/plans/{id}/swap", {
+        params: { path: { id: planId } },
+        body: "id" in slot ? { slotId: slot.id, recipeId, scope } : { ...slot, recipeId, scope },
+      }),
+    ),
+  );
+}
+
+export interface AddDishInput {
+  date: string;
+  mealType: MealType;
+  recipeId: string;
+}
+
+/** One more recipe on a meal (a side next to a main), with its own cook. */
+export function useAddDish(planId: string) {
+  return usePlanChange((body: AddDishInput) =>
+    unwrap(client.POST("/plans/{id}/dishes", { params: { path: { id: planId } }, body })),
+  );
+}
+
+/** Takes one dish off a meal; the server drops its cook when nothing else eats from it. */
+export function useRemoveDish(planId: string) {
+  return usePlanChange((slotId: string) =>
+    unwrap(client.DELETE("/plans/{id}/dishes/{slotId}", { params: { path: { id: planId, slotId } } })),
+  );
 }
 
 /** Creates an empty plan for the current week, aligned to the household's week start. */

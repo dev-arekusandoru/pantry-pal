@@ -210,7 +210,8 @@ export type SlotSpec =
 export interface SetSlotsOp {
   date: string;
   mealType: MealType;
-  spec: SlotSpec;
+  /** One spec, or several dishes for the same meal (e.g. a main and a side), in order. */
+  spec: SlotSpec | SlotSpec[];
 }
 
 export interface SetSlotsResult {
@@ -1014,11 +1015,131 @@ function slotView(ctx: Ctx, slotId: string): SlotView {
   return toSlotView(row, row.cookEventId ? loadEventRow(ctx, row.cookEventId) : undefined);
 }
 
+/** Delete planned cooks of this plan that no slot references any more; returns their ids. */
+function deleteOrphanedPlannedCooks(ctx: Ctx, planId: string, candidates: Iterable<string>): string[] {
+  const deleted: string[] = [];
+  for (const eventId of candidates) {
+    const remaining = ctx.db
+      .select({ count: sql<number>`count(*)` })
+      .from(mealSlots)
+      .where(and(eq(mealSlots.householdId, ctx.householdId), eq(mealSlots.cookEventId, eventId)))
+      .get();
+    if ((remaining?.count ?? 0) > 0) continue;
+    const event = ctx.db
+      .select()
+      .from(cookEvents)
+      .where(and(eq(cookEvents.householdId, ctx.householdId), eq(cookEvents.id, eventId)))
+      .get();
+    if (!event || event.status !== "planned" || event.mealPlanId !== planId) continue;
+    ctx.db.delete(cookEvents).where(eq(cookEvents.id, eventId)).run();
+    deleted.push(eventId);
+  }
+  return deleted;
+}
+
+/** Insert a planned cook dated `date` for the recipe; returns its id. */
+function insertPlannedCook(
+  ctx: Ctx,
+  planId: string,
+  recipeId: string,
+  date: string,
+  plannedServings: number,
+  label: string | null = null,
+): string {
+  assertPositive(plannedServings, "plannedServings");
+  const timestamp = nowIso(ctx);
+  const id = newId("ce");
+  ctx.db
+    .insert(cookEvents)
+    .values({
+      id,
+      householdId: ctx.householdId,
+      mealPlanId: planId,
+      recipeId,
+      cookDate: date,
+      plannedServings,
+      label,
+      status: "planned",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    })
+    .run();
+  return id;
+}
+
+/** Slots at one date+mealType, in display order. */
+function mealGroupRows(ctx: Ctx, planId: string, date: string, mealType: MealType): SlotRow[] {
+  return ctx.db
+    .select()
+    .from(mealSlots)
+    .where(
+      and(
+        eq(mealSlots.householdId, ctx.householdId),
+        eq(mealSlots.mealPlanId, planId),
+        eq(mealSlots.date, date),
+        eq(mealSlots.mealType, mealType),
+      ),
+    )
+    .orderBy(asc(mealSlots.position), asc(mealSlots.id))
+    .all();
+}
+
+/** Insert the slot (and, for `cook`, the cook event) one spec describes. */
+function applySlotSpec(
+  ctx: Ctx,
+  plan: PlanRow,
+  settings: HouseholdSettings,
+  date: string,
+  mealType: MealType,
+  spec: Exclude<SlotSpec, { kind: "clear" }>,
+): void {
+  switch (spec.kind) {
+    case "freeform":
+      insertSlotRow(ctx, plan.id, plan.weekStart, { date, mealType, kind: "freeform", label: spec.label });
+      return;
+    case "skip":
+      insertSlotRow(ctx, plan.id, plan.weekStart, { date, mealType, kind: "skip", label: spec.label ?? null });
+      return;
+    case "leftover":
+      assertPositive(spec.servings, "servings");
+      assertCookEventUsable(ctx, plan.id, spec.cookEventId);
+      insertSlotRow(ctx, plan.id, plan.weekStart, {
+        date,
+        mealType,
+        kind: "meal",
+        cookEventId: spec.cookEventId,
+        servings: spec.servings ?? null,
+      });
+      return;
+    case "cook": {
+      const recipe = resolveRecipeRef(ctx, spec);
+      assertPositive(spec.servings, "servings");
+      assertPositive(spec.cookServings, "cookServings");
+      const plannedServings = spec.cookServings ?? spec.servings ?? defaultServingsForMeal(settings, mealType);
+      const eventId = insertPlannedCook(ctx, plan.id, recipe.id, date, plannedServings, spec.label ?? null);
+      insertSlotRow(ctx, plan.id, plan.weekStart, {
+        date,
+        mealType,
+        kind: "meal",
+        cookEventId: eventId,
+        servings: spec.servings ?? null,
+      });
+      return;
+    }
+    default: {
+      const exhaustive: never = spec;
+      throw new AppError("validation", `Unknown slot spec: ${JSON.stringify(exhaustive)}`);
+    }
+  }
+}
+
 /**
- * Replace the slots at each `(date, mealType)` with the agent-provided spec:
+ * Replace the slots at each `(date, mealType)` with the agent-provided spec(s):
  * `cook` creates a cook event dated that day feeding the slot, `leftover` links an
  * existing cook event, `freeform`/`skip` need no cook, `clear` removes the slots.
- * Planned cook events this operation leaves without any slot are deleted.
+ * An array of specs puts several dishes on the same meal, in that order; `clear`
+ * must stand alone. Planned cook events this operation leaves without any slot
+ * are deleted.
  */
 export function setSlots(ctx: Ctx, planId: string, ops: SetSlotsOp[]): SetSlotsResult {
   const plan = requirePlanRow(ctx, planId);
@@ -1030,137 +1151,43 @@ export function setSlots(ctx: Ctx, planId: string, ops: SetSlotsOp[]): SetSlotsR
 
   const deletedCookEventIds = ctx.db.transaction((tx) => {
     const t = withTx(ctx, tx);
-    const timestamp = nowIso(t);
     const candidates = new Set<string>();
 
     for (const op of ops) {
       assertIsoDate(op.date, "date");
       assertWithinWeek(op.date, plan.weekStart);
+      const specs = Array.isArray(op.spec) ? op.spec : [op.spec];
+      if (specs.length === 0) {
+        throw new AppError("validation", "A slot operation needs at least one spec", {
+          date: op.date,
+          mealType: op.mealType,
+        });
+      }
+      if (specs.length > 1 && specs.some((spec) => spec.kind === "clear")) {
+        throw new AppError("validation", "A clear spec cannot be combined with other specs", {
+          date: op.date,
+          mealType: op.mealType,
+        });
+      }
 
-      const existing = t.db
-        .select()
-        .from(mealSlots)
-        .where(
-          and(
-            eq(mealSlots.householdId, t.householdId),
-            eq(mealSlots.mealPlanId, plan.id),
-            eq(mealSlots.date, op.date),
-            eq(mealSlots.mealType, op.mealType),
-          ),
-        )
-        .all();
+      const existing = mealGroupRows(t, plan.id, op.date, op.mealType);
       for (const row of existing) {
         if (row.cookEventId) candidates.add(row.cookEventId);
       }
       if (existing.length > 0) {
         t.db
           .delete(mealSlots)
-          .where(
-            and(
-              eq(mealSlots.householdId, t.householdId),
-              eq(mealSlots.mealPlanId, plan.id),
-              eq(mealSlots.date, op.date),
-              eq(mealSlots.mealType, op.mealType),
-            ),
-          )
+          .where(inArray(mealSlots.id, existing.map((row) => row.id)))
           .run();
       }
 
-      const spec = op.spec;
-      switch (spec.kind) {
-        case "clear":
-          break;
-        case "freeform":
-          insertSlotRow(t, plan.id, plan.weekStart, {
-            date: op.date,
-            mealType: op.mealType,
-            kind: "freeform",
-            label: spec.label,
-          });
-          break;
-        case "skip":
-          insertSlotRow(t, plan.id, plan.weekStart, {
-            date: op.date,
-            mealType: op.mealType,
-            kind: "skip",
-            label: spec.label ?? null,
-          });
-          break;
-        case "leftover": {
-          assertPositive(spec.servings, "servings");
-          assertCookEventUsable(t, plan.id, spec.cookEventId);
-          insertSlotRow(t, plan.id, plan.weekStart, {
-            date: op.date,
-            mealType: op.mealType,
-            kind: "meal",
-            cookEventId: spec.cookEventId,
-            servings: spec.servings ?? null,
-          });
-          break;
-        }
-        case "cook": {
-          const recipe = resolveRecipeRef(t, spec);
-          assertPositive(spec.servings, "servings");
-          assertPositive(spec.cookServings, "cookServings");
-          const plannedServings =
-            spec.cookServings ??
-            spec.servings ??
-            defaultServingsForMeal(settings, op.mealType);
-          assertPositive(plannedServings, "plannedServings");
-          const eventId = newId("ce");
-          t.db
-            .insert(cookEvents)
-            .values({
-              id: eventId,
-              householdId: t.householdId,
-              mealPlanId: plan.id,
-              recipeId: recipe.id,
-              cookDate: op.date,
-              plannedServings,
-              label: spec.label ?? null,
-              status: "planned",
-              createdAt: timestamp,
-              updatedAt: timestamp,
-            })
-            .run();
-          insertSlotRow(t, plan.id, plan.weekStart, {
-            date: op.date,
-            mealType: op.mealType,
-            kind: "meal",
-            cookEventId: eventId,
-            servings: spec.servings ?? null,
-            position: 0,
-          });
-          break;
-        }
-        default: {
-          const exhaustive: never = spec;
-          throw new AppError("validation", `Unknown slot spec: ${JSON.stringify(exhaustive)}`);
-        }
+      for (const spec of specs) {
+        if (spec.kind === "clear") continue;
+        applySlotSpec(t, plan, settings, op.date, op.mealType, spec);
       }
     }
 
-    const deleted: string[] = [];
-    for (const eventId of candidates) {
-      const remaining = t.db
-        .select({ count: sql<number>`count(*)` })
-        .from(mealSlots)
-        .where(
-          and(eq(mealSlots.householdId, t.householdId), eq(mealSlots.cookEventId, eventId)),
-        )
-        .get();
-      if ((remaining?.count ?? 0) > 0) continue;
-      const event = t.db
-        .select()
-        .from(cookEvents)
-        .where(and(eq(cookEvents.householdId, t.householdId), eq(cookEvents.id, eventId)))
-        .get();
-      if (!event || event.status !== "planned" || event.mealPlanId !== plan.id) continue;
-      t.db.delete(cookEvents).where(eq(cookEvents.id, eventId)).run();
-      deleted.push(eventId);
-    }
-
-    return deleted;
+    return deleteOrphanedPlannedCooks(t, plan.id, candidates);
   });
 
   const rows = ctx.db
@@ -1193,42 +1220,34 @@ export interface SwapMealInput extends RecipeRef {
   scope: SwapScope;
 }
 
-export interface SwapMealResult {
+/** Result of a plan edit made from the week board (swap, add or remove a dish). */
+export interface PlanChangeResult {
   plan: PlanView;
   /** True when an open shopping list generated from this plan no longer matches it. */
   shoppingListStale: boolean;
 }
 
+/** A slot that must belong to `plan`. */
+function requirePlanSlotRow(ctx: Ctx, plan: PlanRow, slotId: string): SlotRow {
+  const row = requireSlotRow(ctx, slotId);
+  if (row.mealPlanId !== plan.id) {
+    throw new AppError("not_found", `Slot ${row.id} not found in plan ${plan.id}`, {
+      planId: plan.id,
+      slotId: row.id,
+    });
+  }
+  return row;
+}
+
 /** The slot a swap targets, or null when the date+mealType group has none yet. */
 function findSwapSlot(ctx: Ctx, plan: PlanRow, input: SwapMealInput): SlotRow | null {
-  if (input.slotId !== undefined) {
-    const row = requireSlotRow(ctx, input.slotId);
-    if (row.mealPlanId !== plan.id) {
-      throw new AppError("not_found", `Slot ${row.id} not found in plan ${plan.id}`, {
-        planId: plan.id,
-        slotId: row.id,
-      });
-    }
-    return row;
-  }
+  if (input.slotId !== undefined) return requirePlanSlotRow(ctx, plan, input.slotId);
   if (input.date === undefined || input.mealType === undefined) {
     throw new AppError("validation", "Provide slotId, or date and mealType");
   }
   assertIsoDate(input.date, "date");
   assertWithinWeek(input.date, plan.weekStart);
-  const rows = ctx.db
-    .select()
-    .from(mealSlots)
-    .where(
-      and(
-        eq(mealSlots.householdId, ctx.householdId),
-        eq(mealSlots.mealPlanId, plan.id),
-        eq(mealSlots.date, input.date),
-        eq(mealSlots.mealType, input.mealType),
-      ),
-    )
-    .orderBy(asc(mealSlots.position), asc(mealSlots.id))
-    .all();
+  const rows = mealGroupRows(ctx, plan.id, input.date, input.mealType);
   if (rows.length > 1) {
     throw new AppError(
       "validation",
@@ -1252,7 +1271,7 @@ function findSwapSlot(ctx: Ctx, plan: PlanRow, input: SwapMealInput): SlotRow | 
  * still be detached with `this`. The swapped-out cook is never left feeding nothing:
  * in-place edits keep it in use and detaching only happens when others still use it.
  */
-export function swapMeal(ctx: Ctx, planId: string, input: SwapMealInput): SwapMealResult {
+export function swapMeal(ctx: Ctx, planId: string, input: SwapMealInput): PlanChangeResult {
   if (!SWAP_SCOPES.includes(input.scope)) {
     throw new AppError("validation", `scope must be one of ${SWAP_SCOPES.join(", ")}`, {
       scope: input.scope,
@@ -1301,23 +1320,7 @@ export function swapMeal(ctx: Ctx, planId: string, input: SwapMealInput): SwapMe
       throw new AppError("validation", "Provide slotId, or date and mealType");
     }
     const plannedServings = slot?.servings ?? defaultServingsForMeal(settings, mealType);
-    assertPositive(plannedServings, "plannedServings");
-
-    const eventId = newId("ce");
-    t.db
-      .insert(cookEvents)
-      .values({
-        id: eventId,
-        householdId: t.householdId,
-        mealPlanId: plan.id,
-        recipeId: recipe.id,
-        cookDate: date,
-        plannedServings,
-        status: "planned",
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      })
-      .run();
+    const eventId = insertPlannedCook(t, plan.id, recipe.id, date, plannedServings);
 
     if (slot === null) {
       insertSlotRow(t, plan.id, plan.weekStart, {
@@ -1333,6 +1336,73 @@ export function swapMeal(ctx: Ctx, planId: string, input: SwapMealInput): SwapMe
         .where(eq(mealSlots.id, slot.id))
         .run();
     }
+  });
+
+  return { plan: buildPlanView(ctx, plan), shoppingListStale: planHasStaleShoppingList(ctx, plan.id) };
+}
+
+export interface AddDishInput extends RecipeRef {
+  date: string;
+  mealType: MealType;
+  /** Servings the new cook yields; defaults to the meal-type default. */
+  servings?: number;
+}
+
+/**
+ * Add one more dish (e.g. a side next to a main) to a meal in one transaction:
+ * a new planned cook dated `date` and a slot after the meal's other dishes.
+ * A `skip` slot at that meal is replaced, since the meal is no longer skipped.
+ */
+export function addDish(ctx: Ctx, planId: string, input: AddDishInput): PlanChangeResult {
+  const plan = requirePlanRow(ctx, planId);
+  const settings = settingsOf(ctx);
+  assertIsoDate(input.date, "date");
+  assertWithinWeek(input.date, plan.weekStart);
+  assertPositive(input.servings, "servings");
+
+  ctx.db.transaction((tx) => {
+    const t = withTx(ctx, tx);
+    const recipe = resolveRecipeRef(t, input);
+    const skips = mealGroupRows(t, plan.id, input.date, input.mealType).filter((row) => row.kind === "skip");
+    if (skips.length > 0) {
+      t.db
+        .delete(mealSlots)
+        .where(inArray(mealSlots.id, skips.map((row) => row.id)))
+        .run();
+    }
+    const plannedServings = input.servings ?? defaultServingsForMeal(settings, input.mealType);
+    const eventId = insertPlannedCook(t, plan.id, recipe.id, input.date, plannedServings);
+    insertSlotRow(t, plan.id, plan.weekStart, {
+      date: input.date,
+      mealType: input.mealType,
+      kind: "meal",
+      cookEventId: eventId,
+    });
+  });
+
+  return { plan: buildPlanView(ctx, plan), shoppingListStale: planHasStaleShoppingList(ctx, plan.id) };
+}
+
+/**
+ * Remove one dish from a meal. Its cook is deleted when it is planned and feeds
+ * no other slot; a cook that also feeds leftovers stays. The cook night of a
+ * done or skipped cook can't be removed (undo or reopen the cook first).
+ */
+export function removeDish(ctx: Ctx, planId: string, slotId: string): PlanChangeResult {
+  const plan = requirePlanRow(ctx, planId);
+
+  ctx.db.transaction((tx) => {
+    const t = withTx(ctx, tx);
+    const slot = requirePlanSlotRow(t, plan, slotId);
+    const event = slot.cookEventId ? requireCookEventRow(t, slot.cookEventId) : null;
+    if (event !== null && event.status !== "planned" && slot.date <= event.cookDate) {
+      throw new AppError("validation", `Cook event ${event.id} is ${event.status}, so its meal can't be removed`, {
+        id: event.id,
+        status: event.status,
+      });
+    }
+    t.db.delete(mealSlots).where(eq(mealSlots.id, slot.id)).run();
+    if (event !== null) deleteOrphanedPlannedCooks(t, plan.id, [event.id]);
   });
 
   return { plan: buildPlanView(ctx, plan), shoppingListStale: planHasStaleShoppingList(ctx, plan.id) };

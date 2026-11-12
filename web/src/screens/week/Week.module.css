@@ -192,6 +192,13 @@
   outline-offset: 5px;
 }
 
+.tonightSides {
+  margin: -4px 0 10px;
+  font-size: 17px;
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
+}
+
 .tonightMeta {
   display: flex;
   align-items: center;
@@ -340,6 +347,26 @@
 
 .slots > .slot:first-child {
   border-top: 0;
+}
+
+/* A later dish of the same meal sits right under the first one, without the
+   dashed divider that separates meals. */
+.slots > .side {
+  border-top: 0;
+}
+
+.side .slotMain {
+  min-height: 48px;
+  padding-top: 0;
+}
+
+/* Holds the sticker's column so dish titles line up; a short rule ties the dish to the meal above. */
+.sideMark {
+  flex: none;
+  width: 48px;
+  align-self: stretch;
+  background: linear-gradient(var(--line), var(--line)) center top / 3px 60% no-repeat;
+  border-radius: 2px;
 }
 
 .slotMain {

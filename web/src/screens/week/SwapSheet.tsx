@@ -3,16 +3,39 @@ import { ToggleGroup, VisuallyHidden } from "radix-ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button, Icon, Pill, SearchInput, Sheet, Skeleton, cx, toast } from "@/ui";
 import { monthDay, weekdayName } from "./dates";
-import { MEAL_EMOJI, pantryCoverage, slotName, swapPlanFor, type AvailabilityLine, type MealType, type PlanView, type RecipeSummary, type Slot } from "./model";
+import {
+  MEAL_EMOJI,
+  dishTitles,
+  pantryCoverage,
+  slotName,
+  swapPlanFor,
+  type AvailabilityLine,
+  type MealType,
+  type PlanView,
+  type RecipeSummary,
+  type Slot,
+} from "./model";
 import { Plate } from "./Plate";
-import { useAvailability, usePickerRecipes, useRecipeIngredients, useSwapMeal } from "./queries";
+import { useAddDish, useAvailability, usePickerRecipes, useRecipeIngredients, useSwapMeal } from "./queries";
 import styles from "./SwapSheet.module.css";
 
-/** Which meal is being changed. `slot` is null for an empty meal with no slot yet. */
+/**
+ * Which meal is being changed. `slot` is null for an empty meal with no slot yet.
+ * `add` picks one more dish for the meal (a side next to a main) instead of a replacement.
+ */
 export interface SwapTarget {
   date: string;
   mealType: MealType;
   slot: Slot | null;
+  add?: boolean;
+}
+
+/** After a plan edit that changed what must be bought. */
+export function showStaleListToast(openShop: () => void) {
+  toast.show({
+    message: "Your plan changed. Update the shopping list",
+    action: { label: "Update", onClick: openShop },
+  });
 }
 
 interface SwapSheetProps {
@@ -38,38 +61,36 @@ function useDebounced<T>(value: T, ms: number): T {
 function SwapSheetBody({ target, plan, onClose }: SwapSheetProps & { target: SwapTarget }) {
   const navigate = useNavigate();
   const swap = useSwapMeal(plan.id);
+  const addDish = useAddDish(plan.id);
+  const busy = swap.isPending || addDish.isPending;
   const [search, setSearch] = useState("");
   const [chosen, setChosen] = useState<RecipeSummary | null>(null);
   const recipes = usePickerRecipes(target.mealType, useDebounced(search, 250));
   const availability = useAvailability(true);
 
-  const { slot, date, mealType } = target;
-  const { askScope, fed } = slot ? swapPlanFor(slot, plan) : { askScope: false, fed: [] };
+  const { slot, date, mealType, add } = target;
+  const { askScope, fed } = slot && !add ? swapPlanFor(slot, plan) : { askScope: false, fed: [] };
+  const dishes = plan.days.find((d) => d.date === date)?.meals[mealType] ?? [];
+
+  const onSuccess = ({ shoppingListStale }: { shoppingListStale: boolean }) => {
+    onClose();
+    if (shoppingListStale) showStaleListToast(() => void navigate({ to: "/shop" }));
+  };
 
   function submit(recipe: RecipeSummary, scope: "this" | "with_leftovers") {
-    swap.mutate(
-      { slot: slot ? { id: slot.id } : { date, mealType }, recipeId: recipe.id, scope },
-      {
-        onSuccess: ({ shoppingListStale }) => {
-          onClose();
-          if (shoppingListStale) {
-            toast.show({
-              message: "Your plan changed. Update the shopping list",
-              action: { label: "Update", onClick: () => void navigate({ to: "/shop" }) },
-            });
-          }
-        },
-      },
-    );
+    swap.mutate({ slot: slot ? { id: slot.id } : { date, mealType }, recipeId: recipe.id, scope }, { onSuccess });
   }
 
   function pick(recipe: RecipeSummary) {
-    if (askScope) setChosen(recipe);
+    if (add) addDish.mutate({ date, mealType, recipeId: recipe.id }, { onSuccess });
+    else if (askScope) setChosen(recipe);
     else submit(recipe, "this");
   }
 
-  const title = `${slot ? "Swap" : "Plan"} ${weekdayName(date)} ${mealType}`;
-  const current = slot?.cookEvent?.recipeTitle ?? slot?.label;
+  const title = add
+    ? `Add to ${weekdayName(date)} ${mealType}`
+    : `${slot ? "Swap" : "Plan"} ${weekdayName(date)} ${mealType}`;
+  const current = add ? dishTitles(dishes) : (slot?.cookEvent?.recipeTitle ?? slot?.label);
   // Announced politely so screen readers hear the list change as the search narrows.
   const resultCount = recipes.isError
     ? "Couldn't load recipes"
@@ -81,7 +102,7 @@ function SwapSheetBody({ target, plan, onClose }: SwapSheetProps & { target: Swa
     <Sheet open onClose={onClose} title={title}>
       <p className={styles.sub}>
         {weekdayName(date)}, {monthDay(date)}
-        {current ? ` · now ${current}` : ""}
+        {current ? ` · ${add ? "with" : "now"} ${current}` : ""}
       </p>
       {chosen && slot ? (
         <ScopeChoice
@@ -117,7 +138,7 @@ function SwapSheetBody({ target, plan, onClose }: SwapSheetProps & { target: Swa
               className={cx(styles.list, styles.results)}
               aria-label={`Pick a ${mealType} recipe`}
               aria-orientation="vertical"
-              disabled={swap.isPending}
+              disabled={busy}
               onValueChange={(value) => {
                 const recipe = recipes.data.find((r) => r.id === value);
                 if (recipe) pick(recipe);
