@@ -27,7 +27,7 @@ export const rootRoute = createRootRoute({
   ),
   notFoundComponent: () => (
     <EmptyState
-      emoji="1FAD9"
+      emoji="relish"
       title="Nothing here"
       action={
         <Link to="/" className={buttonClass({ variant: "primary" })}>

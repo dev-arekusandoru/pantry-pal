@@ -132,11 +132,11 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
         <>
           {header}
           {selectedWeek > currentWeek ? (
-            <EmptyState emoji="1F5D3" title="Nothing planned for this week yet">
+            <EmptyState emoji="lettuce" title="Nothing planned for this week yet">
               Ask your AI assistant to plan these days over MCP. Planning inside the app is coming soon.
             </EmptyState>
           ) : (
-            <EmptyState emoji="1F4ED" title="Nothing was planned that week" />
+            <EmptyState emoji="empty-bowl" title="Nothing was planned that week" />
           )}
         </>
       );
@@ -145,7 +145,7 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
       <>
         {header}
         <EmptyState
-          emoji="1F5D3"
+          emoji="lettuce"
           title="Nothing planned this week"
           action={
             <Button

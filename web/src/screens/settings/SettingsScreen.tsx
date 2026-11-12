@@ -6,15 +6,19 @@ import { LogoutButton } from "@/app/BrowserSession";
 import {
   Button,
   Card,
+  Emoji,
   ErrorState,
   Icon,
   IconButton,
+  IconPicker,
   PageHeader,
   SegmentedControl,
   Sheet,
   Skeleton,
   Stepper,
   cx,
+  hasIcon,
+  ingredientEmoji,
   toast,
   type SegmentOption,
 } from "@/ui";
@@ -23,12 +27,14 @@ import {
   useCreateMember,
   useDeleteMember,
   useHousehold,
+  useIngredients,
   useMembers,
   useRenameMember,
   useServerVersion,
   useUpdateHousehold,
   type HouseholdMember,
   type HouseholdSettings,
+  type Ingredient,
 } from "./queries";
 
 const THEME_OPTIONS: ReadonlyArray<SegmentOption<ThemePreference>> = [
@@ -55,6 +61,8 @@ const SERVINGS_FIELDS: ReadonlyArray<{ key: ServingsKey; label: string; hint: st
 export function SettingsScreen() {
   const household = useHousehold();
   const update = useUpdateHousehold();
+  const ingredients = useIngredients();
+  const [iconIngredient, setIconIngredient] = useState<Pick<Ingredient, "id" | "name" | "imageUrl"> | null>(null);
   const { theme, setTheme } = useTheme();
   const version = useServerVersion();
   const status = useSaveStatus(update.isPending, update.isSuccess, update.submittedAt);
@@ -144,6 +152,13 @@ export function SettingsScreen() {
           </div>
         </Card>
 
+        <MissingIcons
+          ingredients={ingredients.data ?? []}
+          onPick={(ingredient) =>
+            setIconIngredient({ id: ingredient.id, name: ingredient.name, imageUrl: ingredient.imageUrl })
+          }
+        />
+
         <LogoutButton />
 
         <p className={styles.about}>
@@ -151,18 +166,54 @@ export function SettingsScreen() {
           <br />
           Self-hosted. Your pantry stays on your own server.
           <br />
-          Food icons by{" "}
-          <a href="https://openmoji.org" target="_blank" rel="noreferrer">
-            OpenMoji
-          </a>{" "}
-          (CC BY-SA 4.0). UI icons by{" "}
+          UI icons by{" "}
           <a href="https://phosphoricons.com" target="_blank" rel="noreferrer">
             Phosphor
           </a>{" "}
           (MIT).
         </p>
       </div>
+
+      <IconPicker ingredient={iconIngredient} onClose={() => setIconIngredient(null)} />
     </>
+  );
+}
+
+function MissingIcons({ ingredients, onPick }: { ingredients: Ingredient[]; onPick: (ingredient: Ingredient) => void }) {
+  const missing = ingredients.filter((ingredient) => !hasIcon(ingredient.name, ingredient.imageUrl));
+  if (missing.length === 0) return null;
+  const params = new URLSearchParams({
+    title: "Ingredient icons needed",
+    body: `PantryPal has no icon for these ingredients:\n\n${missing.map((i) => `- ${i.name}`).join("\n")}`.slice(0, 3000),
+  });
+  return (
+    <Card as="section" aria-labelledby="settings-icons" className={styles.section}>
+      <h2 id="settings-icons" className={styles.heading}>
+        Items without an icon
+      </h2>
+      <p className={styles.hint}>Pick an icon so these are easy to spot in lists.</p>
+      <ul className={styles.iconList}>
+        {missing.map((ingredient) => (
+          <li key={ingredient.id}>
+            <button type="button" className={styles.iconRow} onClick={() => onPick(ingredient)}>
+              <span className={styles.missingIcon} aria-hidden="true">
+                <Emoji code={ingredientEmoji(ingredient.name)} size={26} />
+              </span>
+              <span className={styles.label}>{ingredient.name}</span>
+              <small>Choose icon</small>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <a
+        className={styles.requestIcon}
+        href={`https://github.com/dev-arekusandoru/pantry-pal/issues/new?${params}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Request an icon
+      </a>
+    </Card>
   );
 }
 

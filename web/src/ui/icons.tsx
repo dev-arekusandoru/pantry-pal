@@ -21,6 +21,8 @@ import {
   Plus,
   ShoppingCartSimple,
   Sun,
+  ThumbsDown,
+  ThumbsUp,
   Timer,
   Trash,
   Users,
@@ -61,6 +63,8 @@ const ICONS = {
   trash: Trash,
   alert: WarningCircle,
   offline: CloudSlash,
+  thumbUp: ThumbsUp,
+  thumbDown: ThumbsDown,
 } satisfies Record<string, PhosphorIcon>;
 
 export type IconName = keyof typeof ICONS;

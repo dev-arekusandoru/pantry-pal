@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Checkbox, Collapsible, Label, Progress } from "radix-ui";
 import { useId, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
-import { Button, Card, Emoji, EmptyState, ErrorState, Icon, PageHeader, Sheet, Skeleton, buttonClass, cx, ingredientEmoji, toast } from "@/ui";
+import { Button, Card, Emoji, EmptyState, ErrorState, Icon, IconPicker, PageHeader, Sheet, Skeleton, buttonClass, cx, hasIcon, ingredientEmoji, toast } from "@/ui";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { aisleLabel } from "../aisles";
 import { uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
@@ -29,6 +29,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   const regenerate = useGenerateList();
   const [name, setName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [iconIngredient, setIconIngredient] = useState<{ id: string; name: string; imageUrl: string | null } | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const addFieldId = useId();
@@ -93,7 +94,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
         <div className={sawLoading.current ? styles.enter : undefined}>
           {toolbar}
           <EmptyState
-            emoji="1F389"
+            emoji="whipped-cream"
             title="Shopping done!"
             action={
               <>
@@ -187,7 +188,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
 
         {counts.total === 0 ? (
           <EmptyState
-            emoji="1F9FA"
+            emoji="bell-peppers"
             title="Nothing on this list"
             action={
               <Button variant="primary" icon={<Icon name="plus" />} onClick={() => setAddOpen(true)}>
@@ -216,7 +217,16 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
                   <Collapsible.Content className={styles.aisleContent}>
                     <ul className={styles.items}>
                       {uncheckedFirst(g.items).map((item) => (
-                        <ItemRow key={item.id} item={item} onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })} />
+                        <ItemRow
+                          key={item.id}
+                          item={item}
+                          onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })}
+                          onEditIcon={
+                            item.ingredientId === null
+                              ? undefined
+                              : () => setIconIngredient({ id: item.ingredientId!, name: item.name, imageUrl: item.imageUrl })
+                          }
+                        />
                       ))}
                     </ul>
                   </Collapsible.Content>
@@ -232,9 +242,14 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
             <ul className={styles.items}>
               {detail.data.runningLow.map((row) => (
                 <li key={row.ingredientId} className={styles.lowRow}>
-                  <span className={styles.itemEmoji} aria-hidden="true">
-                    <Emoji code={ingredientEmoji(row.name)} size={26} />
-                  </span>
+                  <button
+                    type="button"
+                    className={cx(styles.itemIcon, !hasIcon(row.name, row.imageUrl) && styles.noIcon)}
+                    aria-label={`Change the icon for ${row.name}`}
+                    onClick={() => setIconIngredient({ id: row.ingredientId, name: row.name, imageUrl: row.imageUrl })}
+                  >
+                    <Emoji code={ingredientEmoji(row.name, row.imageUrl)} fallback={ingredientEmoji(row.name)} size={26} />
+                  </button>
                   <span className={styles.itemBody}>
                     <span className={styles.itemName}>{row.name}</span>
                     <span className={styles.itemWhy}>{row.status === "out" ? "Out" : "Running low"}</span>
@@ -291,6 +306,8 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
         </form>
       </Sheet>
 
+      <IconPicker ingredient={iconIngredient} onClose={() => setIconIngredient(null)} />
+
       <DoneSheet
         open={doneOpen}
         onClose={() => setDoneOpen(false)}
@@ -318,12 +335,29 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   );
 }
 
-function ItemRow({ item, onToggle }: { item: ShoppingItem; onToggle: (checked: boolean) => void }) {
+function ItemRow({ item, onToggle, onEditIcon }: { item: ShoppingItem; onToggle: (checked: boolean) => void; onEditIcon?: () => void }) {
   const got = item.checkedAt !== null;
   const qty = formatAmount(item.qty, item.unit);
   const why = item.note ?? item.purposeNote ?? (item.source === "manual" ? "Added by hand" : null);
+  const icon = (
+    <span className={cx(styles.itemEmoji, !hasIcon(item.name, item.imageUrl) && styles.noIcon)} aria-hidden="true">
+      <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
+    </span>
+  );
   return (
     <li className={cx(styles.item, got && styles.got)}>
+      {onEditIcon ? (
+        <button
+          type="button"
+          className={cx(styles.itemIcon, !hasIcon(item.name, item.imageUrl) && styles.noIcon)}
+          aria-label={`Change the icon for ${item.name}`}
+          onClick={onEditIcon}
+        >
+          <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
+        </button>
+      ) : (
+        icon
+      )}
       <Checkbox.Root
         className={styles.itemCheck}
         checked={got}
@@ -336,9 +370,6 @@ function ItemRow({ item, onToggle }: { item: ShoppingItem; onToggle: (checked: b
           </Checkbox.Indicator>
         </span>
         <span className={styles.itemContent}>
-          <span className={styles.itemEmoji} aria-hidden="true">
-            <Emoji code={ingredientEmoji(item.name)} size={26} />
-          </span>
           <span className={styles.itemBody}>
             <span className={styles.itemName}>{item.name}</span>
             {why && <span className={styles.itemWhy}>{why}</span>}

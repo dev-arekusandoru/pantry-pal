@@ -1,65 +1,65 @@
 import { describe, expect, it } from "vitest";
-import { EMOJI_ASSETS } from "./openmoji";
-import { ingredientEmoji } from "./ingredientEmoji";
+import { EMOJI_ASSETS } from "./foodIcons";
+import { DEFAULT_ICON, hasIcon, ingredientEmoji } from "./ingredientEmoji";
 
 describe("ingredientEmoji", () => {
   it.each([
-    ["Ribeye steak", "1F969"],
-    ["Chicken thighs", "1F357"],
-    ["Salmon fillet", "1F41F"],
-    ["Large eggs", "1F95A"],
-    ["Smoked bacon", "1F953"],
-    ["Yellow onion", "1F9C5"],
-    ["Garlic cloves", "1F9C4"],
-    ["Carrots", "1F955"],
-    ["Baby spinach", "1F96C"],
-    ["Russet potatoes", "1F954"],
-    ["Black pepper", "1F9C2"],
-    ["Chili powder", "1F336"],
-    ["Red bell pepper", "1FAD1"],
-    ["Broccoli florets", "1F966"],
-    ["Zucchini", "1F952"],
-    ["Lemon juice", "1F34B"],
-    ["Fresh basil", "1F33F"],
-    ["Heavy cream", "1F95B"],
-    ["Unsalted butter", "1F9C8"],
-    ["Parmesan", "1F9C0"],
-    ["Cherry tomatoes", "1F345"],
-    ["Chickpeas", "1FAD8"],
-    ["Olive oil", "1FAD7"],
-    ["Kalamata olives", "1FAD2"],
-    ["Jasmine rice", "1F35A"],
-    ["Spaghetti", "1F35D"],
-    ["All-purpose flour", "1F33E"],
-    ["Honey", "1F36F"],
-    ["Brown sugar", "1F36B"],
-    ["Vegetable broth", "1F372"],
-    ["Sesame seeds", "1F962"],
-    ["Ground cumin", "1F9C2"],
-    ["Sourdough bread", "1F35E"],
-    ["Pancakes", "1F95E"],
-    ["Strawberries", "1F353"],
-    ["Greek yogurt", "1F963"],
-    ["Sun-dried tomatoes in a jar", "1F345"],
-  ])("maps %s to %s", (name, code) => {
-    expect(ingredientEmoji(name)).toBe(code);
+    ["Ribeye steak", "ribeye-steak"],
+    ["Garlic cloves", "garlic"],
+    ["Olive oil", "olive-oil"],
+    ["Coconut milk", "coconut-milk"],
+    ["Chicken thighs", "chicken-drumstick"],
+    ["Green onions", "spring-onion"],
+    ["Jasmine rice", "white-rice"],
+    ["Rice noodles", "rice-noodles"],
+    ["Bananas", "banana"],
+    ["Frozen peas", "frozen-peas"],
+    ["Lime wedges", "lime-wedge"],
+    ["Apples", "apple"],
+    ["Pineapple", "pineapple"],
+    ["Cherry tomatoes", "tomato"],
+    ["Apple cider vinegar", "apple-cider-vinegar"],
+    ["Rolled oats", "oats"],
+    ["Chia seeds", "chia-seeds"],
+    ["Vanilla extract", "vanilla-extract"],
+    ["Water", "water"],
+    ["Black pepper", "black-peppercorns"],
+    ["Chipotle powder", "chili-powder"],
+  ])("maps %s to %s", (name, icon) => {
+    expect(ingredientEmoji(name)).toBe(icon);
   });
 
-  it("falls back to a bowl for an unknown ingredient", () => {
-    expect(ingredientEmoji("Mystery powder")).toBe("1F963");
+  it("falls back to the default icon for an unknown ingredient", () => {
+    expect(ingredientEmoji("Mystery powder")).toBe(DEFAULT_ICON);
   });
 
-  it("only returns codes that have a bundled OpenMoji asset", () => {
-    const names = [
-      "beef", "chicken", "fish", "egg", "bacon", "onion", "garlic", "carrot", "celery",
-      "potato", "pepper", "bell pepper", "chili", "broccoli", "cucumber", "lime", "parsley",
-      "milk", "butter", "cheese", "tomato", "lentils", "oil", "olive", "rice", "pasta",
-      "flour", "honey", "cocoa", "stock", "soy sauce", "salt", "bread", "pancake", "apple",
-      "yogurt", "jam jar", "unknown thing",
-    ];
-    for (const name of names) {
-      const code = ingredientEmoji(name);
-      expect(EMOJI_ASSETS[code], `${name} -> ${code}`).toBeTypeOf("string");
+  it("only returns icons that exist", () => {
+    for (const name of ["beef", "chicken", "rice", "broth", "bread", "cinnamon", "parmesan", "unknown thing"]) {
+      expect(EMOJI_ASSETS[ingredientEmoji(name)], name).toBeTypeOf("string");
     }
+    expect(EMOJI_ASSETS[DEFAULT_ICON]).toBeTypeOf("string");
+  });
+});
+
+describe("ingredientEmoji with an image reference", () => {
+  it("uses a custom URL over a bundled icon and the matcher", () => {
+    expect(ingredientEmoji("Garlic cloves", "https://cdn.example/garlic.png")).toBe("https://cdn.example/garlic.png");
+  });
+
+  it("uses a bundled icon name over the matcher", () => {
+    expect(ingredientEmoji("Mystery powder", "garlic")).toBe("garlic");
+  });
+
+  it("falls back to the matcher for an unknown bare name", () => {
+    expect(ingredientEmoji("Garlic cloves", "no-such-icon")).toBe("garlic");
+  });
+});
+
+describe("hasIcon", () => {
+  it("is false only when nothing matched and there is no custom reference", () => {
+    expect(hasIcon("Garlic cloves", null)).toBe(true);
+    expect(hasIcon("Mystery powder", null)).toBe(false);
+    expect(hasIcon("Mystery powder", "garlic")).toBe(true);
+    expect(hasIcon("Mystery powder", "https://cdn.example/garlic.png")).toBe(true);
   });
 });

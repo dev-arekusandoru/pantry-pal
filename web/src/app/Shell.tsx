@@ -28,7 +28,7 @@ export function Shell() {
       <nav className={styles.nav} aria-label="Main">
         <div className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">
-            <Emoji code="1FAD9" size={34} />
+            <Emoji code="relish" size={34} />
           </span>
           <span className={styles.brandName}>PantryPal</span>
         </div>

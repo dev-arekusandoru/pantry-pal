@@ -6,7 +6,7 @@
  *   2. Color sets: light (default), dark (system preference or explicit).
  *   3. Per-tab colors: `data-tab="week|shop|pantry|recipes|settings"` on any
  *      ancestor sets --tab, --tab-s and --on-tab. --tab-sticker (the header
- *      corner art) is set inline by the shell from the imported OpenMoji SVG.
+ *      corner art) is set inline by the shell from the imported food icon.
  *
  * Theme selection is the `data-theme` attribute on <html>: "light" | "dark" |
  * "system" (see src/app/theme.ts). "system" and "unset" follow the OS.

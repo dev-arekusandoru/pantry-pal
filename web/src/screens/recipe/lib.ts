@@ -1,7 +1,7 @@
 /** Pure helpers shared by the recipe box, recipe detail and cook mode. */
 
 import type { components } from "@/api/schema";
-import type { EmojiCode } from "@/ui/openmoji";
+import type { EmojiCode } from "@/ui/foodIcons";
 
 export type MealType = components["schemas"]["MealType"];
 
@@ -14,6 +14,8 @@ export interface RecipeStepLink {
   position: number;
   ingredientId: string;
   ingredientName: string;
+  /** Bundled icon name or http(s) URL; null = automatic icon. */
+  imageUrl: string | null;
   unit: string | null;
   prepNote: string | null;
 }
@@ -135,17 +137,17 @@ export function haveIngredient(
 }
 
 const MEAL_EMOJI: Record<MealType, EmojiCode> = {
-  breakfast: "1F95E",
-  lunch: "1F957",
-  dinner: "1F35D",
-  snack: "1F37F",
-  dessert: "1F370",
+  breakfast: "fried-egg",
+  lunch: "bread-loaf",
+  dinner: "pasta-ring",
+  snack: "croissant",
+  dessert: "muffin",
 };
 
-/** Decorative OpenMoji code for a recipe without a (working) photo. */
+/** Decorative icon name for a recipe without a (working) photo. */
 export function recipeEmoji(mealTypes: ReadonlyArray<MealType>): EmojiCode {
   const first = mealTypes.find((m) => m === "dinner") ?? mealTypes[0];
-  return first ? MEAL_EMOJI[first] : "1F37D";
+  return first ? MEAL_EMOJI[first] : "roast-chicken";
 }
 
 /** "2026-11-03" -> "Tue, Nov 3" without timezone drift. */

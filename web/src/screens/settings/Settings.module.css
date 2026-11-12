@@ -179,3 +179,57 @@
     gap: 10px;
   }
 }
+
+.iconList {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.iconRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.iconRow:hover {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.iconRow small {
+  margin-left: auto;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.missingIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  outline: 2px dashed var(--line);
+  outline-offset: 2px;
+  opacity: 0.6;
+  filter: grayscale(0.7);
+}
+
+.requestIcon {
+  display: inline-block;
+  margin-top: 12px;
+  padding-left: 10px;
+  font-weight: var(--fw-bold);
+}

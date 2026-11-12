@@ -89,7 +89,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
   }
   return <main className={styles.page}>
     <form className={styles.form} onSubmit={(event) => void submit(event)}>
-      <Emoji code="1FAD9" size={72} />
+      <Emoji code="relish" size={72} />
       <h1 className={styles.title}>Your pantry awaits.</h1>
       <p className={styles.hint}>Enter your household password to open PantryPal.</p>
       <label className={styles.label} htmlFor="pantry-password">Password</label>

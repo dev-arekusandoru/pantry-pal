@@ -10,7 +10,7 @@ export function StepPills({ pills }: { pills: readonly StepPill[] }) {
       {pills.map((pill) => (
         <li key={pill.id}>
           <span className={styles.ingChip}>
-            <Sticker emoji={ingredientEmoji(pill.name)} tone="butter" size={32} />
+            <Sticker emoji={ingredientEmoji(pill.name, pill.imageUrl)} fallback={ingredientEmoji(pill.name)} tone="butter" size={32} />
             <span>
               {pill.amount && <b>{pill.amount} </b>}
               {pill.name}

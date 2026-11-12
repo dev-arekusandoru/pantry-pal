@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { client, qk, unwrap } from "@/api";
+import { client, qk, unwrap, type components } from "@/api";
 import type { paths } from "@/api";
 
 export type Household = paths["/household"]["get"]["responses"][200]["content"]["application/json"];
 export type HouseholdSettings = Household["settings"];
+export type Ingredient = components["schemas"]["IngredientView"];
 
 export interface HouseholdPatch {
   name?: string;
@@ -22,6 +23,14 @@ export function householdQueryOptions() {
 
 export function useHousehold() {
   return useQuery(householdQueryOptions());
+}
+
+/** Every ingredient, for the settings list of items that have no icon yet. */
+export function useIngredients() {
+  return useQuery({
+    queryKey: [...qk.ingredients, "list"] as const,
+    queryFn: async () => (await unwrap(client.GET("/ingredients"))).items,
+  });
 }
 
 /**

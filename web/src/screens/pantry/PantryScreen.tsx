@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { errorMessage } from "@/api";
-import { Button, Card, EmptyState, ErrorState, Icon, PageHeader, SearchInput, SegmentedControl, Skeleton, cx, toast } from "@/ui";
+import { Button, Card, EmptyState, ErrorState, Icon, IconPicker, PageHeader, SearchInput, SegmentedControl, Skeleton, cx, toast } from "@/ui";
 import { AddSheet } from "./AddSheet";
 import styles from "./Pantry.module.css";
 import { useAddToList, useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetExpiry, useSetQty, useSetCategory, useSetShelfLife, useSetStatus } from "./queries";
@@ -22,10 +22,15 @@ export function PantryScreen() {
   const restore = useRestoreItem();
   const [query, setQuery] = useState("");
   const [category, setCategoryFilter] = useState<PantryCategory | "all">("all");
-  const [editing, setEditing] = useState<PantryItem | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [iconIngredient, setIconIngredient] = useState<{ id: string; name: string; imageUrl: string | null } | null>(null);
 
   const items = pantry.data;
+  // Derive from the query so an edit made in a nested sheet shows up here too.
+  const editing = items?.find((i) => i.id === editingId) ?? null;
+  const editIcon = (item: PantryItem) =>
+    setIconIngredient({ id: item.ingredient.id, name: item.ingredient.name, imageUrl: item.ingredient.imageUrl });
   const groups = useMemo(() => groupByCategory(items ?? [], query, category), [items, query, category]);
   // One-way latch: did this screen ever show its skeleton? Rows and the block
   // fade in only when they replace a skeleton; a first paint that already has
@@ -74,7 +79,7 @@ export function PantryScreen() {
           aside={items.length > 0 ? addButton : undefined}
         />
         {items.length === 0 ? (
-          <EmptyState emoji="1FAD9" title="Your pantry is empty" action={addButton}>
+          <EmptyState emoji="relish" title="Your pantry is empty" action={addButton}>
             Add what you have and PantryPal can plan around it.
           </EmptyState>
         ) : (
@@ -92,7 +97,7 @@ export function PantryScreen() {
             </div>
             {groups.length === 0 ? (
               <EmptyState
-                emoji="1F50E"
+                emoji="empty-bowl"
                 title={`Nothing matches "${query.trim()}"`}
                 action={
                   <Button variant="primary" icon={<Icon name="plus" />} onClick={() => setAdding(true)}>
@@ -115,8 +120,9 @@ export function PantryScreen() {
                         key={item.id}
                         item={item}
                         onStep={(it, dir) => adjust.mutate({ item: it, delta: dir > 0 ? stepFor(it.unit) : -Math.min(stepFor(it.unit), it.qty ?? 0) })}
-                        onEditQty={setEditing}
+                        onEditQty={(it) => setEditingId(it.id)}
                         onSetStatus={(it, status) => setStatus.mutate({ item: it, status })}
+                        onEditIcon={editIcon}
                         onAddToList={(it) =>
                           addToList.mutate(it, {
                             onSuccess: (list) => toast.show({ message: `${it.ingredient.name} added to ${list.title}` }),
@@ -134,7 +140,7 @@ export function PantryScreen() {
       </div>
       <SetQtySheet
         item={editing}
-        onClose={() => setEditing(null)}
+        onClose={() => setEditingId(null)}
         onSave={(item, changes) => {
           setQty.mutate({ item, qty: changes.qty });
           if (changes.expiresOn !== item.expiresOn) setExpiry.mutate({ item, expiresOn: changes.expiresOn });
@@ -145,6 +151,7 @@ export function PantryScreen() {
             setShelfLife.mutate({ ingredientId: item.ingredient.id, shelfLifeDays: changes.shelfLifeDays });
           }
         }}
+        onEditIcon={editIcon}
         onRemove={(item) =>
           remove.mutate(
             { item },
@@ -168,6 +175,7 @@ export function PantryScreen() {
         existing={items}
         initialName={query.trim()}
       />
+      <IconPicker ingredient={iconIngredient} onClose={() => setIconIngredient(null)} />
     </>
   );
 }

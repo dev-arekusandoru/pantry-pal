@@ -7,6 +7,7 @@ const item = (id: string, checkedAt: string | null = null): ShoppingItem => ({
   shoppingListId: "l",
   ingredientId: null,
   name: id,
+  imageUrl: null,
   category: "produce",
   qty: 1,
   unit: null,

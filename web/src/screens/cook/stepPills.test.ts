@@ -11,6 +11,7 @@ function link(overrides: Partial<RecipeStepLink>): RecipeStepLink {
     position: 0,
     ingredientId: "ing_1",
     ingredientName: "Flour",
+    imageUrl: null,
     unit: "cup",
     prepNote: "sifted",
     ...overrides,

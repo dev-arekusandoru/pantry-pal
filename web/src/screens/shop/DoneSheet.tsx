@@ -93,7 +93,7 @@ function ReviewRow({ item, text, onChange }: { item: ShoppingItem; text: string 
   return (
     <li className={styles.reviewRow}>
       <span className={styles.itemEmoji} aria-hidden="true">
-        <Emoji code={ingredientEmoji(item.name)} size={26} />
+        <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
       </span>
       <span className={styles.reviewName}>
         {item.name}

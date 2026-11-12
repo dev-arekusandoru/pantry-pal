@@ -113,7 +113,7 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
         <ErrorState error={recipes.error} onRetry={() => void recipes.refetch()} />
       ) : items && items.length === 0 ? (
         <EmptyState
-          emoji={view === "never" ? "1F645" : "1F50D"}
+          emoji={view === "never" ? "empty-bowl" : "empty-bowl"}
           title={view === "never" ? "Nothing set aside" : filtered ? "No recipes match" : "No recipes yet"}
         >
           {view === "never"

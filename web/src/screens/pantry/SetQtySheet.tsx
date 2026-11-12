@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent } from "react";
 import { Label, Select } from "radix-ui";
-import { Button, Icon, Sheet } from "@/ui";
+import { Button, Icon, Sheet, Sticker, hasIcon, ingredientEmoji } from "@/ui";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { CATEGORY_ORDER, aisleLabel } from "../aisles";
 import { parseQty, qtyToInput, unitLabel } from "../shop/format";
@@ -21,9 +21,11 @@ export interface SetQtySheetProps {
   onSave: (item: PantryItem, changes: PantryChanges) => void;
   /** Remove the row from the pantry entirely; the caller confirms with an Undo toast. */
   onRemove: (item: PantryItem) => void;
+  /** Open the icon picker for this item's ingredient. */
+  onEditIcon: (item: PantryItem) => void;
 }
 
-export function SetQtySheet({ item, onClose, onSave, onRemove }: SetQtySheetProps) {
+export function SetQtySheet({ item, onClose, onSave, onRemove, onEditIcon }: SetQtySheetProps) {
   return (
     <Sheet
       open={item !== null}
@@ -38,7 +40,7 @@ export function SetQtySheet({ item, onClose, onSave, onRemove }: SetQtySheetProp
         </>
       }
     >
-      {item && <Form key={item.id} item={item} onClose={onClose} onSave={onSave} onRemove={onRemove} />}
+      {item && <Form key={item.id} item={item} onClose={onClose} onSave={onSave} onRemove={onRemove} onEditIcon={onEditIcon} />}
     </Sheet>
   );
 }
@@ -48,9 +50,10 @@ interface FormProps {
   onClose: () => void;
   onSave: (item: PantryItem, changes: PantryChanges) => void;
   onRemove: (item: PantryItem) => void;
+  onEditIcon: (item: PantryItem) => void;
 }
 
-function Form({ item, onClose, onSave, onRemove }: FormProps) {
+function Form({ item, onClose, onSave, onRemove, onEditIcon }: FormProps) {
   const [text, setText] = useState(item.qty === null ? "" : qtyToInput(item.qty));
   const [expiresOn, setExpiresOn] = useState(item.expiresOn ?? "");
   const [category, setCategory] = useState<PantryCategory>(item.ingredient.category);
@@ -144,6 +147,19 @@ function Form({ item, onClose, onSave, onRemove }: FormProps) {
           aria-invalid={shelfBad || undefined}
           onChange={(e) => setShelfText(e.target.value)}
         />
+      </div>
+      <div className={styles.field}>
+        <span className={styles.fieldLabel}>Icon</span>
+        <div className={styles.iconRow}>
+          <Sticker
+            emoji={ingredientEmoji(name, item.ingredient.imageUrl)}
+            fallback={ingredientEmoji(name)}
+            tone="plain"
+            size={40}
+            className={hasIcon(name, item.ingredient.imageUrl) ? undefined : styles.noIcon}
+          />
+          <Button onClick={() => onEditIcon(item)}>Change icon</Button>
+        </div>
       </div>
       <div className={styles.removeRow}>
         <Button variant="dangerGhost" icon={<Icon name="trash" />} onClick={() => setConfirming(true)}>

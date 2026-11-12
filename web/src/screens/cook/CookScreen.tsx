@@ -2,7 +2,7 @@ import { Link, useCanGoBack, useNavigate, useRouter } from "@tanstack/react-rout
 import { Progress } from "radix-ui";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent } from "react";
 import { errorMessage } from "@/api";
-import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx, toast } from "@/ui";
+import { Button, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx, toast } from "@/ui";
 import { formatClock, stepSeconds } from "../recipe/duration";
 import { formatAmount, formatNumber, localDate, type RecipeStepLink } from "../recipe/lib";
 import { isNotFound, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "../recipe/queries";
@@ -28,7 +28,7 @@ import { CrewPanels } from "./CrewView";
 import { clearCookProgress, isResumable, readCookProgress, saveCookProgress } from "./progress";
 import { useFinishCook, useUndoCook, type FinishInput } from "./queries";
 import { stepPillRows } from "./stepPills";
-import { StepPills } from "./StepPills";
+import { StepPills } from "./StepPillList";
 import { StepTimerRow } from "./StepTimerRow";
 import { useStepTimers } from "./timers";
 import { useWakeLock } from "./wakeLock";
@@ -554,7 +554,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
       <div className={styles.cook}>
         {isNotFound(recipe.error) ? (
           <EmptyState
-            emoji="1F37D"
+            emoji="roast-chicken"
             title="Recipe not found"
             action={
               <Link to="/recipes" className={buttonClass({ variant: "primary" })}>
@@ -860,7 +860,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
             <li key={ri.id}>
               {ri.groupLabel && ri.groupLabel !== ingredientRows[i - 1]?.ri.groupLabel && <p className={styles.sheetGroup}>{ri.groupLabel}</p>}
               <span className={styles.ingChip}>
-                <Sticker emoji={ingredientEmoji(ri.ingredient.name)} tone="butter" size={32} />
+                <Sticker emoji={ingredientEmoji(ri.ingredient.name, ri.ingredient.imageUrl)} fallback={ingredientEmoji(ri.ingredient.name)} tone="butter" size={32} />
                 <span>
                   {amount && <b>{amount} </b>}
                   {ri.ingredient.name}
@@ -971,7 +971,7 @@ function DoneScreen({
 
   return (
     <div className={cx(styles.cook, styles.done)}>
-      <Sticker emoji="1F389" shape="die-cut" size={96} tilt={-8} />
+      <Sticker emoji="whipped-cream" shape="die-cut" size={96} tilt={-8} />
       <h1 className={styles.doneTitle}>Nice cooking!</h1>
       <p className={styles.doneText}>
         {title} ({formatNumber(done.servings)} servings) is done.{" "}
@@ -983,7 +983,7 @@ function DoneScreen({
         <ul className={styles.warnings} aria-label="Heads up">
           {done.warnings.map((w) => (
             <li key={w}>
-              <Emoji code="26A0" size={15} />
+              <Icon name="alert" size={15} />
               <span>{w}</span>
             </li>
           ))}
@@ -995,7 +995,7 @@ function DoneScreen({
           <div className={styles.rateActions}>
             <Button
               size="lg"
-              icon={<Emoji code="1F44D" size={20} />}
+              icon={<Icon name="thumbUp" size={20} />}
               loading={setStatus.isPending && setStatus.variables?.status === "rotation"}
               onClick={() => rate("rotation")}
             >
@@ -1004,7 +1004,7 @@ function DoneScreen({
             <Button
               size="lg"
               variant="dangerGhost"
-              icon={<Emoji code="1F44E" size={20} />}
+              icon={<Icon name="thumbDown" size={20} />}
               loading={setStatus.isPending && setStatus.variables?.status === "never"}
               onClick={() => rate("never")}
             >

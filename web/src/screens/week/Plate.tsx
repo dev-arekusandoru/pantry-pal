@@ -4,7 +4,7 @@ import styles from "./Plate.module.css";
 
 interface PlateProps {
   imageUrl: string | null | undefined;
-  /** OpenMoji code shown when there is no photo or it fails to load. */
+  /** Icon name shown when there is no photo or it fails to load. */
   emoji: EmojiCode;
   className?: string;
 }

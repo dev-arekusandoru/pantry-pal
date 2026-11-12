@@ -409,3 +409,37 @@
   border-top: 2px dashed var(--line);
   display: flex;
 }
+
+/* Missing icon: a dashed ring around the fallback bowl, and a button to pick one. */
+.iconBtn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iconBtn:active {
+  opacity: 0.6;
+}
+
+.noIcon {
+  border-radius: 50%;
+  outline: 2px dashed var(--line);
+  outline-offset: 3px;
+  opacity: 0.6;
+  filter: grayscale(0.7);
+}
+
+.iconRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.iconRow > button {
+  margin-left: auto;
+}

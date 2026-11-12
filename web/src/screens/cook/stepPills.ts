@@ -15,6 +15,7 @@ export interface StepPillScaled {
 export interface StepPill {
   id: string;
   name: string;
+  imageUrl: string | null;
   amount: string;
   prepNote: string | null;
 }
@@ -48,6 +49,7 @@ export function stepPillRows(
     return {
       id: link.id,
       name: link.ingredientName,
+      imageUrl: link.imageUrl,
       amount: formatAmount(qty, qtyMax, link.unit),
       prepNote: link.prepNote,
     };

@@ -16,9 +16,9 @@ import styles from "./RecipeScreen.module.css";
  * again. "Never" is destructive, so it is styled as such and asks first.
  */
 const STATUS_OPTIONS: ReadonlyArray<SegmentOption<EditableStatus>> = [
-  { value: "rotation", label: "Rotation", icon: <Emoji code="1F44D" size={16} /> },
+  { value: "rotation", label: "Rotation", icon: <Icon name="thumbUp" size={16} /> },
   { value: "want_to_try", label: "Want to try" },
-  { value: "never", label: "Never", icon: <Emoji code="1F44E" size={16} />, danger: true },
+  { value: "never", label: "Never", icon: <Icon name="thumbDown" size={16} />, danger: true },
 ];
 
 export interface RecipeScreenProps {
@@ -33,6 +33,7 @@ interface Row {
   id: string;
   group: string | null;
   name: string;
+  imageUrl: string | null;
   prepNote: string | null;
   optional: boolean;
   amount: string;
@@ -105,6 +106,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
         id: ri.id,
         group: ri.groupLabel,
         name: ri.ingredient.name,
+        imageUrl: ri.ingredient.imageUrl,
         prepNote: ri.prepNote,
         optional: ri.optional,
         amount: s ? formatAmount(qty, s.qtyMax, s.unit) : "",
@@ -125,7 +127,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
     if (isNotFound(recipe.error)) {
       return (
         <EmptyState
-          emoji="1F37D"
+          emoji="roast-chicken"
           title="Recipe not found"
           action={
             <Link to="/recipes" className={buttonClass({ variant: "primary" })}>
@@ -279,7 +281,7 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
                 {row.group && row.group !== rows[i - 1]?.group && <p className={styles.group}>{row.group}</p>}
                 <div className={styles.ing}>
                   <span className={styles.ingEmoji} aria-hidden="true">
-                    <Emoji code={ingredientEmoji(row.name)} size={20} />
+                    <Emoji code={ingredientEmoji(row.name, row.imageUrl)} fallback={ingredientEmoji(row.name)} size={20} />
                   </span>
                   <span className={styles.ingAmount}>{row.amount}</span>
                   <span className={styles.ingName}>

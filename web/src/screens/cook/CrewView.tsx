@@ -3,7 +3,7 @@ import { stepSeconds } from "../recipe/duration";
 import type { RecipeStepLink } from "../recipe/lib";
 import { assignedSteps, type CookStep, type Crew } from "./crew";
 import type { StepPill } from "./stepPills";
-import { StepPills } from "./StepPills";
+import { StepPills } from "./StepPillList";
 import { StepTimerRow, type StepTimers } from "./StepTimerRow";
 import styles from "./CookScreen.module.css";
 

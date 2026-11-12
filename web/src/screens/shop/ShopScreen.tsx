@@ -93,7 +93,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
         <PageHeader title="Shopping" sub="Nothing on the list" />
         {planId !== null ? (
           <EmptyState
-            emoji="1F6D2"
+            emoji="tomato"
             title="No shopping list yet"
             action={
               <>
@@ -122,7 +122,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
           </EmptyState>
         ) : (
           <EmptyState
-            emoji="1F9FA"
+            emoji="bell-peppers"
             title="No list, no plan"
             action={
               <>

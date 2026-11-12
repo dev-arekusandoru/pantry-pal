@@ -3,10 +3,10 @@ import styles from "./EmptyState.module.css";
 import { cx } from "./cx";
 import { Emoji } from "./Emoji";
 import { isViewTransitionActive } from "./motion";
-import type { EmojiCode } from "./openmoji";
+import type { EmojiCode } from "./foodIcons";
 
 export interface EmptyStateProps {
-  /** Big sticker icon (OpenMoji code). */
+  /** Big sticker icon (icon name). */
   emoji: EmojiCode;
   title: string;
   /** Supporting sentence(s). */
