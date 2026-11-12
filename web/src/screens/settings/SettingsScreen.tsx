@@ -240,7 +240,6 @@ function PeopleSection() {
         open={pending !== null}
         onClose={() => setPending(null)}
         title={`Remove ${pending?.name ?? ""}?`}
-        variant="center"
         footer={
           <>
             <Button onClick={() => setPending(null)}>Cancel</Button>
