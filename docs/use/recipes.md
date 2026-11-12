@@ -98,6 +98,37 @@ this device. If you leave after the first step, the app offers **Resume at step
 N** or **Start over**, and the recipe page shows the same resume link. Timers
 are not saved.
 
+### Cook together
+
+Two to four people can split one recipe. Each cook follows only their own
+steps. This works best on a shared tablet in landscape.
+
+1. Add each person in **Settings** > **People**.
+2. Open cook mode. When the household has two or more people, **Who's cooking?**
+   opens by itself. Select two to four people, then tap **Next**. To cook alone,
+   tap **Just me** or close the sheet. To change cooks later, tap **Cooks**.
+3. Under **Assign steps**, tap a name on each step to give that step to that
+   cook. Tap a name on a group heading, such as "Sauce", to give the whole group
+   to that cook. The app starts with groups shared out in turn.
+4. Tap **Start cooking**.
+
+The screen shows one panel per cook: two side by side, or a 2 × 2 grid for three
+or four cooks. On a narrow screen, the panels stack. Each panel has its own
+**Back** and **Next** buttons. After a cook's last step, **Done** ends that
+cook's part. Swipe and arrow keys do not move steps in this view.
+
+Timers stay in each cook's step, as in single-cook mode. Alerts show at the top
+with the cook's name. A running timer also shows at the top when no panel shows
+its step, for example after that cook moved on. Tap it to move that cook back to
+that step.
+
+**Finish cooking** appears when every cook is done. To go back to one cook, tap
+**Cooks**, then **Just me**.
+
+The cooks and their places are saved on this device with the rest of your
+progress. When you come back, the app shows **Resume** instead of a step number.
+Each person cannot yet follow along on their own phone.
+
 ### Finish or undo
 
 **Finish cooking** uses the servings shown on screen:

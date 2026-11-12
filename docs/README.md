@@ -19,7 +19,7 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 ## Use PantryPal
 
 - [Pantry](use/pantry.md) — add food and change stock.
-- [Recipes](use/recipes.md) — servings, recipe status, and cook mode.
+- [Recipes](use/recipes.md) — servings, recipe status, cook mode, and cooking together.
 - [Create and edit recipes](use/recipe-editor.md) — the editor, step ingredient links, delete and archive.
 - [Meal plans](use/meal-plans.md) — meals, leftovers, swaps, and prep tasks.
 - [Shopping](use/shopping.md) — create a list and record purchases.

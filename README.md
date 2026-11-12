@@ -56,7 +56,8 @@ connect an AI assistant through MCP. Your data stays on your server.
 - **Track food:** record amounts and expiry dates, grouped by food category.
 - **Manage recipes:** scale ingredients to the number of servings.
 - **Shop with a list:** build a list from your plan and the food you have.
-- **Cook step by step:** follow a recipe and update stock when you finish.
+- **Cook step by step:** follow a recipe, split the steps between cooks, and
+  update stock when you finish.
 - **Connect an AI assistant:** use MCP to manage recipes, plans, and stock.
 
 ## Documentation
