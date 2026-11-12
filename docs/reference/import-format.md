@@ -71,6 +71,7 @@ All eight top-level keys are required; the arrays may be empty but are not omitt
 | `defaultUnit` | unit \| null | yes | Used for stock/shopping when nothing else is specified. |
 | `aliases` | string[] | yes | May be `[]`. Lowercased by the loader; must not collide with any alias or ingredient name. Each becomes an `ingredient_alias` row. |
 | `description` | string | no | Optional prose description. |
+| `imageUrl` | string \| null | no | Icon: a bundled icon name, an `http(s)` link, or `null` for automatic. See [Ingredient icons](../use/icons.md). |
 | `shelfLifeDays` | integer | no | Typical shelf life once purchased. Shopping completion uses it to set the expiry date. |
 | `parQty` | number | no | Desired minimum stock. **Unset in this seed** so imported quantities cannot flip a row to `low`. |
 | `parUnit` | unit | no | Unit for `parQty`. |

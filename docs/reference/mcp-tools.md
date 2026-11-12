@@ -54,7 +54,8 @@ Input schemas come from these files:
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
 | `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, and conversions. | `query`, `category`, `includeArchived`. |
-| `ingredient_upsert` | Create, update, alias, or merge an ingredient. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; category and default unit; `aliases`; `removeAliases`; `intoId` for merge. |
+| `ingredient_upsert` | Create, update, alias, or merge an ingredient. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; category and default unit; `aliases`; `removeAliases`; `imageUrl` (icon name, `http(s)` link, or `null`; see [Ingredient icons](../use/icons.md)); `intoId` for merge. |
+| `list_icons` | List the bundled ingredient icon names that `imageUrl` accepts. Read-only. | `query` (substring filter), `limit` (default 100). |
 | `unit_conversions` | List, create, or delete custom unit conversions such as `1 can = 15 oz`, per ingredient or household-global. | `action` `list`, `create`, or `delete`; `ingredientId`; `includeGlobal`; `conversionId`; `fromUnit`, `toUnit`, `factor`; `note`. |
 
 ## Pantry and availability

@@ -31,3 +31,10 @@ test when it can catch a real user problem.
 
 Keep docs brief. Use common words, short sentences, and the same name for each
 concept. Put procedures in guides and exact fields in reference pages.
+
+## Add ingredient icons
+
+Icons are 160 px WebP files in `web/src/assets/ingredients/`. Drop in a file with
+a descriptive name, for example `olive-oil.webp`, and the app matches it by name.
+Then run `pnpm icons:manifest` so the server accepts the name. See the README in
+that folder for the sheet workflow, naming rules, and matcher overrides.
