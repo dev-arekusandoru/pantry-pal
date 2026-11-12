@@ -3,14 +3,34 @@ import { Progress } from "radix-ui";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type TouchEvent } from "react";
 import { errorMessage } from "@/api";
 import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx, toast } from "@/ui";
-import { formatClock, formatDuration, stepSeconds } from "../recipe/duration";
+import { formatClock, stepSeconds } from "../recipe/duration";
 import { formatAmount, formatNumber, localDate, type RecipeStepLink } from "../recipe/lib";
 import { isNotFound, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "../recipe/queries";
 import type { EditableStatus } from "../recipe/status";
+import { useMembers } from "../settings/queries";
+import {
+  MAX_COOKS,
+  allDone,
+  assignedSteps,
+  cookNames,
+  cooksDone,
+  defaultOwners,
+  focusCookStep,
+  lowestUnfinishedStep,
+  moveCook,
+  passedSteps,
+  setCookPosition,
+  type Crew,
+  type CrewCook,
+} from "./crew";
+import { AssignSteps, WhoCookingSheet } from "./CrewSetup";
+import { CrewPanels } from "./CrewView";
 import { clearCookProgress, isResumable, readCookProgress, saveCookProgress } from "./progress";
 import { useFinishCook, useUndoCook, type FinishInput } from "./queries";
-import { useStepTimers, type StepTimer } from "./timers";
 import { stepPillRows } from "./stepPills";
+import { StepPills } from "./StepPills";
+import { StepTimerRow } from "./StepTimerRow";
+import { useStepTimers } from "./timers";
 import { useWakeLock } from "./wakeLock";
 import styles from "./CookScreen.module.css";
 
@@ -157,6 +177,11 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
     resume && saved !== null ? "resumed" : saved !== null ? "ask" : "restarted",
   );
 
+  const members = useMembers();
+  const memberCooks: CrewCook[] = (members.data ?? []).map((member) => ({ id: member.id, name: member.name }));
+  // Saved cooks survive a member being deleted, so a crew can outlive the list.
+  const canPickCooks = memberCooks.length >= 2;
+
   const stepCount = r?.steps.length ?? 0;
   const resumable = isResumable(saved, stepCount);
   const resumePending = resumeState === "ask" && resumable;
@@ -174,6 +199,15 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
   const [step, setStep] = useState(() =>
     resume && saved !== null && isResumable(saved, saved.stepCount) ? saved.step : 0,
   );
+  const [crew, setCrew] = useState<Crew | null>(() => {
+    if (!resume || saved === null || saved.crew === undefined) return null;
+    return isResumable(saved, saved.stepCount) ? saved.crew : null;
+  });
+  const [cooksOpen, setCooksOpen] = useState(false);
+  // The picker opens by itself once per visit, so a household never has to hunt for it.
+  const [cooksAsked, setCooksAsked] = useState(false);
+  const [draftCooks, setDraftCooks] = useState<CrewCook[]>([]);
+  const [assign, setAssign] = useState<{ cooks: CrewCook[]; owners: string[] } | null>(null);
   const [ingredientsOpen, setIngredientsOpen] = useState(false);
   const [askPlanned, setAskPlanned] = useState(false);
   const [done, setDone] = useState<DoneState | null>(null);
@@ -187,16 +221,25 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
 
   const lastStep = Math.max(0, stepCount - 1);
   const atEnd = step >= lastStep;
-  const overlayOpen = ingredientsOpen || askPlanned || resumePending;
+  const crewPassed = crew !== null ? passedSteps(crew) : [];
+  const overlayOpen = ingredientsOpen || askPlanned || resumePending || cooksOpen;
 
   const { layers, direction, drop: dropStep } = useStepLayers(step);
 
   // Timers: the alert list and the chips for the other steps are kept mounted for
   // one exit fade after they disappear.
   const alerts = timers.ringing.map((s) => ({ step: s }));
+  // A timer already on screen (the solo step, or a crew panel's step) lives in its step.
+  // Chips are only for clocks nobody is looking at, such as a cook who moved on.
+  const crewShown = new Set<number>();
+  for (const cook of crew?.cooks ?? []) {
+    const owned = assignedSteps(crew?.owners ?? [], cook.id);
+    const shown = owned[Math.min(crew?.positions[cook.id] ?? 0, owned.length)];
+    if (shown !== undefined) crewShown.add(shown);
+  }
   const chips = Object.entries(timers.timers)
     .map(([s, t]) => ({ step: Number(s), t }))
-    .filter((x) => x.step !== step && !x.t.finished)
+    .filter((x) => !x.t.finished && !(crew === null ? x.step === step : crewShown.has(x.step)))
     .map(({ step: s }) => ({ step: s, label: formatClock(timers.remaining(s)) }));
   const { leaving: leavingAlerts, drop: dropAlert } = useLeaving(alerts, (a) => a.step);
   const { leaving: leavingChips, drop: dropChip } = useLeaving(chips, (c) => c.step);
@@ -217,6 +260,16 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
     const id = window.setTimeout(() => setSkeletonPhase("gone"), EXIT_FALLBACK_MS);
     return () => window.clearTimeout(id);
   }, [skeletonPhase]);
+
+  // Ask who is cooking as soon as the recipe is on screen. A saved cook gets its resume
+  // prompt first; "Start over" (or no saved cook) then lands here.
+  useEffect(() => {
+    if (cooksAsked || !canPickCooks || skeletonPhase !== "gone" || !r || r.steps.length < 2) return;
+    if (resumePending || resumeState === "resumed" || crew !== null || done !== null) return;
+    setCooksAsked(true);
+    setDraftCooks([]);
+    setCooksOpen(true);
+  }, [cooksAsked, canPickCooks, skeletonPhase, r, resumePending, resumeState, crew, done]);
 
   // Let the screen settle before a prompt covers it: opening the resume sheet
   // over the skeleton (or mid route transition) is the flash this avoids.
@@ -247,6 +300,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
     resumeApplied.current = true;
     if (isResumable(saved, r.steps.length)) {
       setStep(Math.min(r.steps.length - 1, saved.step));
+      if (saved.crew !== undefined) setCrew(saved.crew);
     }
   }, [r, resumeState, saved]);
 
@@ -259,9 +313,10 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
       stepCount: r.steps.length,
       servings,
       ...(plannedCookId !== undefined ? { cookEvent: plannedCookId } : {}),
+      ...(crew !== null ? { crew } : {}),
       savedAt: new Date().toISOString(),
     });
-  }, [r, slug, step, servings, done, resumePending, plannedCookId]);
+  }, [r, slug, step, servings, done, resumePending, plannedCookId, crew]);
 
   function go(delta: number) {
     setStep((s) => Math.min(lastStep, Math.max(0, s + delta)));
@@ -271,14 +326,14 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
   const keyGo = useRef(go);
   keyGo.current = go;
   useEffect(() => {
-    if (overlayOpen || done !== null) return;
+    if (overlayOpen || done !== null || crew !== null) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight") keyGo.current(1);
       if (e.key === "ArrowLeft") keyGo.current(-1);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [overlayOpen, done]);
+  }, [overlayOpen, done, crew]);
 
   function onTouchEnd(e: TouchEvent) {
     const start = touch.current;
@@ -335,12 +390,16 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
   function resumeAt() {
     if (!resumable || saved === null) return;
     setResumeState("resumed");
+    setCrew(saved.crew ?? null);
     setStep(Math.min(lastStep, Math.max(0, saved.step)));
   }
 
   function startOver() {
     clearCookProgress(slug);
     setResumeState("restarted");
+    setCrew(null);
+    setAssign(null);
+    setDraftCooks([]);
     setStep(0);
   }
 
@@ -405,6 +464,69 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
     complete({ kind: "adhoc", recipeId: r.id, servings });
   }
 
+  function openCooks() {
+    setDraftCooks(crew?.cooks ?? []);
+    setCooksOpen(true);
+  }
+
+  function toggleDraftCook(cook: CrewCook) {
+    setDraftCooks((current) => {
+      if (current.some((chosen) => chosen.id === cook.id)) return current.filter((chosen) => chosen.id !== cook.id);
+      return current.length >= MAX_COOKS ? current : [...current, cook];
+    });
+  }
+
+  /** Picker "Next": start from a fair split the user can then adjust step by step. */
+  function beginAssign() {
+    if (!r || draftCooks.length < 2) return;
+    // Renamed members get their current name; deleted ones keep the saved one.
+    const cooks = draftCooks.map((cook) => memberCooks.find((member) => member.id === cook.id) ?? cook);
+    setCooksOpen(false);
+    setAssign({ cooks, owners: defaultOwners(r.steps, cooks) });
+  }
+
+  function startCrew() {
+    if (assign === null) return;
+    const positions: Record<string, number> = {};
+    for (const cook of assign.cooks) positions[cook.id] = 0;
+    setCrew({ cooks: assign.cooks, owners: assign.owners, positions });
+    setAssign(null);
+    setDraftCooks([]);
+    setStep(0);
+  }
+
+  /** Solo again: navigation picks up at the lowest step nobody has passed. */
+  function justMe() {
+    if (crew !== null && r !== undefined) setStep(lowestUnfinishedStep(crew, r.steps.length));
+    setCrew(null);
+    setCooksOpen(false);
+    setDraftCooks([]);
+  }
+
+  function updateCrew(update: (current: Crew) => Crew) {
+    setCrew((current) => (current === null ? null : update(current)));
+  }
+
+  function moveCookPanel(cookId: string, delta: number) {
+    updateCrew((current) => moveCook(current, cookId, delta));
+  }
+
+  function markCookDone(cookId: string) {
+    updateCrew((current) => setCookPosition(current, cookId, assignedSteps(current.owners, cookId).length));
+  }
+
+  function reopenCook(cookId: string) {
+    updateCrew((current) => setCookPosition(current, cookId, assignedSteps(current.owners, cookId).length - 1));
+  }
+
+  function jumpToCookStep(cookId: string, stepIndex: number) {
+    updateCrew((current) => focusCookStep(current, cookId, stepIndex));
+  }
+
+  function cookForStep(stepIndex: number): CrewCook | undefined {
+    return crew?.cooks.find((cook) => cook.id === crew.owners[stepIndex]);
+  }
+
   // The skeleton is an overlay: it fades out over the loaded screen so the two
   // states crossfade instead of cutting, and it can never block a tap.
   function stage(content: ReactNode) {
@@ -462,10 +584,28 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
     );
   }
 
+  if (assign !== null) {
+    return stage(
+      <AssignSteps
+        steps={r.steps}
+        cooks={assign.cooks}
+        owners={assign.owners}
+        onChange={(owners) => setAssign((current) => (current === null ? current : { ...current, owners }))}
+        onBack={() => {
+          setAssign(null);
+          setCooksOpen(true);
+        }}
+        onStart={startCrew}
+        onExit={exit}
+      />,
+    );
+  }
+
   const ingredientRows = r.ingredients.map((ri) => {
     const s = scaled.data?.items.find((x) => x.recipeIngredientId === ri.id) ?? (servings === r.servings ? ri : undefined);
     return { ri, amount: s ? formatAmount(s.qty ?? null, s.qtyMax ?? null, s.unit ?? null) : "" };
   });
+  const resumeCrewNames = saved?.crew !== undefined ? cookNames(saved.crew.cooks) : null;
 
   // Step pills scale like the ingredient lines: exempt lines stay, a null link
   // qty follows the whole (already scaled) line.
@@ -473,12 +613,18 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
     stepPillRows(links, r.ingredients, scaled.data?.items ?? [], servings ?? r.servings, r.servings);
 
   return (
-    <div className={styles.cook}>
+    <div className={cx(styles.cook, crew !== null && styles.wide)}>
       <header className={styles.top}>
         <IconButton className={styles.round} label="Exit cook mode" icon={<Icon name="close" />} onClick={exit} />
         <div className={styles.title}>
           <h1>{r.title}</h1>
-          <span>{stepCount > 0 ? `Step ${step + 1} of ${stepCount}` : "No steps"}</span>
+          <span>
+            {crew !== null
+              ? `Cooking with ${cookNames(crew.cooks)}`
+              : stepCount > 0
+                ? `Step ${step + 1} of ${stepCount}`
+                : "No steps"}
+          </span>
         </div>
         <IconButton
           className={styles.round}
@@ -486,44 +632,68 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
           icon={<Icon name="list" />}
           onClick={() => setIngredientsOpen(true)}
         />
+        {(canPickCooks || crew !== null) && (
+          <IconButton className={styles.round} label="Cooks" icon={<Icon name="people" />} onClick={openCooks} />
+        )}
       </header>
 
-      {stepCount > 1 && (
-        <Progress.Root
-          className={styles.progress}
-          value={step + 1}
-          max={stepCount}
-          getValueLabel={(value, max) => `Step ${value} of ${max}`}
-          aria-label="Step progress"
-        >
-          {r.steps.map((s, i) => (
-            <i key={s.id} aria-hidden="true" className={cx(i < step && styles.passed, i === step && styles.now)} />
-          ))}
-        </Progress.Root>
-      )}
+      {stepCount > 1 &&
+        (crew === null ? (
+          <Progress.Root
+            className={styles.progress}
+            value={step + 1}
+            max={stepCount}
+            getValueLabel={(value, max) => `Step ${value} of ${max}`}
+            aria-label="Step progress"
+          >
+            {r.steps.map((s, i) => (
+              <i key={s.id} aria-hidden="true" className={cx(i < step && styles.passed, i === step && styles.now)} />
+            ))}
+          </Progress.Root>
+        ) : (
+          /* A crew has no single current step: a step is done once its owner passes it. */
+          <div className={styles.progress} aria-hidden="true">
+            {r.steps.map((s, i) => (
+              <i key={s.id} className={cx(crewPassed[i] && styles.passed)} />
+            ))}
+          </div>
+        ))}
 
       {alerts.length + leavingAlerts.length > 0 && (
         <div className={styles.alerts}>
-          {alerts.map(({ step: s }) => (
-            <div key={s} className={styles.alertSlot} role="alert">
-              <div className={styles.alert}>
-                <Icon name="timer" />
-                <span>Step {s + 1} timer is done</span>
-                {s !== step && (
+          {alerts.map(({ step: s }) => {
+            const owner = cookForStep(s);
+            return (
+              <div key={s} className={styles.alertSlot} role="alert">
+                <div className={styles.alert}>
+                  <Icon name="timer" />
+                  <span>
+                    {owner !== undefined ? `${owner.name} · ` : ""}Step {s + 1} timer is done
+                  </span>
+                  {(owner !== undefined || s !== step) && (
+                    <button
+                      type="button"
+                      aria-label={`Go to step ${s + 1}`}
+                      onClick={() => {
+                        if (owner !== undefined) jumpToCookStep(owner.id, s);
+                        else setStep(s);
+                        timers.dismiss(s);
+                      }}
+                    >
+                      Go to step
+                    </button>
+                  )}
                   <button
                     type="button"
-                    aria-label={`Go to step ${s + 1}`}
-                    onClick={() => (setStep(s), timers.dismiss(s))}
+                    aria-label={`Dismiss step ${s + 1} timer alert`}
+                    onClick={() => timers.dismiss(s)}
                   >
-                    Go to step
+                    Dismiss
                   </button>
-                )}
-                <button type="button" aria-label={`Dismiss step ${s + 1} timer alert`} onClick={() => timers.dismiss(s)}>
-                  Dismiss
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {leavingAlerts.map(({ step: s }) => (
             <div
               key={`left-${s}`}
@@ -544,13 +714,16 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
 
       {chips.length + leavingChips.length > 0 && (
         <ul className={styles.chips} aria-label="Running timers">
-          {chips.map(({ step: s, label }) => (
-            <li key={s}>
-              <button type="button" onClick={() => setStep(s)}>
-                <Icon name="timer" /> Step {s + 1} · {label}
-              </button>
-            </li>
-          ))}
+          {chips.map(({ step: s, label }) => {
+            const owner = cookForStep(s);
+            return (
+              <li key={s}>
+                <button type="button" onClick={() => (owner !== undefined ? jumpToCookStep(owner.id, s) : setStep(s))}>
+                  <Icon name="timer" /> {owner !== undefined ? `${owner.name} · ` : ""}Step {s + 1} · {label}
+                </button>
+              </li>
+            );
+          })}
           {leavingChips.map(({ step: s, label }) => (
             <li
               key={`left-${s}`}
@@ -568,102 +741,117 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
         </ul>
       )}
 
-      <main
-        className={styles.main}
-        ref={mainRef}
-        onTouchStart={(e) => {
-          const t = e.touches[0];
-          touch.current = t ? { x: t.clientX, y: t.clientY } : null;
-        }}
-        onTouchEnd={onTouchEnd}
-      >
-        {stepCount === 0 || r.steps[step] === undefined ? (
-          <p className={styles.text}>This recipe has no steps yet. Use the ingredient list and finish when you're done.</p>
-        ) : (
-          /* Polite live region, kept mounted across steps so the new text is announced. */
-          <div className={styles.stack} aria-live="polite">
-            {layers.map((layer) => {
-              const s = r.steps[layer.index];
-              if (s === undefined) return null;
-              const seconds = stepSeconds(s);
-              return (
-                <div
-                  key={layer.index}
-                  className={cx(
-                    styles.step,
-                    layer.leaving
-                      ? styles.leaving
-                      : layer.entering
-                        ? direction === 1
-                          ? styles.stepNext
-                          : styles.stepPrev
-                        : undefined,
-                  )}
-                  aria-hidden={layer.leaving || undefined}
-                  onAnimationEnd={
-                    layer.leaving
-                      ? (event) => {
-                          if (event.target === event.currentTarget) dropStep(layer.index);
-                        }
-                      : undefined
-                  }
-                >
-                  {s.groupLabel && <p className={styles.group}>{s.groupLabel}</p>}
-                  <p className={styles.text}>{s.text}</p>
-                  {s.links.length > 0 && (
-                    <ul className={styles.stepIngs} aria-label="Ingredients for this step">
-                      {pillsFor(s.links).map((pill) => (
-                        <li key={pill.id}>
-                          <span className={styles.ingChip}>
-                            <Sticker emoji={ingredientEmoji(pill.name)} tone="butter" size={32} />
-                            <span>
-                              {pill.amount && <b>{pill.amount} </b>}
-                              {pill.name}
-                              {pill.prepNote && <small>, {pill.prepNote}</small>}
-                            </span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {seconds !== null && (
-                    <StepTimerRow
-                      seconds={seconds}
-                      timer={timers.timers[layer.index]}
-                      left={formatClock(timers.remaining(layer.index))}
-                      leaving={layer.leaving}
-                      onStart={() => timers.start(layer.index, seconds)}
-                      onCancel={() => timers.cancel(layer.index)}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
+      {crew !== null ? (
+        <main className={styles.crewMain}>
+          <CrewPanels
+            crew={crew}
+            steps={r.steps}
+            timers={timers}
+            pillsFor={pillsFor}
+            onMove={moveCookPanel}
+            onDone={markCookDone}
+            onReopen={reopenCook}
+          />
+        </main>
+      ) : (
+        <main
+          className={styles.main}
+          ref={mainRef}
+          onTouchStart={(e) => {
+            const t = e.touches[0];
+            touch.current = t ? { x: t.clientX, y: t.clientY } : null;
+          }}
+          onTouchEnd={onTouchEnd}
+        >
+          {stepCount === 0 || r.steps[step] === undefined ? (
+            <p className={styles.text}>
+              This recipe has no steps yet. Use the ingredient list and finish when you're done.
+            </p>
+          ) : (
+            /* Polite live region, kept mounted across steps so the new text is announced. */
+            <div className={styles.stack} aria-live="polite">
+              {layers.map((layer) => {
+                const s = r.steps[layer.index];
+                if (s === undefined) return null;
+                const seconds = stepSeconds(s);
+                return (
+                  <div
+                    key={layer.index}
+                    className={cx(
+                      styles.step,
+                      layer.leaving
+                        ? styles.leaving
+                        : layer.entering
+                          ? direction === 1
+                            ? styles.stepNext
+                            : styles.stepPrev
+                          : undefined,
+                    )}
+                    aria-hidden={layer.leaving || undefined}
+                    onAnimationEnd={
+                      layer.leaving
+                        ? (event) => {
+                            if (event.target === event.currentTarget) dropStep(layer.index);
+                          }
+                        : undefined
+                    }
+                  >
+                    {s.groupLabel && <p className={styles.group}>{s.groupLabel}</p>}
+                    <p className={styles.text}>{s.text}</p>
+                    <StepPills pills={pillsFor(s.links)} />
+                    {seconds !== null && (
+                      <StepTimerRow index={layer.index} seconds={seconds} timers={timers} leaving={layer.leaving} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      )}
 
-      <footer className={styles.foot}>
-        <Button size="lg" icon={<Icon name="back" />} onClick={() => go(-1)} disabled={step === 0}>
-          Back
-        </Button>
-        {atEnd ? (
-          <Button
-            size="lg"
-            variant="primary"
-            className={styles.next}
-            icon={<Icon name="check" />}
-            loading={finish.isPending || servings === undefined}
-            onClick={onFinish}
-          >
-            Finish cooking
+      {crew !== null ? (
+        <footer className={styles.crewFoot}>
+          {allDone(crew) ? (
+            <Button
+              size="lg"
+              variant="primary"
+              className={cx(styles.next, styles.crewFinish)}
+              icon={<Icon name="check" />}
+              loading={finish.isPending || servings === undefined}
+              onClick={onFinish}
+            >
+              Finish cooking
+            </Button>
+          ) : (
+            <p className={styles.crewNote}>
+              {cooksDone(crew)} of {crew.cooks.length} cooks done
+            </p>
+          )}
+        </footer>
+      ) : (
+        <footer className={styles.foot}>
+          <Button size="lg" icon={<Icon name="back" />} onClick={() => go(-1)} disabled={step === 0}>
+            Back
           </Button>
-        ) : (
-          <Button size="lg" variant="primary" className={styles.next} onClick={() => go(1)}>
-            Next step
-          </Button>
-        )}
-      </footer>
+          {atEnd ? (
+            <Button
+              size="lg"
+              variant="primary"
+              className={styles.next}
+              icon={<Icon name="check" />}
+              loading={finish.isPending || servings === undefined}
+              onClick={onFinish}
+            >
+              Finish cooking
+            </Button>
+          ) : (
+            <Button size="lg" variant="primary" className={styles.next} onClick={() => go(1)}>
+              Next step
+            </Button>
+          )}
+        </footer>
+      )}
 
       <Sheet open={ingredientsOpen} onClose={() => setIngredientsOpen(false)} title="Ingredients">
         <p className={styles.sheetSub}>For {formatNumber(servings ?? r.servings)} servings</p>
@@ -685,6 +873,22 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
         </ul>
       </Sheet>
 
+      <WhoCookingSheet
+        open={cooksOpen}
+        cooks={[
+          ...memberCooks,
+          // A deleted member's saved cook stays pickable so they can be removed.
+          ...(crew?.cooks ?? []).filter(
+            (saved) => draftCooks.some((chosen) => chosen.id === saved.id) && !memberCooks.some((m) => m.id === saved.id),
+          ),
+        ]}
+        selected={draftCooks}
+        onToggle={toggleDraftCook}
+        onClose={() => setCooksOpen(false)}
+        onJustMe={justMe}
+        onNext={beginAssign}
+      />
+
       <Sheet
         open={resumePending && promptReady && saved !== null}
         onClose={resumeAt}
@@ -693,15 +897,19 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
           <>
             <Button onClick={startOver}>Start over</Button>
             <Button variant="primary" onClick={resumeAt}>
-              Resume at step {(saved?.step ?? 0) + 1}
+              {resumeCrewNames !== null ? "Resume" : `Resume at step ${(saved?.step ?? 0) + 1}`}
             </Button>
           </>
         }
       >
-        <p>
-          You stopped at step {(saved?.step ?? 0) + 1} of {stepCount}
-          {saved !== null ? ` (${formatNumber(saved.servings)} servings)` : ""}.
-        </p>
+        {resumeCrewNames !== null ? (
+          <p>You were cooking with {resumeCrewNames}.</p>
+        ) : (
+          <p>
+            You stopped at step {(saved?.step ?? 0) + 1} of {stepCount}
+            {saved !== null ? ` (${formatNumber(saved.servings)} servings)` : ""}.
+          </p>
+        )}
       </Sheet>
 
       <Sheet
@@ -819,46 +1027,6 @@ function DoneScreen({
           Undo
         </Button>
       </div>
-    </div>
-  );
-}
-
-/** One step's timer button / running clock. Kept out of the live region below. */
-function StepTimerRow({
-  seconds,
-  timer,
-  left,
-  leaving,
-  onStart,
-  onCancel,
-}: {
-  seconds: number;
-  timer: StepTimer | undefined;
-  /** Countdown text, e.g. `4:59`. */
-  left: string;
-  /** The step is fading out, so its controls must not take focus. */
-  leaving: boolean;
-  onStart: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className={styles.timerRow} aria-live="off">
-      {timer === undefined || timer.finished ? (
-        <button type="button" className={styles.timer} tabIndex={leaving ? -1 : undefined} onClick={onStart}>
-          <Icon name={timer?.finished ? "refresh" : "timer"} />
-          {timer?.finished ? `Done. Restart ${formatDuration(seconds)}` : `Start ${formatDuration(seconds)} timer`}
-        </button>
-      ) : (
-        <>
-          <span className={cx(styles.timer, styles.running)} role="timer" aria-label={`Time left ${left}`}>
-            <Icon name="timer" />
-            {left}
-          </span>
-          <Button variant="ghost" className={styles.cancel} tabIndex={leaving ? -1 : undefined} onClick={onCancel}>
-            Cancel
-          </Button>
-        </>
-      )}
     </div>
   );
 }
