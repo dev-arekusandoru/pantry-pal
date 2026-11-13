@@ -130,26 +130,29 @@ function Tile({ slot, ctx, side, canRemove, canAdd, isNow }: { slot: Slot; ctx: 
   const body = (
     <>
       <Plate imageUrl={photoOf(ctx, slot)} emoji={MEAL_EMOJI[slot.mealType]} className={styles.tilePlate} />
-      <span className={styles.cap}>
-        {slot.isLeftover ? (
-          <span className={styles.tag}>
-            <Icon name="leftover" size={14} />
-            {leftoverText(slot)}
-          </span>
-        ) : state === "done" ? (
-          <span className={styles.tag}>
-            <Icon name="check" size={14} />
-            Cooked
-          </span>
-        ) : state === "skipped" ? (
-          <span className={styles.tag}>Skipped</span>
-        ) : null}
-        <span className={styles.tileTitle}>{title}</span>
-      </span>
+      {!side && (
+        <span className={styles.metaMeal} aria-hidden="true">
+          {MEAL_LABEL[slot.mealType]}
+        </span>
+      )}
+      {slot.isLeftover ? (
+        <span className={styles.tileTag}>
+          <Icon name="leftover" size={14} />
+          {leftoverText(slot)}
+        </span>
+      ) : state === "done" ? (
+        <span className={styles.tileTag}>
+          <Icon name="check" size={14} />
+          Cooked
+        </span>
+      ) : state === "skipped" ? (
+        <span className={styles.tileTag}>Skipped</span>
+      ) : null}
+      <span className={styles.tileTitle}>{title}</span>
     </>
   );
   return (
-    <li className={styles.tileCard} data-state={state} data-left={slot.isLeftover || undefined} data-side={side || undefined} data-now={isNow || undefined}>
+    <li className={styles.tileCard} data-state={state} data-side={side || undefined} data-now={isNow || undefined}>
       {link ? (
         <Link {...link} className={styles.tile} title={title}>
           {body}
@@ -168,16 +171,7 @@ function Tile({ slot, ctx, side, canRemove, canAdd, isNow }: { slot: Slot; ctx: 
 
 function Meal({ mealType, slots, date, ctx, isNow }: { mealType: MealType; slots: Slot[]; date: string; ctx: Ctx; isNow: boolean }) {
   return (
-    <div role="group" aria-label={`${weekdayName(date)} ${mealType}`} className={styles.meal} data-meal={mealType}>
-      <p className={styles.mealHead}>
-        {MEAL_LABEL[mealType]}
-        {isNow && (
-          <span className={styles.nowTag}>
-            <Icon name="flame" size={13} />
-            Now
-          </span>
-        )}
-      </p>
+    <div role="group" aria-label={`${weekdayName(date)} ${mealType}${isNow ? ", now" : ""}`} className={styles.meal} data-meal={mealType}>
       {slots.length === 0 ? (
         <button
           type="button"

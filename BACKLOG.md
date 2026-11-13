@@ -30,7 +30,7 @@
 - Gamification state (treat used, sweep count, sweep snooze) is stored per browser; move it to the household so it follows you across devices
 - Sticker book: check the recipe details on tap, and add a per-recipe collection (cooked recipes as stickers)
 - Design: redo dark mode in the Kitchen Diary look (the dark palette is the old one and is opt-in); update docs screenshots; check Cook mode, Settings, 320px width and 200% zoom after the restyle
-- Week page: wall tablet layout. The app caps content at 1120px, which wastes a 1920px screen; allow a wider Week page (a Skylight-style landscape layout) without widening text-heavy pages
+- Week page: wall tablet layout. The page now allows 1560px, but the week timeline fills only the left part of a 1920px screen; use the free width, for example two days side by side or a week grid beside it
 - Week page: let people edit the meal time windows (breakfast until 10:30, lunch until 15:00) in Settings; keep a week grid view as an option beside the timeline
 - Week page: check other weeks (browsing next and last week), 200% zoom and measured text contrast over recipe photos
 

@@ -175,6 +175,11 @@
     max-width: var(--content-max);
     padding: 36px var(--main-pad) 80px;
   }
+
+  /* The week is a dashboard (a wall tablet may show it all day); give it more room than text pages. */
+  .shell[data-tab="week"] .main {
+    --content-max: 1560px;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {

@@ -774,39 +774,28 @@ a.itemLink:hover .itemTitle {
 }
 
 .tileCard {
+  position: relative;
   display: grid;
-  gap: 2px;
   min-width: 0;
-  padding: 4px;
+  overflow: hidden;
   border-radius: var(--r-md);
   background: var(--card);
   box-shadow: 0 0 0 1.5px var(--line);
   transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
 
-.tileCard[data-left] {
-  box-shadow: 0 0 0 1.5px var(--accent-text);
-  background: var(--peach-s);
-}
-
 .tileCard[data-now] {
   box-shadow: 0 0 0 3px var(--accent-text);
-}
-
-.tileCard[data-state="done"],
-.tileCard[data-state="skipped"] {
-  background: color-mix(in srgb, var(--pistachio-s) 60%, var(--card));
 }
 
 .tile {
   position: relative;
   isolation: isolate;
   display: grid;
-  align-items: end;
-  min-block-size: 8.5rem;
-  padding: 0;
-  overflow: hidden;
-  border-radius: var(--r-sm);
+  align-content: end;
+  gap: 4px;
+  min-block-size: 10rem;
+  padding: 10px 12px;
   color: var(--ink);
   font: inherit;
   text-align: start;
@@ -816,7 +805,7 @@ a.itemLink:hover .itemTitle {
 }
 
 .tileCard[data-side] .tile {
-  min-block-size: 5.5rem;
+  min-block-size: 6.5rem;
 }
 
 .tile .tilePlate {
@@ -824,28 +813,65 @@ a.itemLink:hover .itemTitle {
   inset: 0;
   z-index: -1;
   aspect-ratio: auto;
-  border-radius: inherit;
+  border-radius: 0;
   place-items: start center;
   padding-block-start: 14px;
   transition: transform var(--dur) var(--ease);
 }
 
-/* The caption sits on a near-opaque card strip, so its contrast never depends on the photo. */
-.cap {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  padding: 6px 8px;
+/* A fade under the title keeps it readable on any photo. Plate renders the photo as the only lazy <img>;
+   with no photo, or when it fails to load, the title stays ink on the pastel plate. */
+.tile:has(img[loading="lazy"])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(40 20 8 / 0.74), rgb(40 20 8 / 0.3) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+.metaMeal,
+.tileTag {
+  padding: 2px 8px;
+  border-radius: var(--r-chip);
   background: color-mix(in srgb, var(--card) 94%, transparent);
-  border-start-start-radius: var(--r-sm);
-  border-start-end-radius: var(--r-sm);
+  color: var(--ink);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+}
+
+.metaMeal {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 8px;
+  inset-inline-start: 8px;
+}
+
+.tileCard[data-now] .metaMeal::after {
+  content: " · Now";
+  color: var(--accent-text);
+}
+
+.tileTag {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: start;
 }
 
 .tileTitle {
+  position: relative;
+  z-index: 1;
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+.tile:has(img[loading="lazy"]) .tileTitle {
+  color: #fff;
 }
 
 .tileCard[data-state="done"] .tileTitle {
@@ -853,21 +879,38 @@ a.itemLink:hover .itemTitle {
   text-decoration-thickness: 1.5px;
 }
 
+/* Tools float on the photo corner; on hover devices they appear on hover or keyboard focus. */
 .tools {
+  position: absolute;
+  inset-block-start: 6px;
+  inset-inline-end: 6px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  min-block-size: 4px;
+  gap: 4px;
 }
 
 .tools .tool {
   inline-size: 34px;
   block-size: 34px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: 0 0 0 1px var(--line);
 }
 
 .tools .tool svg {
   inline-size: 19px;
   block-size: 19px;
+}
+
+@media (hover: hover) {
+  .tools {
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease);
+  }
+
+  .tileCard:hover .tools,
+  .tileCard:focus-within .tools {
+    opacity: 1;
+  }
 }
 
 .sideTools .tool {
@@ -880,29 +923,6 @@ a.itemLink:hover .itemTitle {
   gap: 4px;
   align-content: start;
   min-width: 0;
-}
-
-.mealHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 8px;
-  margin: 0;
-  color: var(--muted);
-  font-family: var(--font-note);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
-}
-
-.nowTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 0 7px;
-  border-radius: var(--r-chip);
-  background: var(--accent-fill);
-  color: var(--on-accent);
-  font-size: var(--fs-xs);
 }
 
 .plan {
@@ -926,7 +946,7 @@ a.itemLink:hover .itemTitle {
 
 .cells {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 20rem));
   gap: var(--sp-3);
   align-items: start;
 }
@@ -1167,14 +1187,6 @@ details[open] > summary > .chevron {
 
 /* phones: shorter tiles, so a week is not a mile long */
 @container mix (max-width: 519px) {
-  .tile {
-    min-block-size: 6.5rem;
-  }
-
-  .tileCard[data-side] .tile {
-    min-block-size: 4.5rem;
-  }
-
   .plan {
     min-block-size: 4rem;
   }

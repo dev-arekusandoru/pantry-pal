@@ -58,6 +58,12 @@ Each day lists its meals:
   Tue dinner**. These come from one cook feeding several meals.
 - An open prep task shows above the meals of the day it is due.
 
+Each meal is a photo tile. A meal with no photo shows a food icon instead. The
+meal name sits at the top left, and a **Leftovers from Sunday** label shows when
+the meal is a leftover. On a screen with a mouse, the swap, add, and remove
+buttons of a tile show when you point at it or move focus to it. On a touch
+screen they always show.
+
 The app cannot add or edit prep tasks.
 
 ## Weekly missions and the Treat Stamp
