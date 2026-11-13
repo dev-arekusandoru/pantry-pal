@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { DoneCook } from "./history";
-import { weekMissions } from "./missions";
+import { readSweepCount, recordSweep, weekMissions } from "./missions";
 import type { PlanView, Slot } from "@/screens/week/model";
 
 function dinner(status: "planned" | "done", extra: Partial<Slot> = {}): Slot {
@@ -36,15 +36,21 @@ describe("weekMissions", () => {
       { id: "dinners", title: "Cook 3 dinners at home", hint: "2 more dinners, 1 night left. You can do it.", done: false, progress: 1, target: 3 },
       { id: "new", title: "Try something new", hint: "", done: true, progress: 1, target: 1 },
       { id: "prep", title: "Finish the week's prep", hint: "", done: false, progress: 1, target: 2 },
+      { id: "sweep", title: "Sweep the pantry", hint: "", done: false, progress: 0, target: 1 },
     ]);
   });
 
-  it("omits missions without home dinners, planned cooks or prep tasks", () => {
+  it("omits missions without home dinners, planned cooks or prep tasks, but always offers the sweep", () => {
     expect(weekMissions(plan({
       days: [{ date: "2026-11-09", meals: { dinner: [dinner("planned", { isLeftover: true })] } }],
       cookEvents: [],
       prepTasks: [],
-    }), history, "2026-11-09")).toEqual([]);
+    }), history, "2026-11-09").map((m) => m.id)).toEqual(["sweep"]);
+  });
+
+  it("marks the sweep mission done after a finished sweep this week", () => {
+    const sweep = weekMissions(plan(), history, "2026-11-12", 2).find((m) => m.id === "sweep");
+    expect(sweep).toMatchObject({ done: true, progress: 1, target: 1 });
   });
 
   it("marks dinner and prep missions done without at-risk hints", () => {
@@ -57,5 +63,23 @@ describe("weekMissions", () => {
     }), history, "2026-11-09");
     expect(result[0]).toMatchObject({ done: true, progress: 2, target: 2, hint: "" });
     expect(result[2]).toMatchObject({ done: true, progress: 1, target: 1 });
+  });
+});
+
+describe("sweep count", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("counts sweeps per plan week in local storage", () => {
+    expect(readSweepCount("2026-11-09")).toBe(0);
+    recordSweep("2026-11-09");
+    recordSweep("2026-11-09");
+    expect(readSweepCount("2026-11-09")).toBe(2);
+    expect(readSweepCount("2026-11-16")).toBe(0);
+    expect(localStorage.getItem("pantrypal.sweep.2026-11-09")).toBe("2");
+  });
+
+  it("ignores a damaged value", () => {
+    localStorage.setItem("pantrypal.sweep.2026-11-09", "oops");
+    expect(readSweepCount("2026-11-09")).toBe(0);
   });
 });

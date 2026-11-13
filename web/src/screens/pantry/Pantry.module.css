@@ -447,3 +447,11 @@
 .iconRow > button {
   margin-left: auto;
 }
+
+/* Header actions: wrap on narrow screens instead of squeezing the title. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}

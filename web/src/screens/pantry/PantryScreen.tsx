@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { errorMessage } from "@/api";
-import { Button, Card, EmptyState, ErrorState, Icon, IconPicker, PageHeader, SearchInput, SegmentedControl, Skeleton, cx, toast } from "@/ui";
+import { Button, Card, EmptyState, ErrorState, Icon, IconPicker, PageHeader, SearchInput, SegmentedControl, Skeleton, buttonClass, cx, toast } from "@/ui";
 import { AddSheet } from "./AddSheet";
 import styles from "./Pantry.module.css";
 import { useAddToList, useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetExpiry, useSetQty, useSetCategory, useSetShelfLife, useSetStatus } from "./queries";
 import { SetQtySheet } from "./SetQtySheet";
 import { StockRow } from "./StockRow";
+import { SweepSheet } from "./sweep/SweepSheet";
 import { CATEGORY_ORDER, aisleLabel } from "../aisles";
 import { groupByCategory, stepFor, type PantryCategory, type PantryItem } from "./stock";
 
@@ -24,6 +26,7 @@ export function PantryScreen() {
   const [category, setCategoryFilter] = useState<PantryCategory | "all">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [sweeping, setSweeping] = useState(false);
   const [iconIngredient, setIconIngredient] = useState<{ id: string; name: string; imageUrl: string | null } | null>(null);
 
   const items = pantry.data;
@@ -42,6 +45,11 @@ export function PantryScreen() {
     <Button variant="primary" icon={<Icon name="plus" />} onClick={() => setAdding(true)}>
       Add
     </Button>
+  );
+  const stickerBook = (
+    <Link to="/dex" className={buttonClass({ variant: "ghost" })}>
+      Sticker book
+    </Link>
   );
 
   if (pantry.error && !items) {
@@ -76,7 +84,19 @@ export function PantryScreen() {
         <PageHeader
           title="Pantry"
           sub={items.length === 0 ? "Nothing in the pantry yet" : `${items.length} ${items.length === 1 ? "thing" : "things"} in the pantry`}
-          aside={items.length > 0 ? addButton : undefined}
+          aside={
+            <div className={styles.actions}>
+              {stickerBook}
+              {items.length > 0 && (
+                <>
+                  <Button icon={<Icon name="timer" />} onClick={() => setSweeping(true)}>
+                    Sweep
+                  </Button>
+                  {addButton}
+                </>
+              )}
+            </div>
+          }
         />
         {items.length === 0 ? (
           <EmptyState emoji="relish" title="Your pantry is empty" action={addButton}>
@@ -176,6 +196,7 @@ export function PantryScreen() {
         initialName={query.trim()}
       />
       <IconPicker ingredient={iconIngredient} onClose={() => setIconIngredient(null)} />
+      <SweepSheet open={sweeping} onClose={() => setSweeping(false)} items={items} />
     </>
   );
 }

@@ -82,6 +82,42 @@ list gets the full amount the plan needs.
 The app records exact amounts. It shows an approximate amount as a normal
 number, without an estimate marker.
 
+## Sweep the pantry
+
+A sweep is a 60-second check of your stock. Tap **Sweep** in the header. The
+header shows **Sweep** only when the pantry has items.
+
+The sweep shows one item at a time with its icon, name, and amount. It starts
+with the items you checked longest ago. Items you never checked come first.
+A ring and a **seconds left** line show the time. If your device is set to
+reduce motion, the ring is hidden and only the text shows. Choose one answer:
+
+| Answer | Key | What it does |
+| --- | --- | --- |
+| **Still have it** | `1` or Right arrow | Marks the item as checked today. The amount does not change. |
+| **Running low** | `2` or Left arrow | Sets the status to **Running low** and adds the item to the list. |
+| **All out** | `3` or Down arrow | Sets the item to **Out** and adds it to the list. A measured item goes to zero. |
+| **Skip** | `S` or Up arrow | Moves on. Nothing changes. |
+
+On a touch screen, swipe the item card right for **Still have it** and left for
+**Running low**. The list is the same one **Add to list** uses: this week's
+list, the newest open list, or a new list.
+
+The app saves each answer at once. When the time is up, or when you answer every
+item, the sweep ends with a summary, for example "Swept 4 things. 2 went on your
+shopping list." Skipped items are not counted. Tap **Done** to close it. You can
+close the sweep early with **Esc** or **Close**; the answers you gave stay saved.
+
+A finished sweep that has at least one answer counts for the **Sweep the
+pantry** mission on the week screen. The app stores that count in this
+browser's local storage. See [Weekly missions](meal-plans.md#weekly-missions-and-the-treat-stamp).
+
+## Open the sticker book
+
+Tap **Sticker book** in the header to open the
+[ingredient sticker book](ingredient-dex.md). The Pantry tab stays highlighted
+while you view it.
+
 ## Remove stock
 
 Open the item's amount sheet, tap **Remove from pantry**, then confirm with

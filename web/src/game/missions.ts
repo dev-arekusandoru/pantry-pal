@@ -4,7 +4,7 @@ import { addDays } from "@/screens/week/dates";
 import { slotState, type PlanView } from "@/screens/week/model";
 
 export interface WeekMission {
-  id: "dinners" | "new" | "prep";
+  id: "dinners" | "new" | "prep" | "sweep";
   title: string;
   hint: string;
   done: boolean;
@@ -12,8 +12,8 @@ export interface WeekMission {
   target: number;
 }
 
-/** Derives this week's gentle checklist from the plan and completed-cook history. */
-export function weekMissions(plan: PlanView, history: readonly DoneCook[], today: string): WeekMission[] {
+/** Derives this week's gentle checklist from the plan, completed-cook history and the pantry sweeps finished this week. */
+export function weekMissions(plan: PlanView, history: readonly DoneCook[], today: string, sweeps = 0): WeekMission[] {
   const weekEnd = addDays(plan.weekStart, 7);
   const homeDinnerDays = plan.days.filter((day) =>
     day.meals.dinner.some((slot) => slot.kind === "meal" && !slot.isLeftover),
@@ -62,7 +62,28 @@ export function weekMissions(plan: PlanView, history: readonly DoneCook[], today
     });
   }
 
+  missions.push({ id: "sweep", title: "Sweep the pantry", hint: "", done: sweeps > 0, progress: Math.min(sweeps, 1), target: 1 });
+
   return missions;
+}
+
+const sweepKey = (weekStart: string) => `pantrypal.sweep.${weekStart}`;
+
+/** Pantry sweeps finished in the plan week starting `weekStart`; per browser. */
+export function readSweepCount(weekStart: string): number {
+  try {
+    return Number(localStorage.getItem(sweepKey(weekStart))) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function recordSweep(weekStart: string): void {
+  try {
+    localStorage.setItem(sweepKey(weekStart), String(readSweepCount(weekStart) + 1));
+  } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
 }
 
 function readTreat(weekStart: string): boolean {

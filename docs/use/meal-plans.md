@@ -37,17 +37,19 @@ cannot add or edit prep tasks.
 ## Weekly missions and the Treat Stamp
 
 The current week has a **This week's missions** card for planned home-cooked
-dinners, trying a recipe not cooked before the week started, and finishing
-planned prep. Progress comes from the current plan and completed-cook history;
-missions without anything planned are left out. A gentle nudge appears when
-more planned dinners remain than nights left, with no penalty for an unfinished
-mission.
+dinners, trying a recipe not cooked before the week started, finishing planned
+prep, and **Sweep the pantry**. Progress comes from the current plan and
+completed-cook history; missions without anything planned are left out. The
+sweep mission is always there. It is done after you finish one [pantry
+sweep](pantry.md#sweep-the-pantry) in the plan week. The app counts sweeps in
+this browser's local storage, so a sweep on another browser or device does not
+count. A gentle nudge appears when more planned dinners remain than nights
+left, with no penalty for an unfinished mission.
 
 Finishing all planned home-cooked dinners earns the **Treat Stamp**. **Use my
 treat** marks it as enjoyed; this is only a cosmetic reminder, not a reward
 that changes the plan or pantry. Its used state is stored in this browser's
-local storage, so it does not sync to another browser or device. **Sticker
-book** opens the recipe collection.
+local storage, so it does not sync to another browser or device.
 
 ## Change one meal
 

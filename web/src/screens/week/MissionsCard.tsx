@@ -1,12 +1,11 @@
-import { Link } from "@tanstack/react-router";
 import { Icon, Pal } from "@/ui";
 import type { DoneCook } from "@/game/history";
-import { useTreat, weekMissions } from "@/game/missions";
+import { readSweepCount, useTreat, weekMissions } from "@/game/missions";
 import type { PlanView } from "./model";
 import styles from "./Week.module.css";
 
 export function MissionsCard({ plan, history, today }: { plan: PlanView; history: readonly DoneCook[]; today: string }) {
-  const missions = weekMissions(plan, history, today);
+  const missions = weekMissions(plan, history, today, readSweepCount(plan.weekStart));
   const dinnerMission = missions.find((mission) => mission.id === "dinners");
   const treat = useTreat(plan.weekStart, dinnerMission?.done ?? false);
 
@@ -14,7 +13,6 @@ export function MissionsCard({ plan, history, today }: { plan: PlanView; history
     <section className={styles.missions} data-ui="missions" aria-labelledby="missions-title">
       <header className={styles.missionsHead}>
         <h2 id="missions-title">This week's missions</h2>
-        <Link to="/dex" className={styles.dexLink}>Sticker book</Link>
       </header>
       <ul className={styles.missionList}>
         {missions.map((mission) => (

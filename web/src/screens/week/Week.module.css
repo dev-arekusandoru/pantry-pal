@@ -669,14 +669,6 @@
   font-size: var(--fs-lg);
 }
 
-.dexLink {
-  flex: none;
-  color: var(--accent-text);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
-  text-underline-offset: 3px;
-}
-
 .missionList {
   display: grid;
   gap: 10px;
@@ -770,8 +762,7 @@
   cursor: pointer;
 }
 
-.treatButton:focus-visible,
-.dexLink:focus-visible {
+.treatButton:focus-visible {
   outline: 3px solid var(--accent-text);
   outline-offset: 3px;
 }

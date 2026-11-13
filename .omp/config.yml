@@ -1,2 +1,2 @@
 modelRoles:
-  task: openai-codex/gpt-6-luna:auto
+  task: anthropic/claude-sonnet-5-5:auto

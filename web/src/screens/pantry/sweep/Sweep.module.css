@@ -1,0 +1,171 @@
+.game,
+.summary {
+  display: grid;
+  gap: var(--sp-4);
+  min-height: min(420px, 62dvh);
+  align-content: start;
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-family: var(--font-note);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+}
+
+.count {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+}
+
+.ring {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  transform: rotate(-90deg);
+}
+
+.ring circle {
+  fill: none;
+  stroke-width: 5;
+}
+
+.ringTrack {
+  stroke: var(--line);
+}
+
+.ringLeft {
+  stroke: var(--accent);
+  stroke-linecap: round;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ringLeft {
+    transition: stroke-dashoffset 1s linear;
+  }
+}
+
+/* Reduced motion: no ring at all, just the seconds as text. */
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    display: none;
+  }
+}
+
+.card {
+  display: grid;
+  place-items: center;
+  min-height: 210px;
+  padding: var(--sp-5) var(--sp-4);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-xl);
+  background: var(--card) var(--grain);
+  text-align: center;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.cardInner {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cardInner {
+    animation: cardIn var(--dur-enter) var(--ease-out);
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.name {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-h2);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.amount {
+  font-family: var(--font-note);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  color: var(--muted);
+}
+
+.swipeHint {
+  display: none;
+  margin: calc(var(--sp-2) * -1) 0 0;
+  text-align: center;
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+@media (pointer: coarse) {
+  .swipeHint {
+    display: block;
+  }
+  .key {
+    display: none;
+  }
+}
+
+.answers {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.answers > button {
+  justify-content: center;
+}
+
+.answers > .low {
+  background: var(--butter-s);
+}
+
+.answers > .out {
+  background: var(--gum-s);
+}
+
+@media (min-width: 700px) {
+  .answers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.key {
+  min-width: 22px;
+  padding: 2px 6px;
+  border: 1.5px solid currentColor;
+  border-radius: var(--r-xs);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  opacity: 0.7;
+}
+
+.game > button:last-child {
+  justify-self: center;
+}
+
+.summary {
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.summaryLine {
+  max-width: 28ch;
+  font-family: var(--font-note);
+  font-size: var(--fs-h3);
+  line-height: 1.25;
+}

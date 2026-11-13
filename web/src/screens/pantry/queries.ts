@@ -243,3 +243,12 @@ export function useRestoreItem() {
     },
   });
 }
+
+/** "Still have it": stamps the row as checked now, without changing the amount. */
+export function useVerifyItem() {
+  return useStockEdit({
+    mutationFn: (item: PantryItem) => unwrap(client.POST("/pantry/{id}/verify", { params: { path: { id: item.id } } })),
+    optimistic: (item) => ({ id: item.id, apply: (i) => ({ ...i, lastVerifiedAt: new Date().toISOString() }) }),
+    undo: (_item, before) => (i) => (before ? { ...i, lastVerifiedAt: before.lastVerifiedAt } : i),
+  });
+}
