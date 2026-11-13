@@ -23,6 +23,7 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 - [Create and edit recipes](use/recipe-editor.md) — the editor, step ingredient links, delete and archive.
 - [Meal plans](use/meal-plans.md) — meals, leftovers, swaps, and prep tasks.
 - [Ingredient icons](use/icons.md) — how icons are chosen, and how to change one.
+- [Ingredient sticker book](use/ingredient-dex.md) — collect stickers as you cook.
 - [Shopping](use/shopping.md) — create a list and record purchases.
 - [Dietary rules](use/dietary-rules.md) — set rules through the API or MCP.
 

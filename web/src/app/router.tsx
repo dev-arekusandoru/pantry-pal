@@ -1,5 +1,6 @@
 import { createRouter } from "@tanstack/react-router";
 import { cookRoute } from "@/screens/cook/route";
+import { dexRoute } from "@/screens/dex/route";
 import { pantryRoute } from "@/screens/pantry/route";
 import { editRecipeRoute, newRecipeRoute } from "@/screens/recipe-edit/route";
 import { recipeRoute } from "@/screens/recipe/route";
@@ -14,7 +15,7 @@ import { rootRoute, shellRoute } from "./routes";
  * Tabbed screens hang off `shellRoute`, full-screen ones off `rootRoute`.
  */
 const routeTree = rootRoute.addChildren([
-  shellRoute.addChildren([weekRoute, shopRoute, pantryRoute, recipesRoute, recipeRoute, newRecipeRoute, editRecipeRoute, settingsRoute]),
+  shellRoute.addChildren([weekRoute, shopRoute, pantryRoute, recipesRoute, dexRoute, recipeRoute, newRecipeRoute, editRecipeRoute, settingsRoute]),
   cookRoute,
 ]);
 

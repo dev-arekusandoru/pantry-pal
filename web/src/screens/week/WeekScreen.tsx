@@ -1,6 +1,7 @@
 import { VisuallyHidden } from "radix-ui";
 import { useEffect, useRef, useState } from "react";
 import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, cx } from "@/ui";
+import { useCookHistory } from "@/game/history";
 import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
 import { DayCard } from "./DayCard";
 import { addDays, localToday, monthDay, selectedWeekStart, weekRange, weekStartFor } from "./dates";
@@ -8,6 +9,7 @@ import { PrepNudge } from "./PrepNudge";
 import { usePlan, usePrepTasks, useRecipeIndex, useStartEmptyWeek } from "./queries";
 import { SwapSheet, type SwapTarget } from "./SwapSheet";
 import { TonightCard } from "./TonightCard";
+import { MissionsCard } from "./MissionsCard";
 import { WeekPal } from "./WeekPal";
 import styles from "./Week.module.css";
 
@@ -45,6 +47,7 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   const plan = usePlan(selectedWeek);
   const recipes = useRecipeIndex();
   const prep = usePrepTasks(today);
+  const cookHistory = useCookHistory();
   const startWeek = useStartEmptyWeek();
   const [target, setTarget] = useState<SwapTarget | null>(null);
   // A swap target belongs to one plan's slots; drop it when the visible week changes.
@@ -178,6 +181,7 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
         {isCurrentWeek && (
           <>
             <WeekPal plan={planView} today={today} />
+            {cookHistory.data && <MissionsCard plan={planView} history={cookHistory.data} today={today} />}
             <TonightCard plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
           </>
         )}

@@ -1,0 +1,17 @@
+.progress { height: 8px; margin: -8px 0 28px; overflow: hidden; border-radius: 99px; background: var(--surface-muted); }
+.progress > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+.group { margin: 24px 0 34px; }
+.group h2 { margin: 0 0 12px; color: var(--ink); font-family: var(--font-note); font-size: 1.35rem; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.tile { min-width: 0; padding: 12px 8px; border: 1.5px solid var(--line); border-radius: 16px; background: var(--surface); text-align: center; color: var(--ink); }
+.tile button { width: 100%; padding: 0; border: 0; color: inherit; background: transparent; font: inherit; cursor: pointer; }
+.tile img { display: block; margin: 0 auto 6px; }
+.name { display: block; overflow-wrap: anywhere; font-weight: 600; }
+.meta { display: block; margin-top: 4px; color: var(--ink-muted); font-size: .75rem; }
+.uncollected { opacity: .32; }
+.silhouette { position: relative; }
+.silhouette .name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.uncollected img { filter: grayscale(1); }
+.recipes { margin: 8px 0 0; color: var(--ink-muted); font-size: .8rem; }
+@media (min-width: 700px) { .grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; } }
+@media (prefers-reduced-motion: no-preference) { .tile { transition: transform .16s ease, box-shadow .16s ease; } .tile:focus-within, .tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgb(80 55 35 / 10%); } }
