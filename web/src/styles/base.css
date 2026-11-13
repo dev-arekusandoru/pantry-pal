@@ -124,7 +124,7 @@ button:disabled {
  * `document.startViewTransition` (see app/router.tsx); these rules only paint it.
  * Where the API is missing the page swaps instantly, so nothing here is load-bearing.
  *
- * The page dissolves while the new screen rises <= --shift, and scroll restoration
+ * The old and new screen crossfade with matching durations and easing, and scroll restoration
  * happens before the new snapshot is taken, so old content never jumps. Both fades
  * share one duration and easing: the browser blends the snapshots additively, so
  * only complementary opacities keep the page from flashing brighter (mismatched
@@ -147,15 +147,12 @@ button:disabled {
   animation-timing-function: var(--ease);
 }
 
-/* The rise lives on the group, so both snapshots move as one and the old page
-   never lags 8px behind the new one. */
+/* The group's own animation carries its box from the old to the new geometry;
+   removing it leaves the group at the old box until the transition ends (a late
+   snap). Squash it to one frame instead: the box jumps straight to the new one,
+   so nothing slides, and the screens just crossfade inside it. */
 ::view-transition-group(app-screen) {
-  animation: vt-page-rise var(--dur-enter) var(--ease-out) both;
-}
-
-/* Leaving cook mode is a step back, not forward (typed transition, where supported). */
-:root:active-view-transition-type(from-cook)::view-transition-group(app-screen) {
-  animation-name: vt-page-settle;
+  animation-duration: 0.001ms;
 }
 
 /*
@@ -171,18 +168,6 @@ button:disabled {
 ::view-transition-new(app-nav) {
   animation-duration: var(--dur-fast);
   animation-timing-function: var(--ease);
-}
-
-@keyframes vt-page-rise {
-  from {
-    transform: translateY(var(--shift));
-  }
-}
-
-@keyframes vt-page-settle {
-  from {
-    transform: translateY(calc(var(--shift) * -1));
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

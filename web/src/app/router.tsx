@@ -19,13 +19,6 @@ const routeTree = rootRoute.addChildren([
   cookRoute,
 ]);
 
-/** Cook mode lives at `/recipes/$slug/cook` (see `screens/cook/route.tsx`). */
-const COOK_PATHNAME = /^\/recipes\/[^/]+\/cook$/;
-
-interface LocationChange {
-  fromLocation?: { pathname: string } | undefined;
-}
-
 export function createAppRouter(options?: { history?: Parameters<typeof createRouter>[0]["history"] }) {
   return createRouter({
     routeTree,
@@ -33,16 +26,10 @@ export function createAppRouter(options?: { history?: Parameters<typeof createRo
     scrollRestoration: true,
     // Short crossfade between routes via the View Transitions API. A no-op where
     // `document.startViewTransition` is missing (older browsers, jsdom).
-    // Cook mode is entered as a step forward and left as a step back: the
-    // `from-cook` type flips the enter animation in base.css. Browsers without
-    // typed view transitions just get the default (forward) treatment.
+    // The first load is not a navigation: fading the app in from a blank page
+    // would only delay the content the user is waiting for.
     defaultViewTransition: {
-      types: ({ fromLocation }: LocationChange) => {
-        // The first load is not a navigation: fading the app in from a blank page
-        // would only delay the content the user is waiting for.
-        if (fromLocation === undefined) return false;
-        return COOK_PATHNAME.test(fromLocation.pathname) ? ["from-cook"] : [];
-      },
+      types: ({ fromLocation }: { fromLocation?: unknown }) => (fromLocation === undefined ? false : []),
     },
     ...options,
   });

@@ -150,15 +150,25 @@ export function useAddToList() {
         (planId === null ? undefined : open.find((l) => l.mealPlanId === planId)) ??
         open[0] ??
         (await unwrap(client.POST("/shopping-lists", { body: { title: "Shopping list" } }))).list;
-      await unwrap(
+      const added = await unwrap(
         client.POST("/shopping-lists/{id}/items", {
           params: { path: { id: list.id } },
           body: { items: [{ ingredientId: item.ingredientId }] },
         }),
       );
-      return list;
+      return { list, itemId: added.items[0]?.id ?? null };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
+  });
+}
+
+/** Take back one list item, for example the one a sweep answer just added. */
+export function useRemoveListItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId, itemId }: { listId: string; itemId: string }) =>
+      unwrap(client.DELETE("/shopping-lists/{id}/items/{itemId}", { params: { path: { id: listId, itemId } } })),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
   });
 }
 

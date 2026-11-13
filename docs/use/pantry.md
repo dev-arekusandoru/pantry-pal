@@ -84,33 +84,71 @@ number, without an estimate marker.
 
 ## Sweep the pantry
 
-A sweep is a 60-second check of your stock. Tap **Sweep** in the header. The
-header shows **Sweep** only when the pantry has items.
+A sweep is a relaxed check of your stock. It has no time limit. Tap **Sweep**
+in the header. The header shows **Sweep** only when the pantry has items.
 
-The sweep shows one item at a time with its icon, name, and amount. It starts
-with the items you checked longest ago. Items you never checked come first.
-A ring and a **seconds left** line show the time. If your device is set to
-reduce motion, the ring is hidden and only the text shows. Choose one answer:
+The sweep shows one item at a time with its icon, name, and amount. The order
+is random. It changes each time you open the sweep. The sweep covers every item,
+with or without an amount, except items that a recent sweep already covered
+(see [Items you answered are left out for a while](#items-you-answered-are-left-out-for-a-while)).
+A line such as "4 of 38" and a thin progress bar show where you are. Choose one
+answer:
 
 | Answer | Key | What it does |
 | --- | --- | --- |
 | **Still have it** | `1` or Right arrow | Marks the item as checked today. The amount does not change. |
-| **Running low** | `2` or Left arrow | Sets the status to **Running low** and adds the item to the list. |
+| **Running low** | `2` or Left arrow | Sets the status to **Running low** and adds the item to the list. The amount does not change. |
 | **All out** | `3` or Down arrow | Sets the item to **Out** and adds it to the list. A measured item goes to zero. |
 | **Skip** | `S` or Up arrow | Moves on. Nothing changes. |
 
-On a touch screen, swipe the item card right for **Still have it** and left for
-**Running low**. The list is the same one **Add to list** uses: this week's
-list, the newest open list, or a new list.
+You can also drag the item card. Drag it right for **Still have it** and left
+for **Running low**. The card follows your finger or mouse and tilts a little.
+A label with an icon fades in as you drag. At 80 pixels the label turns solid
+and the edge of the card shows a color. Let go past that point to answer. Let go
+before it, and the card goes back. If your device is set to reduce motion, the
+card does not tilt or fly off, but the label and the color still show. The list
+is the same one **Add to list** uses: this week's list, the newest open list,
+or a new list.
 
-The app saves each answer at once. When the time is up, or when you answer every
-item, the sweep ends with a summary, for example "Swept 4 things. 2 went on your
-shopping list." Skipped items are not counted. Tap **Done** to close it. You can
-close the sweep early with **Esc** or **Close**; the answers you gave stay saved.
+The app saves each answer at once. Tap **Finish** at any time to end the sweep
+and see the summary. The sweep also ends when you answer every item. The summary
+looks like this: "Swept 4 things. 2 went on your shopping list." Skipped items
+are not counted. Tap **Done** to close it. You can close the sweep early with
+**Esc** or **Close**. The answers you gave stay saved.
+
+### Undo an answer
+
+Tap **Undo** or press `U` to go back to the previous item. You can do this again
+and again, back to the first item. **Undo** is off until you have answered an
+item. Undo:
+
+- puts the item's status and amount back as they were;
+- takes the item off the shopping list if the answer added it there;
+- removes the item from the "left out for a while" list and from the count of
+  swept things.
+
+After **Still have it**, undo keeps the "checked today" mark. It does not change
+the amount. You cannot undo from the summary.
+
+### Items you answered are left out for a while
+
+After you answer an item, later sweeps leave it out:
+
+| Answer | Left out for |
+| --- | --- |
+| **Running low** or **All out** | 7 days |
+| **Still have it** | 3 days |
+| **Skip** | Not at all |
+
+The app keeps this in this browser's local storage, so another browser or device
+does not share it. If a sweep finds nothing to check, it shows "Everything was
+checked lately. Nice and tidy!". Tap **Sweep everything anyway** to sweep all
+items now.
 
 A finished sweep that has at least one answer counts for the **Sweep the
-pantry** mission on the week screen. The app stores that count in this
-browser's local storage. See [Weekly missions](meal-plans.md#weekly-missions-and-the-treat-stamp).
+pantry** mission on the week screen. This also applies when you end the sweep
+with **Finish**. The app stores that count in this browser's local storage. See
+[Weekly missions](meal-plans.md#weekly-missions-and-the-treat-stamp).
 
 ## Open the sticker book
 

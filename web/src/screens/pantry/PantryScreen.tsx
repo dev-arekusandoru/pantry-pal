@@ -89,7 +89,7 @@ export function PantryScreen() {
               {stickerBook}
               {items.length > 0 && (
                 <>
-                  <Button icon={<Icon name="timer" />} onClick={() => setSweeping(true)}>
+                  <Button icon={<Icon name="check" />} onClick={() => setSweeping(true)}>
                     Sweep
                   </Button>
                   {addButton}
@@ -145,7 +145,7 @@ export function PantryScreen() {
                         onEditIcon={editIcon}
                         onAddToList={(it) =>
                           addToList.mutate(it, {
-                            onSuccess: (list) => toast.show({ message: `${it.ingredient.name} added to ${list.title}` }),
+                            onSuccess: ({ list }) => toast.show({ message: `${it.ingredient.name} added to ${list.title}` }),
                             onError: (error) => toast.error(errorMessage(error)),
                           })
                         }

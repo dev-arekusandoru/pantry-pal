@@ -65,6 +65,8 @@ const PROMPT_SETTLE_MS = 300;
 const EXIT_FALLBACK_MS = 320;
 
 interface StepLayer {
+  /** Unique per paint: stepping A to B and back to A in one fade must not reuse a React key. */
+  id: number;
   /** Step index. */
   index: number;
   /** The step the screen just left: painted once more while it fades away. */
@@ -77,7 +79,7 @@ interface StepLayers {
   layers: StepLayer[];
   /** 1 when the step advanced, -1 when it went back; drives the enter offset. */
   direction: 1 | -1;
-  drop: (index: number) => void;
+  drop: (id: number) => void;
 }
 
 /**
@@ -87,8 +89,9 @@ interface StepLayers {
  * stack never changes height mid-fade.
  */
 function useStepLayers(step: number): StepLayers {
+  const nextId = useRef(1);
   const [state, setState] = useState<{ layers: StepLayer[]; direction: 1 | -1 }>(() => ({
-    layers: [{ index: step, leaving: false, entering: false }],
+    layers: [{ id: 0, index: step, leaving: false, entering: false }],
     direction: 1,
   }));
 
@@ -97,16 +100,16 @@ function useStepLayers(step: number): StepLayers {
     setState({
       layers: [
         ...state.layers.filter((layer) => !layer.leaving).map((layer) => ({ ...layer, leaving: true, entering: false })),
-        { index: step, leaving: false, entering: true },
+        { id: nextId.current++, index: step, leaving: false, entering: true },
       ],
       direction: step > shown ? 1 : -1,
     });
   }
 
-  const drop = useCallback((index: number) => {
+  const drop = useCallback((id: number) => {
     setState((current) => ({
       ...current,
-      layers: current.layers.filter((layer) => !(layer.index === index && layer.leaving)),
+      layers: current.layers.filter((layer) => !(layer.id === id && layer.leaving)),
     }));
   }, []);
 
@@ -776,7 +779,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
                 const seconds = stepSeconds(s);
                 return (
                   <div
-                    key={layer.index}
+                    key={layer.id}
                     className={cx(
                       styles.step,
                       layer.leaving
@@ -791,7 +794,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
                     onAnimationEnd={
                       layer.leaving
                         ? (event) => {
-                            if (event.target === event.currentTarget) dropStep(layer.index);
+                            if (event.target === event.currentTarget) dropStep(layer.id);
                           }
                         : undefined
                     }

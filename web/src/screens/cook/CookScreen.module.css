@@ -210,12 +210,14 @@
   gap: 24px;
 }
 
+/* The incoming step waits out half the exit, so the two never sit at half
+   opacity on top of each other (that overlap read as glitchy text). */
 .stepNext {
-  animation: enterRise var(--dur-enter) var(--ease-out);
+  animation: enterRise var(--dur-enter) var(--ease-out) calc(var(--dur-exit) / 2) backwards;
 }
 
 .stepPrev {
-  animation: enterFall var(--dur-enter) var(--ease-out);
+  animation: enterFall var(--dur-enter) var(--ease-out) calc(var(--dur-exit) / 2) backwards;
 }
 
 /* Shared exit used by steps, alerts and chips. */
@@ -235,6 +237,7 @@
 @keyframes enterRise {
   from {
     opacity: 0;
+    filter: blur(4px);
     transform: translateY(var(--shift));
   }
 }
@@ -242,6 +245,7 @@
 @keyframes enterFall {
   from {
     opacity: 0;
+    filter: blur(4px);
     transform: translateY(calc(var(--shift) * -1));
   }
 }
