@@ -35,7 +35,7 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
   if (!slot || !cook) {
     const text = !slot ? "Nothing planned for dinner" : slot.kind === "skip" ? (slot.label ?? "No dinner planned") : (slot.label ?? "Something simple");
     return (
-      <section className={styles.tonightPlain} aria-label="Dinner tonight">
+      <section className={styles.tonightPlain} data-ui="tonight" aria-label="Dinner tonight">
         <p className={styles.kicker}>Dinner tonight</p>
         <h2 className={styles.tonightTitle}>{text}</h2>
         <div className={styles.actions}>
@@ -58,7 +58,7 @@ export function TonightCard({ plan, today, recipes, onSwap }: TonightCardProps) 
   const note = slotNote(slot, plan);
 
   return (
-    <section className={styles.tonight} aria-label="Dinner tonight">
+    <section className={styles.tonight} data-ui="tonight" aria-label="Dinner tonight">
       <Plate imageUrl={recipe?.imageUrl} emoji={MEAL_EMOJI.dinner} className={styles.tonightPlate} />
       <div className={styles.tonightBody}>
         <div className={styles.tonightTop}>

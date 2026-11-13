@@ -8,7 +8,7 @@ export interface SegmentOption<T extends string> {
   label: string;
   /** Optional decorative icon before the label. */
   icon?: ReactNode;
-  /** Marks a destructive choice, e.g. "Never": tomato ink, tomato fill when chosen. */
+  /** Marks a destructive choice, e.g. "Never": danger ink, danger fill when chosen. */
   danger?: boolean;
 }
 

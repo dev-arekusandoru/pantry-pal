@@ -20,14 +20,14 @@
 
 .tools {
   display: grid;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 /* ---------- shelves ---------- */
 .shelf {
-  padding: 16px 16px 6px;
-  margin-bottom: 16px;
+  padding: 12px 14px 4px;
+  margin-bottom: 10px;
 }
 
 .shelfName {
@@ -35,16 +35,16 @@
   gap: 10px;
   align-items: center;
   font-size: var(--fs-h3);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .shelfName small {
-  font-size: var(--fs-sm);
+  font-size: 12.5px;
   font-weight: var(--fw-bold);
   letter-spacing: 0;
   background: var(--gum-s);
-  padding: 2px 12px;
-  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  border-radius: var(--r-chip);
   font-variation-settings: var(--wdth-body);
 }
 
@@ -61,8 +61,8 @@
 .row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 68px;
+  gap: 10px;
+  min-height: 50px;
   border-top: 2px dashed var(--line);
 }
 
@@ -91,7 +91,7 @@
   align-items: stretch;
   justify-content: center;
   min-width: 0;
-  min-height: 44px;
+  min-height: 40px;
   padding: 0;
   border: 0;
   background: none;
@@ -112,6 +112,7 @@
 }
 
 .note {
+  font-family: var(--font-note);
   font-size: var(--fs-xs);
   color: var(--muted);
   font-weight: var(--fw-semibold);
@@ -142,12 +143,12 @@
 
 .statusBtn {
   flex: none;
-  min-height: 48px;
-  min-width: 48px;
+  min-height: 40px;
+  min-width: 40px;
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-chip);
   transition: transform var(--dur-fast) var(--pop);
 }
 
@@ -170,8 +171,8 @@
   min-width: 210px;
   display: grid;
   gap: 2px;
-  padding: 6px;
-  background: var(--card);
+  padding: 4px;
+  background: var(--card) var(--grain);
   border-radius: var(--r-md);
   box-shadow: var(--shadow), 0 0 0 2px var(--line);
   transform-origin: var(--radix-popper-transform-origin, center);
@@ -200,7 +201,8 @@
 }
 
 .menuLabel {
-  padding: 6px 12px 4px;
+  font-family: var(--font-note);
+  padding: 4px 10px 2px;
   font-size: var(--fs-xs);
   font-weight: var(--fw-bold);
   color: var(--muted);
@@ -212,8 +214,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 40px;
+  padding: 0 10px;
   border-radius: var(--r-sm);
   font-weight: var(--fw-semibold);
   cursor: pointer;
@@ -248,7 +250,7 @@
 /* ---------- forms in sheets ---------- */
 .addForm {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .field {
@@ -259,6 +261,7 @@
 
 .field > span,
 .fieldLabel {
+  font-family: var(--font-note);
   font-weight: var(--fw-bold);
   font-size: var(--fs-sm);
   padding-left: 6px;
@@ -267,18 +270,17 @@
 .fieldRow {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .input {
   width: 100%;
   min-width: 0;
-  height: 54px;
-  border: 0;
-  border-radius: var(--r-pill);
-  background: var(--card);
-  box-shadow: inset 0 0 0 2.5px var(--line);
-  padding: 0 20px;
+  height: 42px;
+  border: var(--field-ring);
+  border-radius: var(--r-field);
+  background: var(--field-bg);
+  padding: 0 16px;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -301,7 +303,7 @@
   min-width: var(--radix-select-trigger-width);
   max-height: var(--radix-select-content-available-height);
   overflow: hidden;
-  background: var(--card);
+  background: var(--card) var(--grain);
   border-radius: var(--r-md);
   box-shadow: var(--shadow), 0 0 0 2px var(--line);
   transform-origin: var(--radix-popper-transform-origin, center);
@@ -318,15 +320,15 @@
 .selectViewport {
   max-height: 280px;
   overflow-y: auto;
-  padding: 6px;
+  padding: 4px;
 }
 
 .selectItem {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 40px;
+  padding: 0 10px;
   border-radius: var(--r-sm);
   font-weight: var(--fw-semibold);
   cursor: pointer;
@@ -351,9 +353,9 @@
   height: 16px;
 }
 
-.input:focus {
-  outline: none;
-  box-shadow: inset 0 0 0 3px var(--blue);
+.input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .input::placeholder {
@@ -362,25 +364,27 @@
 }
 
 .input[aria-invalid="true"] {
-  box-shadow: inset 0 0 0 3px var(--tomato);
+  border-style: dashed;
+  border-color: var(--danger-text);
 }
 
 .hint {
+  font-family: var(--font-note);
   background: var(--butter-s);
   border-radius: var(--r-sm);
-  padding: 10px 14px;
+  padding: 8px 12px;
   font-weight: var(--fw-semibold);
 }
 
 .setForm {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .setField {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -390,7 +394,7 @@
   font-weight: var(--fw-heavy);
   text-align: center;
   font-variant-numeric: tabular-nums;
-  height: 64px;
+  height: 52px;
 }
 
 .setUnit {
@@ -404,8 +408,8 @@
 
 /* Destructive action, kept apart from the sheet footer's Cancel and Save. */
 .removeRow {
-  margin-top: 4px;
-  padding-top: 16px;
+  margin-top: 2px;
+  padding-top: 12px;
   border-top: 2px dashed var(--line);
   display: flex;
 }
@@ -436,7 +440,7 @@
 .iconRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 

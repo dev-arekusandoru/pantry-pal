@@ -8,10 +8,10 @@
   align-items: center;
   gap: 12px;
   max-width: 94vw;
-  padding: 8px 8px 8px 18px;
-  background: var(--tomato-fill);
-  color: var(--on-tomato);
-  border-radius: var(--r-pill);
+  padding: 6px 6px 6px 16px;
+  background: var(--danger-fill);
+  color: var(--on-danger);
+  border-radius: var(--r-chip);
   box-shadow: var(--shadow);
   font-weight: var(--fw-bold);
   animation: drop 0.35s var(--pop);

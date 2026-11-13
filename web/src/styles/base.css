@@ -1,5 +1,10 @@
 /* Global reset + base elements. Component styles live in CSS modules. */
-@import "@fontsource-variable/bricolage-grotesque/wdth.css";
+@import "@fontsource/kiwi-maru/latin-500.css";
+@import "@fontsource/zen-maru-gothic/latin-500.css";
+@import "@fontsource/zen-maru-gothic/latin-700.css";
+@import "@fontsource/zen-maru-gothic/latin-900.css";
+@import "@fontsource/klee-one/latin-400.css";
+@import "@fontsource/klee-one/latin-600.css";
 @import "./tokens.css";
 
 *,
@@ -15,10 +20,21 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  background: var(--bg);
+}
+
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--page-art);
+  view-transition-name: page-art;
 }
 
 body {
-  background: var(--bg);
+  background: transparent;
   color: var(--ink);
   font: var(--fw-regular) var(--fs-base) / 1.45 var(--font);
   font-variation-settings: var(--wdth-body);
@@ -29,14 +45,15 @@ body {
 h1,
 h2,
 h3 {
-  font-weight: var(--fw-heavy);
-  letter-spacing: -0.02em;
+  font-family: var(--font-head);
+  font-weight: var(--fw-head);
+  letter-spacing: var(--tracking-head);
   font-variation-settings: var(--wdth-heading);
 }
 
 h1 {
   font-size: var(--fs-display);
-  line-height: 0.92;
+  line-height: var(--lh-head);
 }
 h2 {
   font-size: var(--fs-h2);
@@ -82,18 +99,9 @@ button:disabled {
 
 /* Visible focus everywhere. Contrast against both page and tinted blocks. */
 :focus-visible {
-  outline: 3px solid var(--blue);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
   border-radius: 14px;
-}
-
-[data-theme="dark"] :focus-visible {
-  outline-color: var(--butter);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) :focus-visible {
-    outline-color: var(--butter);
-  }
 }
 
 ::selection {
@@ -124,18 +132,29 @@ button:disabled {
  */
 ::view-transition-old(root),
 ::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(page-art),
+::view-transition-old(page-art),
+::view-transition-new(page-art) {
+  animation: none;
+}
+
+::view-transition-old(app-screen),
+::view-transition-new(app-screen) {
   animation-duration: var(--dur);
   animation-timing-function: var(--ease);
 }
 
 /* The rise lives on the group, so both snapshots move as one and the old page
    never lags 8px behind the new one. */
-::view-transition-group(root) {
+::view-transition-group(app-screen) {
   animation: vt-page-rise var(--dur-enter) var(--ease-out) both;
 }
 
 /* Leaving cook mode is a step back, not forward (typed transition, where supported). */
-:root:active-view-transition-type(from-cook)::view-transition-group(root) {
+:root:active-view-transition-type(from-cook)::view-transition-group(app-screen) {
   animation-name: vt-page-settle;
 }
 

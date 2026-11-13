@@ -1,0 +1,336 @@
+/*
+ * Skin layer: restyles the [data-ui] hooks that components expose (page header,
+ * week day/slot, pantry and shop tiles, recipe cards). Module classes are hashed,
+ * so this file uses hooks, tags and structure only. `html:root` keeps the
+ * specificity above the module rules. Food icons set inline sizes, so their
+ * overrides need !important.
+ */
+
+/* ───────── notebook: no card, wavy-underlined title, tilted sticker with tape ───────── */
+
+html:root [data-ui="header"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px 14px;
+  min-height: 0;
+  padding: 4px 0 6px;
+  margin-bottom: 14px;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+  color: var(--ink);
+}
+html:root [data-ui="header"]::before,
+html:root [data-ui="header"]::after {
+  display: none; /* the sticker is drawn by header-text::after so it can sit beside the title */
+}
+html:root [data-ui="header-text"] {
+  display: grid;
+  grid-template-columns: minmax(0, auto) auto;
+  align-items: center;
+  column-gap: 14px;
+  max-width: 100%;
+}
+html:root [data-ui="header-text"] h1 {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: var(--fs-title);
+  line-height: 1.15;
+  text-decoration: underline wavy var(--accent) 2px;
+  text-underline-offset: 6px;
+  text-decoration-skip-ink: none;
+}
+html:root [data-ui="header-text"] p {
+  grid-column: 1;
+  margin-top: 8px;
+  font-family: var(--font-note);
+  font-weight: normal;
+  opacity: 1;
+  color: var(--muted);
+}
+html:root [data-ui="header-text"]::after {
+  content: "";
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 56px;
+  height: 56px;
+  background: var(--tab-sticker) center / contain no-repeat;
+  transform: rotate(8deg);
+  filter: drop-shadow(0 3px 0 rgba(255, 255, 255, 0.55)) drop-shadow(0 5px 6px rgba(80, 30, 0, 0.2));
+  pointer-events: none;
+}
+html:root [data-ui="header-text"]::before {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: calc(50% - 36px);
+  width: 30px;
+  height: 11px;
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0 4px, transparent 4px 8px), var(--tab);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--bd);
+  transform: rotate(-38deg);
+  z-index: 1;
+  pointer-events: none;
+}
+html:root [data-ui="header-aside"] {
+  margin-left: auto;
+}
+@media (min-width: 768px) {
+  html:root [data-ui="header"] {
+    padding: 8px 0 10px;
+  }
+  html:root [data-ui="header-text"]::after {
+    width: 72px;
+    height: 72px;
+  }
+  html:root [data-ui="header-text"]::before {
+    right: 24px;
+    top: calc(50% - 44px);
+  }
+}
+
+/* ═════════════════ tiles: chunky pastel tiles ═════════════════ */
+
+html:root {
+  --tile-ring: 0 0 0 var(--btn-w) var(--bd), 0 calc(var(--press) + 1px) 0 var(--btn-w) color-mix(in srgb, var(--bd) 55%, transparent);
+}
+
+/* ----- pantry and shop: grids of vertical tiles ----- */
+html:root [data-ui="shelf-list"],
+html:root [data-ui="shop-list"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, calc(50% - 4px)), 1fr));
+  gap: 8px;
+}
+html:root [data-ui="shelf"] {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  margin-bottom: 18px;
+}
+html:root [data-ui="shelf"] > h2 {
+  margin-bottom: 8px;
+}
+html:root [data-ui="shop-aisle"] > h2 {
+  margin-bottom: 8px;
+}
+html:root [data-ui="stock-row"],
+html:root [data-ui="shop-item"] {
+  position: relative;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px 6px 10px;
+  text-align: center;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--tab-s) 85%, var(--card)) var(--grain);
+  box-shadow: var(--tile-ring);
+}
+html:root [data-ui="shop-item"]:has([data-state="checked"]) {
+  background: color-mix(in srgb, var(--tab) 55%, var(--card)) var(--grain);
+}
+/* the icon on top, ~48px */
+html:root [data-ui="stock-row"] img,
+html:root [data-ui="shop-item"] img {
+  width: 44px !important;
+  height: 44px !important;
+}
+html:root [data-ui="stock-row"] :has(> img) {
+  width: 60px;
+  height: 60px;
+}
+html:root [data-ui="shop-item"] > :first-child {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 2px;
+}
+
+/* pantry tile: name, notes, then the stepper or status at the bottom */
+html:root [data-ui="stock-row"] > button:not([aria-label]) {
+  flex: none;
+  align-items: center;
+  max-width: 100%;
+  min-height: 0;
+  font-size: var(--fs-base);
+}
+html:root [data-ui="stock-row"] button span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+html:root [data-ui="stock-row"] button span span {
+  justify-content: center;
+  flex-wrap: wrap;
+}
+html:root [data-ui="stock-row"] > button[aria-label^="Add "] {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+html:root [data-ui="stock-row"] > [role="group"] {
+  align-self: stretch;
+  margin-top: auto;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--tab-s) 65%, var(--card));
+}
+html:root [data-ui="stock-row"] > [role="group"] > :nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+html:root [data-ui="stock-row"] > [role="group"] > :nth-child(2) > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+html:root [data-ui="stock-row"] > [role="group"] > :nth-child(2) b {
+  font-size: var(--fs-base);
+}
+html:root [data-ui="stock-row"] > [role="group"] > :nth-child(2) small {
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--muted);
+}
+html:root [data-ui="stock-row"] > [role="group"] > button:first-child,
+html:root [data-ui="stock-row"] > [role="group"] > button:last-child {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  background: color-mix(in srgb, var(--tab-s) 75%, var(--card));
+  color: var(--ink);
+  box-shadow: none;
+}
+html:root [data-ui="stock-row"] > [aria-haspopup] {
+  margin-top: auto;
+}
+
+/* shop tile: tick box in the corner, name and amount under the icon */
+html:root [data-ui="shop-item"] > [role="checkbox"] {
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  align-self: stretch;
+  min-height: 0;
+  padding: 0 4px 2px;
+  gap: 4px;
+  text-align: center;
+}
+html:root [data-ui="shop-item"] > [role="checkbox"] > :first-child {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+html:root [data-ui="shop-item"] > [role="checkbox"] > :last-child {
+  flex: none;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+html:root [data-ui="shop-item"] > [role="checkbox"] > :last-child > :first-child {
+  flex: none;
+  align-items: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* ----- week: tinted name strip, slots as side-by-side tiles ----- */
+html:root [data-ui="day"] {
+  padding: 0 12px 10px;
+}
+html:root [data-ui="day"]::after {
+  display: none;
+}
+html:root [data-ui="day-name"] {
+  margin: 0 -12px 6px;
+  padding: 9px 14px 7px;
+  background: color-mix(in srgb, var(--tab-s) 80%, var(--card));
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+html:root [data-ui="day"][aria-current="date"] [data-ui="day-name"] {
+  background: var(--tab);
+  color: var(--on-tab);
+}
+html:root [data-ui="day"][aria-current="date"] [data-ui="day-name"] > span:nth-child(2) {
+  color: var(--on-tab);
+}
+html:root [data-ui="day"][aria-current="date"] [data-ui="day-name"] > span:nth-child(3) {
+  background: var(--card);
+  color: var(--ink);
+}
+html:root [data-ui="day-name"] h3 {
+  font-family: var(--font-head);
+  font-variation-settings: normal;
+}
+@media (min-width: 640px) {
+  html:root [data-ui="day-slots"] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 2px;
+  }
+  html:root [data-ui="slot"] {
+    border-top-width: 0;
+    padding: 4px 4px 4px 10px;
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--tab-s) 85%, var(--card)) var(--grain);
+    box-shadow: var(--tile-ring);
+  }
+  html:root [data-ui="slot"] > :first-child {
+    min-height: 64px;
+  }
+  /* an empty meal: label above the add prompt */
+  html:root [data-ui="slot"] > button:has(> span:first-child:not([aria-hidden])) {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 4px;
+  }
+}
+
+/* ----- tonight and Pal on a pastel mat ----- */
+html:root [data-ui="tonight"],
+html:root [data-ui="pal"] {
+  background: color-mix(in srgb, var(--tab-s) 70%, var(--card)) var(--grain);
+  box-shadow: var(--tile-ring);
+}
+
+/* ----- recipes: a thick pastel mat around the photo ----- */
+html:root [data-ui="recipe-card"] > a {
+  padding: 10px 10px 12px;
+  border-radius: var(--r-xl);
+  background: color-mix(in srgb, var(--tab-s) 70%, var(--card)) var(--grain);
+  box-shadow: var(--tile-ring);
+}
+html:root [data-ui="recipe-card"] > a > :first-child {
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 3px var(--card), 0 0 0 4.5px var(--bd);
+  margin: 3px 3px 0;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html:root [data-ui="stock-row"],
+  html:root [data-ui="shop-item"] {
+    transition: transform var(--dur-fast) var(--pop);
+  }
+  html:root [data-ui="stock-row"]:hover,
+  html:root [data-ui="shop-item"]:hover {
+    transform: translateY(-2px);
+  }
+}

@@ -21,7 +21,7 @@
   gap: 16px;
   background: var(--ink);
   color: var(--bg);
-  padding: 14px 24px;
+  padding: 11px 18px;
   border-radius: var(--r-pill);
   font-weight: var(--fw-bold);
   text-align: center;
@@ -50,8 +50,8 @@
 }
 
 .error {
-  background: var(--tomato-fill);
-  color: var(--on-tomato);
+  background: var(--danger-fill);
+  color: var(--on-danger);
 }
 
 .action {

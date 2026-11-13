@@ -130,6 +130,7 @@ export function RecipesScreen({ view, meal, query, onChange }: RecipesScreenProp
               <li
                 key={r.id}
                 className={cx(styles.card, animateCards && styles.cardEnter)}
+                data-ui="recipe-card"
                 style={
                   animateCards
                     ? ({

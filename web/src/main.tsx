@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./app/App";
 import { initTheme } from "./app/theme";
 import "./styles/base.css";
+import "./styles/skin.css";
 
 initTheme();
 

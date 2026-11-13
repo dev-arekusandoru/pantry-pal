@@ -12,7 +12,6 @@
     "openapi:types": "node scripts/generate-types.mjs"
   },
   "devDependencies": {
-    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-query": "^5.105.1",
     "@tanstack/react-router": "^1.170.46",
@@ -33,6 +32,9 @@
   },
   "description": "PantryPal web app. Everything is bundled by Vite, so all packages are devDependencies and `pnpm prune --prod` strips them from the runtime image.",
   "dependencies": {
+    "@fontsource/kiwi-maru": "^5.3.1",
+    "@fontsource/klee-one": "^5.3.1",
+    "@fontsource/zen-maru-gothic": "^5.3.1",
     "radix-ui": "^1.8.1"
   }
 }

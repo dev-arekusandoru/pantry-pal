@@ -7,8 +7,8 @@ beforeEach(() => {
 });
 
 describe("theme", () => {
-  it("defaults to system", () => {
-    expect(readStoredTheme()).toBe("system");
+  it("defaults to light", () => {
+    expect(readStoredTheme()).toBe("light");
   });
 
   it("persists and applies the preference", () => {
@@ -21,7 +21,7 @@ describe("theme", () => {
 
   it("ignores garbage in storage", () => {
     localStorage.setItem(THEME_STORAGE_KEY, "purple");
-    expect(readStoredTheme()).toBe("system");
+    expect(readStoredTheme()).toBe("light");
     applyTheme("light");
     expect(document.documentElement.dataset.theme).toBe("light");
   });

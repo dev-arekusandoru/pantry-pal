@@ -2,7 +2,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 import styles from "./Pill.module.css";
 import { cx } from "./cx";
 
-export type PillTone = "neutral" | "tab" | "butter" | "pistachio" | "gum" | "blue" | "peach" | "tomato";
+export type PillTone = "neutral" | "tab" | "butter" | "pistachio" | "gum" | "blue" | "peach" | "accent" | "danger";
 
 export interface PillProps extends HTMLAttributes<HTMLSpanElement> {
   /** `tab` follows the current screen's color (`data-tab`). Default `neutral`. */

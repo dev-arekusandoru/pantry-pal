@@ -47,10 +47,27 @@
   max-height: 88dvh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  position: relative;
+  background: var(--bg) var(--grain);
   color: var(--ink);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
-  padding: 18px 18px 0;
+  padding: 16px 16px 0;
+}
+
+/* Tape strip holding the sheet to the desk; off unless a skin enables it. */
+.panel::before {
+  content: "";
+  display: var(--sheet-tape);
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 84px;
+  height: 26px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0 5px, transparent 5px 10px), var(--tab, var(--butter));
+  box-shadow: 0 0 0 1.5px var(--bd);
+  border-radius: 4px;
+  pointer-events: none;
 }
 
 .panel:focus {
@@ -81,11 +98,13 @@
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  padding-bottom: 16px;
+  /* Side/top room so focus rings of controls aren't clipped by the scroller. */
+  padding: 4px 6px 12px;
+  margin: -4px -6px 0;
 }
 
 .footer {
-  padding: 12px 0 calc(16px + var(--safe-bottom));
+  padding: 10px 0 calc(12px + var(--safe-bottom));
   display: flex;
   align-items: center;
   gap: 10px;

@@ -79,7 +79,7 @@
 }
 
 .body {
-  padding: 22px 2px 0;
+  padding: 16px 2px 0;
 }
 
 /* Groups title/meta/badges/status so they stagger in as one block. */
@@ -90,7 +90,7 @@
 .title {
   font-size: clamp(36px, 10vw, 54px);
   line-height: 0.95;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   text-wrap: balance;
 }
 
@@ -113,11 +113,11 @@
 .meta svg {
   width: 17px;
   height: 17px;
-  color: var(--tomato-text);
+  color: var(--accent-text);
 }
 
 .desc {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   max-width: 60ch;
   font-size: 16.5px;
 }
@@ -126,10 +126,10 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin-top: 12px;
+  margin-top: 10px;
   font-size: 15px;
   font-weight: var(--fw-semibold);
-  color: var(--tomato-text);
+  color: var(--accent-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -144,11 +144,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 16px 0 0;
+  margin: 12px 0 0;
 }
 
 .status {
-  margin-top: 14px;
+  margin-top: 10px;
   max-width: 560px;
 }
 
@@ -156,14 +156,15 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-bold);
   color: var(--muted);
+  font-family: var(--font-note);
   padding-left: 4px;
 }
 
 .ings {
-  margin-top: 24px;
-  background: var(--card);
+  margin-top: 16px;
+  background: var(--card) var(--grain);
   border-radius: 32px;
-  padding: 20px 18px 16px;
+  padding: 15px 14px 12px;
   box-shadow: var(--shadow);
 }
 
@@ -172,12 +173,12 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
 
 .summary {
-  margin-top: 14px;
-  padding: 12px 16px;
+  margin-top: 10px;
+  padding: 9px 12px;
   border-radius: var(--r-sm);
   background: var(--peach-s);
   display: grid;
@@ -202,9 +203,10 @@
   font-size: 15px;
   font-weight: var(--fw-heavy);
   background: var(--butter-s);
-  padding: 3px 14px;
-  border-radius: var(--r-pill);
-  margin: 16px 0 4px;
+  padding: 2px 10px;
+  border-radius: var(--r-chip);
+  font-family: var(--font-note);
+  margin: 12px 0 4px;
 }
 
 .ingList {
@@ -216,7 +218,7 @@
   grid-template-columns: 30px minmax(52px, 84px) 1fr 26px;
   gap: 8px;
   align-items: baseline;
-  padding: 11px 0;
+  padding: 8px 0;
   border-top: 2px dashed var(--line);
   font-size: 16.5px;
 }
@@ -274,7 +276,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 12px;
+  margin-top: 10px;
   color: var(--muted);
   font-size: 13px;
   font-weight: var(--fw-semibold);
@@ -292,7 +294,7 @@
 }
 
 .method {
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .method h2 {
@@ -301,22 +303,22 @@
 
 .steps li {
   display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-  padding: 12px 0;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  padding: 8px 0;
 }
 
 .stepNum {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--tomato-fill);
-  color: var(--on-tomato);
+  background: var(--accent-fill);
+  color: var(--on-accent);
   font-weight: var(--fw-heavy);
-  font-size: 19px;
+  font-size: 17px;
   display: grid;
   place-items: center;
-  box-shadow: 0 3px 0 var(--tomato-d);
+  box-shadow: 0 3px 0 var(--accent-d);
 }
 
 .steps li:nth-child(3n + 2) .stepNum {
@@ -335,7 +337,7 @@
   max-width: 62ch;
   font-size: 16.5px;
   line-height: 1.55;
-  padding-top: 7px;
+  padding-top: 5px;
 }
 
 .steps .group {
@@ -350,7 +352,7 @@
   font-weight: var(--fw-bold);
   background: var(--butter-s);
   padding: 2px 10px;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-chip);
   margin-left: 8px;
   white-space: nowrap;
 }
@@ -370,7 +372,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 24px 16px calc(16px + var(--safe-bottom));
+  padding: 20px 16px calc(12px + var(--safe-bottom));
   /* Opaque behind the buttons; only the 28px above them fades, so text never
      shows through the CTA. */
   background: linear-gradient(transparent, var(--bg) 28px);
@@ -386,7 +388,7 @@
 /* Availability summary can arrive after the recipe; its space is reserved while
    it loads so the ingredient list below never moves. */
 .summaryPlaceholder {
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 /* Placeholder laid out like the real page: hero aspect ratio, title, meta and
@@ -416,13 +418,13 @@
 }
 
 .skeletonCard {
-  margin-top: 24px;
-  padding: 20px 18px 16px;
+  margin-top: 16px;
+  padding: 15px 14px 12px;
   border-radius: 32px;
-  background: var(--card);
+  background: var(--card) var(--grain);
   box-shadow: var(--shadow);
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .skeletonCardHead {
@@ -438,5 +440,5 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
 }

@@ -23,6 +23,8 @@ export { IconButton } from "./IconButton";
 export type { IconButtonProps } from "./IconButton";
 export { PageHeader } from "./PageHeader";
 export type { PageHeaderProps } from "./PageHeader";
+export { Pal } from "./Pal";
+export type { PalMood } from "./Pal";
 export { Pill } from "./Pill";
 export type { PillProps, PillTone } from "./Pill";
 export { SearchInput } from "./SearchInput";

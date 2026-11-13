@@ -33,3 +33,12 @@
 .die-cut {
   filter: drop-shadow(0 6px 0 rgba(255, 255, 255, 0.55)) drop-shadow(0 8px 10px rgba(80, 30, 0, 0.2));
 }
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .sticker {
+    transition: transform var(--dur-fast) var(--pop);
+  }
+  .sticker:hover {
+    transform: rotate(calc(var(--tilt) * -1)) scale(1.06);
+  }
+}

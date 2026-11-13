@@ -17,12 +17,12 @@ export interface PageHeaderProps {
  */
 export function PageHeader({ title, sub, aside, className }: PageHeaderProps) {
   return (
-    <header className={cx(styles.head, className)}>
-      <div className={styles.text}>
+    <header className={cx(styles.head, className)} data-ui="header">
+      <div className={styles.text} data-ui="header-text">
         <h1>{title}</h1>
         {sub && <p className={styles.sub}>{sub}</p>}
       </div>
-      {aside && <div className={styles.aside}>{aside}</div>}
+      {aside && <div className={styles.aside} data-ui="header-aside">{aside}</div>}
     </header>
   );
 }

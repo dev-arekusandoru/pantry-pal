@@ -3,7 +3,8 @@
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 6px 4px 10px;
+  padding: 8px;
+  margin: -8px -8px -6px;
 }
 
 .root::-webkit-scrollbar {
@@ -16,9 +17,9 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: var(--r-pill);
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--r-chip);
   background: var(--card);
   font-weight: var(--fw-bold);
   font-size: 15px;
@@ -42,12 +43,12 @@
 
 /* A destructive choice never looks like a neutral filter. */
 .seg.danger {
-  color: var(--tomato-text);
+  color: var(--danger-text);
 }
 
 .seg.danger[data-state="on"] {
-  background: var(--tomato-fill);
-  color: var(--on-tomato);
+  background: var(--danger-fill);
+  color: var(--on-danger);
 }
 
 @media (hover: hover) {
@@ -58,6 +59,6 @@
     background: color-mix(in srgb, var(--ink) 90%, var(--bg));
   }
   .seg.danger[data-state="on"]:not(:disabled):hover:not(:active) {
-    background: color-mix(in srgb, var(--tomato-fill) 88%, #000);
+    background: color-mix(in srgb, var(--danger-fill) 88%, #000);
   }
 }

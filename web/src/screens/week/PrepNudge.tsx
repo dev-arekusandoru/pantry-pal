@@ -22,7 +22,7 @@ export function PrepNudge({ tasks, today, fadeIn }: PrepNudgeProps) {
   const { next, rest } = picked;
 
   return (
-    <section className={cx(styles.nudge, animate && styles.nudgeFade)} aria-label="Next prep task">
+    <section className={cx(styles.nudge, animate && styles.nudgeFade)} data-ui="nudge" aria-label="Next prep task">
       <span className={styles.nudgeIcon} aria-hidden="true">
         <Icon name="timer" size="100%" />
       </span>

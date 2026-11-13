@@ -1,21 +1,21 @@
 /*
- * PantryPal design tokens (Glaze direction).
+ * PantryPal design tokens (Kitchen Diary: paper, cocoa ink, pastel stickers).
  *
  * Three layers:
- *   1. Theme-independent: type, radii, motion, layout.
- *   2. Color sets: light (default), dark (system preference or explicit).
+ *   1. Theme-independent: type, radii, skin, motion, layout.
+ *   2. Color sets: light (default), dark (explicit only until it is redesigned).
  *   3. Per-tab colors: `data-tab="week|shop|pantry|recipes|settings"` on any
  *      ancestor sets --tab, --tab-s and --on-tab. --tab-sticker (the header
  *      corner art) is set inline by the shell from the imported food icon.
  *
  * Theme selection is the `data-theme` attribute on <html>: "light" | "dark" |
- * "system" (see src/app/theme.ts). "system" and "unset" follow the OS.
+ * "system" (see src/app/theme.ts). "system" follows the OS; the default is light.
  * Adding a theme = adding one more color block below.
  */
 
 :root {
   /* ----- type ----- */
-  --font: "Bricolage Grotesque Variable", ui-rounded, system-ui, sans-serif;
+  --font: "Zen Maru Gothic", ui-rounded, system-ui, sans-serif;
   --fs-xs: 12px;
   --fs-sm: 13.5px;
   --fs-base: 16px;
@@ -30,16 +30,60 @@
   --fw-semibold: 600;
   --fw-bold: 700;
   --fw-heavy: 800;
-  --wdth-body: "wdth" 94;
-  --wdth-heading: "wdth" 86;
+  --wdth-body: normal;
+  --wdth-heading: normal;
 
   /* ----- shape ----- */
-  --r-xs: 13px;
-  --r-sm: 18px;
-  --r-md: 24px;
-  --r-lg: 28px;
-  --r-xl: 34px;
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 22px;
   --r-pill: 999px;
+
+  /* ----- skin: the look of surfaces and controls ----- */
+  --font-head: "Kiwi Maru", "Zen Maru Gothic", serif;
+  --font-note: "Klee One", "Zen Maru Gothic", cursive; /* handwritten notes: kickers, meal labels, dates, Pal's line */
+  --fw-head: 500;
+  --lh-head: 1.12;
+  --tracking-head: 0;
+  --bd: color-mix(in srgb, var(--ink) 62%, var(--card)); /* pencil outline: button rings and edges */
+  --btn-w: 1.5px; /* button ring width */
+  --press: 2px; /* height of the hard edge under a button */
+  --press-y: 1px; /* how far a button sinks when pressed */
+  --press-scale: 0.97;
+  --hover-y: -1px;
+  --btn-soft: 0 8px 12px -8px color-mix(in srgb, var(--bd) 55%, transparent); /* soft shadow under secondary buttons */
+  --btn-p-soft: 0 8px 12px -8px color-mix(in srgb, var(--ink) 60%, transparent), inset 0 2px 0 rgba(255, 255, 255, 0.16);
+  --btn-p-inset: inset 0 0 0 3px var(--accent-fill), inset 0 0 0 4.5px color-mix(in srgb, var(--on-accent) 45%, transparent); /* letterpress line inside the primary button */
+  --tilt-a: -2.5deg; /* chips: kicker */
+  --tilt-b: 3deg; /* chips: today flag */
+  --head-tint: 0%; /* how much of the tab color fills the header (rest is --card) */
+  --head-glow: 0%; /* tab-colored glow in the header's top-right corner */
+  --head-shadow: var(--shadow);
+  --head-art: none; /* decoration layered on the header fill */
+  --head-tape: block; /* washi tape strip on the header */
+  --dots: color-mix(in srgb, var(--ink) 16%, transparent);
+  --page-art: radial-gradient(circle, var(--dots) 1.3px, transparent 1.6px) 0 0 / 22px 22px; /* dotted paper */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.33 0 0 0 0 0.15 0 0 0 0 0.07 0 0 0 0.34 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") 0 0 / 180px 180px repeat; /* paper texture: `background: var(--card) var(--grain)` on every paper surface */
+  --r-btn: 10px; /* buttons */
+  --r-chip: 6px; /* pills, filter chips, segmented controls */
+  --r-field: var(--r-btn); /* text inputs and the search box */
+  --field-bg: #fff;
+  --field-ring: 1.5px solid var(--line);
+  --nav-bg: var(--card); /* the bottom bar / left rail */
+  --nav-ink: var(--ink);
+  --nav-muted: var(--muted);
+  --nav-r: 24px; /* outer corner radius of the rail */
+  --tab-r: 12px; /* nav item corner radius */
+  --tab-pull: 0px; /* how far the active rail tab sticks out past the rail edge */
+  --tab-on-ring: 0 0 0 0 transparent; /* outline of the active nav item */
+  --sheet-tape: block; /* tape strip on top of sheets and dialogs */
+  --today-ring: 0 0 0 3px var(--butter); /* highlight ring on today's card */
+  --today-ribbon: none; /* ribbon bookmark on today's card: "block" turns it on */
+  --nudge-bg: var(--butter-s); /* the "due today" prep note: a sticky note */
+  --nudge-ring: 0 0 0 1px color-mix(in srgb, var(--bd) 40%, transparent), 0 10px 14px -8px color-mix(in srgb, var(--bd) 60%, transparent);
+  --nudge-tilt: -0.7deg;
 
   /* ----- spacing ----- */
   --sp-1: 4px;
@@ -62,12 +106,12 @@
   --shift: 8px; /* max translate distance for any enter/exit; never larger */
 
   /* ----- layout ----- */
-  --nav-h: 76px;
+  --nav-h: 64px;
   --nav-gap: 12px; /* space between the floating bottom nav and the screen edge */
-  --rail-w: 250px;
+  --rail-w: 216px;
   --content-max: 760px;
   --main-pad: 16px; /* side padding of the content column (the shell raises it on wide screens) */
-  --fab-size: 62px;
+  --fab-size: 54px;
   --fab-gap: 18px; /* space between the FAB and the nav bar / page edge */
   --fab-inset: 20px; /* how far the FAB sits from the content edge */
   --safe-top: env(safe-area-inset-top, 0px);
@@ -78,35 +122,41 @@
   --z-toast: 90;
 
   /* ----- color: light ----- */
-  --bg: #fff3e0;
-  --card: #ffffff;
-  --ink: #3b2218;
-  --muted: #7f6050; /* 5.2:1 on --bg, AA */
-  --line: #f1ddc4;
+  --bg: #fbf3df;
+  --card: #fffcf6;
+  --ink: #542711;
+  --muted: #7f5944; /* 5.6:1 on --bg, AA */
+  --line: #d3b99b;
+  --focus: #3b5eb2; /* focus and selection rings: 3:1 on --bg and --card */
 
-  --tomato: #ee5a3d; /* decorative: stickers, icons, big numerals */
-  --tomato-text: #c93f25; /* tomato used as text (AA on --bg and --card) */
-  --tomato-fill: #c93f25; /* action fill, white label (AA) */
-  --tomato-d: #a32f1a; /* press-down edge under --tomato-fill */
-  --on-tomato: #ffffff;
+  --accent: #eb883b; /* decorative: selected rings, ribbons, stamps, progress */
+  --accent-text: #984b16; /* accent used as text (AA on --bg and --card) */
+  --accent-fill: #542711; /* primary action fill: cocoa ink (AA with --on-accent) */
+  --accent-d: #2d1205; /* press-down edge under --accent-fill */
+  --on-accent: #fefaf0;
+  /* Errors and destructive actions. Never the accent hue (one color, one meaning). */
+  --danger-text: #a4273f;
+  --danger-fill: #af283d;
+  --danger-d: #781827;
+  --on-danger: #fefaf0;
 
-  --butter: #ffd14a;
-  --butter-s: #ffedb0;
-  --pistachio: #aedc7c;
-  --pistachio-s: #ddf2c3;
-  --blue: #5562e6;
-  --blue-s: #dce0ff;
-  --on-blue: #ffffff;
-  --gum: #ff9dc8;
-  --gum-s: #ffd9ea;
-  --peach: #ffb48b;
-  --peach-s: #ffe0cd;
+  --butter: #fddb72;
+  --butter-s: #fff0c2;
+  --pistachio: #a7e7af;
+  --pistachio-s: #d9f6dc;
+  --blue: #97d4f8;
+  --blue-s: #d7efff;
+  --on-blue: #542711;
+  --gum: #ffc1ce;
+  --gum-s: #fee8ec;
+  --peach: #fdc495;
+  --peach-s: #ffe4cf;
 
-  --shadow: 0 2px 0 rgba(59, 34, 24, 0.06), 0 10px 24px -10px rgba(120, 60, 20, 0.28);
-  --overlay: rgba(59, 34, 24, 0.5);
-  --ink-fixed: #3b2218; /* cocoa ink for text on bright tab fills, both themes */
-  --cook-bg: var(--butter);
-  --cook-ink: #3b2218;
+  --shadow: 0 0 0 1px color-mix(in srgb, var(--bd) 38%, transparent), 0 16px 24px -14px color-mix(in srgb, var(--bd) 55%, transparent);
+  --overlay: rgba(84, 39, 17, 0.45);
+  --ink-fixed: #542711; /* cocoa ink for text on bright tab fills, both themes */
+  --cook-bg: var(--butter-s);
+  --cook-ink: #542711;
   color-scheme: light;
 }
 
@@ -117,12 +167,17 @@
     --ink: #ffebd6;
     --muted: #c3a491;
     --line: #4b3226;
+    --focus: #f4c03a;
 
-    --tomato: #f26645;
-    --tomato-text: #f26645;
-    --tomato-fill: #c8432a;
-    --tomato-d: #8f2e1b;
-    --on-tomato: #ffffff;
+    --accent: #f26645;
+    --accent-text: #f26645;
+    --accent-fill: #c8432a;
+    --accent-d: #8f2e1b;
+    --on-accent: #ffffff;
+    --danger-text: #f26645;
+    --danger-fill: #c8432a;
+    --danger-d: #8f2e1b;
+    --on-danger: #ffffff;
 
     --butter: #f4c03a;
     --butter-s: #58451a;
@@ -136,7 +191,7 @@
     --peach: #ffb48b;
     --peach-s: #5a3523;
 
-    --shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 12px 26px -10px rgba(0, 0, 0, 0.6);
+    --shadow: 0 12px 26px -10px rgba(0, 0, 0, 0.6);
     --overlay: rgba(0, 0, 0, 0.6);
     --cook-bg: #1e120d;
     --cook-ink: #ffebd6;
@@ -150,12 +205,17 @@
   --ink: #ffebd6;
   --muted: #c3a491;
   --line: #4b3226;
+  --focus: #f4c03a;
 
-  --tomato: #f26645;
-  --tomato-text: #f26645;
-  --tomato-fill: #c8432a;
-  --tomato-d: #8f2e1b;
-  --on-tomato: #ffffff;
+  --accent: #f26645;
+  --accent-text: #f26645;
+  --accent-fill: #c8432a;
+  --accent-d: #8f2e1b;
+  --on-accent: #ffffff;
+  --danger-text: #f26645;
+  --danger-fill: #c8432a;
+  --danger-d: #8f2e1b;
+  --on-danger: #ffffff;
 
   --butter: #f4c03a;
   --butter-s: #58451a;
@@ -169,7 +229,7 @@
   --peach: #ffb48b;
   --peach-s: #5a3523;
 
-  --shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 12px 26px -10px rgba(0, 0, 0, 0.6);
+  --shadow: 0 12px 26px -10px rgba(0, 0, 0, 0.6);
   --overlay: rgba(0, 0, 0, 0.6);
   --cook-bg: #1e120d;
   --cook-ink: #ffebd6;

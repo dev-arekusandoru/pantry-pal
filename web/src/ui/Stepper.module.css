@@ -8,8 +8,8 @@
 }
 
 .step {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -41,7 +41,7 @@
 }
 
 .value {
-  min-width: 66px;
+  min-width: 58px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -65,7 +65,7 @@
 }
 
 .valueButton {
-  height: 44px;
+  height: 38px;
   padding: 0 6px;
   border-radius: var(--r-pill);
   text-decoration: underline dotted color-mix(in srgb, var(--ink) 35%, transparent);

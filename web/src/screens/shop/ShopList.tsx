@@ -7,6 +7,7 @@ import { aisleLabel } from "../aisles";
 import { uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
 import { DoneSheet } from "./DoneSheet";
 import { formatAmount } from "./format";
+import { useSwipeRow } from "@/ui/useSwipeRow";
 import styles from "./Shop.module.css";
 import { useAddItem, useCheckItem, useDeleteList, useGenerateList, usePromoteItem, useShoppingList } from "./queries";
 
@@ -204,7 +205,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
               const left = g.items.filter((i) => i.checkedAt === null).length;
               const label = aisleLabel(g.category);
               return (
-                <Collapsible.Root key={g.category} className={styles.aisle} defaultOpen>
+                <Collapsible.Root key={g.category} className={styles.aisle} data-ui="shop-aisle" defaultOpen>
                   <h2 className={styles.aisleName}>
                     <Collapsible.Trigger className={styles.aisleTrigger}>
                       <span>{label}</span>
@@ -215,7 +216,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
                     </Collapsible.Trigger>
                   </h2>
                   <Collapsible.Content className={styles.aisleContent}>
-                    <ul className={styles.items}>
+                    <ul className={styles.items} data-ui="shop-list">
                       {uncheckedFirst(g.items).map((item) => (
                         <ItemRow
                           key={item.id}
@@ -344,8 +345,18 @@ function ItemRow({ item, onToggle, onEditIcon }: { item: ShoppingItem; onToggle:
       <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
     </span>
   );
+  const swipe = useSwipeRow({ onCommit: () => onToggle(!got) });
   return (
-    <li className={cx(styles.item, got && styles.got)}>
+    <li
+      className={cx(styles.item, styles.swipeRow, got && styles.got)}
+      data-ui="shop-item"
+      {...swipe.rowProps}
+      style={swipe.style}
+    >
+      <span className={styles.swipeHint} aria-hidden="true" style={{ opacity: swipe.progress }}>
+        <Icon name="check" />
+        {got ? "Put back" : "Got it"}
+      </span>
       {onEditIcon ? (
         <button
           type="button"

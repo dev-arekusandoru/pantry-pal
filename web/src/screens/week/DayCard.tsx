@@ -46,16 +46,20 @@ interface DayCardProps {
 export function DayCard({ day, plan, today, recipes, onSwap }: DayCardProps) {
   const isToday = day.date === today;
   return (
-    <li className={cx(styles.day, isToday && styles.isToday)} aria-current={isToday ? "date" : undefined}>
-      <div className={styles.dayName}>
+    <li
+      className={cx(styles.day, isToday && styles.isToday)}
+      data-ui="day"
+      aria-current={isToday ? "date" : undefined}
+    >
+      <div className={styles.dayName} data-ui="day-name">
         <h3 className={styles.dayShort}>{weekdayName(day.date)}</h3>
         <span className={styles.dayDate}>{monthDay(day.date)}</span>
         {isToday && <span className={styles.todayFlag}>Today</span>}
       </div>
-      <ul className={styles.slots}>
+      <ul className={styles.slots} data-ui="day-slots">
         {mealGroups(day).flatMap(({ mealType, slots }) =>
           slots.length === 0 ? (
-            <li key={mealType} className={styles.slot}>
+            <li key={mealType} className={styles.slot} data-ui="slot">
               <button
                 type="button"
                 className={cx(styles.slotMain, styles.planBtn)}
@@ -166,6 +170,7 @@ function SlotRow({ slot, plan, recipes, onSwap, isSide, canRemove, canAdd }: Slo
         slot.isLeftover && styles.leftover,
         state !== "planned" && styles[state],
       )}
+      data-ui="slot"
     >
       {cook ? (
         <Link

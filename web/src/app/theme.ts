@@ -14,9 +14,9 @@ function isPreference(v: unknown): v is ThemePreference {
 export function readStoredTheme(): ThemePreference {
   try {
     const v = localStorage.getItem(THEME_STORAGE_KEY);
-    return isPreference(v) ? v : "system";
+    return isPreference(v) ? v : "light"; // dark is not redesigned yet, so "system" is opt-in
   } catch {
-    return "system";
+    return "light";
   }
 }
 
@@ -71,7 +71,7 @@ export interface UseTheme {
 }
 
 export function useTheme(): UseTheme {
-  const theme = useSyncExternalStore(subscribe, () => current, () => "system" as const);
+  const theme = useSyncExternalStore(subscribe, () => current, () => "light" as const);
   const systemDark = useSyncExternalStore(subscribeSystem, systemPrefersDark, () => false);
   const resolved = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   return { theme, resolved, setTheme };

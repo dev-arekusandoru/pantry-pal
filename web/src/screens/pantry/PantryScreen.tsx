@@ -109,12 +109,12 @@ export function PantryScreen() {
               </EmptyState>
             ) : (
               groups.map((g) => (
-                <Card key={g.category} as="section" radius="xl" className={styles.shelf} aria-label={aisleLabel(g.category)}>
+                <Card key={g.category} as="section" radius="xl" className={styles.shelf} data-ui="shelf" aria-label={aisleLabel(g.category)}>
                   <h2 className={styles.shelfName}>
                     {aisleLabel(g.category)}
                     <small>{g.items.length}</small>
                   </h2>
-                  <ul>
+                  <ul data-ui="shelf-list">
                     {g.items.map((item) => (
                       <StockRow
                         key={item.id}

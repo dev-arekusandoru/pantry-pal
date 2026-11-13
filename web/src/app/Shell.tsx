@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link, Outlet, useMatches } from "@tanstack/react-router";
-import { Emoji, Icon, cx, emojiSrc } from "../ui";
+import { Icon, Pal, cx, emojiSrc } from "../ui";
 import styles from "./Shell.module.css";
 import { TABS, type TabId } from "./tabs";
 
@@ -28,7 +28,7 @@ export function Shell() {
       <nav className={styles.nav} aria-label="Main">
         <div className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">
-            <Emoji code="relish" size={34} />
+            <Pal size={44} />
           </span>
           <span className={styles.brandName}>PantryPal</span>
         </div>

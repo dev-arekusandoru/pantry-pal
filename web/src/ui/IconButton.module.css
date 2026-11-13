@@ -2,8 +2,8 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--card);
   color: var(--ink);
@@ -16,8 +16,8 @@
 }
 
 .btn svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 .btn:active:not(:disabled) {
@@ -40,5 +40,20 @@
   .plain:not(:disabled):hover:not(:active) {
     background: color-mix(in srgb, var(--ink) 7%, transparent);
     transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn svg {
+    transition: transform var(--dur-fast) var(--pop);
+  }
+  .btn:not(:disabled):active svg {
+    transform: scale(0.88);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .btn:not(:disabled):hover:not(:active) svg {
+    transform: rotate(-8deg) scale(1.12);
   }
 }

@@ -1,5 +1,5 @@
 .card {
-  background: var(--card);
+  background: var(--card) var(--grain);
   box-shadow: var(--shadow);
 }
 .md {
@@ -12,5 +12,5 @@
   border-radius: var(--r-xl);
 }
 .padded {
-  padding: 14px 16px;
+  padding: 11px 14px;
 }

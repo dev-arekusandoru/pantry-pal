@@ -4,7 +4,7 @@ import { cx } from "./cx";
 
 /**
  * `primary` is the one affirmative action of a view. `danger` (solid) confirms a
- * destructive action; `dangerGhost` (tomato outline) triggers one.
+ * destructive action; `dangerGhost` (danger outline) triggers one.
  */
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "dangerGhost";
 export type ButtonSize = "md" | "lg";

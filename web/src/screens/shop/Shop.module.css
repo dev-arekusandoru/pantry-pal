@@ -21,15 +21,15 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: -6px 0 14px;
+  margin: -6px 0 10px;
 }
 
 /* ---------- header count + meter ---------- */
 .count {
-  background: var(--card);
+  background: var(--card) var(--grain);
   color: var(--ink);
   border-radius: var(--r-md);
-  padding: 10px 16px;
+  padding: 8px 13px;
   text-align: center;
   line-height: 1;
   box-shadow: var(--shadow);
@@ -45,7 +45,7 @@
 .countN {
   font-size: 44px;
   font-weight: var(--fw-heavy);
-  color: var(--tomato-text);
+  color: var(--accent-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -61,7 +61,7 @@
   height: 18px;
   background: var(--card);
   border-radius: var(--r-pill);
-  margin: -4px 0 18px;
+  margin: -4px 0 12px;
   padding: 3px;
   box-shadow: inset 0 0 0 2px var(--line);
 }
@@ -84,8 +84,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 10px;
+  margin-bottom: 12px;
   background: var(--butter-s);
 }
 
@@ -97,24 +97,23 @@
 /* ---------- add form (sheet) ---------- */
 .addForm {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .addField {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   font-weight: var(--fw-bold);
 }
 
 .addInput,
 .qtyInput {
   min-width: 0;
-  height: 54px;
-  border: 0;
-  border-radius: var(--r-pill);
-  background: var(--card);
-  box-shadow: inset 0 0 0 2.5px var(--line);
-  padding: 0 22px;
+  height: 42px;
+  border: var(--field-ring);
+  border-radius: var(--r-field);
+  background: var(--field-bg);
+  padding: 0 16px;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -123,10 +122,10 @@
   width: 100%;
 }
 
-.addInput:focus,
-.qtyInput:focus {
-  outline: none;
-  box-shadow: inset 0 0 0 3px var(--blue);
+.addInput:focus-visible,
+.qtyInput:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
 }
 
 .addInput::placeholder,
@@ -137,7 +136,7 @@
 
 /* ---------- aisles ---------- */
 .aisle {
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 }
 
 .aisleName {
@@ -146,7 +145,7 @@
   align-items: center;
   gap: 8px;
   font-size: var(--fs-h3);
-  margin: 0 6px 10px;
+  margin: 0 6px 8px;
 }
 
 .aisleTrigger {
@@ -166,11 +165,11 @@
 }
 
 .aisleName small {
-  font-size: var(--fs-sm);
+  font-size: 12.5px;
   font-weight: var(--fw-bold);
   background: var(--pistachio-s);
-  padding: 3px 12px;
-  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  border-radius: var(--r-chip);
   font-variation-settings: var(--wdth-body);
   letter-spacing: 0;
 }
@@ -193,7 +192,10 @@
    hands it over as --radix-collapsible-content-height, and Presence waits for
    these animations before unmounting the panel. */
 .aisleContent {
+  /* Padding + negative margin keep item shadows inside the clip without moving layout. */
   overflow: hidden;
+  padding: 8px;
+  margin: -8px;
 }
 
 .aisleContent[data-state="open"] {
@@ -224,15 +226,15 @@
 
 .items {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .item {
   display: flex;
   align-items: center;
-  padding-left: 10px;
+  padding-left: 8px;
   border-radius: var(--r-md);
-  background: var(--card);
+  background: var(--card) var(--grain);
   box-shadow: var(--shadow);
   transition:
     background-color var(--dur) var(--ease),
@@ -245,9 +247,9 @@
   align-items: center;
   flex: 1;
   min-width: 0;
-  min-height: 68px;
-  padding: 12px 16px 12px 4px;
-  gap: 12px;
+  min-height: 52px;
+  padding: 8px 12px 8px 4px;
+  gap: 10px;
   border-radius: inherit;
   font-size: var(--fs-md);
   font-weight: var(--fw-bold);
@@ -267,8 +269,8 @@
 }
 
 .itemBox {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   flex: none;
   border-radius: var(--r-xs);
   border: 3px solid var(--line);
@@ -285,8 +287,8 @@
 }
 
 .itemBox svg {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   fill: var(--ink-fixed);
   stroke: var(--ink-fixed);
   stroke-width: 3.2;
@@ -307,7 +309,7 @@
 
 .itemEmoji {
   font-size: 26px;
-  width: 34px;
+  width: 30px;
   text-align: center;
   flex: none;
   transition: transform 0.3s var(--pop), opacity 0.3s;
@@ -317,8 +319,8 @@
 .itemIcon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   flex: none;
   padding: 0;
   border: 0;
@@ -368,6 +370,7 @@
 }
 
 .itemWhy {
+  font-family: var(--font-note);
   font-size: var(--fs-sm);
   color: var(--muted);
   font-weight: var(--fw-semibold);
@@ -383,8 +386,9 @@
   flex: none;
   font-weight: var(--fw-heavy);
   background: var(--bg);
-  border-radius: var(--r-pill);
-  padding: 4px 12px;
+  border-radius: var(--r-chip);
+  padding: 2px 9px;
+  font-size: 12.5px;
   white-space: nowrap;
   transition: background-color var(--dur) var(--ease);
 }
@@ -411,27 +415,27 @@
 
 .finish {
   text-align: center;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .finish p {
   color: var(--muted);
   font-size: var(--fs-sm);
-  margin-top: 12px;
+  margin-top: 8px;
   font-weight: var(--fw-semibold);
 }
 
 /* ---------- running low ---------- */
 .runningLow {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .lowRow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 60px;
-  padding: 10px 14px;
+  gap: 8px;
+  min-height: 50px;
+  padding: 7px 12px;
   border-radius: var(--r-md);
   background: var(--butter-s);
   box-shadow: var(--shadow);
@@ -444,11 +448,12 @@
 /* ---------- list picker ---------- */
 .pickGroups {
   display: grid;
-  gap: 18px;
+  gap: 12px;
 }
 
 .pickHead {
-  margin: 0 6px 8px;
+  font-family: var(--font-note);
+  margin: 0 6px 6px;
   font-size: var(--fs-sm);
   color: var(--muted);
   text-transform: uppercase;
@@ -457,7 +462,7 @@
 
 .pickList {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   list-style: none;
 }
 
@@ -484,10 +489,10 @@
   border: 0;
   align-items: center;
   gap: 10px;
-  min-height: 64px;
-  padding: 10px 16px;
+  min-height: 50px;
+  padding: 7px 12px;
   border-radius: var(--r-md);
-  background: var(--card);
+  background: var(--card) var(--grain);
   box-shadow: 0 0 0 2px var(--line);
   transition: box-shadow var(--dur) var(--ease);
 }
@@ -515,6 +520,7 @@
 }
 
 .pickSub {
+  font-family: var(--font-note);
   font-size: var(--fs-sm);
   color: var(--muted);
   font-weight: var(--fw-semibold);
@@ -522,14 +528,15 @@
 
 /* ---------- done sheet ---------- */
 .sheetNote {
+  font-family: var(--font-note);
   color: var(--muted);
   font-weight: var(--fw-semibold);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .sheetFoot {
-  margin-top: 16px;
-  padding: 12px 14px;
+  margin-top: 12px;
+  padding: 9px 12px;
   border-radius: var(--r-sm);
   background: var(--butter-s);
   font-weight: var(--fw-semibold);
@@ -543,8 +550,8 @@
 .reviewRow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 64px;
+  gap: 10px;
+  min-height: 50px;
   border-top: 2px dashed var(--line);
 }
 
@@ -570,13 +577,13 @@
 .qtyEdit {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: none;
 }
 
 .qtyInput {
   width: 84px;
-  height: 48px;
+  height: 42px;
   padding: 0 12px;
   text-align: center;
   font-weight: var(--fw-heavy);
@@ -584,7 +591,8 @@
 }
 
 .qtyInput[aria-invalid="true"] {
-  box-shadow: inset 0 0 0 3px var(--tomato);
+  border-style: dashed;
+  border-color: var(--danger-text);
 }
 
 .qtyUnit {
@@ -592,4 +600,39 @@
   color: var(--muted);
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
+}
+
+/* Swipe-to-check: the row slides right over a hint that rides along just left of it. */
+.swipeRow {
+  position: relative;
+  transition:
+    transform 0.4s var(--pop),
+    background-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.swipeHint {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-right: 14px;
+  border-radius: var(--r-md);
+  background: var(--tab-s);
+  color: var(--on-tab);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  pointer-events: none;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipeRow {
+    transition: none;
+  }
 }

@@ -8,6 +8,7 @@ import { PrepNudge } from "./PrepNudge";
 import { usePlan, usePrepTasks, useRecipeIndex, useStartEmptyWeek } from "./queries";
 import { SwapSheet, type SwapTarget } from "./SwapSheet";
 import { TonightCard } from "./TonightCard";
+import { WeekPal } from "./WeekPal";
 import styles from "./Week.module.css";
 
 /** The browser's local date, refreshed when the tab comes back (the page may stay open overnight). */
@@ -175,7 +176,10 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
         aria-busy={plan.isPlaceholderData || undefined}
       >
         {isCurrentWeek && (
-          <TonightCard plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
+          <>
+            <WeekPal plan={planView} today={today} />
+            <TonightCard plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
+          </>
         )}
         {isCurrentWeek && prep.data && <PrepNudge tasks={prep.data} today={today} fadeIn={painted.current} />}
         <ul className={styles.days}>

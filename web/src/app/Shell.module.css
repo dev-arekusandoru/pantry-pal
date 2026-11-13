@@ -14,11 +14,11 @@
   right: 12px;
   bottom: calc(var(--nav-gap) + var(--safe-bottom));
   height: var(--nav-h);
-  background: var(--card);
+  background: var(--nav-bg) var(--grain);
   border-radius: 34px;
   box-shadow: var(--shadow), 0 0 0 2px var(--line);
   display: flex;
-  padding: 8px;
+  padding: 6px;
 }
 
 .brand {
@@ -29,6 +29,7 @@
   display: flex;
   flex: 1;
   gap: 4px;
+  overflow: visible;
 }
 
 .tab {
@@ -39,10 +40,10 @@
   align-items: center;
   justify-content: center;
   gap: 1px;
-  border-radius: 26px;
+  border-radius: var(--tab-r);
   font-size: 12px;
   font-weight: var(--fw-bold);
-  color: var(--muted);
+  color: var(--nav-muted);
   text-decoration: none;
   transition:
     background var(--dur-fast) var(--ease),
@@ -60,10 +61,26 @@
 .on {
   background: var(--tab);
   color: var(--on-tab);
+  box-shadow:
+    var(--tab-on-ring),
+    0 0 var(--tab-glow-r, 0px) -4px color-mix(in srgb, var(--tab) 75%, transparent);
   transform: translateY(-1px);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .on .tabIcon {
+    animation: tabBoing 0.5s var(--pop);
+  }
+}
+
+@keyframes tabBoing {
+  40% {
+    transform: scale(1.25) rotate(-8deg);
+  }
+}
+
 .main {
+  view-transition-name: app-screen;
   padding: 16px var(--main-pad) 24px;
   max-width: var(--content-max);
   margin: 0 auto;
@@ -80,21 +97,21 @@
   .shell,
   .hideNavOnMobile {
     padding-bottom: 0;
-    padding-left: var(--rail-w);
+    padding-left: calc(var(--rail-w) + 24px);
   }
 
   .nav,
   .hideNavOnMobile .nav {
     display: flex;
-    top: 0;
-    left: 0;
+    top: 12px;
+    left: 12px;
     right: auto;
-    bottom: 0;
+    bottom: 12px;
     width: var(--rail-w);
     height: auto;
     flex-direction: column;
-    padding: 28px 18px 24px;
-    border-radius: 0 40px 40px 0;
+    padding: 20px 12px 16px;
+    border-radius: var(--r-xl);
     box-shadow: var(--shadow);
   }
 
@@ -102,12 +119,11 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 0 8px 28px;
+    margin: 0 8px 18px;
   }
 
   .brandMark {
     font-size: 34px;
-    transform: rotate(-10deg);
   }
 
   .brandName {
@@ -115,28 +131,33 @@
     font-weight: var(--fw-heavy);
     font-variation-settings: "wdth" 82;
     letter-spacing: -0.02em;
+    color: var(--nav-ink);
   }
 
   .tabs {
     flex-direction: column;
     flex: none;
-    gap: 6px;
+    gap: 4px;
   }
 
   .tab {
     flex: none;
     flex-direction: row;
     justify-content: flex-start;
-    gap: 14px;
-    height: 56px;
-    padding: 0 18px;
-    font-size: 17px;
-    border-radius: 22px;
+    gap: 12px;
+    height: 44px;
+    padding: 0 14px;
+    font-size: 15px;
+    border-radius: var(--tab-r);
+  }
+
+  .on {
+    margin-right: calc(var(--tab-pull) * -1);
   }
 
   .tabIcon {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 
   .main {
@@ -153,5 +174,14 @@
     --content-max: 1120px;
     max-width: var(--content-max);
     padding: 36px var(--main-pad) 80px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .tabIcon {
+    transition: transform var(--dur-fast) var(--pop);
+  }
+  .tab:not(.on):hover .tabIcon {
+    transform: rotate(-8deg) scale(1.12);
   }
 }

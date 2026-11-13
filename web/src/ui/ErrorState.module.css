@@ -1,6 +1,6 @@
 .root {
   text-align: center;
-  padding: 48px 20px;
+  padding: 36px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,7 +19,7 @@
   height: 84px;
   border-radius: 50%;
   background: var(--peach-s);
-  color: var(--tomato-text);
+  color: var(--danger-text);
   box-shadow: 0 0 0 4px var(--card), 0 0 0 6px var(--line);
   transform: rotate(-5deg);
   margin-bottom: 8px;

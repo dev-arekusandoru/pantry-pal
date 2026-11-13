@@ -1,16 +1,16 @@
 .page {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   padding-bottom: 24px;
 }
 
 .card {
-  background: var(--card);
+  background: var(--card) var(--grain);
   border-radius: 28px;
-  padding: 20px 18px;
+  padding: 15px 14px;
   box-shadow: var(--shadow);
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .heading {
@@ -44,19 +44,20 @@
   font-weight: var(--fw-bold);
   font-size: var(--fs-sm);
   color: var(--muted);
+  font-family: var(--font-note);
 }
 
 .input,
 .textarea {
   width: 100%;
-  min-height: 48px;
-  padding: 10px 16px;
-  border-radius: var(--r-md);
-  background: var(--bg);
+  min-height: 42px;
+  padding: 8px 14px;
+  border: var(--field-ring);
+  border-radius: var(--r-field);
+  background: var(--field-bg);
   color: var(--ink);
   font-weight: var(--fw-semibold);
   font-size: var(--fs-md);
-  box-shadow: inset 0 0 0 2px var(--line);
 }
 
 .textarea {
@@ -114,7 +115,7 @@
 .check input {
   width: 20px;
   height: 20px;
-  accent-color: var(--tomato-fill);
+  accent-color: var(--accent-fill);
 }
 
 .chips {
@@ -127,8 +128,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 6px 4px 12px;
-  border-radius: var(--r-pill);
+  padding: 2px 5px 2px 10px;
+  border-radius: var(--r-chip);
   background: var(--butter-s);
   font-weight: var(--fw-bold);
 }
@@ -151,13 +152,13 @@
 
 .rows {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .row {
   display: grid;
   gap: 10px;
-  padding: 14px;
+  padding: 11px;
   border-radius: 20px;
   background: var(--bg);
   box-shadow: inset 0 0 0 2px var(--line);
@@ -200,7 +201,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 4px 8px;
   border-radius: var(--r-pill);
   background: var(--butter-s);
 }
@@ -215,14 +216,14 @@
   width: 96px;
   height: 36px;
   padding: 0 12px;
-  border-radius: var(--r-pill);
-  background: var(--card);
-  box-shadow: inset 0 0 0 2px var(--line);
+  border: var(--field-ring);
+  border-radius: var(--r-field);
+  background: var(--field-bg);
 }
 
 .warning {
   border-radius: 22px;
-  padding: 14px 16px;
+  padding: 11px 14px;
   background: var(--peach-s);
   box-shadow: inset 0 0 0 2px var(--line);
   font-size: var(--fs-sm);
@@ -242,7 +243,7 @@
 }
 
 .error {
-  color: var(--tomato-text);
+  color: var(--danger-text);
   font-weight: var(--fw-bold);
 }
 
@@ -251,5 +252,5 @@
   gap: 10px;
   justify-content: flex-end;
   flex-wrap: wrap;
-  padding: 8px 0 0;
+  padding: 4px 0 0;
 }

@@ -11,14 +11,14 @@
   height: var(--fab-size);
   min-width: var(--fab-size);
   padding: 0;
-  border-radius: var(--r-pill);
-  background: var(--tomato-fill);
-  color: var(--on-tomato);
+  border-radius: var(--r-btn);
+  background: var(--accent-fill);
+  color: var(--on-accent);
   font-size: var(--fs-md);
   font-weight: var(--fw-bold);
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 5px 0 var(--tomato-d), var(--shadow);
+  box-shadow: 0 calc(var(--press) + 1px) 0 var(--accent-d), var(--btn-p-soft), var(--btn-p-inset), var(--shadow);
   transition:
     transform var(--dur-fast) var(--ease),
     box-shadow var(--dur-fast) var(--ease),
@@ -32,15 +32,15 @@
 }
 
 .fab:active:not(:disabled) {
-  transform: translateY(3px) scale(0.97);
-  box-shadow: 0 2px 0 var(--tomato-d), var(--shadow);
+  transform: translateY(var(--press-y)) scale(var(--press-scale));
+  box-shadow: 0 max(0px, calc(var(--press) - 2px)) 0 var(--accent-d), var(--btn-p-soft), var(--btn-p-inset), var(--shadow);
 }
 
 @media (hover: hover) {
   .fab:not(:disabled):hover:not(:active) {
-    transform: translateY(-2px);
-    background: color-mix(in srgb, var(--tomato-fill) 91%, var(--ink));
-    box-shadow: 0 7px 0 var(--tomato-d), var(--shadow);
+    transform: translateY(var(--hover-y));
+    background: color-mix(in srgb, var(--accent-fill) 91%, var(--ink));
+    box-shadow: 0 calc(var(--press) + 3px) 0 var(--accent-d), var(--btn-p-soft), var(--btn-p-inset), var(--shadow);
   }
 }
 
@@ -60,7 +60,7 @@
 /* Wide screens: the nav is a left rail, so sit against the content column's edge. */
 @media (min-width: 768px) {
   .fab {
-    right: max(var(--main-pad), calc((100vw - var(--rail-w) - var(--content-max)) / 2 + var(--main-pad)));
+    right: max(var(--main-pad), calc((100vw - var(--rail-w) - 24px - var(--content-max)) / 2 + var(--main-pad)));
     bottom: calc(var(--fab-inset) + var(--safe-bottom));
   }
 }

@@ -7,7 +7,7 @@ import { STATUS_LABEL, expiryState, type PantryItem, type PantryStatus } from ".
 const STATUS_TONE: Record<PantryStatus, PillTone> = {
   on_hand: "pistachio",
   low: "butter",
-  out: "tomato",
+  out: "danger",
   unknown: "neutral",
 };
 
@@ -35,12 +35,12 @@ export function StockRow({ item, onStep, onEditQty, onSetStatus, onAddToList, on
       emoji={ingredientEmoji(name, imageUrl)}
       fallback={ingredientEmoji(name)}
       tone="plain"
-      size={46}
+      size={40}
       className={missingIcon ? styles.noIcon : undefined}
     />
   );
   return (
-    <li className={styles.row}>
+    <li className={styles.row} data-ui="stock-row">
       {missingIcon ? (
         <button type="button" className={styles.iconBtn} aria-label={`${name} has no icon. Choose one`} onClick={() => onEditIcon(item)}>
           {sticker}
@@ -56,7 +56,7 @@ export function StockRow({ item, onStep, onEditQty, onSetStatus, onAddToList, on
             <span className={styles.expiryText}>
               Best before {new Date(`${item.expiresOn}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </span>
-            {expiry !== null && <Pill tone={expiry === "expired" ? "tomato" : "butter"}>{expiry === "expired" ? "Expired" : "Expiring soon"}</Pill>}
+            {expiry !== null && <Pill tone={expiry === "expired" ? "danger" : "butter"}>{expiry === "expired" ? "Expired" : "Expiring soon"}</Pill>}
           </span>
         )}
       </button>
