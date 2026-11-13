@@ -147,7 +147,7 @@ row with an unknown amount stays unknown.
 
 **Undo** is on the done screen and in the toast. It restores the stock the cook
 took out. A planned cook returns to **planned**; an ad-hoc cook is deleted. You
-can also undo a finished meal from the week board.
+can also undo a finished meal from the Week page.
 
 ## Through the API or MCP
 

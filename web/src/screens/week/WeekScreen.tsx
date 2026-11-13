@@ -1,16 +1,12 @@
 import { VisuallyHidden } from "radix-ui";
-import { useEffect, useRef, useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton, cx } from "@/ui";
+import { useEffect, useState } from "react";
+import { Button, EmptyState, ErrorState, Icon, IconButton, PageHeader, Skeleton } from "@/ui";
 import { useCookHistory } from "@/game/history";
 import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
-import { DayCard } from "./DayCard";
 import { addDays, localToday, monthDay, selectedWeekStart, weekRange, weekStartFor } from "./dates";
-import { PrepNudge } from "./PrepNudge";
 import { usePlan, usePrepTasks, useRecipeIndex, useStartEmptyWeek } from "./queries";
 import { SwapSheet, type SwapTarget } from "./SwapSheet";
-import { TonightCard } from "./TonightCard";
-import { MissionsCard } from "./MissionsCard";
-import { WeekPal } from "./WeekPal";
+import { WeekBody } from "./WeekBody";
 import styles from "./Week.module.css";
 
 /** The browser's local date, refreshed when the tab comes back (the page may stay open overnight). */
@@ -52,18 +48,6 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   const [target, setTarget] = useState<SwapTarget | null>(null);
   // A swap target belongs to one plan's slots; drop it when the visible week changes.
   useEffect(() => setTarget(null), [selectedWeek]);
-  // One-way latch: did this screen ever show its loading skeleton? Content that
-  // replaces a skeleton fades in; a first paint that already has data is left to
-  // the route transition, which would otherwise fade the same frame twice.
-  const sawLoading = useRef(false);
-  if (plan.isPending) sawLoading.current = true;
-  // True once this screen has painted. The prep nudge arrives on its own query:
-  // when it lands after the first paint it fades in, when it is already there
-  // with the first paint the route transition owns that frame.
-  const painted = useRef(false);
-  useEffect(() => {
-    painted.current = true;
-  }, []);
 
   const browseWeek = (days: number) => {
     const next = addDays(selectedWeek, days);
@@ -173,24 +157,17 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   return (
     <>
       {header}
-      <div
-        className={cx(styles.planBlock, sawLoading.current && styles.enter)}
-        data-updating={plan.isPlaceholderData || undefined}
-        aria-busy={plan.isPlaceholderData || undefined}
-      >
-        {isCurrentWeek && (
-          <>
-            <WeekPal plan={planView} today={today} />
-            {cookHistory.data && <MissionsCard plan={planView} history={cookHistory.data} today={today} />}
-            <TonightCard plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
-          </>
-        )}
-        {isCurrentWeek && prep.data && <PrepNudge tasks={prep.data} today={today} fadeIn={painted.current} />}
-        <ul className={styles.days}>
-          {planView.days.map((day) => (
-            <DayCard key={day.date} day={day} plan={planView} today={today} recipes={recipes.data} onSwap={setTarget} />
-          ))}
-        </ul>
+      <div className={styles.planBlock} data-updating={plan.isPlaceholderData || undefined} aria-busy={plan.isPlaceholderData || undefined}>
+        <WeekBody
+          plan={planView}
+          today={today}
+          now={new Date()}
+          isCurrentWeek={isCurrentWeek}
+          recipes={recipes.data}
+          prep={prep.data}
+          history={cookHistory.data}
+          onSwap={setTarget}
+        />
       </div>
       <SwapSheet target={target} plan={planView} onClose={() => setTarget(null)} />
     </>

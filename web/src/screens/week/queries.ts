@@ -3,6 +3,7 @@ import { ApiError, client, qk, unwrap } from "@/api";
 import { householdQueryOptions, weekStartsOnOf } from "@/screens/settings/queries";
 import { localToday, weekStartFor } from "./dates";
 import { nudgeWindow, type AvailabilityLine, type MealType, type PlanView } from "./model";
+import { shortLines } from "./today";
 
 /** Cache key for one week's plan (the API looks plans up by id or weekStart). */
 const planKey = (weekStart: string) => [...qk.plans, weekStart] as const;
@@ -166,5 +167,15 @@ export function useRecipeIngredients(slug: string, enabled: boolean) {
     enabled,
     staleTime: 5 * 60_000,
     select: (recipe) => recipe.ingredients,
+  });
+}
+
+/** Ingredients this plan needs that the pantry will not cover (drives the "go shopping" hint). */
+export function useShortfall(mealPlanId: string | undefined) {
+  return useQuery({
+    queryKey: [...qk.pantry, "availability", "plan", mealPlanId],
+    queryFn: () => unwrap(client.GET("/pantry/availability", { params: { query: { mealPlanId } } })),
+    enabled: mealPlanId !== undefined,
+    select: (data) => shortLines(data.items),
   });
 }

@@ -120,32 +120,12 @@ export function dishTitles(slots: readonly Slot[]): string {
   return titles.length <= 1 ? (titles[0] ?? "") : `${titles.slice(0, -1).join(", ")} and ${titles.at(-1)}`;
 }
 
-/** Every dish of today's dinner: a planned meal first (the featured one), then the rest. */
-export function tonightDinner(plan: PlanView, today: string): Slot[] {
-  const dinners = plan.days.find((d) => d.date === today)?.meals.dinner ?? [];
-  const main = dinners.find((s) => s.kind === "meal") ?? dinners[0];
-  return main ? [main, ...dinners.filter((s) => s !== main)] : [];
-}
-
 const NUDGE_WINDOW_PAST_DAYS = 3;
 const NUDGE_WINDOW_AHEAD_DAYS = 7;
 
 /** Query window for prep tasks worth nudging about. */
 export function nudgeWindow(today: string): { from: string; to: string } {
   return { from: addDays(today, -NUDGE_WINDOW_PAST_DAYS), to: addDays(today, NUDGE_WINDOW_AHEAD_DAYS) };
-}
-
-/**
- * The prep task to nudge about: due today or later first (soonest), then the
- * most recently overdue. Done tasks are ignored. `rest` counts the others.
- */
-export function pickNextPrep(tasks: readonly PrepTask[], today: string): { next: PrepTask; rest: number } | null {
-  const open = tasks.filter((t) => !t.done);
-  const byOrder = (a: PrepTask, b: PrepTask) => a.position - b.position;
-  const upcoming = open.filter((t) => t.dueDate >= today).sort((a, b) => a.dueDate.localeCompare(b.dueDate) || byOrder(a, b));
-  const overdue = open.filter((t) => t.dueDate < today).sort((a, b) => b.dueDate.localeCompare(a.dueDate) || byOrder(a, b));
-  const next = upcoming[0] ?? overdue[0];
-  return next ? { next, rest: open.length - 1 } : null;
 }
 
 /** "Due today", "Due tomorrow", "Due Thursday", "Overdue since Sunday". */
@@ -171,4 +151,9 @@ export function pantryCoverage(
     return line.available === null || line.available > 0;
   }).length;
   return { have, total: required.length };
+}
+
+/** Recipe link target: id when the recipe is missing from the index (the API accepts either). */
+export function recipeSlug(recipes: ReadonlyMap<string, RecipeSummary> | undefined, recipeId: string): string {
+  return recipes?.get(recipeId)?.slug ?? recipeId;
 }

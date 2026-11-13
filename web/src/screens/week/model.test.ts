@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { localToday, parseWeekParam, selectedWeekStart, weekStartFor } from "./dates";
-import { pantryCoverage, pickNextPrep, prepDueLabel, swapPlanFor, type AvailabilityLine, type PlanView, type PrepTask, type Slot } from "./model";
+import { pantryCoverage, prepDueLabel, swapPlanFor, type AvailabilityLine, type PlanView, type PrepTask, type Slot } from "./model";
 
 function task(id: string, dueDate: string, position = 0, done = false): PrepTask {
   return { id, dueDate, position, done, description: id } as PrepTask;
@@ -38,23 +38,8 @@ describe("dates", () => {
   });
 });
 
-describe("pickNextPrep", () => {
+describe("prepDueLabel", () => {
   const today = "2026-11-03";
-
-  it("prefers today/upcoming over overdue, soonest first", () => {
-    const picked = pickNextPrep([task("old", "2026-11-01"), task("later", "2026-11-05"), task("now", "2026-11-03", 1)], today);
-    expect(picked?.next.id).toBe("now");
-    expect(picked?.rest).toBe(2);
-  });
-
-  it("falls back to the most recently overdue task and skips done ones", () => {
-    const picked = pickNextPrep([task("a", "2026-10-31"), task("b", "2026-11-02"), task("c", "2026-11-03", 0, true)], today);
-    expect(picked?.next.id).toBe("b");
-  });
-
-  it("returns null when nothing is open", () => {
-    expect(pickNextPrep([task("c", "2026-11-03", 0, true)], today)).toBeNull();
-  });
 
   it("labels due dates", () => {
     expect(prepDueLabel(task("a", "2026-11-03"), today)).toBe("Due today");

@@ -1,9 +1,10 @@
 # Meal plans
 
-The Week tab shows the current week of meals. An AI assistant usually creates
-the plan. The app shows it, starts cooks, and lets you change one meal at a time.
+The Week tab shows today's meals and the rest of the current week. An AI
+assistant usually creates the plan. The app shows it, starts cooks, and lets you
+change one meal at a time.
 
-![Week board with meals, leftovers, and swap and add controls](../images/week.png)
+![Week page with today's meal, shopping, tomorrow, missions, and the week timeline](../images/week.png)
 
 ## Read the week
 
@@ -11,6 +12,40 @@ The header says **This week** or **Week of Nov 2**, with the date range below.
 The arrows beside the title move back and forward one week. **This week** returns
 to the current week. The selected week is in the page URL, so Back and deep
 links work.
+
+### Today
+
+On the current week, the top of the page is about today:
+
+- **Meal chips.** **Breakfast**, **Lunch**, and **Dinner** choose which meal the
+  hero shows. The app preselects the meal for the time of day: breakfast until
+  10:30, lunch until 15:00, and dinner after that. The chip for that meal says
+  **now**. You cannot change these times in the app.
+- **The hero.** It shows the chosen meal with a photo, time, servings, and a
+  note such as **Also feeds Tue dinner**. Tap the title to open the recipe.
+  **Start cooking** shows while the cook is planned. **Swap** opens the recipe
+  sheet. A finished meal shows **Cooked** and **Undo**. A meal with more than one
+  dish lists the other dishes under the hero, each with its own swap and remove
+  buttons. An empty meal offers **Plan something**.
+- **To make today.** It lists the cooks for today and the open prep tasks due
+  today, with a **Cook** or **Cooked** mark. Tap a prep task to mark it done.
+  Prep tasks that are overdue appear here too. When nothing is due, the list
+  says so. Meals that are leftovers show under **Leftovers today**.
+- **Shopping.** When the pantry is short for the week, a line such as **Pick up 4
+  things before tomorrow** names the first few items and links to **Open
+  shopping list**. When the pantry covers the week, the page says **Pantry
+  covers the week**. The page shows nothing for a week that is over.
+
+On a wide screen, a side rail beside these shows **Tomorrow** and **This week's
+missions**. On a narrow screen, they appear below the shopping line. Browsing
+another week shows only the timeline.
+
+### The week timeline
+
+**The week** is a timeline. On the current week it starts with **Now**, then
+**Later today**, **Tomorrow**, and **Rest of the week**, one day at a time.
+**Earlier this week** and **Earlier today** are folded; open them to see meals
+that have passed. Another week lists its days in order.
 
 Each day lists its meals:
 
@@ -21,18 +56,9 @@ Each day lists its meals:
   first dish shows the meal name; each other dish shows **With**.
 - A note can say **Made Sunday**, **Leftovers from Sunday**, or **Also feeds
   Tue dinner**. These come from one cook feeding several meals.
-- Today carries a **Today** flag.
+- An open prep task shows above the meals of the day it is due.
 
-On the current week, **Dinner tonight** appears above the days. Tap the card to
-open the recipe. **Start cooking** shows when the meal is still planned. **Undo**
-shows for a finished meal. The swap button sits next to **Dinner tonight** at the
-top of the card.
-When dinner has more than one dish, the card shows the first one and names the
-others under its title.
-
-The next prep task also appears, with its due date and **Done**. It picks the
-soonest task due today or later, then the most recently overdue one. The app
-cannot add or edit prep tasks.
+The app cannot add or edit prep tasks.
 
 ## Weekly missions and the Treat Stamp
 
@@ -53,7 +79,7 @@ local storage, so it does not sync to another browser or device.
 
 ## Change one meal
 
-Tap the swap button on a meal, or **Plan something** on an empty one. A meal
+Tap **Swap** in the hero or the swap button on a meal, or **Plan something** on an empty one. A meal
 without a recipe opens the sheet when you tap the row. The sheet
 lists recipes for that meal type. Use the search field to narrow the list. Each
 choice shows its time and how much the pantry covers:
@@ -81,14 +107,17 @@ and use **Update the list**.
 
 ## Add a side to a meal
 
-1. Tap the add button (**+**) on the meal's last dish.
+1. Tap **Add dish** in the hero, or the add button (**+**) on the meal's last dish.
 2. Pick a recipe. The sheet lists recipes for that meal type.
 
 The recipe becomes one more dish on the meal, with its own cook. It cooks the
 household's default servings for that meal. The other dishes do not change.
 Swap each dish on its own with its swap button.
 
-To take a dish off a meal that has more than one, tap its remove button (trash).
+To take a dish off a meal that has more than one, tap **Remove** in the hero or
+the dish's remove button (trash). A toast offers **Undo**, which adds the recipe
+back as a new cook. A leftover or a note has nothing to add back, so it shows no
+**Undo**.
 The app also removes the dish's planned cook when no other meal eats from it.
 You cannot remove a dish that is already cooked; undo the cook first.
 
@@ -99,13 +128,13 @@ A skipped meal has no add button. Swap it to plan a recipe.
 One cook can feed more than one meal. The cook night and the later meals point
 to the same cook, and the later meals are leftovers.
 
-The week board marks the later meals and names the day of the cook. The swap
+The timeline marks the later meals and names the day of the cook. The swap
 scope controls whether only the selected meal changes or every meal fed by the
 same cook changes.
 
 ## Finish a cook and undo it
 
-Use **Start cooking** on **Dinner tonight**, or open a planned meal and use
+Use **Start cooking** in the hero, or open a planned meal and use
 **Start cooking** on the recipe. Finishing the cook in
 [cook mode](recipes.md#cook-a-recipe) completes the planned meal.
 
