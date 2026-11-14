@@ -233,6 +233,39 @@ export const setSlotsSchema = z
   })
   .openapi({ description: "Upsert meal slots for one or more date+mealType groups." });
 
+const draftEatSchema = z.object({
+  id: z.string().min(1).describe("Draft id of the eat; ignored by the server."),
+  date: isoDateSchema.describe("Meal date inside the plan week."),
+  mealType: mealTypeSchema,
+  servings: z.number().positive().nullable().describe("Servings eaten; null = the household default."),
+});
+
+const draftBatchSchema = z.object({
+  id: z.string().min(1).describe("Existing cook event id, or a draft id prefixed `*-draft-`."),
+  recipeId: z.string().min(1),
+  cookDate: isoDateSchema.describe("Cook date; may fall before the plan week."),
+  servings: z.number().positive().describe("Servings the cook yields."),
+  eats: z.array(draftEatSchema).min(1),
+});
+
+const draftNoteSchema = z.object({
+  id: z.string().min(1).describe("Existing slot id, or a draft id prefixed `*-draft-`."),
+  date: isoDateSchema.describe("Meal date inside the plan week."),
+  mealType: mealTypeSchema,
+  kind: z.enum(["freeform", "skip"]),
+  label: z.string().min(1),
+});
+
+export const saveDraftSchema = z
+  .object({
+    batches: z.array(draftBatchSchema),
+    notes: z.array(draftNoteSchema),
+  })
+  .openapi({
+    description:
+      "A whole planner draft week. Replaces the plan's slots and planned cooks; cooks that are already done or skipped are kept.",
+  });
+
 export const addCookEventSchema = z
   .object({
     ...recipeRefShape,

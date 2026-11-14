@@ -1,8 +1,9 @@
 # Meal plans
 
 The Week tab shows today's meals and the rest of the current week. An AI
-assistant usually creates the plan. The app shows it, starts cooks, and lets you
-change one meal at a time.
+assistant usually creates the plan. The app shows it, starts cooks, changes one
+meal at a time, and has a [Plan mode](#plan-the-week-in-the-app) for a whole
+week.
 
 ![Week page with today's meal, shopping, tomorrow, missions, and the week timeline](../images/week.png)
 
@@ -65,6 +66,38 @@ buttons of a tile show when you point at it or move focus to it. On a touch
 screen they always show.
 
 The app cannot add or edit prep tasks.
+
+## Plan the week in the app
+
+Tap **Plan** in the week header to open Plan mode. The button then says **Done
+planning**; tap it to return to the read-only week. Plan mode edits a draft, so
+a misplaced card does not change the plan until it is saved.
+
+On a wide screen the week is a grid of days and meals. The recipe drawer beside
+it groups recipes by meal and filters them by quick, recently cooked, and
+favorite. Drag a recipe onto a meal. Drag a placed meal or a cook card to another
+day. **Eat out**, **Fridge clean-out**, and **Write your own** add a free-text
+meal; type its name where it lands. Add an empty snack or dessert row under a
+day when you need one. Open a cook or meal card to change its servings or its
+cook day.
+
+On a narrow screen the plan shows one day at a time. The strip of seven days and
+the arrows, or a sideways swipe, move between days; the day's meals sit together
+on a paper card. **Cooking today** at the top of the card is a sideways row of
+that day's cooks: tap one to change its servings or cook day. Each meal below is
+a labelled section with its dish cards. Tap **Plan breakfast** on an empty meal,
+or the **+** beside a meal, to add another dish. The recipe sheet keeps its
+search field and the meal chips across the top while the two-column grid of
+recipes scrolls under them; the meal you opened it from is selected, and **Eat
+out**, **Fridge clean-out**, and **Write your own** sit under the grid. Tap a
+recipe to place it. Tap a placed dish to change its servings or cook day; its
+remove button takes it off the plan, and the toast offers **Undo**.
+
+Changes save by themselves a moment after you make them. The status next to
+**Done planning** says **Saving…** and then **Saved**. When a save fails it says
+**Couldn't save** and offers **Retry**; the draft stays on screen until a save
+succeeds. Only planned cooks change. A cook that is already done or skipped
+keeps its status, and its meals follow the draft.
 
 ## Weekly missions and the Treat Stamp
 
@@ -158,15 +191,13 @@ A future week with no plan has a **Plan this week** button, but weekly planning
 is not in the app yet. The button shows a **Coming soon** message. Ask the
 assistant to create the plan. A past week with no plan says nothing was planned.
 
-The app can change one meal, add or remove a dish, start a cook, finish it, undo
-it, and mark prep tasks done. It cannot:
+The app can change one meal, add or remove a dish, plan a whole week in [Plan
+mode](#plan-the-week-in-the-app), start a cook, finish it, undo it, and mark prep
+tasks done. It cannot:
 
 - Generate a complete weekly plan in one action.
-- Add snack or dessert slots.
-- Move cook events, or add or delete them other than by adding or removing a
-  dish.
-- Change planned servings.
-- Mark a meal skipped or add a free-text meal.
+- Mark a meal skipped, though a free-text meal such as **Eat out** has the same
+  effect on the day.
 - Edit plan notes or prep tasks.
 
 Use the API or MCP for those tasks.

@@ -1,24 +1,20 @@
 /* ---------- week header navigation ---------- */
+/* Rows and the sticker gutter come from styles/skin.css (the header's design layer). */
 .weekHead {
   align-items: center;
-  flex-wrap: wrap;
   gap: 12px;
   min-height: 0;
-  padding: 20px 18px;
 }
 
 .weekHead h1 {
   font-size: var(--fs-h3);
 }
 
-.weekHead > :global(div:first-child) {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.weekHead > :global(div:nth-child(2)) {
-  margin-inline-start: auto;
-  padding-inline-end: 48px;
+/* The sticker sits in the header's top-right corner; keep the controls clear of it. */
+@media (min-width: 768px) {
+  .weekHead > :global([data-ui="header-aside"]) {
+    padding-inline-end: 136px;
+  }
 }
 
 .weekNav {
@@ -50,30 +46,6 @@
   content: "";
   position: absolute;
   inset: -4px 0;
-}
-
-@media (max-width: 440px) {
-  .weekHead::after {
-    width: 72px;
-    height: 72px;
-    right: -4px;
-    top: -8px;
-  }
-  .weekHead > :global(div:nth-child(2)) {
-    padding-inline-end: 56px;
-  }
-}
-
-@media (min-width: 600px) {
-  .weekHead {
-    padding: 26px 24px 22px;
-  }
-  .weekHead h1 {
-    font-size: var(--fs-title);
-  }
-  .weekHead > :global(div:nth-child(2)) {
-    padding-inline-end: 136px;
-  }
 }
 
 .loading {

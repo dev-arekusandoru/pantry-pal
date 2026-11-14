@@ -7,7 +7,9 @@ export const weekRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: "/",
   staticData: { tab: "week" },
-  /** `?week=YYYY-MM-DD` deep-links a browsed week; invalid values drop to the current week. `?plan=1` opens Plan mode. */
+  /**
+   * `?week=YYYY-MM-DD` deep-links a browsed week; invalid values drop to the current week. `?plan=1` opens Plan mode.
+   */
   validateSearch: (search: Record<string, unknown>): { week?: string; plan?: boolean } => {
     const week = parseWeekParam(search.week);
     const plan = Boolean(search.plan);

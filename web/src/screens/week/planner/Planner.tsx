@@ -39,6 +39,8 @@ import { CookChip, EatChip, NoteChip, Preview, focusChip } from "./Chips";
 import { Ctx, useGrid, type Editing, type GridCtx } from "./ctx";
 import { Drawer } from "./Drawer";
 import { gridKeyboard } from "./keyboard";
+import { DayPlanner } from "./mobile/DayView";
+import { useSaveDraft, type SaveStatus } from "./save";
 import { firstEatDate, initialDraft, itemName, noteIcon, recipeIcon, restoreBatch, restoreEat, type Item, type Target } from "./model";
 
 const MEAL_ORDER: readonly MealType[] = ["breakfast", "lunch", "dinner", "snack", "dessert"];
@@ -95,8 +97,29 @@ function Cell({ id, target, label, today, disabled, invalid, suits, empty, class
 
 const detect: CollisionDetection = (args) => (args.pointerCoordinates ? pointerWithin(args) : closestCenter(args));
 
+/** Autosave state, sitting beside the page's "Done planning" button. */
+function SaveNote({ save }: { save: { status: SaveStatus; error: string | null; retry: () => void } }) {
+  if (save.status === "idle") return null;
+  return (
+    <p className={styles.saveBar} data-status={save.status} role="status">
+      {save.status === "saving" && "Saving…"}
+      {save.status === "saved" && "Saved ✓"}
+      {save.status === "error" && (
+        <>
+          Couldn't save{save.error ? ` (${save.error})` : ""}.
+          <Button variant="ghost" onClick={save.retry}>
+            Retry
+          </Button>
+        </>
+      )}
+    </p>
+  );
+}
+
 export function Planner({ plan, recipes, today }: PlannerProps) {
   const [draft, setDraft] = useState(() => initialDraft(plan));
+  const save = useSaveDraft(plan, draft);
+  const [narrow, setNarrow] = useState(false);
   const [selected, setSelected] = useState<Item | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [hot, setHot] = useState<string | null>(null);
@@ -146,6 +169,15 @@ export function Planner({ plan, recipes, today }: PlannerProps) {
     const el = wrapRef.current;
     if (!el) return;
     const fit = () => {
+      // Below 700px the planner swaps to the mobile views; they scroll with the page like any other content.
+      const mobile = el.clientWidth > 0 && el.clientWidth < 700;
+      setNarrow(mobile);
+      if (mobile) {
+        el.removeAttribute("data-fit");
+        el.style.removeProperty("--planner-h");
+        el.style.marginBottom = "";
+        return;
+      }
       let below = 0;
       for (let n = el.parentElement; n; n = n.parentElement) {
         const cs = getComputedStyle(n);
@@ -368,8 +400,15 @@ export function Planner({ plan, recipes, today }: PlannerProps) {
         }}
       >
         <div ref={wrapRef} className={styles.wrap} data-tab="week">
+        {narrow ? (
+          <div className={styles.mobile}>
+            <SaveNote save={save} />
+            <DayPlanner draft={draft} setDraft={setDraft} recipes={recipes} today={today} />
+          </div>
+        ) : (
         <div className={styles.root}>
           <div className={styles.main}>
+            <SaveNote save={save} />
             {selected && (
               <span role="status" className={styles.srOnly}>
                 {selectedVerb} {itemName(selected, draft)}: choose {selected.type === "cook" ? "a cook day" : "a meal"} in the grid.
@@ -503,6 +542,7 @@ export function Planner({ plan, recipes, today }: PlannerProps) {
 
           <Drawer recipes={recipes} selected={selected} onSelect={setSelected} />
         </div>
+        )}
         </div>
 
         <DragOverlay dropAnimation={reduceMotion ? null : undefined}>

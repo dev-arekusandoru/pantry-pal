@@ -21,6 +21,29 @@
   gap: var(--sp-3);
 }
 
+/* Mobile branch: the picker, the save note and the scrollable planner. */
+.mobile {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.saveBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin: 0;
+  min-height: 24px;
+  color: var(--muted);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.saveBar[data-status="error"] {
+  color: var(--danger-text);
+}
+
 .srOnly {
   position: absolute;
   width: 1px;

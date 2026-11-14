@@ -33,6 +33,9 @@ html:root [data-ui="header-text"] {
   align-items: center;
   column-gap: 14px;
   max-width: 100%;
+  /* Natural width (title and date on one line): a wide aside wraps under the
+     block instead of squeezing the text to a word a line on phones. */
+  flex: 1 0 auto;
 }
 html:root [data-ui="header-text"] h1 {
   grid-column: 1;
