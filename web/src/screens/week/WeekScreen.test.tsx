@@ -30,7 +30,7 @@ function renderWeek(props: RenderWeekProps = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const ui = (next: RenderWeekProps) => (
     <QueryClientProvider client={client}>
-      <WeekScreen week={next.week} onSelectWeek={next.onSelectWeek ?? vi.fn()} />
+      <WeekScreen week={next.week} onSelectWeek={next.onSelectWeek ?? vi.fn()} onPlanning={vi.fn()} />
     </QueryClientProvider>
   );
   const view = render(ui(props));

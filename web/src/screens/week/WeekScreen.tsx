@@ -6,6 +6,7 @@ import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
 import { addDays, localToday, monthDay, selectedWeekStart, weekRange, weekStartFor } from "./dates";
 import { usePlan, usePrepTasks, useRecipeIndex, useStartEmptyWeek } from "./queries";
 import { SwapSheet, type SwapTarget } from "./SwapSheet";
+import { Planner } from "./planner/Planner";
 import { WeekBody } from "./WeekBody";
 import styles from "./Week.module.css";
 
@@ -29,9 +30,12 @@ export interface WeekScreenProps {
   week?: string;
   /** Show the week starting `weekStart`, or the current week when null. */
   onSelectWeek: (weekStart: string | null) => void;
+  /** Plan mode (`?plan=1`): the draggable week planner instead of the read-only week. */
+  planning?: boolean;
+  onPlanning: (planning: boolean) => void;
 }
 
-export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
+export function WeekScreen({ week, onSelectWeek, planning = false, onPlanning }: WeekScreenProps) {
   const today = useToday();
   const household = useHousehold();
   // Plans are keyed by the household's first weekday; weekStartsOnOf returns
@@ -77,6 +81,9 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
           This week
         </Button>
       )}
+      <Button className={styles.weekJump} onClick={() => onPlanning(!planning)} aria-pressed={planning}>
+        {planning ? "Done planning" : "Plan"}
+      </Button>
     </nav>
   );
   const header = (
@@ -154,6 +161,14 @@ export function WeekScreen({ week, onSelectWeek }: WeekScreenProps) {
   }
 
   const planView = plan.data;
+  if (planning) {
+    return (
+      <>
+        {header}
+        <Planner plan={planView} recipes={recipes.data} today={today} />
+      </>
+    );
+  }
   return (
     <>
       {header}
