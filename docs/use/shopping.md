@@ -8,9 +8,11 @@ record what you bought.
 
 ## Get a list
 
-The app opens the current week's plan list when one exists. If the week has a
-plan but no list, it offers **Make the shopping list**. It does not show an older
-week's list.
+The app opens the list you picked last in this browser tab. Otherwise it opens
+the current week's plan list, then next week's. If a plan has no list, the page
+offers **Make the list for this week** and **Make the list for next week**
+(each shows only when that week has a plan). The Week tab also keeps the week
+you browsed until you close the browser tab.
 
 When there is no plan, the app opens the newest open list, or offers **Start a
 blank list**.
