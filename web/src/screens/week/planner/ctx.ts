@@ -7,8 +7,6 @@ export interface Editing {
   batchId: string;
   /** "cook" or the id of the eat the popover hangs off. */
   key: string;
-  /** Just dropped: the popover greets instead of just editing. */
-  fresh: boolean;
 }
 
 export interface GridCtx {

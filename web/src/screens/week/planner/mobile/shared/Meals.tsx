@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Emoji, Icon, Sheet, toast } from "@/ui";
+import { Emoji, Icon, toast } from "@/ui";
 import { weekdayName } from "../../../dates";
 import { CORE_MEALS, MEAL_EMOJI, MEAL_LABEL, type MealType, type RecipeSummary } from "../../../model";
 import { removeEat, type Draft, type DraftBatch, type DraftEat } from "../../draft";
@@ -10,6 +10,7 @@ import { CookCard, DishCard, NoteCard } from "./Chip";
 import { RecipeSheet } from "./RecipeSheet";
 
 const MEAL_ORDER: readonly MealType[] = ["breakfast", "lunch", "dinner", "snack", "dessert"];
+const EXTRA_MEALS = MEAL_ORDER.filter((m) => !CORE_MEALS.includes(m));
 
 interface DayBodyProps {
   draft: Draft;
@@ -29,7 +30,6 @@ export function DayBody({ draft, setDraft, recipes, date }: DayBodyProps) {
     ...draft.batches.flatMap((b) => b.eats.filter((e) => e.date === date).map((e) => e.mealType)),
     ...draft.notes.filter((n) => n.date === date).map((n) => n.mealType),
   ]);
-  const meals = MEAL_ORDER.filter((m) => CORE_MEALS.includes(m) || used.has(m));
 
   const removeMeal = (batch: DraftBatch, eat: DraftEat) => {
     setDraft((d) => removeEat(d, batch.id, eat.id));
@@ -52,8 +52,62 @@ export function DayBody({ draft, setDraft, recipes, date }: DayBodyProps) {
     });
   };
 
-  const editBatch = editing ? draft.batches.find((b) => b.id === editing.batchId) : undefined;
   const when = weekdayName(date);
+
+  // Empty meals keep their header and the dashed slot, so the day reads the same at a glance.
+  const mealSection = (meal: MealType) => {
+    const eats = draft.batches.flatMap((batch) =>
+      batch.eats.filter((e) => e.date === date && e.mealType === meal).map((eat) => ({ batch, eat })),
+    );
+    const notes = draft.notes.filter((n) => n.date === date && n.mealType === meal);
+    const label = MEAL_LABEL[meal];
+    const empty = eats.length + notes.length === 0;
+    return (
+      <section key={meal} className={styles.mealRow} aria-label={`${label} on ${when}`}>
+        <div className={styles.mealHead}>
+          <h3 className={styles.mealLabel}>
+            <Emoji code={MEAL_EMOJI[meal]} size={20} />
+            {label}
+          </h3>
+          <button
+            type="button"
+            className={styles.addDish}
+            aria-label={`Add ${label.toLowerCase()} on ${when}`}
+            onClick={() => setPicking(meal)}
+          >
+            <Icon name="plus" size={16} />
+          </button>
+        </div>
+        {empty ? (
+          <button type="button" className={styles.emptySlot} aria-label={`Plan ${label.toLowerCase()} on ${when}`} onClick={() => setPicking(meal)}>
+            <Icon name="plus" size={15} />
+            Plan {label.toLowerCase()}
+          </button>
+        ) : (
+          <ul className={styles.dishList}>
+            {eats.map(({ batch, eat }) => (
+              <li key={eat.id}>
+                <DishCard
+                  batch={batch}
+                  eat={eat}
+                  recipe={recipes?.get(batch.recipeId)}
+                  onOpen={() => setEditing({ batchId: batch.id, eatId: eat.id })}
+                  onRemove={() => removeMeal(batch, eat)}
+                />
+              </li>
+            ))}
+            {notes.map((n) => (
+              <li key={n.id}>
+                <NoteCard note={n} onRemove={() => removeNote(n.id)} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    );
+  };
+
+  const unusedExtras = EXTRA_MEALS.filter((m) => !used.has(m));
 
   return (
     <div className={styles.dayBody}>
@@ -63,7 +117,7 @@ export function DayBody({ draft, setDraft, recipes, date }: DayBodyProps) {
             <Icon name="flame" size={14} />
             Cooking today
           </h3>
-          <ul className={styles.cookRow}>
+          <ul className={styles.cookRow} data-no-swipe="">
             {cooks.map((b) => (
               <li key={b.id}>
                 <CookCard batch={b} recipe={recipes?.get(b.recipeId)} onOpen={() => setEditing({ batchId: b.id, eatId: null })} />
@@ -73,63 +127,26 @@ export function DayBody({ draft, setDraft, recipes, date }: DayBodyProps) {
         </section>
       )}
 
-      {meals.map((meal) => {
-        const eats = draft.batches.flatMap((batch) =>
-          batch.eats.filter((e) => e.date === date && e.mealType === meal).map((eat) => ({ batch, eat })),
-        );
-        const notes = draft.notes.filter((n) => n.date === date && n.mealType === meal);
-        const label = MEAL_LABEL[meal];
-        if (eats.length + notes.length === 0) {
-          return (
+      {CORE_MEALS.map(mealSection)}
+
+      {unusedExtras.length > 0 && (
+        <div className={styles.extraPick}>
+          {unusedExtras.map((m) => (
             <button
-              key={meal}
+              key={m}
               type="button"
-              className={styles.emptySlot}
-              onClick={() => setPicking(meal)}
-              aria-label={`Add ${label.toLowerCase()} on ${when}`}
+              className={styles.extraChip}
+              aria-label={`Add ${MEAL_LABEL[m].toLowerCase()} on ${when}`}
+              onClick={() => setPicking(m)}
             >
-              <Icon name="plus" size={15} />
-              Plan {label.toLowerCase()}
+              <Icon name="plus" size={14} />
+              {MEAL_LABEL[m]}
             </button>
-          );
-        }
-        return (
-          <section key={meal} className={styles.mealRow} aria-label={`${label} on ${when}`}>
-            <div className={styles.mealHead}>
-              <h3 className={styles.mealLabel}>
-                <Emoji code={MEAL_EMOJI[meal]} size={20} />
-                {label}
-              </h3>
-              <button
-                type="button"
-                className={styles.addDish}
-                aria-label={`Another dish for ${label.toLowerCase()} on ${when}`}
-                onClick={() => setPicking(meal)}
-              >
-                <Icon name="plus" size={16} />
-              </button>
-            </div>
-            <ul className={styles.dishList}>
-              {eats.map(({ batch, eat }) => (
-                <li key={eat.id}>
-                  <DishCard
-                    batch={batch}
-                    eat={eat}
-                    recipe={recipes?.get(batch.recipeId)}
-                    onOpen={() => setEditing({ batchId: batch.id, eatId: eat.id })}
-                    onRemove={() => removeMeal(batch, eat)}
-                  />
-                </li>
-              ))}
-              {notes.map((n) => (
-                <li key={n.id}>
-                  <NoteCard note={n} onRemove={() => removeNote(n.id)} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+          ))}
+        </div>
+      )}
+
+      {EXTRA_MEALS.filter((m) => used.has(m)).map(mealSection)}
 
       <RecipeSheet
         open={picking !== null}
@@ -140,17 +157,14 @@ export function DayBody({ draft, setDraft, recipes, date }: DayBodyProps) {
         recipes={recipes}
       />
 
-      <Sheet open={editing !== null} onClose={() => setEditing(null)} title={editBatch ? `Edit ${editBatch.title}` : "Edit meal"}>
-        {editing && (
-          <BatchSheet
-            batchId={editing.batchId}
-            eatId={editing.eatId}
-            draft={draft}
-            setDraft={setDraft}
-            onClose={() => setEditing(null)}
-          />
-        )}
-      </Sheet>
+      <BatchSheet
+        open={editing !== null}
+        batchId={editing?.batchId ?? null}
+        eatId={editing?.eatId ?? null}
+        draft={draft}
+        setDraft={setDraft}
+        onClose={() => setEditing(null)}
+      />
     </div>
   );
 }

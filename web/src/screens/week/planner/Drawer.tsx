@@ -3,7 +3,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Emoji, Icon, SearchInput, Skeleton, type EmojiCode } from "@/ui";
 import { MEAL_EMOJI, MEAL_LABEL, type MealType, type RecipeSummary } from "../model";
 import styles from "./Planner.module.css";
-import { recipeIcon, sameItem, type Item } from "./model";
+import { recipeIcon, sameItem, servingsText, type Item } from "./model";
 
 const DAY_MS = 86_400_000;
 
@@ -80,7 +80,7 @@ function DrawerCard({ id, item, name, thumb, meta, picked, onPick }: {
   );
 }
 
-const meta = (r: RecipeSummary) => [r.totalMinutes ? `${r.totalMinutes} min` : null, `serves ${r.servings}`].filter(Boolean).join(" · ");
+const meta = (r: RecipeSummary) => [r.totalMinutes ? `${r.totalMinutes} min` : null, servingsText(r.servings)].filter(Boolean).join(" · ");
 
 export function Drawer({ recipes, selected, onSelect }: { recipes: Map<string, RecipeSummary> | undefined; selected: Item | null; onSelect: (i: Item | null) => void }) {
   const [query, setQuery] = useState("");

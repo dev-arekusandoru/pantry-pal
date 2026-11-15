@@ -7,99 +7,163 @@
 }
 
 /* ---------- day strip ---------- */
-.dayStrip {
-  display: flex;
+/* A soft paper pill above the card: seven round date chips, one dot per core meal under each. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   padding: 4px;
-  border-radius: var(--r-lg);
+  border-radius: var(--r-xl);
   background: var(--card) var(--grain);
   box-shadow: var(--shadow);
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 
-.stripBtn {
-  flex: 1 0 44px;
-  min-width: 44px;
-  min-height: 48px;
+.dayView[data-slide] {
+  animation: slide-in 200ms var(--ease) both;
+}
+
+.dayView[data-slide="-1"] {
+  --from: -28px;
+}
+
+.dayView[data-slide="1"] {
+  --from: 28px;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--from));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dayView[data-slide] {
+    animation: none;
+  }
+}
+
+/* Decorative chevrons hugging the pill's ends: the strip swipes to change week. */
+.strip {
+  position: relative;
+}
+
+.stripChevron {
+  position: absolute;
+  top: 50%;
+  translate: 0 -55%;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.stripChevron[data-side="start"] {
+  left: 3px;
+}
+
+.stripChevron[data-side="end"] {
+  right: 3px;
+}
+
+@media (min-width: 352px) {
+  .strip {
+    padding-inline: 10px;
+  }
+}
+
+/* No room for them on the narrowest phones; the caption and the hidden buttons still work. */
+@media (max-width: 351px) {
+  .stripChevron {
+    display: none;
+  }
+}
+
+.stripHint {
+  margin-block: calc(var(--sp-1) * -1) 0;
+  text-align: center;
+  color: var(--muted);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+}
+
+/* 320px phones: 7 × 44px targets need the pill to reach 4px from the screen edges. */
+@media (max-width: 351px) {
+  .strip {
+    margin-inline: calc(var(--main-pad) * -1 + 4px);
+    padding: 2px;
+  }
+}
+
+.stripTab {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 4px 0;
   border-radius: var(--r-sm);
   color: var(--muted);
+  font: inherit;
+  line-height: 1;
 }
 
-.stripBtn[aria-pressed="true"] {
-  background: var(--butter-s);
+.stripTab[aria-pressed="true"] {
   color: var(--ink);
-  box-shadow: inset 0 0 0 2px var(--bd);
 }
 
-.stripDot {
+.stripFace {
   display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
+  place-content: center;
+  justify-items: center;
+  gap: 1px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 2px dashed var(--line);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+
+.stripDay {
   font-family: var(--font-note);
-  font-size: 10px;
+  font-size: 8px;
   font-weight: var(--fw-bold);
-  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.stripDot[data-filled] {
-  border: 0;
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.stripName {
-  font-family: var(--font-note);
-  font-size: 10px;
-  font-weight: var(--fw-bold);
-  line-height: 1;
-}
-
-/* ---------- day header ---------- */
-.dayNav {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.dayTitle {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
+.stripNum {
   font-family: var(--font-head);
-  font-size: var(--fs-lg);
+  font-size: 13px;
   font-weight: var(--fw-head);
-  line-height: var(--lh-head);
-  text-align: center;
 }
 
-.dayTitle > span:not(.todayFlag) {
-  font-family: var(--font-note);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-bold);
-  color: var(--muted);
+/* Selected = filled butter; today = the dashed ring, independent of colour. */
+.stripTab[aria-pressed="true"] .stripFace {
+  background: var(--butter-s);
+  box-shadow: inset 0 0 0 1.5px var(--bd);
 }
 
-.todayFlag {
-  padding: 0 9px;
-  border-radius: var(--r-chip);
-  background: var(--accent-fill);
-  color: var(--on-accent);
-  font-family: var(--font-note);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
-  transform: rotate(var(--tilt-b));
+.stripTab[data-today] .stripFace {
+  outline: 2px dashed var(--accent-text);
+  outline-offset: 2px;
+}
+
+.stripDots {
+  display: flex;
+  gap: 2px;
+}
+
+.stripMealDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.2px var(--bd);
+}
+
+.stripMealDot[data-filled] {
+  background: var(--ink);
+  box-shadow: none;
 }
 
 /* ---------- the day's paper card ---------- */
@@ -138,7 +202,9 @@
 .cookRow {
   display: flex;
   gap: 6px;
-  padding-block-end: 6px;
+  /* Room inside the scroller so rings, tilt and shadows are not clipped. */
+  padding: 4px 6px 8px;
+  margin: -4px -6px -6px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
@@ -357,6 +423,34 @@
   box-shadow: 0 0 0 1.5px var(--h);
 }
 
+/* ---------- snack and dessert shortcuts ---------- */
+.extraPick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.extraChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border-radius: var(--r-chip);
+  color: var(--muted);
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+
+@media (hover: hover) {
+  .extraChip:hover {
+    background: var(--butter-s);
+    color: var(--ink);
+  }
+}
+
 /* ---------- empty meal ---------- */
 .emptySlot {
   display: flex;
@@ -389,15 +483,16 @@
   padding-block-end: var(--sp-4);
 }
 
-/* Search and meal tabs stay put while the grid scrolls under them. */
+/* Search and meal tabs stay put while the grid scrolls under them; the sheet's own
+   paper shows through (no coloured panel), it only masks the scrolled content. */
 .sheetTop {
   position: sticky;
-  top: -4px;
+  top: 0;
   z-index: 2;
   display: grid;
   gap: 6px;
   margin: -4px -6px 0;
-  padding: 4px 6px 8px;
+  padding: 8px 6px 10px;
   background: var(--bg);
 }
 
@@ -405,7 +500,9 @@
   min-width: 0;
   display: flex;
   gap: 4px;
-  padding-block-end: 2px;
+  /* Block and inline room so the chips' rings and focus outlines are not cut. */
+  padding: 3px 2px 4px;
+  margin: -3px -2px 0;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
@@ -588,12 +685,6 @@
   font-weight: var(--fw-head);
   line-height: var(--lh-head);
   overflow-wrap: anywhere;
-}
-
-.popSub {
-  color: var(--muted);
-  font-family: var(--font-note);
-  font-size: var(--fs-xs);
 }
 
 .stepperRow {

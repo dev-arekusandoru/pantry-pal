@@ -48,6 +48,64 @@
   inset: -4px 0;
 }
 
+/* ---------- Plan mode on phones: the read-only header's look (squiggle title, quiet date line, egg), plus Done ---------- */
+.planTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.planTitleBox {
+  min-width: 0;
+}
+
+.planTitle {
+  font-family: var(--font-head);
+  font-size: clamp(24px, 7vw, 34px);
+  line-height: 1.15;
+  text-decoration: underline wavy var(--accent) 2px;
+  text-underline-offset: 6px;
+  text-decoration-skip-ink: none;
+}
+
+.planRange {
+  margin-top: 8px;
+  font-family: var(--font-note);
+  color: var(--muted);
+}
+
+/* Reserved height: the status appearing and going never moves the bar. */
+.planStatus {
+  min-height: 24px;
+  font-size: var(--fs-sm);
+}
+
+.planStatus > p {
+  justify-content: flex-start;
+}
+
+.planSide {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  flex: none;
+}
+
+.planSticker {
+  width: 40px;
+  height: 40px;
+  background: var(--tab-sticker) center / contain no-repeat;
+  transform: rotate(8deg);
+  filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.55)) drop-shadow(0 3px 4px rgba(80, 30, 0, 0.2));
+}
+
+.planDone {
+  min-width: 76px;
+  height: 44px;
+}
+
 .loading {
   display: grid;
   gap: 10px;

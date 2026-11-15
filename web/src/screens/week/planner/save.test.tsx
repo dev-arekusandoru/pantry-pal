@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { describe, expect, it, vi } from "vitest";
 import type { PlanView } from "../model";
 import { addBatch, addEat, moveEat, removeEat, setServings, type Draft } from "./draft";
-import { draftChanged, draftSignature } from "./save";
+import { initialDraft, emptyPlan } from "./model";
+import { draftChanged, draftSignature, useSaveDraft } from "./save";
+
+const post = vi.hoisted(() => vi.fn());
+vi.mock("@/api", async (orig) => ({ ...(await orig<typeof import("@/api")>()), client: { POST: post } }));
 
 const days = ["2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-15"];
 
@@ -87,5 +94,57 @@ describe("draft save diff", () => {
     expect(draftSignature(reversed)).toBe(draftSignature(two));
     expect(draftChanged(reversed, serverPlan(two))).toBe(false);
     expect(draftSignature({ ...empty, batches: [{ ...batch!, eats: [] }] })).toBe(draftSignature(empty));
+  });
+});
+
+describe("empty week", () => {
+  it("opening Plan mode on a week with no plan is not a change, so nothing gets created", () => {
+    const plan = emptyPlan("2027-03-01");
+    expect(plan.id).toBe("");
+    expect(plan.days).toHaveLength(7);
+    expect(draftChanged(initialDraft(plan), plan)).toBe(false);
+  });
+
+  it("the first placed dish is a change", () => {
+    const plan = emptyPlan("2027-03-01");
+    const draft = addBatch(initialDraft(plan), { id: "r1", title: "Chili" }, "2027-03-01", "dinner");
+    expect(draftChanged(draft, plan)).toBe(true);
+  });
+});
+
+describe("useSaveDraft when the week changes elsewhere", () => {
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+  );
+  const elsewhere = serverPlan(addBatch(empty, { id: "r9", title: "Tacos" }, days[2]!, "dinner"));
+
+  function open(draft: Draft, plan: PlanView) {
+    const reset = vi.fn();
+    const hook = renderHook(({ d, p }) => useSaveDraft(p, d, reset), { wrapper, initialProps: { d: draft, p: plan } });
+    return { hook, reset };
+  }
+
+  it("follows the new plan when nothing is unsaved", () => {
+    const { hook, reset } = open(initialDraft(serverPlan(empty)), serverPlan(empty));
+    hook.rerender({ d: initialDraft(serverPlan(empty)), p: elsewhere });
+    expect(reset).toHaveBeenCalledOnce();
+    expect(hook.result.current.status).not.toBe("conflict");
+  });
+
+  it("stops saving and asks when there are unsaved edits", async () => {
+    post.mockClear();
+    vi.useFakeTimers();
+    const mine = addBatch(empty, { id: "r1", title: "Chili" }, days[1]!, "dinner");
+    const { hook, reset } = open(mine, serverPlan(empty));
+    hook.rerender({ d: mine, p: elsewhere });
+    expect(hook.result.current.status).toBe("conflict");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(post).not.toHaveBeenCalled();
+    expect(reset).not.toHaveBeenCalled();
+    act(() => hook.result.current.loadLatest());
+    expect(reset).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 });

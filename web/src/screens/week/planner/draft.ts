@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { addDays, daysBetween } from "../dates";
 import type { MealType, PlanView, RecipeSummary } from "../model";
 
@@ -7,6 +8,12 @@ export interface PlannerProps {
   /** Recipe drawer source; undefined while loading. */
   recipes: Map<string, RecipeSummary> | undefined;
   today: string;
+  /** The page header: the host picks its look, the planner says whether it is in its phone layout and hands over the save status. */
+  header: (narrow: boolean, status: ReactNode) => ReactNode;
+  /** Phone layout: swiping the day strip asks the host for the previous (-1) or next (1) week, with the weekday to keep. */
+  onWeek?: (step: -1 | 1, dayIndex: number, keyboard: boolean) => void;
+  /** Set when this planner mounted because of such a swipe: the weekday to keep, the slide direction, and whether the keyboard did it (focus returns to the strip). */
+  arrival?: { day: number; dir: -1 | 1; keyboard: boolean };
 }
 
 /** One eating occasion fed by a batch. */

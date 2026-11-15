@@ -9,7 +9,7 @@ import { useGrid } from "./ctx";
 import { firstEatDate, recipeIcon } from "./model";
 
 /** Servings, cook day and eat days for one batch. Hangs off the chip that opened it. */
-export function BatchEditor({ batch, eatKey, fresh }: { batch: DraftBatch; eatKey: string; fresh: boolean }) {
+export function BatchEditor({ batch, eatKey }: { batch: DraftBatch; eatKey: string }) {
   const g = useGrid();
   const eat = batch.eats.find((e) => e.id === eatKey);
   const meal = eat?.mealType ?? batch.eats[0]?.mealType ?? "dinner";
@@ -25,7 +25,6 @@ export function BatchEditor({ batch, eatKey, fresh }: { batch: DraftBatch; eatKe
         <Emoji code={recipeIcon(batch.title)} size={40} />
         <div className={styles.popTitleBox}>
           <p className={styles.popTitle}>{batch.title}</p>
-          <p className={styles.popSub}>{fresh ? "Added to your plan. Tweak it, or just carry on." : "One cook, as many meals as you like."}</p>
         </div>
         <Popover.Close className={styles.popClose} aria-label="Close">
           <Icon name="close" size={16} />
@@ -45,9 +44,7 @@ export function BatchEditor({ batch, eatKey, fresh }: { batch: DraftBatch; eatKe
           <button type="button" className={styles.linkBtn} onClick={() => g.setServings(batch.id, null)}>
             Back to auto ({auto})
           </button>
-        ) : (
-          <span className={styles.chipNote}>auto: adds up your meals</span>
-        )}
+        ) : null}
       </div>
 
       <fieldset className={styles.popField}>
@@ -103,13 +100,6 @@ export function BatchEditor({ batch, eatKey, fresh }: { batch: DraftBatch; eatKe
 
       <div className={styles.popActions}>
         <Button
-          variant="secondary"
-          icon={<Icon name="swap" />}
-          onClick={() => g.startMove(eat ? { type: "eat", batchId: batch.id, eatId: eat.id } : { type: "cook", batchId: batch.id })}
-        >
-          {eat ? "Move this meal" : "Move cook day"}
-        </Button>
-        <Button
           variant="dangerGhost"
           icon={<Icon name="trash" />}
           onClick={() => {
@@ -119,6 +109,16 @@ export function BatchEditor({ batch, eatKey, fresh }: { batch: DraftBatch; eatKe
           }}
         >
           {eat ? "Remove meal" : "Remove batch"}
+        </Button>
+        <Button
+          variant="ghost"
+          icon={<Icon name="swap" />}
+          onClick={() => g.startMove(eat ? { type: "eat", batchId: batch.id, eatId: eat.id } : { type: "cook", batchId: batch.id })}
+        >
+          {eat ? "Move meal" : "Move cook day"}
+        </Button>
+        <Button variant="primary" className={styles.popSave} onClick={() => g.edit(null)}>
+          Save
         </Button>
       </div>
     </>

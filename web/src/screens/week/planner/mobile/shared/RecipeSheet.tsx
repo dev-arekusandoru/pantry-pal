@@ -4,6 +4,7 @@ import { monthDay, weekdayName } from "../../../dates";
 import { MEAL_EMOJI, MEAL_LABEL, type MealType, type RecipeSummary } from "../../../model";
 import { RecipePhoto } from "@/screens/recipe/RecipePhoto";
 import { addBatch, addNote, type Draft } from "../../draft";
+import { servingsText } from "../../model";
 import styles from "./mobile.module.css";
 
 interface RecipeSheetProps {
@@ -95,7 +96,7 @@ export function RecipeSheet({ open, onClose, date, meal, setDraft, recipes }: Re
                   <RecipePhoto imageUrl={r.imageUrl} mealTypes={r.mealTypes} className={styles.recipePhoto} />
                   <span className={styles.recipeTitle}>{r.title}</span>
                   <span className={styles.recipeMeta}>
-                    {[r.totalMinutes ? `${r.totalMinutes} min` : null, `serves ${r.servings}`].filter(Boolean).join(" · ")}
+                    {[r.totalMinutes ? `${r.totalMinutes} min` : null, servingsText(r.servings)].filter(Boolean).join(" · ")}
                   </span>
                 </button>
               </li>

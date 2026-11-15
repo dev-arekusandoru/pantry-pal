@@ -40,7 +40,7 @@ import { Ctx, useGrid, type Editing, type GridCtx } from "./ctx";
 import { Drawer } from "./Drawer";
 import { gridKeyboard } from "./keyboard";
 import { DayPlanner } from "./mobile/DayView";
-import { useSaveDraft, type SaveStatus } from "./save";
+import { useSaveDraft, type SaveDraftState } from "./save";
 import { firstEatDate, initialDraft, itemName, noteIcon, recipeIcon, restoreBatch, restoreEat, type Item, type Target } from "./model";
 
 const MEAL_ORDER: readonly MealType[] = ["breakfast", "lunch", "dinner", "snack", "dessert"];
@@ -98,7 +98,7 @@ function Cell({ id, target, label, today, disabled, invalid, suits, empty, class
 const detect: CollisionDetection = (args) => (args.pointerCoordinates ? pointerWithin(args) : closestCenter(args));
 
 /** Autosave state, sitting beside the page's "Done planning" button. */
-function SaveNote({ save }: { save: { status: SaveStatus; error: string | null; retry: () => void } }) {
+function SaveNote({ save }: { save: SaveDraftState }) {
   if (save.status === "idle") return null;
   return (
     <p className={styles.saveBar} data-status={save.status} role="status">
@@ -112,13 +112,24 @@ function SaveNote({ save }: { save: { status: SaveStatus; error: string | null; 
           </Button>
         </>
       )}
+      {save.status === "conflict" && (
+        <>
+          This week changed elsewhere.
+          <Button variant="ghost" onClick={save.loadLatest}>
+            Load latest
+          </Button>
+          <Button variant="ghost" onClick={save.keepMine}>
+            Keep mine
+          </Button>
+        </>
+      )}
     </p>
   );
 }
 
-export function Planner({ plan, recipes, today }: PlannerProps) {
+export function Planner({ plan, recipes, today, header, onWeek, arrival }: PlannerProps) {
   const [draft, setDraft] = useState(() => initialDraft(plan));
-  const save = useSaveDraft(plan, draft);
+  const save = useSaveDraft(plan, draft, setDraft);
   const [narrow, setNarrow] = useState(false);
   const [selected, setSelected] = useState<Item | null>(null);
   const [editing, setEditing] = useState<Editing | null>(null);
@@ -256,7 +267,7 @@ export function Planner({ plan, recipes, today }: PlannerProps) {
         const nb = next.batches[next.batches.length - 1];
         const key = nb?.eats[0]?.id;
         // Wait out dnd-kit's own focus restore, or the popover would lose focus straight away.
-        if (nb && key) window.setTimeout(() => setEditing({ batchId: nb.id, key, fresh: true }), 150);
+        if (nb && key) window.setTimeout(() => setEditing({ batchId: nb.id, key }), 150);
         return;
       }
       case "note": {
@@ -385,6 +396,8 @@ export function Planner({ plan, recipes, today }: PlannerProps) {
   const selectedVerb = selected?.type === "eat" || selected?.type === "cook" || selected?.type === "placed-note" ? "Moving" : "Placing";
 
   return (
+    <>
+    {header(narrow, <SaveNote save={save} />)}
     <Ctx.Provider value={ctx}>
       <DndContext
         sensors={sensors}
@@ -402,8 +415,7 @@ export function Planner({ plan, recipes, today }: PlannerProps) {
         <div ref={wrapRef} className={styles.wrap} data-tab="week">
         {narrow ? (
           <div className={styles.mobile}>
-            <SaveNote save={save} />
-            <DayPlanner draft={draft} setDraft={setDraft} recipes={recipes} today={today} />
+            <DayPlanner draft={draft} setDraft={setDraft} recipes={recipes} today={today} onWeek={onWeek} arrival={arrival} />
           </div>
         ) : (
         <div className={styles.root}>
@@ -556,5 +568,6 @@ export function Planner({ plan, recipes, today }: PlannerProps) {
         </DragOverlay>
       </DndContext>
     </Ctx.Provider>
+    </>
   );
 }

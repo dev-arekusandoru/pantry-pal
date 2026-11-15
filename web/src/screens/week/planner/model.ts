@@ -1,6 +1,6 @@
 import { ingredientEmoji, type EmojiCode } from "@/ui";
-import { weekdayName } from "../dates";
-import type { MealType, RecipeSummary } from "../model";
+import { addDays, weekdayName } from "../dates";
+import type { MealType, PlanView, RecipeSummary } from "../model";
 import { DEFAULT_EAT_SERVINGS, draftFromPlan, type PlannerProps, type Draft, type DraftBatch, type DraftEat, type DraftNote } from "./draft";
 
 /** Anything that can be dragged, or picked up with "Place" and put down with a tap. */
@@ -18,6 +18,28 @@ export function initialDraft(plan: PlannerProps["plan"]): Draft {
   const d = draftFromPlan(plan);
   return { ...d, notes: d.notes.filter((n) => n.kind !== "skip" && n.label.trim().toLowerCase() !== "unplanned") };
 }
+
+/** A week with no saved plan: the planner edits this empty grid, and the first save creates the plan (`id` stays ""). */
+export function emptyPlan(weekStart: string): PlanView {
+  const meals = { breakfast: [], lunch: [], dinner: [], snack: [], dessert: [] };
+  return {
+    id: "",
+    householdId: "",
+    weekStart,
+    title: null,
+    status: "active",
+    notes: null,
+    createdAt: "",
+    updatedAt: "",
+    days: Array.from({ length: 7 }, (_, i) => ({ date: addDays(weekStart, i), meals })),
+    cookEvents: [],
+    prepTasks: [],
+    warnings: [],
+  };
+}
+
+/** "8 servings" / "1 serving": one form for every servings line in the planner. */
+export const servingsText = (n: number) => `${n} ${n === 1 ? "serving" : "servings"}`;
 
 /** Some icon files read as blanks at chip size (pancake is a plain disc); those titles get a clearer icon. */
 const RECIPE_ICONS: Record<string, EmojiCode> = { pancakes: "croissant" };

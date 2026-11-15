@@ -27,7 +27,10 @@ function WeekPage() {
       onSelectWeek={(weekStart) =>
         // Same page, new search: keep the scroll position and skip the page crossfade.
         void navigate({
-          search: { ...(weekStart === null ? {} : { week: weekStart }), ...(plan ? { plan: true } : {}) },
+          search: {
+            ...(weekStart === null ? {} : { week: weekStart }),
+            ...(plan ? { plan: true } : {}),
+          },
           resetScroll: false,
           viewTransition: false,
         })

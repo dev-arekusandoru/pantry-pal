@@ -7,7 +7,7 @@ import type { DraftBatch, DraftEat, DraftNote } from "./draft";
 import styles from "./Planner.module.css";
 import { BatchEditor } from "./BatchEditor";
 import { useGrid } from "./ctx";
-import { feedsLine, noteIcon, recipeIcon, sameItem, type Item } from "./model";
+import { feedsLine, noteIcon, recipeIcon, sameItem, servingsText, type Item } from "./model";
 
 export const focusChip = (key: string) => document.querySelector<HTMLElement>(`[data-chip="${CSS.escape(key)}"]`)?.focus();
 
@@ -57,7 +57,7 @@ function ChipFrame({ dragId, item, focusKey, kind, batch, editorKey, label, titl
         aria-label={label}
         title={title}
         aria-description={kind === "eat" || kind === "cook" ? "Hold Shift while dropping to move the whole batch." : undefined}
-        onClick={onActivate ?? (batch && editorKey !== undefined ? () => g.edit({ batchId: batch.id, key: editorKey, fresh: false }) : undefined)}
+        onClick={onActivate ?? (batch && editorKey !== undefined ? () => g.edit({ batchId: batch.id, key: editorKey }) : undefined)}
         {...attributes}
         {...listeners}
       >
@@ -86,7 +86,7 @@ function ChipFrame({ dragId, item, focusKey, kind, batch, editorKey, label, titl
               focusChip(focusKey);
             }}
           >
-            <BatchEditor batch={batch} eatKey={editorKey} fresh={editing.fresh} />
+            <BatchEditor batch={batch} eatKey={editorKey} />
           </Popover.Content>
         </Popover.Portal>
       )}
@@ -147,7 +147,7 @@ export function CookChip({ batch, weekStart }: { batch: DraftBatch; weekStart: s
       kind="cook"
       batch={batch}
       editorKey="cook"
-      label={`Cook ${batch.title} on ${when}${early ? " (before the week)" : ""}, serves ${batch.servings}, ${feeds}`}
+      label={`Cook ${batch.title} on ${when}${early ? " (before the week)" : ""}, ${servingsText(batch.servings)}, ${feeds}`}
       title={`${batch.title}: ${feeds}`}
       removeLabel={`Remove ${batch.title} and its ${batch.eats.length} ${batch.eats.length === 1 ? "meal" : "meals"}`}
       onRemove={() => g.removeBatch(batch)}

@@ -37,17 +37,20 @@ describe("mobile day planner", () => {
   it("shows filled days, the cooking strip and the day's meals", async () => {
     const user = userEvent.setup();
     render(<Harness initial={draftWithChili()} />);
-    expect(screen.getByRole("button", { name: /^Monday Nov 9, 1 planned/ })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^Monday Nov 9, 1 planned/ }));
+    const monday = screen.getByRole("button", { name: /^Monday Nov 9, 1 dish planned/ });
+    await user.click(monday);
+    expect(monday).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Cooking today")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Monday");
-    expect(screen.getByRole("button", { name: /^Add lunch/ })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Dinner on Monday" })).toBeInTheDocument();
+    // Empty meals keep their header and the dashed plan slot under it.
+    expect(screen.getByRole("region", { name: "Lunch on Monday" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Plan lunch on Monday" })).toBeInTheDocument();
   });
 
   it("places a freeform note from the recipe sheet", async () => {
     const user = userEvent.setup();
     render(<Harness initial={draftWithChili()} />);
-    await user.click(screen.getByRole("button", { name: /^Add lunch/ }));
+    await user.click(screen.getByRole("button", { name: "Plan lunch on Wednesday" }));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Eat out" }));
     expect(await screen.findByText("Eat out")).toBeInTheDocument();

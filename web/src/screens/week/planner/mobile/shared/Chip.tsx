@@ -3,7 +3,7 @@ import { Emoji, Icon } from "@/ui";
 import { monthDay, weekdayName } from "../../../dates";
 import { MEAL_LABEL, type RecipeSummary } from "../../../model";
 import type { DraftBatch, DraftEat, DraftNote } from "../../draft";
-import { noteIcon, recipeIcon } from "../../model";
+import { noteIcon, recipeIcon, servingsText } from "../../model";
 import styles from "./mobile.module.css";
 
 /** Recipe photo with the desktop's food-icon badge on its corner; the bare icon when there is no photo. */
@@ -35,13 +35,13 @@ export function DishCard({ batch, eat, recipe, onOpen, onRemove }: {
       <button
         type="button"
         className={styles.dishMain}
-        aria-label={`${batch.title}, ${from}, serves ${batch.servings}. Edit servings and cook day`}
+        aria-label={`${batch.title}, ${from}, ${servingsText(batch.servings)}. Edit servings and cook day`}
         onClick={onOpen}
       >
         <Pic recipe={recipe} title={batch.title} size={76} />
         <span className={styles.dishText}>
           <span className={styles.dishTitle}>{batch.title}</span>
-          <span className={styles.dishMeta}>serves {batch.servings}</span>
+          <span className={styles.dishMeta}>{servingsText(batch.servings)}</span>
         </span>
       </button>
       <button
@@ -84,13 +84,13 @@ export function CookCard({ batch, recipe, onOpen }: { batch: DraftBatch; recipe:
       type="button"
       className={styles.cookCard}
       data-hue={batch.hue}
-      aria-label={`Cook ${batch.title} on ${weekdayName(batch.cookDate)} ${monthDay(batch.cookDate)}, serves ${batch.servings}. Edit`}
+      aria-label={`Cook ${batch.title} on ${weekdayName(batch.cookDate)} ${monthDay(batch.cookDate)}, ${servingsText(batch.servings)}. Edit`}
       onClick={onOpen}
     >
       <Pic recipe={recipe} title={batch.title} size={30} />
       <span className={styles.cookText}>
         <span className={styles.cookTitle}>{batch.title}</span>
-        <span className={styles.cookSrv}>serves {batch.servings}</span>
+        <span className={styles.cookSrv}>{servingsText(batch.servings)}</span>
       </span>
     </button>
   );

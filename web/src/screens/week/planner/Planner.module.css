@@ -638,12 +638,6 @@
   overflow-wrap: anywhere;
 }
 
-.popSub {
-  font-family: var(--font-note);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-}
-
 .popClose {
   display: grid;
   place-items: center;
@@ -730,7 +724,13 @@
 .popActions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-2);
+}
+
+/* Save is the one primary action; it takes the trailing edge. */
+.popSave {
+  margin-inline-start: auto;
 }
 
 /* ---------- drawer ---------- */

@@ -7,6 +7,7 @@ import { addDays, localToday, monthDay, selectedWeekStart, weekRange, weekStartF
 import { usePlan, usePrepTasks, useRecipeIndex, useStartEmptyWeek } from "./queries";
 import { SwapSheet, type SwapTarget } from "./SwapSheet";
 import { Planner } from "./planner/Planner";
+import { emptyPlan } from "./planner/model";
 import { WeekBody } from "./WeekBody";
 import styles from "./Week.module.css";
 
@@ -50,6 +51,11 @@ export function WeekScreen({ week, onSelectWeek, planning = false, onPlanning }:
   const cookHistory = useCookHistory();
   const startWeek = useStartEmptyWeek();
   const [target, setTarget] = useState<SwapTarget | null>(null);
+  // Set by a week swipe in the phone planner: the weekday to keep and the slide direction.
+  const [arrival, setArrival] = useState<{ day: number; dir: -1 | 1; keyboard: boolean }>();
+  useEffect(() => {
+    if (!planning) setArrival(undefined);
+  }, [planning]);
   // A swap target belongs to one plan's slots; drop it when the visible week changes.
   useEffect(() => setTarget(null), [selectedWeek]);
 
@@ -95,7 +101,8 @@ export function WeekScreen({ week, onSelectWeek, planning = false, onPlanning }:
     />
   );
 
-  if (plan.isPending) {
+  // A "no plan" answer kept from the previous week says nothing about this one; the planner must not mount an empty grid for it.
+  if (plan.isPending || (planning && plan.isPlaceholderData && plan.data === null)) {
     return (
       <>
         {header}
@@ -120,18 +127,25 @@ export function WeekScreen({ week, onSelectWeek, planning = false, onPlanning }:
     );
   }
 
-  if (plan.data === null) {
-    // Other weeks: a future week offers planning (coming soon), a past week just states the gap.
+  if (plan.data === null && !planning) {
+    // Other weeks: offer to plan it (future) or state the gap (past); either way Plan mode is one tap away.
     if (!isCurrentWeek) {
+      const planIt = (
+        <Button variant="primary" icon={<Icon name="plus" />} onClick={() => onPlanning(true)}>
+          Plan this week
+        </Button>
+      );
       return (
         <>
           {header}
           {selectedWeek > currentWeek ? (
-            <EmptyState emoji="lettuce" title="Nothing planned for this week yet">
-              Ask your AI assistant to plan these days over MCP. Planning inside the app is coming soon.
+            <EmptyState emoji="lettuce" title="Nothing planned for this week yet" action={planIt}>
+              Or ask your AI assistant to plan these days over MCP.
             </EmptyState>
           ) : (
-            <EmptyState emoji="empty-bowl" title="Nothing was planned that week" />
+            <EmptyState emoji="empty-bowl" title="Nothing was planned that week" action={planIt}>
+              Or ask your AI assistant to plan these days over MCP.
+            </EmptyState>
           )}
         </>
       );
@@ -160,15 +174,44 @@ export function WeekScreen({ week, onSelectWeek, planning = false, onPlanning }:
     );
   }
 
-  const planView = plan.data;
   if (planning) {
+    // A week without a plan edits an empty grid; the first save creates the plan.
+    // While the next week loads, the previous planner stays up (keepPreviousData); its key swaps it out on arrival.
+    const planView = plan.data ?? emptyPlan(selectedWeek);
     return (
-      <>
-        {header}
-        <Planner plan={planView} recipes={recipes.data} today={today} />
-      </>
+      <Planner
+        key={planView.weekStart}
+        plan={planView}
+        recipes={recipes.data}
+        today={today}
+        onWeek={(step, day, keyboard) => {
+          setArrival({ day, dir: step, keyboard });
+          browseWeek(step * 7);
+        }}
+        arrival={planView.weekStart === selectedWeek ? arrival : undefined}
+        header={(narrow, status) =>
+          narrow ? (
+            <div className={styles.planTop}>
+              <div className={styles.planTitleBox}>
+                <h1 className={styles.planTitle}>{title}</h1>
+                <p className={styles.planRange}>{rangeLabel}</p>
+                <div className={styles.planStatus}>{status}</div>
+              </div>
+              <div className={styles.planSide}>
+                <span className={styles.planSticker} aria-hidden="true" />
+                <Button variant="primary" className={styles.planDone} onClick={() => onPlanning(false)}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          ) : (
+            header
+          )
+        }
+      />
     );
   }
+  const planView = plan.data!;
   return (
     <>
       {header}
