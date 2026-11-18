@@ -132,6 +132,12 @@ for (const family of Object.keys(BUILTIN) as UnitFamily[]) {
   for (const unit of Object.keys(BUILTIN[family])) FAMILY_BY_UNIT.set(unit, family);
 }
 
+/** Amount of the family base unit (g, ml, count) in one built-in `unit`, or `null`. */
+export function builtinFactor(unit: string, family: UnitFamily): number | null {
+  const table = BUILTIN[family];
+  return Object.hasOwn(table, unit) ? (table[unit] as number) : null;
+}
+
 /**
  * Canonicalize a free-text unit (case-insensitive, plural tolerant).
  *

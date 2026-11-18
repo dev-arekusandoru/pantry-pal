@@ -232,6 +232,10 @@ export const ingredients = sqliteTable(
     parQty: real("par_qty"),
     parUnit: text("par_unit"),
     notes: text("notes"),
+    /** USDA FoodData Central id; null with source "auto" = nothing confident, with "manual" = user cleared it. */
+    nutritionFdcId: integer("nutrition_fdc_id"),
+    /** null = never matched (backfill target), "auto" = auto-matched, "manual" = user choice. */
+    nutritionSource: text("nutrition_source").$type<"auto" | "manual">(),
     archivedAt: text("archived_at"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi";
 import { INGREDIENT_CATEGORIES, PANTRY_STATUSES } from "../db/schema.js";
+import { ingredientNutritionSchema } from "./nutrition.js";
 
 export const ingredientCategorySchema = z
   .enum(INGREDIENT_CATEGORIES)
@@ -72,6 +73,7 @@ export const ingredientSchema = z
 
 export const ingredientViewSchema = ingredientSchema
   .extend({
+    nutrition: ingredientNutritionSchema,
     aliases: z.array(ingredientAliasSchema),
     conversions: z.array(unitConversionSchema).describe("Custom conversions for this ingredient."),
     pantry: z.array(ingredientStockSchema).describe("Stock rows for this ingredient."),

@@ -21,6 +21,7 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 - [Pantry](use/pantry.md) — add food and change stock.
 - [Recipes](use/recipes.md) — servings, recipe status, cook mode, and cooking together.
 - [Create and edit recipes](use/recipe-editor.md) — the editor, step ingredient links, delete and archive.
+- [Nutrition](use/nutrition.md) — calories and nutrients, blank lines, and food matches.
 - [Meal plans](use/meal-plans.md) — meals, leftovers, swaps, and prep tasks.
 - [Ingredient icons](use/icons.md) — how icons are chosen, and how to change one.
 - [Ingredient sticker book](use/ingredient-dex.md) — collect stickers as you cook.

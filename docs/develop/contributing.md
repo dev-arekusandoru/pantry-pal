@@ -38,3 +38,19 @@ Icons are 160 px WebP files in `web/src/assets/ingredients/`. Drop in a file wit
 a descriptive name, for example `olive-oil.webp`, and the app matches it by name.
 Then run `pnpm icons:manifest` so the server accepts the name. See the README in
 that folder for the sheet workflow, naming rules, and matcher overrides.
+
+## Update nutrition data
+
+Recipe nutrition reads `nutrition/usda-foods.json.gz`, a snapshot of USDA
+FoodData Central (SR Legacy and Foundation Foods). The server never downloads
+data at run time. To rebuild the file, run from the repository root:
+
+```sh
+pnpm nutrition:data
+```
+
+The script downloads the CSV archives from `fdc.nal.usda.gov`, caches them in
+the system temporary directory, and writes the snapshot. Commit the new file.
+To use newer archives, change the URLs in `scripts/nutrition-data.ts` and the
+`NUTRITION_SOURCE` text in `src/services/foods.ts`. Run `pnpm test` afterward.
+The Docker image copies the `nutrition/` directory.

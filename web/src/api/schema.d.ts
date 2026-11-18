@@ -7076,6 +7076,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/nutrition/foods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search USDA foods
+         * @description Search the bundled USDA FoodData Central foods by name, best match first. Nutrients are per 100 g (sodium in mg).
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Food name to search for. */
+                    q: string;
+                    /** @description Maximum results (default 10). */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Matching foods */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FoodList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingredients/{id}/nutrition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set an ingredient's USDA food
+         * @description mode "auto" re-runs the name match; mode "manual" pins `fdcId` (null clears the match and stops auto-matching).
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetIngredientNutrition"];
+                };
+            };
+            responses: {
+                /** @description Updated ingredient */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IngredientView"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recipes/{idOrSlug}/nutrition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get recipe nutrition
+         * @description Calories, protein, carbs, fat, fiber, sugar and sodium for the whole recipe and per serving. Optional lines are excluded; lines without a USDA match, quantity or gram conversion stay blank and are reported per line.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Recipe id or slug. */
+                    idOrSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recipe nutrition */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecipeNutrition"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rules": {
         parameters: {
             query?: never;
@@ -7834,12 +7965,41 @@ export interface components {
             items: components["schemas"]["IngredientView"][];
         };
         IngredientView: components["schemas"]["Ingredient"] & {
+            nutrition: components["schemas"]["IngredientNutrition"];
             aliases: components["schemas"]["IngredientAlias"][];
             /** @description Custom conversions for this ingredient. */
             conversions: components["schemas"]["UnitConversion"][];
             /** @description Stock rows for this ingredient. */
             pantry: components["schemas"]["IngredientStock"][];
         };
+        /** @description USDA food matched to this ingredient; null = no match. */
+        IngredientNutrition: {
+            /**
+             * @description auto = matched by name, manual = user choice.
+             * @enum {string}
+             */
+            source: "auto" | "manual";
+            /** @description Matched USDA food; null = deliberately cleared. */
+            fdcId: number | null;
+            description: string | null;
+            per100g: components["schemas"]["Nutrients"];
+        } | null;
+        Nutrients: {
+            /** @description kcal. */
+            calories: number | null;
+            /** @description Grams. */
+            protein: number | null;
+            /** @description Grams. */
+            carbs: number | null;
+            /** @description Grams. */
+            fat: number | null;
+            /** @description Grams. */
+            fiber: number | null;
+            /** @description Grams. */
+            sugar: number | null;
+            /** @description Milligrams. */
+            sodium: number | null;
+        } | null;
         IngredientAlias: {
             /** @description Alias id (ali_...). */
             id: string;
@@ -8564,6 +8724,73 @@ export interface components {
             optional: boolean;
             scalingExempt: boolean;
             prepNote: string | null;
+        };
+        FoodList: {
+            items: components["schemas"]["Food"][];
+        };
+        Food: {
+            /** @description USDA FoodData Central id. */
+            fdcId: number;
+            /** @description USDA description, e.g. "Onions, raw". */
+            description: string;
+            /** @enum {string} */
+            dataType: "sr_legacy" | "foundation";
+            per100g: components["schemas"]["Nutrients"] & unknown;
+            portions: components["schemas"]["FoodPortion"][];
+            /** @description Match score 0..1; higher is better. */
+            score: number;
+        };
+        FoodPortion: {
+            /** @description Portion label, e.g. "cup" or "medium". */
+            label: string;
+            /** @description Grams in one such portion. */
+            grams: number;
+        };
+        SetIngredientNutrition: {
+            /**
+             * @description Re-run the automatic name match.
+             * @enum {string}
+             */
+            mode: "auto";
+        } | {
+            /** @enum {string} */
+            mode: "manual";
+            /** @description USDA food id to use; null clears the match and stops auto-matching. */
+            fdcId: number | null;
+        };
+        RecipeNutrition: {
+            recipeId: string;
+            servings: number | null;
+            total: components["schemas"]["Nutrients"] & unknown;
+            perServing: components["schemas"]["Nutrients"] & unknown;
+            /** @description Non-optional lines with status ok. */
+            countedLines: number;
+            /** @description Non-optional lines that are not ok. */
+            missingLines: number;
+            /** @description Data source credit. */
+            source: string;
+            lines: components["schemas"]["RecipeNutritionLine"][];
+        };
+        RecipeNutritionLine: {
+            recipeIngredientId: string;
+            ingredientId: string;
+            name: string;
+            qty: number | null;
+            qtyMax: number | null;
+            unit: string | null;
+            /** @description Grams used for this line (range midpoint). */
+            grams: number | null;
+            /** @description Matched USDA food. */
+            food: {
+                fdcId: number;
+                description: string;
+            } | null;
+            nutrients: components["schemas"]["Nutrients"] & unknown;
+            /**
+             * @description ok = counted; optional = excluded; no_match = no USDA food; no_quantity = to taste; no_conversion = amount not convertible to grams.
+             * @enum {string}
+             */
+            status: "ok" | "optional" | "no_match" | "no_quantity" | "no_conversion";
         };
         DietaryRuleList: {
             items: components["schemas"]["DietaryRule"][];

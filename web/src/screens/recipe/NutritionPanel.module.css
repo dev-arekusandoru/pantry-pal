@@ -1,0 +1,211 @@
+/* Quieter than the ingredients card: flat paper with a pencil ring, no lift. */
+.panel {
+  margin-top: 16px;
+  padding: 14px 14px 12px;
+  border-radius: 24px;
+  background: var(--card) var(--grain);
+  box-shadow: 0 0 0 2px var(--line);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.title {
+  font-size: var(--fs-h3);
+}
+
+.placeholder {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Calories are the one big number; the rest are quiet reference. */
+.stats {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.stats dt {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.stats dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.calories dd {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.calories b {
+  font-family: var(--font-head);
+  font-weight: var(--fw-head);
+  font-size: clamp(36px, 10vw, 48px);
+  line-height: 1;
+}
+
+.calories span {
+  color: var(--muted);
+  font-weight: var(--fw-bold);
+}
+
+.group {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.main dd {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-heavy);
+}
+
+.minor {
+  padding-top: 8px;
+  border-top: 2px dashed var(--line);
+}
+
+.minor dd {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-bold);
+}
+
+.partial {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--butter-s);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.retry {
+  margin-left: 6px;
+  height: 36px;
+}
+
+/* Native button: Enter and Space work, and aria-expanded tells screen readers the state. */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 4px;
+  padding: 0 4px;
+  color: var(--accent-text);
+  font-weight: var(--fw-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.chevron {
+  transition: transform var(--dur) var(--ease);
+}
+
+.toggle[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.breakdown[hidden] {
+  display: none;
+}
+
+.breakdown {
+  animation: breakdown-in var(--dur-enter) var(--ease-out);
+}
+
+@keyframes breakdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--shift) * -1));
+  }
+}
+
+.line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 2px dashed var(--line);
+}
+
+.line:first-child {
+  border-top: 0;
+}
+
+.lineName {
+  font-weight: var(--fw-bold);
+  overflow-wrap: anywhere;
+}
+
+.lineKcal {
+  font-weight: var(--fw-heavy);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.lineDetail {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  overflow-wrap: anywhere;
+}
+
+/* Blank lines read as quieter, but the reason text, not the tint, says why. */
+.line:not([data-status="ok"]) .lineName {
+  color: var(--muted);
+}
+
+.change {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  align-self: center;
+  min-height: 36px;
+  padding: 0 8px;
+  color: var(--accent-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.line[data-status="optional"] .lineDetail {
+  grid-column: 1 / -1;
+}
+
+.credit {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breakdown {
+    animation: none;
+  }
+  .chevron {
+    transition: none;
+  }
+}

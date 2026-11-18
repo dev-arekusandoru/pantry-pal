@@ -1,6 +1,6 @@
 # MCP tool reference
 
-PantryPal registers 28 MCP tools. The `tools/list` request returns each tool's
+PantryPal registers 31 MCP tools. The `tools/list` request returns each tool's
 full JSON Schema, generated from the Zod schemas in the source. Use this page to
 choose a tool and see its main inputs. Use `tools/list` or the linked source
 files for every field, default, and enum.
@@ -22,6 +22,7 @@ Input schemas come from these files:
 | Household | [`household.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/household.ts) | [`household.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/household.ts) |
 | Ingredients, units, pantry | [`pantry.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/pantry.ts) | [`ingredients.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/ingredients.ts), [`pantry.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/pantry.ts) |
 | Recipes and rules | [`recipes.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/recipes.ts) | [`recipes.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/recipes.ts), [`rules.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/rules.ts) |
+| Nutrition | [`nutrition.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/nutrition.ts) | [`nutrition.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/nutrition.ts) |
 | Plans and cooking | [`planning.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/planning.ts) | [`plans.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/plans.ts) |
 | Shopping | [`shopping.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/mcp/tools/shopping.ts) | [`shopping.ts`](https://github.com/dev-arekusandoru/pantry-pal/blob/main/src/schemas/shopping.ts) |
 
@@ -89,6 +90,20 @@ A step `links` entry uses `ingredientIndex` in the submitted `ingredients` array
 line's unit; `null` means the whole line.
 `recipe_check` returns `ok: false` only for an unconditional forbidden match.
 A violation with a `conditionNote` is a judgement call for the agent.
+
+## Nutrition
+
+| Tool | Purpose | Key inputs |
+| --- | --- | --- |
+| `get_recipe_nutrition` | Read calories, protein, carbs, fat, fiber, sugar, and sodium (mg) for a recipe, whole and per serving. Each ingredient line has a status and its matched USDA food. Read-only. | `idOrSlug`. |
+| `search_foods` | Search the bundled USDA foods by name, best match first. Nutrients are for 100 g. Read-only. | `query`; optional `limit` (1 to 50, default 10). |
+| `set_ingredient_nutrition` | Choose the USDA food that an ingredient uses. Returns the ingredient with its `nutrition`. | `ingredientId` or `ingredient`; `mode` `auto` or `manual`; `fdcId` for `manual` (a number from `search_foods`, or `null` to clear the match for good). |
+
+Optional lines are not counted. A line with no quantity, no food, or no gram
+conversion stays blank. Check `missingLines` and each line `status` before you
+quote a total. The match applies to the ingredient in every recipe. See
+[Nutrition](../use/nutrition.md) and the
+[REST API](rest-api.md#recipe-nutrition).
 
 ## Plans and cooking
 

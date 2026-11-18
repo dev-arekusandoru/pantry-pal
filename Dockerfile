@@ -57,6 +57,8 @@ COPY --from=build /app/dist ./dist
 # Static web app, served by the Hono server at `/` (path: <package root>/web/dist).
 COPY --from=build /app/web/dist ./web/dist
 COPY --from=build /app/drizzle ./drizzle
+# Bundled USDA FoodData Central nutrition data, read from <package root>/nutrition/.
+COPY nutrition ./nutrition
 # Example seed file, so `node dist/cli.js seed seed/example.json` works in
 # the container without extra mounts.
 COPY seed ./seed

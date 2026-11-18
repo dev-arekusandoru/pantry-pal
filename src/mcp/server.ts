@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { packageVersion } from "../api/routes/health.js";
 import type { Ctx } from "../context.js";
 import { registerHouseholdTools } from "./tools/household.js";
+import { registerNutritionTools } from "./tools/nutrition.js";
 import { registerPantryTools } from "./tools/pantry.js";
 import { registerPlanningTools } from "./tools/planning.js";
 import { registerRecipeTools } from "./tools/recipes.js";
@@ -33,6 +34,7 @@ export function createMcpServer(ctx: Ctx): McpServer {
   registerHouseholdTools(server, ctx);
   registerPantryTools(server, ctx);
   registerRecipeTools(server, ctx);
+  registerNutritionTools(server, ctx);
   registerPlanningTools(server, ctx);
   registerShoppingTools(server, ctx);
 

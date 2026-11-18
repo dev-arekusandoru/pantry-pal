@@ -49,6 +49,9 @@ Each ingredient shows a pantry mark:
 Optional ingredients are not counted. Unknown amounts are not treated as zero;
 check those in the [pantry](pantry.md).
 
+Below the ingredients, the **Nutrition** panel shows calories and nutrients. See
+[Nutrition](nutrition.md).
+
 ## Set a recipe status
 
 Use **Rotation**, **Want to try**, or **Never** in the **Keep in rotation?** row
@@ -160,6 +163,8 @@ Use these for bulk work and automation:
 - Create or edit many recipes, or set step ingredient links: `recipe_save`.
 - Add a rating or a note about a status change: `recipe_set_status`.
 - Read status history: `GET /recipes/{idOrSlug}/status-history`.
+- Read recipe nutrition or set an ingredient's USDA food: `get_recipe_nutrition`,
+  `set_ingredient_nutrition`. See [Nutrition](nutrition.md).
 - Check a recipe against dietary rules: `recipe_check`. See
   [Dietary rules](dietary-rules.md).
 

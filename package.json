@@ -21,6 +21,7 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "icons:manifest": "tsx scripts/icons-manifest.ts",
+    "nutrition:data": "tsx scripts/nutrition-data.ts",
     "build:server": "tsc -p tsconfig.build.json",
     "test:web": "pnpm --filter @pantrypal/web test",
     "test:all": "vitest run && pnpm test:web",

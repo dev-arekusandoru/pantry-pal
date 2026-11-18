@@ -3,6 +3,7 @@ import type { AppEnv } from "../../auth/middleware.js";
 import { registerHealthRoutes } from "./health.js";
 import { registerHouseholdRoutes } from "./household.js";
 import { registerIngredientRoutes } from "./ingredients.js";
+import { registerNutritionRoutes } from "./nutrition.js";
 import { registerPantryRoutes } from "./pantry.js";
 import { registerPlansRoutes } from "./plans.js";
 import { registerRecipeRoutes } from "./recipes.js";
@@ -29,6 +30,7 @@ export const routeRegistrars: Array<(app: ApiApp) => void> = [
   registerPantryRoutes,
   registerPlansRoutes,
   registerRecipeRoutes,
+  registerNutritionRoutes,
   registerRuleRoutes,
   registerHouseholdRoutes,
   registerTokenRoutes,

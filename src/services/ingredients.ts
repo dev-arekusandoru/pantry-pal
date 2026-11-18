@@ -16,6 +16,7 @@ import { AppError } from "../lib/errors.js";
 import { normalizeImageUrl } from "../lib/icons.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
+import { autoMatchFood, getFood, type Nutrients } from "./foods.js";
 import { convert, normalizeUnit } from "./units.js";
 
 export type Ingredient = typeof ingredients.$inferSelect;
@@ -122,6 +123,8 @@ export function resolveIngredient(
       householdId: ctx.householdId,
       name: displayName,
       normalizedName: normalized,
+      nutritionFdcId: autoMatchFood(displayName)?.fdcId ?? null,
+      nutritionSource: "auto",
       category: options.category ?? "other",
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -158,15 +161,42 @@ export interface IngredientStockView {
   status: PantryStatus;
 }
 
-/** Ingredient row plus its aliases, custom conversions and pantry stock. */
-export interface IngredientView extends Omit<Ingredient, "householdId"> {
+export interface IngredientNutritionView {
+  source: "auto" | "manual";
+  fdcId: number | null;
+  description: string | null;
+  per100g: Nutrients | null;
+}
+
+/** Ingredient row plus its aliases, custom conversions, pantry stock and USDA match. */
+export interface IngredientView
+  extends Omit<Ingredient, "householdId" | "nutritionFdcId" | "nutritionSource"> {
+  /** null = no USDA food matched (never matched, or auto-match found nothing confident). */
+  nutrition: IngredientNutritionView | null;
   aliases: IngredientAliasView[];
   conversions: IngredientConversionView[];
   pantry: IngredientStockView[];
 }
 
-function ingredientView(ctx: Ctx, row: Ingredient): IngredientView {
-  const { householdId: _householdId, ...rest } = row;
+function nutritionView(row: Ingredient): IngredientNutritionView | null {
+  if (row.nutritionSource === null) return null;
+  const food = row.nutritionFdcId === null ? null : getFood(row.nutritionFdcId);
+  if (row.nutritionSource === "auto" && food === null) return null;
+  return {
+    source: row.nutritionSource,
+    fdcId: food?.fdcId ?? null,
+    description: food?.description ?? null,
+    per100g: food?.per100g ?? null,
+  };
+}
+
+export function ingredientView(ctx: Ctx, row: Ingredient): IngredientView {
+  const {
+    householdId: _householdId,
+    nutritionFdcId: _nutritionFdcId,
+    nutritionSource: _nutritionSource,
+    ...rest
+  } = row;
 
   const aliases = ctx.db
     .select({
@@ -218,7 +248,7 @@ function ingredientView(ctx: Ctx, row: Ingredient): IngredientView {
     )
     .all();
 
-  return { ...rest, aliases, conversions, pantry };
+  return { ...rest, nutrition: nutritionView(row), aliases, conversions, pantry };
 }
 
 // ---------------------------------------------------------------------------
@@ -230,7 +260,7 @@ function withTx<T>(ctx: Ctx, fn: (tx: Ctx) => T): T {
   return ctx.db.transaction((tx) => fn({ ...ctx, db: tx as unknown as Ctx["db"] }));
 }
 
-function requireIngredient(ctx: Ctx, id: string): Ingredient {
+export function requireIngredient(ctx: Ctx, id: string): Ingredient {
   const row = ctx.db
     .select()
     .from(ingredients)
@@ -389,6 +419,8 @@ function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientV
       parQty: requireParQty(input.parQty),
       parUnit: normalizeUnitInput(input.parUnit, "unit"),
       notes: input.notes ?? null,
+      nutritionFdcId: autoMatchFood(name)?.fdcId ?? null,
+      nutritionSource: "auto",
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -441,6 +473,10 @@ function updateIngredientIn(
     }
     patch.name = name;
     patch.normalizedName = normalized;
+    if (name !== row.name && row.nutritionSource !== "manual") {
+      patch.nutritionFdcId = autoMatchFood(name)?.fdcId ?? null;
+      patch.nutritionSource = "auto";
+    }
   }
   if (input.description !== undefined) patch.description = input.description;
   if (input.category !== undefined) patch.category = input.category;
@@ -578,6 +614,23 @@ export function mergeIngredients(
     const source = requireIngredient(tx, sourceId);
     const target = requireIngredient(tx, targetId);
     const timestamp = nowIso(tx);
+
+    // Keep the target's USDA match; carry the source's over when the target has none.
+    const targetMatched = target.nutritionSource === "manual" || target.nutritionFdcId !== null;
+    const sourceMatched = source.nutritionSource === "manual" || source.nutritionFdcId !== null;
+    if (!targetMatched && sourceMatched) {
+      target.nutritionFdcId = source.nutritionFdcId;
+      target.nutritionSource = source.nutritionSource;
+      tx.db
+        .update(ingredients)
+        .set({
+          nutritionFdcId: source.nutritionFdcId,
+          nutritionSource: source.nutritionSource,
+          updatedAt: timestamp,
+        })
+        .where(and(eq(ingredients.householdId, tx.householdId), eq(ingredients.id, target.id)))
+        .run();
+    }
 
     const recipeIngredientsMoved = tx.db
       .update(recipeIngredients)

@@ -25,6 +25,9 @@ const TOOL_NAMES = [
   "recipe_save",
   "recipe_set_status",
   "recipe_check",
+  "get_recipe_nutrition",
+  "search_foods",
+  "set_ingredient_nutrition",
   "rules_list",
   "rules_manage",
   "plan_get",
@@ -341,5 +344,38 @@ describe("MCP endpoint", () => {
 
     const get = await rpc(app, { method: "GET", token });
     expect(get.status).toBe(405);
+  });
+
+  it("searches foods, pins an ingredient's food and returns recipe nutrition", async () => {
+    const { app, token } = makeTestApp();
+    await rpc(app, { token, body: initialize() });
+
+    const search = await callTool(app, token, "search_foods", { query: "onion", limit: 3 });
+    const foods = (search.payload as { items: { fdcId: number }[] }).items;
+    expect(foods.length).toBeGreaterThan(0);
+
+    const saved = await callTool(app, token, "recipe_save", {
+      title: "Onion soup",
+      servings: 2,
+      ingredients: [{ ingredient: "Mystery onion", qty: 200, unit: "g" }],
+    });
+    expect(saved.result.isError).toBeUndefined();
+
+    const set = await callTool(app, token, "set_ingredient_nutrition", {
+      ingredient: "Mystery onion",
+      mode: "manual",
+      fdcId: foods[0]!.fdcId,
+    });
+    expect(set.result.isError).toBeUndefined();
+    expect(set.payload).toMatchObject({ nutrition: { source: "manual", fdcId: foods[0]!.fdcId } });
+
+    const missingId = await callTool(app, token, "set_ingredient_nutrition", {
+      ingredient: "Mystery onion",
+      mode: "manual",
+    });
+    expect(missingId.result.isError).toBe(true);
+
+    const nutrition = await callTool(app, token, "get_recipe_nutrition", { idOrSlug: "onion-soup" });
+    expect(nutrition.payload).toMatchObject({ servings: 2, countedLines: 1, missingLines: 0 });
   });
 });

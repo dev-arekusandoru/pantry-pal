@@ -5,6 +5,7 @@ import { Button, Emoji, EmptyState, ErrorState, Icon, IconButton, Pill, Segmente
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { formatDuration, stepSeconds } from "./duration";
 import { formatAmount, formatDay, formatMinutes, formatNumber, haveIngredient, type Have, type MealType } from "./lib";
+import { NutritionPanel } from "./NutritionPanel";
 import { RecipePhoto } from "./RecipePhoto";
 import { isNotFound, useAvailability, useDeleteRecipe, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "./queries";
 import type { EditableStatus } from "./status";
@@ -317,6 +318,8 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
             </p>
           )}
         </section>
+
+        <NutritionPanel slug={r.slug} />
 
         <section className={styles.method} aria-labelledby="method-h">
           <h2 id="method-h">Method</h2>

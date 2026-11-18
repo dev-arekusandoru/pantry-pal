@@ -23,6 +23,7 @@ flowchart LR
 | `src/schemas/` | Zod input and output schemas |
 | `src/db/schema.ts` | Database tables |
 | `drizzle/` | Database migrations |
+| `nutrition/` | Bundled USDA food data, built by `pnpm nutrition:data` |
 | `src/seed/` | JSON import loader |
 | `src/cli.ts` | Household, token, migration, and import commands |
 

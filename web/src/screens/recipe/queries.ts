@@ -96,3 +96,46 @@ export function useDeleteRecipe() {
 export function isNotFound(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404;
 }
+
+/** Whole-recipe and per-serving nutrition with the per-line breakdown. Shares `qk.recipes`, so recipe edits refresh it. */
+export function useRecipeNutrition(slug: string) {
+  return useQuery({
+    queryKey: [...qk.recipes, "nutrition", slug],
+    queryFn: () =>
+      unwrap(client.GET("/recipes/{idOrSlug}/nutrition", { params: { path: { idOrSlug: slug } } })),
+  });
+}
+
+/** USDA food search for the match picker. The dataset ships with the server, so results rarely change. */
+export function useFoodSearch(query: string, limit = 15) {
+  const q = query.trim();
+  return useQuery({
+    queryKey: [...qk.nutrition, "foods", q, limit],
+    queryFn: () => unwrap(client.GET("/nutrition/foods", { params: { query: { q, limit } } })),
+    enabled: q !== "",
+    staleTime: 10 * 60_000,
+    placeholderData: keepPreviousData,
+    select: (d) => d.items,
+  });
+}
+
+export type IngredientNutritionChoice = { mode: "auto" } | { mode: "manual"; fdcId: number | null };
+
+/** Pick the USDA food for an ingredient. It applies to every recipe that uses the ingredient. */
+export function useSetIngredientNutrition() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ingredientId: string; choice: IngredientNutritionChoice }) =>
+      unwrap(
+        client.PUT("/ingredients/{id}/nutrition", {
+          params: { path: { id: input.ingredientId } },
+          body: input.choice,
+        }),
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.recipes });
+      void queryClient.invalidateQueries({ queryKey: qk.ingredients });
+    },
+    onError: (error) => toast.show({ message: errorMessage(error), tone: "error" }),
+  });
+}

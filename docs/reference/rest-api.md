@@ -65,10 +65,11 @@ Paths below are relative to `/api/v1`.
 | --- | --- |
 | `/household`, `/household/members` | Read and update settings and members |
 | `/tokens` | List, create, and revoke API tokens. Needs a browser session; a bearer token gets `403`. The secret is only in the create response |
-| `/ingredients` | Find, create, update, archive, alias, and merge ingredients |
+| `/ingredients` | Find, create, update, archive, alias, and merge ingredients; set an ingredient's USDA food |
 | `/unit-conversions`, `/units/convert` | Manage conversions and convert amounts |
 | `/pantry` | Read stock, set amounts, record changes, and check availability |
-| `/recipes` | Manage recipes and step ingredient links, scale servings, check rules, and set status |
+| `/recipes` | Manage recipes and step ingredient links, scale servings, read nutrition, check rules, and set status |
+| `/nutrition` | Search the bundled USDA foods |
 | `/rules` | Manage dietary rules and check ingredient lists |
 | `/plans` | Manage week plans, meal slots, dishes, swaps, cooks, and prep tasks |
 | `/cook-events` | Create, complete, reopen, and undo cooks |
@@ -104,6 +105,56 @@ Recipe read returns the links on each step as `links[]`, with `ingredientName`,
 `qty`, `unit`, `prepNote`, and `position`. The recipe also returns
 `cookEventCount`; `DELETE /recipes/{idOrSlug}` conflicts when it is greater than
 zero.
+
+### Recipe nutrition
+
+Nutrition comes from the bundled USDA FoodData Central data. See
+[Nutrition](../use/nutrition.md) for what the web app shows.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /recipes/{idOrSlug}/nutrition` | Calories, protein, carbs, fat, fiber, sugar, and sodium for the recipe and per serving, with one entry for each ingredient line. |
+| `GET /nutrition/foods?q=&limit=` | Search USDA foods by name, best match first. `limit` is 1 to 50; the default is 10. |
+| `PUT /ingredients/{id}/nutrition` | Set the ingredient's USDA food. Returns the ingredient. |
+
+The recipe response has these fields:
+
+- `total` and `perServing` hold `calories` (kcal), `protein`, `carbs`, `fat`,
+  `fiber`, `sugar` (g), and `sodium` (mg). A value is `null` when no counted line
+  has it. `perServing` is `null` when the recipe has no servings.
+- `countedLines` and `missingLines` count the non-optional lines that have, and
+  do not have, a calculated value.
+- `source` names the dataset. `lines[]` has `qty`, `qtyMax`, `unit`, `grams`,
+  the matched `food`, `nutrients`, and a `status`.
+
+A line `status` is one of these. The server checks them in this order:
+
+| `status` | Meaning |
+| --- | --- |
+| `optional` | The line is optional. It is not counted. |
+| `no_quantity` | The line has no quantity. |
+| `no_match` | The ingredient has no USDA food. |
+| `no_conversion` | The amount cannot be turned into grams. |
+| `ok` | The line is counted in the totals. |
+
+A quantity range uses its middle. The server converts to grams with the
+household unit conversions first, then with the portions of the USDA food.
+
+Food search items have `fdcId`, `description`, `dataType`, `per100g`,
+`portions`, and a `score` from 0 to 1. Nutrients are for 100 g.
+
+`PUT /ingredients/{id}/nutrition` takes one of these bodies:
+
+| Body | Effect |
+| --- | --- |
+| `{"mode": "auto"}` | Run the name match again. |
+| `{"mode": "manual", "fdcId": 170000}` | Use this USDA food. An unknown `fdcId` returns `not_found`. |
+| `{"mode": "manual", "fdcId": null}` | Clear the match. The ingredient is not matched again by itself. |
+
+The ingredient view has a `nutrition` field: `null` when no food is matched, or
+`{source, fdcId, description, per100g}`. `source` is `auto` or `manual`. After
+a manual clear, `source` is `manual` and `fdcId` is `null`. The match belongs to
+the ingredient, so it applies to every recipe that uses it.
 
 Write and delete responses vary. Use the response schema for the endpoint.
 

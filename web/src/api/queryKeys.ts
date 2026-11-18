@@ -17,6 +17,7 @@ export const qk = {
   pantry: ["pantry"] as const,
   ingredients: ["ingredients"] as const,
   recipes: ["recipes"] as const,
+  nutrition: ["nutrition"] as const,
   plans: ["plans"] as const,
   prepTasks: ["prep-tasks"] as const,
   cookEvents: ["cook-events"] as const,
