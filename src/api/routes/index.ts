@@ -8,6 +8,7 @@ import { registerPlansRoutes } from "./plans.js";
 import { registerRecipeRoutes } from "./recipes.js";
 import { registerRuleRoutes } from "./rules.js";
 import { registerShoppingRoutes } from "./shopping.js";
+import { registerTokenRoutes } from "./tokens.js";
 
 /** The API sub-app mounted at `/api/v1`. */
 export type ApiApp = OpenAPIHono<AppEnv>;
@@ -30,4 +31,5 @@ export const routeRegistrars: Array<(app: ApiApp) => void> = [
   registerRecipeRoutes,
   registerRuleRoutes,
   registerHouseholdRoutes,
+  registerTokenRoutes,
 ];

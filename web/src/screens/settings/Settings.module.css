@@ -237,3 +237,22 @@
   padding-left: 10px;
   font-weight: var(--fw-bold);
 }
+
+.secret {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 20px;
+  border: 2px solid var(--ink);
+}
+
+.secret code {
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.secretActions {
+  display: flex;
+  gap: 8px;
+}

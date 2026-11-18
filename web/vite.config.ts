@@ -2,6 +2,10 @@ import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
+// Plain `{ target }` keeps the browser's `Host` (Vite's string shorthand sets
+// changeOrigin), so the server's `Origin` == `Host` check passes.
+const proxyEntry = { target: process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787" };
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -11,9 +15,9 @@ export default defineConfig({
     proxy: {
       // The Hono server (`pnpm dev` at the repo root) listens on 4787.
       // Override with PANTRYPAL_API_URL to point at another instance.
-      "/api": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
-      "/health": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
-      "/auth": process.env.PANTRYPAL_API_URL ?? "http://127.0.0.1:4787",
+      "/api": proxyEntry,
+      "/health": proxyEntry,
+      "/auth": proxyEntry,
     },
   },
   build: {

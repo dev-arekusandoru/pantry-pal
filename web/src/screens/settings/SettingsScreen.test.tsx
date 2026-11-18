@@ -42,12 +42,26 @@ function makeMember(id: string, name: string): HouseholdMember {
 /** Household, its people, and the public health endpoint the footer reads. */
 function stubSettingsApi() {
   const members = [makeMember("m_1", "Ada")];
+  const tokens: Array<{ id: string; name: string; prefix: string; createdAt: string; lastUsedAt: null }> = [];
 
   vi.stubGlobal(
     "fetch",
     vi.fn(async (req: Request) => {
       const path = new URL(req.url, "http://localhost").pathname;
       if (path.endsWith("/household")) return Response.json(HOUSEHOLD);
+
+      if (path.endsWith("/tokens")) {
+        if (req.method === "GET") return Response.json({ items: tokens });
+        const { name } = (await req.json()) as { name: string };
+        const row = { id: `tok_${tokens.length + 1}`, name, prefix: "pp_abcde", createdAt: "2026-01-01T00:00:00Z", lastUsedAt: null };
+        tokens.push(row);
+        return Response.json({ ...row, token: "pp_secret123" }, { status: 201 });
+      }
+      const tokenById = path.match(/\/tokens\/([^/]+)$/);
+      if (tokenById && req.method === "DELETE") {
+        tokens.splice(0, tokens.length, ...tokens.filter((t) => t.id !== tokenById[1]));
+        return new Response(null, { status: 204 });
+      }
 
       if (path.endsWith("/household/members")) {
         if (req.method === "GET") return Response.json({ items: members });
@@ -157,5 +171,20 @@ describe("SettingsScreen", () => {
     await user.click(screen.getByRole("button", { name: "Remove" }));
     await waitFor(() => expect(screen.queryByLabelText("Name for Ada")).not.toBeInTheDocument());
     expect(members).toHaveLength(0);
+  });
+
+  it("shows a new API token secret once and revokes it", async () => {
+    const user = userEvent.setup();
+    await renderSettings();
+
+    await user.type(screen.getByLabelText("Token name"), "Claude");
+    await user.click(screen.getByRole("button", { name: "Create" }));
+    expect(await screen.findByText("pp_secret123")).toBeInTheDocument();
+    expect(screen.getByText("Copy it now. It won't be shown again.")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Revoke Claude" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Revoke Claude" }));
+    await user.click(screen.getByRole("button", { name: "Revoke token" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Revoke Claude" })).not.toBeInTheDocument());
   });
 });

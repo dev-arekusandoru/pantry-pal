@@ -25,13 +25,17 @@ import {
 import styles from "./Settings.module.css";
 import {
   useCreateMember,
+  useCreateToken,
   useDeleteMember,
   useHousehold,
   useIngredients,
   useMembers,
   useRenameMember,
+  useRevokeToken,
   useServerVersion,
+  useTokens,
   useUpdateHousehold,
+  type ApiToken,
   type HouseholdMember,
   type HouseholdSettings,
   type Ingredient,
@@ -150,6 +154,13 @@ export function SettingsScreen() {
               </Fragment>
             ))}
           </div>
+        </Card>
+
+        <Card as="section" aria-labelledby="settings-tokens" className={styles.section}>
+          <h2 id="settings-tokens" className={styles.heading}>
+            API tokens
+          </h2>
+          <TokensSection />
         </Card>
 
         <MissingIcons
@@ -406,6 +417,135 @@ function AddPersonForm({ adding, onAdd }: { adding: boolean; onAdd: (name: strin
         Add
       </Button>
     </form>
+  );
+}
+
+function TokensSection() {
+  const tokens = useTokens();
+  const create = useCreateToken();
+  const revoke = useRevokeToken();
+  const inputId = useId();
+  const [draft, setDraft] = useState("");
+  const [secret, setSecret] = useState<string | null>(null);
+  const [pending, setPending] = useState<ApiToken | null>(null);
+  const trimmed = draft.trim();
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!trimmed) return;
+    create.mutate(trimmed, {
+      onSuccess: (created) => {
+        setSecret(created.token);
+        setDraft("");
+      },
+      onError: (error) => toast.error(errorMessage(error)),
+    });
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(secret ?? "");
+      toast.show({ message: "Copied" });
+    } catch {
+      toast.error("Could not copy. Select the token and copy it by hand.");
+    }
+  }
+
+  return (
+    <>
+      <p className={cx(styles.hint, styles.sectionHint)}>
+        Tokens let apps and AI agents use the API and MCP server for this household.
+      </p>
+
+      {secret !== null && (
+        <div className={styles.secret} role="status">
+          <code aria-label="New API token">{secret}</code>
+          <p className={styles.hint}>Copy it now. It won't be shown again.</p>
+          <div className={styles.secretActions}>
+            <Button onClick={() => void copy()}>Copy</Button>
+            <Button onClick={() => setSecret(null)}>Done</Button>
+          </div>
+        </div>
+      )}
+
+      {tokens.isPending ? (
+        <div className={styles.rows} aria-busy="true" aria-label="Loading tokens">
+          <Skeleton height={44} radius={999} />
+        </div>
+      ) : tokens.isError ? (
+        <p className={cx(styles.hint, styles.error)} role="alert">
+          {errorMessage(tokens.error)}
+        </p>
+      ) : tokens.data.length === 0 ? (
+        <p className={styles.hint}>No tokens yet.</p>
+      ) : (
+        <div className={styles.rows} role="list">
+          {tokens.data.map((token, index) => (
+            <Fragment key={token.id}>
+              {index > 0 && <Separator.Root decorative className={styles.sep} />}
+              <div role="listitem" className={styles.row}>
+                <div className={styles.rowText}>
+                  <span className={styles.label}>{token.name}</span>
+                  <span className={styles.hint}>
+                    {token.prefix}… · {token.lastUsedAt ? `Used ${new Date(token.lastUsedAt).toLocaleDateString()}` : "Never used"}
+                  </span>
+                </div>
+                <Button onClick={() => setPending(token)} aria-label={`Revoke ${token.name}`}>
+                  Revoke
+                </Button>
+              </div>
+            </Fragment>
+          ))}
+        </div>
+      )}
+
+      <form className={cx(styles.nameForm, styles.addPerson)} onSubmit={submit}>
+        <div className={styles.field}>
+          <Label.Root className={styles.label} htmlFor={inputId}>
+            Token name
+          </Label.Root>
+          <input
+            id={inputId}
+            className={styles.input}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="e.g. Claude"
+            autoComplete="off"
+            enterKeyHint="done"
+            maxLength={80}
+          />
+        </div>
+        <Button type="submit" variant="primary" disabled={!trimmed} loading={create.isPending}>
+          Create
+        </Button>
+      </form>
+
+      <Sheet
+        open={pending !== null}
+        onClose={() => setPending(null)}
+        title={`Revoke ${pending?.name ?? ""}?`}
+        footer={
+          <>
+            <Button onClick={() => setPending(null)}>Cancel</Button>
+            <Button
+              variant="primary"
+              loading={revoke.isPending}
+              onClick={() => {
+                if (!pending) return;
+                revoke.mutate(pending.id, {
+                  onError: (error) => toast.error(errorMessage(error)),
+                  onSettled: () => setPending(null),
+                });
+              }}
+            >
+              Revoke token
+            </Button>
+          </>
+        }
+      >
+        <p>Apps that use this token stop working right away.</p>
+      </Sheet>
+    </>
   );
 }
 

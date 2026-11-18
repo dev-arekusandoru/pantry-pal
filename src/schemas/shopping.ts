@@ -425,7 +425,7 @@ export const deleteResponseSchema = z.object({ deleted: z.literal(true), id: z.s
 
 export const errorResponseSchema = z.object({
   error: z.object({
-    code: z.enum(["not_found", "conflict", "validation", "unprocessable", "unauthorized", "unavailable"]),
+    code: z.enum(["not_found", "conflict", "validation", "unprocessable", "unauthorized", "forbidden", "unavailable"]),
     message: z.string(),
   }),
 });

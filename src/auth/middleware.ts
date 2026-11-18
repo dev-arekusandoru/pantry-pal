@@ -7,7 +7,7 @@ import { resolveSession, SESSION_COOKIE_NAME } from "./session.js";
 import { verifyToken } from "./tokens.js";
 
 /** Hono environment for authenticated routes: `c.var.ctx` is always set. */
-export type AppEnv = { Variables: { ctx: Ctx } };
+export type AppEnv = { Variables: { ctx: Ctx; authKind: "session" | "token" } };
 
 /** Extract the token from `Authorization: Bearer <token>` (case-insensitive scheme). */
 export function extractBearerToken(header: string | undefined): string | null {
@@ -105,6 +105,7 @@ export function createAuthMiddleware(
           401,
         );
       }
+      c.set("authKind", "token");
       c.set("ctx", makeCtx(db, verified.householdId, now));
       await next();
       return;
@@ -121,6 +122,7 @@ export function createAuthMiddleware(
           );
         }
         c.header("Cache-Control", "no-store");
+        c.set("authKind", "session");
         c.set("ctx", makeCtx(db, session.household.id, now));
         await next();
         return;

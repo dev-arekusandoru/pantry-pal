@@ -96,7 +96,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -111,7 +111,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -126,7 +126,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -141,7 +141,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -200,7 +200,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -215,7 +215,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -230,7 +230,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -245,7 +245,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -302,7 +302,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -317,7 +317,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -332,7 +332,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -347,7 +347,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -391,7 +391,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -406,7 +406,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -421,7 +421,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -436,7 +436,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -494,7 +494,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -509,7 +509,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -524,7 +524,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -539,7 +539,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -597,7 +597,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -612,7 +612,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -627,7 +627,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -642,7 +642,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -690,7 +690,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -705,7 +705,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -720,7 +720,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -735,7 +735,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -783,7 +783,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -798,7 +798,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -813,7 +813,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -828,7 +828,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -887,7 +887,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -902,7 +902,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -917,7 +917,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -932,7 +932,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -993,7 +993,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1008,7 +1008,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1023,7 +1023,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1038,7 +1038,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1085,7 +1085,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1100,7 +1100,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1115,7 +1115,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1130,7 +1130,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1189,7 +1189,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1204,7 +1204,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1219,7 +1219,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1234,7 +1234,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1306,7 +1306,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1321,7 +1321,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1336,7 +1336,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -1351,7 +1351,7 @@ export interface paths {
                         "application/json": {
                             error: {
                                 /** @enum {string} */
-                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "unavailable";
+                                code: "not_found" | "conflict" | "validation" | "unprocessable" | "unauthorized" | "forbidden" | "unavailable";
                                 message: string;
                             };
                         };
@@ -7264,7 +7264,7 @@ export interface paths {
         };
         /**
          * Get the household
-         * @description Single household of this instance, including its settings.
+         * @description The signed-in account's household, including its settings.
          */
         get: {
             parameters: {
@@ -7448,6 +7448,112 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List API tokens
+         * @description Active tokens of the household, newest first. Never includes secrets. Needs a browser session; an API token gets 403 `forbidden`.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tokens */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiTokenList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Create an API token
+         * @description The `token` secret is in this response only. Needs a browser session; an API token gets 403 `forbidden`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateApiTokenInput"];
+                };
+            };
+            responses: {
+                /** @description Created token */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CreatedApiToken"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke an API token
+         * @description Needs a browser session; an API token gets 403 `forbidden`.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Token id. */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -8610,6 +8716,25 @@ export interface components {
         DeleteHouseholdMemberResult: {
             deleted: boolean;
             id: string;
+        };
+        ApiTokenList: {
+            items: components["schemas"]["ApiToken"][];
+        };
+        ApiToken: {
+            id: string;
+            name: string;
+            /** @description First characters of the secret, to tell tokens apart. */
+            prefix: string;
+            createdAt: string;
+            lastUsedAt: string | null;
+        };
+        CreatedApiToken: components["schemas"]["ApiToken"] & {
+            /** @description The secret. Shown only in this response. */
+            token: string;
+        };
+        CreateApiTokenInput: {
+            /** @description Label, e.g. the app that uses the token. */
+            name: string;
         };
     };
     responses: never;

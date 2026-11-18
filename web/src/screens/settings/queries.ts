@@ -136,3 +136,31 @@ export function useServerVersion() {
     },
   });
 }
+
+export type ApiToken = paths["/tokens"]["get"]["responses"][200]["content"]["application/json"]["items"][number];
+
+const TOKENS_KEY = ["tokens"] as const;
+
+export function useTokens() {
+  return useQuery({
+    queryKey: TOKENS_KEY,
+    queryFn: async () => (await unwrap(client.GET("/tokens"))).items,
+  });
+}
+
+/** Resolves with the secret, which the server returns only for this call. */
+export function useCreateToken() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => unwrap(client.POST("/tokens", { body: { name } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: TOKENS_KEY }),
+  });
+}
+
+export function useRevokeToken() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unwrap(client.DELETE("/tokens/{id}", { params: { path: { id } } })),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: TOKENS_KEY }),
+  });
+}

@@ -18,7 +18,7 @@ curl -sS http://localhost:8787/api/v1/household \
   -H "Authorization: Bearer $PANTRYPAL_TOKEN"
 ```
 
-See [CLI commands](cli.md) to create a token.
+Create a token in **Settings** > **API tokens**, or see [CLI commands](cli.md).
 
 ## Authentication
 
@@ -64,6 +64,7 @@ Paths below are relative to `/api/v1`.
 | Path | Tasks |
 | --- | --- |
 | `/household`, `/household/members` | Read and update settings and members |
+| `/tokens` | List, create, and revoke API tokens. Needs a browser session; a bearer token gets `403`. The secret is only in the create response |
 | `/ingredients` | Find, create, update, archive, alias, and merge ingredients |
 | `/unit-conversions`, `/units/convert` | Manage conversions and convert amounts |
 | `/pantry` | Read stock, set amounts, record changes, and check availability |
@@ -118,7 +119,7 @@ Write and delete responses vary. Use the response schema for the endpoint.
 | --- | --- | --- |
 | `validation` | 400, 413 | Invalid body, path, or query; login body over 4 KiB |
 | `unauthorized` | 401 | Missing, invalid, or revoked token; missing or invalid browser session; wrong password |
-| `forbidden` | 403 | Cross-origin login, logout, or unsafe cookie request |
+| `forbidden` | 403 | Cross-origin login, logout, or unsafe cookie request; token management with a bearer token |
 | `not_found` | 404 | No matching record in this household, or browser login is not configured |
 | `conflict` | 409 | A conflict with current data |
 | `unsupported_media_type` | 415 | Login body is not `application/json` |

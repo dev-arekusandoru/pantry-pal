@@ -3,7 +3,7 @@
   "info": {
     "title": "PantryPal",
     "version": "0.1.0",
-    "description": "Self-hosted household pantry, recipe, meal-plan and shopping backend. All /api/v1 routes require a bearer API token, unless the server runs with PANTRYPAL_TRUST_NETWORK=1 (then requests without a token act as the household)."
+    "description": "Self-hosted household pantry, recipe, meal-plan and shopping backend. /api/v1 accepts a bearer API token or the browser session cookie issued by POST /auth/login; each account owns one household. /mcp is bearer-only."
   },
   "tags": [
     {
@@ -14,6 +14,9 @@
   "security": [
     {
       "bearerAuth": []
+    },
+    {
+      "sessionCookie": []
     }
   ],
   "components": {
@@ -27,7 +30,7 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "__Host-pantrypal_session",
-        "description": "Browser session cookie set by POST /auth/login when PANTRYPAL_PASSWORD is configured. Valid for 30 days; rotating the password invalidates it. Never accepted by /mcp."
+        "description": "Browser session cookie set by POST /auth/signup or POST /auth/login. Valid for 30 days; logout or a password reset invalidates it. Never accepted by /mcp."
       }
     },
     "schemas": {
@@ -4397,6 +4400,84 @@
           "deleted",
           "id"
         ]
+      },
+      "ApiTokenList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiToken"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ApiToken": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "First characters of the secret, to tell tokens apart."
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "createdAt",
+          "lastUsedAt"
+        ]
+      },
+      "CreatedApiToken": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiToken"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "token": {
+                "type": "string",
+                "description": "The secret. Shown only in this response."
+              }
+            },
+            "required": [
+              "token"
+            ]
+          }
+        ]
+      },
+      "CreateApiTokenInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Label, e.g. the app that uses the token."
+          }
+        },
+        "required": [
+          "name"
+        ]
       }
     },
     "parameters": {}
@@ -4531,6 +4612,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4569,6 +4651,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4607,6 +4690,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4645,6 +4729,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4728,6 +4813,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4766,6 +4852,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4804,6 +4891,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4842,6 +4930,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4936,6 +5025,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -4974,6 +5064,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5012,6 +5103,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5050,6 +5142,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5117,6 +5210,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5155,6 +5249,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5193,6 +5288,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5231,6 +5327,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5300,6 +5397,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5338,6 +5436,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5376,6 +5475,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5414,6 +5514,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5500,6 +5601,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5538,6 +5640,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5576,6 +5679,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5614,6 +5718,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5694,6 +5799,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5732,6 +5838,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5770,6 +5877,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5808,6 +5916,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5893,6 +6002,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5931,6 +6041,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -5969,6 +6080,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6007,6 +6119,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6100,6 +6213,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6138,6 +6252,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6176,6 +6291,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6214,6 +6330,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6306,6 +6423,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6344,6 +6462,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6382,6 +6501,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6420,6 +6540,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6515,6 +6636,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6553,6 +6675,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6591,6 +6714,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6629,6 +6753,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6722,6 +6847,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6760,6 +6886,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6798,6 +6925,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6836,6 +6964,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -6968,6 +7097,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -7006,6 +7136,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -7044,6 +7175,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -7082,6 +7214,7 @@
                             "validation",
                             "unprocessable",
                             "unauthorized",
+                            "forbidden",
                             "unavailable"
                           ]
                         },
@@ -19984,7 +20117,7 @@
           "household"
         ],
         "summary": "Get the household",
-        "description": "Single household of this instance, including its settings.",
+        "description": "The signed-in account's household, including its settings.",
         "responses": {
           "200": {
             "description": "Household",
@@ -20147,6 +20280,83 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens": {
+      "get": {
+        "tags": [
+          "tokens"
+        ],
+        "summary": "List API tokens",
+        "description": "Active tokens of the household, newest first. Never includes secrets. Needs a browser session; an API token gets 403 `forbidden`.",
+        "responses": {
+          "200": {
+            "description": "Tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiTokenList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tokens"
+        ],
+        "summary": "Create an API token",
+        "description": "The `token` secret is in this response only. Needs a browser session; an API token gets 403 `forbidden`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiTokenInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedApiToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tokens/{id}": {
+      "delete": {
+        "tags": [
+          "tokens"
+        ],
+        "summary": "Revoke an API token",
+        "description": "Needs a browser session; an API token gets 403 `forbidden`.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Token id."
+            },
+            "required": true,
+            "description": "Token id.",
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked"
           }
         }
       }

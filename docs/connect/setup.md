@@ -5,7 +5,11 @@ read and change household data. First, [install PantryPal](../start/install.md).
 
 ## Create a token
 
-For Docker Compose:
+In the web app, open **Settings** > **API tokens**. Enter a name and select
+**Create**. Copy the secret now; it is shown only once. Use one token per client.
+To remove access, select **Revoke** next to the token.
+
+An administrator can also use the CLI. For Docker Compose:
 
 ```sh
 docker compose exec pantrypal node dist/cli.js token create --name assistant
@@ -14,7 +18,6 @@ docker compose exec pantrypal node dist/cli.js token create --name assistant
 For a source checkout, use `pnpm cli token create --name assistant`.
 For the Cloudflare Tunnel stack, select its Compose file:
 `docker compose -f docker-compose.tunnel.yml exec pantrypal node dist/cli.js token create --name assistant`.
-Copy the secret now; it is shown only once. Use one token per client.
 See [CLI commands](../reference/cli.md) to list or revoke tokens.
 
 ## Add the server
