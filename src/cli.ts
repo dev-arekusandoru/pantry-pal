@@ -144,26 +144,28 @@ async function readPassword(flags: Record<string, string>): Promise<string> {
   process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdin.setEncoding("utf8");
-  let password = "";
-  for await (const chunk of process.stdin) {
-    for (const char of chunk as string) {
-      if (char === "\r" || char === "\n") {
-        process.stdin.setRawMode(false);
-        process.stdin.pause();
-        process.stdout.write("\n");
-        return password;
+  // Not `for await`: leaving that loop destroys stdin, which breaks the confirmation prompt.
+  return new Promise<string>((resolve, reject) => {
+    let password = "";
+    const finish = (done: () => void): void => {
+      process.stdin.off("data", onData);
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      process.stdout.write("\n");
+      done();
+    };
+    const onData = (chunk: string): void => {
+      for (const char of chunk) {
+        if (char === "\r" || char === "\n") return finish(() => resolve(password));
+        if (char === "\u0003") {
+          return finish(() => reject(new AppError("validation", "Cancelled")));
+        }
+        if (char === "\u007f") password = password.slice(0, -1);
+        else if (char >= " ") password += char;
       }
-      if (char === "\u0003") {
-        process.stdin.setRawMode(false);
-        process.stdin.pause();
-        process.stdout.write("\n");
-        throw new AppError("validation", "Cancelled");
-      }
-      if (char === "\u007f") password = password.slice(0, -1);
-      else if (char >= " ") password += char;
-    }
-  }
-  return password;
+    };
+    process.stdin.on("data", onData);
+  });
 }
 
 async function readNewPassword(flags: Record<string, string>): Promise<string> {
