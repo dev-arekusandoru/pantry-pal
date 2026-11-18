@@ -47,7 +47,7 @@ stays where it is. On a phone you can also swipe a row.
 
 Tap the rest of the row to open the item. The sheet shows what the item is
 used in, for example the planned recipe and its amount, with warnings such as
-"check the pantry" as tags. A big icon shows at the top. An item added by hand
+"check the pantry" as tags. A big icon shows at the top; tap it to change the icon. An item added by hand
 says **Added by hand**. In the sheet you can:
 
 - Change **Quantity to buy** and tap **Save**.

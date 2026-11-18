@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { errorMessage } from "@/api";
-import { Button, Emoji, Icon, Sheet, ingredientEmoji, toast } from "@/ui";
+import { Button, Emoji, Icon, IconPicker, Sheet, ingredientEmoji, toast } from "@/ui";
 import type { ShoppingItem } from "./cart";
 import { parseQty, qtyToInput, unitLabel } from "./format";
 import styles from "./Shop.module.css";
@@ -72,6 +72,7 @@ function UsedIn({ item }: { item: ShoppingItem }) {
 
 function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingItem; onClose: () => void }) {
   const [text, setText] = useState(item.qty === null ? "" : qtyToInput(item.qty));
+  const [pickingIcon, setPickingIcon] = useState(false);
   // Set once "I have it" is tapped: the amount to add to the pantry, which can differ from the list.
   const [pantryText, setPantryText] = useState<string | null>(null);
   const update = useUpdateItemQty(listId);
@@ -90,9 +91,29 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
 
   return (
     <div className={styles.addForm}>
-      <div className={styles.sheetHero} aria-hidden="true">
-        <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={88} />
-      </div>
+      {item.ingredientId !== null ? (
+        <button
+          type="button"
+          className={styles.sheetHero}
+          aria-label={`Change the icon for ${item.name}`}
+          onClick={() => setPickingIcon(true)}
+        >
+          <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={88} />
+          <span className={styles.heroEdit} aria-hidden="true">
+            <Icon name="swap" />
+          </span>
+        </button>
+      ) : (
+        <div className={styles.sheetHero} aria-hidden="true">
+          <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={88} />
+        </div>
+      )}
+      {item.ingredientId !== null && (
+        <IconPicker
+          ingredient={pickingIcon ? { id: item.ingredientId, name: item.name, imageUrl: item.imageUrl } : null}
+          onClose={() => setPickingIcon(false)}
+        />
+      )}
       <UsedIn item={item} />
       <div className={styles.addField}>
         <label htmlFor="shop-item-qty">Quantity to buy</label>

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Checkbox, Collapsible, Label, Progress } from "radix-ui";
 import { useId, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
-import { Button, Card, Emoji, EmptyState, ErrorState, Icon, IconPicker, PageHeader, Sheet, Skeleton, buttonClass, cx, hasIcon, ingredientEmoji, toast } from "@/ui";
+import { Button, Card, Emoji, EmptyState, ErrorState, Icon, PageHeader, Sheet, Skeleton, buttonClass, cx, hasIcon, ingredientEmoji, toast } from "@/ui";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { aisleLabel } from "../aisles";
 import type { ShoppingItem, ShoppingList } from "./cart";
@@ -31,9 +31,8 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   const regenerate = useGenerateList();
   const [name, setName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [iconIngredient, setIconIngredient] = useState<{ id: string; name: string; imageUrl: string | null } | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
-  const [openItem, setOpenItem] = useState<ShoppingItem | null>(null);
+  const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const addFieldId = useId();
 
@@ -74,6 +73,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   }
 
   const { counts, groups } = detail.data;
+  const openItem = openItemId === null ? null : groups.flatMap((g) => g.items).find((i) => i.id === openItemId) ?? null;
   const current = detail.data.list;
   const pct = counts.total === 0 ? 0 : Math.round((counts.checked / counts.total) * 100);
   // List management and adding share one toolbar row, so neither floats over the list.
@@ -224,12 +224,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
                           key={item.id}
                           item={item}
                           onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })}
-                          onOpen={() => setOpenItem(item)}
-                          onEditIcon={
-                            item.ingredientId === null
-                              ? undefined
-                              : () => setIconIngredient({ id: item.ingredientId!, name: item.name, imageUrl: item.imageUrl })
-                          }
+                          onOpen={() => setOpenItemId(item.id)}
                         />
                       ))}
                     </ul>
@@ -246,14 +241,9 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
             <ul className={styles.items}>
               {detail.data.runningLow.map((row) => (
                 <li key={row.ingredientId} className={styles.lowRow}>
-                  <button
-                    type="button"
-                    className={cx(styles.itemIcon, !hasIcon(row.name, row.imageUrl) && styles.noIcon)}
-                    aria-label={`Change the icon for ${row.name}`}
-                    onClick={() => setIconIngredient({ id: row.ingredientId, name: row.name, imageUrl: row.imageUrl })}
-                  >
+                  <span className={cx(styles.itemEmoji, !hasIcon(row.name, row.imageUrl) && styles.noIcon)} aria-hidden="true">
                     <Emoji code={ingredientEmoji(row.name, row.imageUrl)} fallback={ingredientEmoji(row.name)} size={26} />
-                  </button>
+                  </span>
                   <span className={styles.itemBody}>
                     <span className={styles.itemName}>{row.name}</span>
                     <span className={styles.itemWhy}>{row.status === "out" ? "Out" : "Running low"}</span>
@@ -310,8 +300,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
         </form>
       </Sheet>
 
-      <IconPicker ingredient={iconIngredient} onClose={() => setIconIngredient(null)} />
-      <ItemSheet listId={list.id} item={openItem} onClose={() => setOpenItem(null)} />
+      <ItemSheet listId={list.id} item={openItem} onClose={() => setOpenItemId(null)} />
 
       <DoneSheet
         open={doneOpen}
@@ -340,7 +329,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   );
 }
 
-function ItemRow({ item, onToggle, onOpen, onEditIcon }: { item: ShoppingItem; onToggle: (checked: boolean) => void; onOpen: () => void; onEditIcon?: () => void }) {
+function ItemRow({ item, onToggle, onOpen }: { item: ShoppingItem; onToggle: (checked: boolean) => void; onOpen: () => void }) {
   const got = item.checkedAt !== null;
   const qty = formatAmount(item.qty, item.unit);
   const icon = (
@@ -353,6 +342,7 @@ function ItemRow({ item, onToggle, onOpen, onEditIcon }: { item: ShoppingItem; o
     <li
       className={cx(styles.item, styles.swipeRow, got && styles.got)}
       data-ui="shop-item"
+      onClick={onOpen}
       {...swipe.rowProps}
       style={swipe.style}
     >
@@ -360,21 +350,11 @@ function ItemRow({ item, onToggle, onOpen, onEditIcon }: { item: ShoppingItem; o
         <Icon name="check" />
         {got ? "Put back" : "Got it"}
       </span>
-      {onEditIcon ? (
-        <button
-          type="button"
-          className={cx(styles.itemIcon, !hasIcon(item.name, item.imageUrl) && styles.noIcon)}
-          aria-label={`Change the icon for ${item.name}`}
-          onClick={onEditIcon}
-        >
-          <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
-        </button>
-      ) : (
-        icon
-      )}
+      {icon}
       <Checkbox.Root
         className={styles.itemCheck}
         checked={got}
+        onClick={(e) => e.stopPropagation()}
         onCheckedChange={(next) => onToggle(next === true)}
         aria-label={`Got ${item.name}`}
       >
