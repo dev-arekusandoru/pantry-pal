@@ -4,8 +4,9 @@ import { useId, useMemo, useRef, useState, type CSSProperties, type FormEvent } 
 import { Button, Card, Emoji, EmptyState, ErrorState, Icon, IconPicker, PageHeader, Sheet, Skeleton, buttonClass, cx, hasIcon, ingredientEmoji, toast } from "@/ui";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { aisleLabel } from "../aisles";
-import { uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
+import type { ShoppingItem, ShoppingList } from "./cart";
 import { DoneSheet } from "./DoneSheet";
+import { ItemSheet } from "./ItemSheet";
 import { formatAmount } from "./format";
 import { useSwipeRow } from "@/ui/useSwipeRow";
 import styles from "./Shop.module.css";
@@ -32,6 +33,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   const [addOpen, setAddOpen] = useState(false);
   const [iconIngredient, setIconIngredient] = useState<{ id: string; name: string; imageUrl: string | null } | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
+  const [openItem, setOpenItem] = useState<ShoppingItem | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const addFieldId = useId();
 
@@ -217,11 +219,12 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
                   </h2>
                   <Collapsible.Content className={styles.aisleContent}>
                     <ul className={styles.items} data-ui="shop-list">
-                      {uncheckedFirst(g.items).map((item) => (
+                      {g.items.map((item) => (
                         <ItemRow
                           key={item.id}
                           item={item}
                           onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })}
+                          onOpen={() => setOpenItem(item)}
                           onEditIcon={
                             item.ingredientId === null
                               ? undefined
@@ -308,6 +311,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
       </Sheet>
 
       <IconPicker ingredient={iconIngredient} onClose={() => setIconIngredient(null)} />
+      <ItemSheet listId={list.id} item={openItem} onClose={() => setOpenItem(null)} />
 
       <DoneSheet
         open={doneOpen}
@@ -336,10 +340,9 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   );
 }
 
-function ItemRow({ item, onToggle, onEditIcon }: { item: ShoppingItem; onToggle: (checked: boolean) => void; onEditIcon?: () => void }) {
+function ItemRow({ item, onToggle, onOpen, onEditIcon }: { item: ShoppingItem; onToggle: (checked: boolean) => void; onOpen: () => void; onEditIcon?: () => void }) {
   const got = item.checkedAt !== null;
   const qty = formatAmount(item.qty, item.unit);
-  const why = item.note ?? item.purposeNote ?? (item.source === "manual" ? "Added by hand" : null);
   const icon = (
     <span className={cx(styles.itemEmoji, !hasIcon(item.name, item.imageUrl) && styles.noIcon)} aria-hidden="true">
       <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
@@ -373,21 +376,20 @@ function ItemRow({ item, onToggle, onEditIcon }: { item: ShoppingItem; onToggle:
         className={styles.itemCheck}
         checked={got}
         onCheckedChange={(next) => onToggle(next === true)}
-        aria-label={item.name}
+        aria-label={`Got ${item.name}`}
       >
         <span className={styles.itemBox} aria-hidden="true">
           <Checkbox.Indicator className={styles.itemCheckMark} forceMount>
             <Icon name="check" />
           </Checkbox.Indicator>
         </span>
-        <span className={styles.itemContent}>
-          <span className={styles.itemBody}>
-            <span className={styles.itemName}>{item.name}</span>
-            {why && <span className={styles.itemWhy}>{why}</span>}
-          </span>
-          {qty && <span className={styles.itemQty}>{qty}</span>}
-        </span>
       </Checkbox.Root>
+      <button type="button" className={styles.itemContent} data-ui="shop-item-open" aria-label={`${item.name}: details`} onClick={onOpen}>
+        <span className={styles.itemBody}>
+          <span className={styles.itemName}>{item.name}</span>
+        </span>
+        {qty && <span className={styles.itemQty}>{qty}</span>}
+      </button>
     </li>
   );
 }

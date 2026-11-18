@@ -241,19 +241,14 @@
     box-shadow var(--dur) var(--ease);
 }
 
-/* The whole row is the checkbox button, so the whole row is the tap target. */
+/* Only the box toggles; the rest of the row is a button that opens the item. */
 .itemCheck {
   display: flex;
   align-items: center;
-  flex: 1;
-  min-width: 0;
+  flex: none;
   min-height: 52px;
-  padding: 8px 12px 8px 4px;
-  gap: 10px;
+  padding: 8px 4px 8px 4px;
   border-radius: inherit;
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  line-height: 1.2;
 }
 
 .itemCheck:focus-visible {
@@ -263,9 +258,21 @@
 .itemContent {
   flex: 1;
   min-width: 0;
+  min-height: 52px;
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 8px 12px 8px 6px;
+  border-radius: inherit;
+  text-align: left;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+}
+
+.itemContent:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
 }
 
 .itemBox {
@@ -635,4 +642,86 @@
   .swipeRow {
     transition: none;
   }
+}
+
+.sheetHero {
+  display: grid;
+  place-items: center;
+  width: 132px;
+  height: 132px;
+  margin: 0 auto 4px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 0 0 3px var(--line);
+}
+
+.sheetActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.usedIn {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 2px dashed var(--line);
+  border-radius: 16px;
+}
+
+.usedLabel {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.usedList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usedRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: var(--fw-bold);
+}
+
+.usedTitle {
+  min-width: 0;
+}
+
+.usedAmount {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--line);
+  font-size: var(--fs-sm);
+}
+
+.usedFlags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.usedFlag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--danger-text);
+  color: var(--danger-text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.usedEmpty {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
 }

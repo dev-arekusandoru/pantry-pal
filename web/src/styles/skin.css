@@ -222,8 +222,15 @@ html:root [data-ui="stock-row"] > [aria-haspopup] {
   margin-top: auto;
 }
 
-/* shop tile: tick box in the corner, name and amount under the icon */
+/* shop tile: tick box in the corner; the rest of the tile opens the item */
 html:root [data-ui="shop-item"] > [role="checkbox"] {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-height: 0;
+  padding: 4px;
+}
+html:root [data-ui="shop-item"] > [data-ui="shop-item-open"] {
   flex: 1;
   flex-direction: column;
   justify-content: flex-start;
@@ -231,22 +238,10 @@ html:root [data-ui="shop-item"] > [role="checkbox"] {
   align-self: stretch;
   min-height: 0;
   padding: 0 4px 2px;
-  gap: 4px;
+  gap: 6px;
   text-align: center;
 }
-html:root [data-ui="shop-item"] > [role="checkbox"] > :first-child {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-}
-html:root [data-ui="shop-item"] > [role="checkbox"] > :last-child {
-  flex: none;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 6px;
-  width: 100%;
-}
-html:root [data-ui="shop-item"] > [role="checkbox"] > :last-child > :first-child {
+html:root [data-ui="shop-item"] > [data-ui="shop-item-open"] > :first-child {
   flex: none;
   align-items: center;
   max-width: 100%;

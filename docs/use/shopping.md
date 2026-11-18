@@ -10,7 +10,7 @@ record what you bought.
 
 The app opens the list you picked last in this browser tab. Otherwise it opens
 the current week's plan list, then next week's. If a plan has no list, the page
-offers **Make the list for this week** and **Make the list for next week**
+offers **Generate shopping list**. Tap it and choose this week or next week
 (each shows only when that week has a plan). The Week tab also keeps the week
 you browsed until you close the browser tab.
 
@@ -41,11 +41,20 @@ you can check off.
 ## Shop
 
 Items are grouped by aisle, such as **Produce**, **Meat and fish**, and
-**Dairy**. The header shows how many are left, and the bar shows progress. Tap a
-row to check it off; tap again to clear the check.
+**Dairy**. The header shows how many are left, and the bar shows progress. Tap
+the box to check an item off; tap it again to clear the check. A checked item
+stays where it is. On a phone you can also swipe a row.
 
-Most items show why they are there, for example the planned recipe and its
-amount. An item added by hand says **Added by hand**.
+Tap the rest of the row to open the item. The sheet shows what the item is
+used in, for example the planned recipe and its amount, with warnings such as
+"check the pantry" as tags. A big icon shows at the top. An item added by hand
+says **Added by hand**. In the sheet you can:
+
+- Change **Quantity to buy** and tap **Save**.
+- Tap **I have it**. Confirm **How much goes into the
+  pantry?** (it starts at the list amount; clear it to mark the item on hand),
+  then tap **Add to pantry and remove**.
+- Tap **Remove** to take the item off without a pantry change.
 
 Tap **Add item** above the aisles, type a name, and tap **Add**. The app matches
 the name to an ingredient when it can. A name with no match stays as free text

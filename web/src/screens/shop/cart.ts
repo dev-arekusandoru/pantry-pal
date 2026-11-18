@@ -17,11 +17,6 @@ export function setChecked(detail: ShoppingDetail, itemId: string, checkedAt: st
   };
 }
 
-/** Still-to-get items first, then the ones in the cart; server order kept within each. */
-export function uncheckedFirst(items: readonly ShoppingItem[]): ShoppingItem[] {
-  return [...items.filter((i) => i.checkedAt === null), ...items.filter((i) => i.checkedAt !== null)];
-}
-
 /**
  * The list to show when the URL doesn't name one: this week's plan list, else
  * (without a plan) the newest open list. A plan never falls back to another

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { ApiError, client, qk, unwrap } from "@/api";
-import { setChecked, type ShoppingDetail } from "./cart";
+import { setChecked, type ShoppingDetail, type ShoppingItem } from "./cart";
 
 const keys = {
   /** This week's plan as the shop screen needs it: id only, null when there is none. */
@@ -86,6 +86,40 @@ export function useAddItem(listId: string) {
         }),
       ),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
+  });
+}
+
+export function useUpdateItemQty(listId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId, qty }: { itemId: string; qty: number | null }) =>
+      unwrap(client.PATCH("/shopping-lists/{id}/items/{itemId}", { params: { path: { id: listId, itemId } }, body: { qty } })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
+  });
+}
+
+/** Take an item off the list. With `pantry`, first record it as stock: that amount, or "on hand" when null. */
+export function useRemoveItem(listId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ item, pantry }: { item: ShoppingItem; pantry?: { qty: number | null } }) => {
+      if (pantry) {
+        await unwrap(
+          pantry.qty !== null
+            ? client.POST("/pantry/adjust", {
+                body: { ingredient: item.name, category: item.category, delta: pantry.qty, unit: item.unit },
+              })
+            : client.POST("/pantry/set", {
+                body: { ingredient: item.name, category: item.category, qty: null, status: "on_hand" },
+              }),
+        );
+      }
+      await unwrap(client.DELETE("/shopping-lists/{id}/items/{itemId}", { params: { path: { id: listId, itemId: item.id } } }));
+    },
+    onSuccess: (_data, { pantry }) => {
+      if (pantry) void qc.invalidateQueries({ queryKey: qk.pantry });
+      return qc.invalidateQueries({ queryKey: qk.shoppingLists });
+    },
   });
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickDefaultList, setChecked, uncheckedFirst, type ShoppingDetail, type ShoppingItem, type ShoppingList } from "./cart";
+import { pickDefaultList, setChecked, type ShoppingDetail, type ShoppingItem, type ShoppingList } from "./cart";
 
 const item = (id: string, checkedAt: string | null = null): ShoppingItem => ({
   id,
@@ -56,12 +56,6 @@ describe("setChecked", () => {
 
   it("unchecks", () => {
     expect(setChecked(detail, "b", null).counts.checked).toBe(0);
-  });
-});
-
-describe("uncheckedFirst", () => {
-  it("moves checked items to the end, keeping order", () => {
-    expect(uncheckedFirst([item("a", "t"), item("b"), item("c", "t"), item("d")]).map((i) => i.id)).toEqual(["b", "d", "a", "c"]);
   });
 });
 

@@ -2,9 +2,9 @@ import { Link } from "@tanstack/react-router";
 import { errorMessage } from "@/api";
 import { useState } from "react";
 import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
-import { addDays, localToday, weekStartFor } from "@/screens/week/dates";
+import { addDays, localToday, weekRange, weekStartFor } from "@/screens/week/dates";
 import { usePlan } from "@/screens/week/queries";
-import { Button, EmptyState, ErrorState, Icon, PageHeader, Skeleton, buttonClass, toast } from "@/ui";
+import { Button, EmptyState, ErrorState, Icon, PageHeader, Sheet, Skeleton, buttonClass, toast } from "@/ui";
 import { pickDefaultList } from "./cart";
 import { ListPicker } from "./ListPicker";
 import { ShopList } from "./ShopList";
@@ -23,6 +23,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
   const household = useHousehold();
   const thisWeek = weekStartFor(localToday(), weekStartsOnOf(household.data));
   const nextPlan = usePlan(addDays(thisWeek, 7));
+  const [weekOpen, setWeekOpen] = useState(false);
   const lists = useShoppingLists();
   const [pickerOpen, setPickerOpen] = useState(false);
   const generate = useGenerateList();
@@ -65,9 +66,10 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
     lists.data.find((l) => l.id === listId) ??
     pickDefaultList(lists.data, planId) ??
     (nextPlanId ? pickDefaultList(lists.data, nextPlanId) : undefined);
+  const nextWeek = addDays(thisWeek, 7);
   const targets = [
-    ...(planId ? [{ id: planId, label: "this week" }] : []),
-    ...(nextPlanId ? [{ id: nextPlanId, label: "next week" }] : []),
+    ...(planId ? [{ id: planId, label: `This week (${weekRange(thisWeek)})` }] : []),
+    ...(nextPlanId ? [{ id: nextPlanId, label: `Next week (${weekRange(nextWeek)})` }] : []),
   ];
 
   const picker = (
@@ -112,18 +114,9 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
             title="No shopping list yet"
             action={
               <>
-                {targets.map((t, i) => (
-                  <Button
-                    key={t.id}
-                    variant={i === 0 ? "primary" : "secondary"}
-                    size="lg"
-                    loading={generate.isPending && generate.variables?.mealPlanId === t.id}
-                    disabled={generate.isPending}
-                    onClick={() => generate.mutate({ mealPlanId: t.id }, { onSuccess: (d) => onSelectList(d.list.id) })}
-                  >
-                    {`Make the list for ${t.label}`}
-                  </Button>
-                ))}
+                <Button variant="primary" size="lg" onClick={() => setWeekOpen(true)}>
+                  Generate shopping list
+                </Button>
                 {lists.data.length > 0 && (
                   <Button variant="ghost" icon={<Icon name="list" />} onClick={() => setPickerOpen(true)}>
                     All lists
@@ -153,6 +146,31 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
           </EmptyState>
         )}
         {picker}
+        <Sheet open={weekOpen} onClose={() => setWeekOpen(false)} title="Which week?">
+          <div className={styles.addForm}>
+            {targets.map((t) => (
+              <Button
+                key={t.id}
+                size="lg"
+                loading={generate.isPending && generate.variables?.mealPlanId === t.id}
+                disabled={generate.isPending}
+                onClick={() =>
+                  generate.mutate(
+                    { mealPlanId: t.id },
+                    {
+                      onSuccess: (d) => {
+                        setWeekOpen(false);
+                        onSelectList(d.list.id);
+                      },
+                    },
+                  )
+                }
+              >
+                {t.label}
+              </Button>
+            ))}
+          </div>
+        </Sheet>
       </>
     );
   }
