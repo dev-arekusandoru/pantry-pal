@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { errorMessage } from "@/api";
 import { useState } from "react";
-import { Button, EmptyState, ErrorState, Icon, PageHeader, Skeleton, buttonClass, toast } from "@/ui";
+import { useHousehold, weekStartsOnOf } from "@/screens/settings/queries";
+import { addDays, localToday, weekRange, weekStartFor } from "@/screens/week/dates";
+import { usePlan } from "@/screens/week/queries";
+import { Button, EmptyState, ErrorState, Icon, PageHeader, Sheet, Skeleton, buttonClass, toast } from "@/ui";
 import { pickDefaultList } from "./cart";
 import { ListPicker } from "./ListPicker";
 import { ShopList } from "./ShopList";
@@ -17,6 +20,10 @@ export interface ShopScreenProps {
 
 export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
   const plan = useCurrentPlanId();
+  const household = useHousehold();
+  const thisWeek = weekStartFor(localToday(), weekStartsOnOf(household.data));
+  const nextPlan = usePlan(addDays(thisWeek, 7));
+  const [weekOpen, setWeekOpen] = useState(false);
   const lists = useShoppingLists();
   const [pickerOpen, setPickerOpen] = useState(false);
   const generate = useGenerateList();
@@ -38,7 +45,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
       </>
     );
   }
-  if (!lists.data || plan.data === undefined) {
+  if (!lists.data || plan.data === undefined || nextPlan.isPending) {
     return (
       <div aria-busy="true" aria-label="Loading your list">
         <PageHeader title="Shopping" />
@@ -53,7 +60,17 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
   }
 
   const planId = plan.data;
-  const selected = lists.data.find((l) => l.id === listId) ?? pickDefaultList(lists.data, planId);
+  const nextPlanId = nextPlan.data?.id ?? null;
+  // On a weekend the list you shop for is often next week's, so fall back to it.
+  const selected =
+    lists.data.find((l) => l.id === listId) ??
+    pickDefaultList(lists.data, planId) ??
+    (nextPlanId ? pickDefaultList(lists.data, nextPlanId) : undefined);
+  const nextWeek = addDays(thisWeek, 7);
+  const targets = [
+    ...(planId ? [{ id: planId, label: `This week (${weekRange(thisWeek)})` }] : []),
+    ...(nextPlanId ? [{ id: nextPlanId, label: `Next week (${weekRange(nextWeek)})` }] : []),
+  ];
 
   const picker = (
     <ListPicker
@@ -91,24 +108,14 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
     return (
       <>
         <PageHeader title="Shopping" sub="Nothing on the list" />
-        {planId !== null ? (
+        {targets.length > 0 ? (
           <EmptyState
             emoji="tomato"
             title="No shopping list yet"
             action={
               <>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  loading={generate.isPending}
-                  onClick={() =>
-                    generate.mutate(
-                      { mealPlanId: planId },
-                      { onSuccess: (d) => onSelectList(d.list.id) },
-                    )
-                  }
-                >
-                  Make the shopping list
+                <Button variant="primary" size="lg" onClick={() => setWeekOpen(true)}>
+                  Generate shopping list
                 </Button>
                 {lists.data.length > 0 && (
                   <Button variant="ghost" icon={<Icon name="list" />} onClick={() => setPickerOpen(true)}>
@@ -118,7 +125,7 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
               </>
             }
           >
-            We'll work out what this week's plan needs and leave out what you already have.
+            We'll work out what the plan needs and leave out what you already have.
           </EmptyState>
         ) : (
           <EmptyState
@@ -139,6 +146,31 @@ export function ShopScreen({ listId, onSelectList }: ShopScreenProps) {
           </EmptyState>
         )}
         {picker}
+        <Sheet open={weekOpen} onClose={() => setWeekOpen(false)} title="Which week?">
+          <div className={styles.addForm}>
+            {targets.map((t) => (
+              <Button
+                key={t.id}
+                size="lg"
+                loading={generate.isPending && generate.variables?.mealPlanId === t.id}
+                disabled={generate.isPending}
+                onClick={() =>
+                  generate.mutate(
+                    { mealPlanId: t.id },
+                    {
+                      onSuccess: (d) => {
+                        setWeekOpen(false);
+                        onSelectList(d.list.id);
+                      },
+                    },
+                  )
+                }
+              >
+                {t.label}
+              </Button>
+            ))}
+          </div>
+        </Sheet>
       </>
     );
   }

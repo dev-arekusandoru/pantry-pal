@@ -23,6 +23,7 @@ import {
   planChangeResultSchema,
   planViewSchema,
   prepTaskViewSchema,
+  saveDraftSchema,
   setSlotsResultSchema,
   setSlotsSchema,
   skipCookEventSchema,
@@ -48,6 +49,7 @@ import {
   listPlans,
   listPrepTasks,
   removeDish,
+  saveDraft,
   setSlots,
   swapMeal,
   updateCookEvent,
@@ -195,10 +197,27 @@ const deleteSlotRoute = createRoute({
   responses: { 200: jsonResponse(idResultSchema), 404: { description: "Plan or slot not found" } },
 });
 
+const saveDraftRoute = createRoute({
+  method: "post",
+  path: "/plans/{id}/draft",
+  tags: ["plans"],
+  summary: "Save a whole planner draft",
+  description:
+    "Replaces the plan's meal slots and planned cooks with the draft in one transaction. Use it for week-planner edits that the slot endpoints cannot express, such as a cook day before the plan week. Cooks already done or skipped are kept; only their slots follow the draft. Returns the updated plan and whether an open shopping list for it is now stale.",
+  request: {
+    params: planIdParam,
+    body: { content: { "application/json": { schema: saveDraftSchema } } },
+  },
+  responses: {
+    200: jsonResponse(planChangeResultSchema),
+    400: { description: "Invalid draft" },
+    404: { description: "Plan or recipe not found" },
+  },
+});
+
 const swapMealRoute = createRoute({
   method: "post",
   path: "/plans/{id}/swap",
-  tags: ["plans"],
   summary: "Swap the recipe on one meal slot",
   description:
     "One transaction. scope `with_leftovers` replaces the recipe of the cook that feeds the slot (every slot it feeds changes). scope `this` changes only this meal: a slot sharing its cook with other slots becomes its own cook dated that day. Slots without a cook get a new cook. Cooks already done can't be swapped. Returns the updated plan and whether an open shopping list for it is now stale.",
@@ -465,6 +484,9 @@ export function registerPlansRoutes(app: OpenAPIHono<AppEnv>): void {
 
   app.openapi(setSlotsRoute, (c) =>
     c.json(setSlots(c.var.ctx, c.req.valid("param").id, c.req.valid("json").ops), 200),
+  );
+  app.openapi(saveDraftRoute, (c) =>
+    c.json(saveDraft(c.var.ctx, c.req.valid("param").id, c.req.valid("json")), 200),
   );
   app.openapi(updateSlotRoute, (c) => {
     const { id: planId, slotId } = c.req.valid("param");

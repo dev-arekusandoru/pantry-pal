@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { Checkbox, Collapsible, Label, Progress } from "radix-ui";
 import { useId, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
-import { Button, Card, Emoji, EmptyState, ErrorState, Icon, IconPicker, PageHeader, Sheet, Skeleton, buttonClass, cx, hasIcon, ingredientEmoji, toast } from "@/ui";
+import { Button, Card, Emoji, EmptyState, ErrorState, Icon, PageHeader, Sheet, Skeleton, buttonClass, cx, hasIcon, ingredientEmoji, toast } from "@/ui";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { aisleLabel } from "../aisles";
-import { uncheckedFirst, type ShoppingItem, type ShoppingList } from "./cart";
+import type { ShoppingItem, ShoppingList } from "./cart";
 import { DoneSheet } from "./DoneSheet";
+import { ItemSheet } from "./ItemSheet";
 import { formatAmount } from "./format";
 import { useSwipeRow } from "@/ui/useSwipeRow";
 import styles from "./Shop.module.css";
@@ -30,8 +31,8 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   const regenerate = useGenerateList();
   const [name, setName] = useState("");
   const [addOpen, setAddOpen] = useState(false);
-  const [iconIngredient, setIconIngredient] = useState<{ id: string; name: string; imageUrl: string | null } | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
+  const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const addFieldId = useId();
 
@@ -72,6 +73,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   }
 
   const { counts, groups } = detail.data;
+  const openItem = openItemId === null ? null : groups.flatMap((g) => g.items).find((i) => i.id === openItemId) ?? null;
   const current = detail.data.list;
   const pct = counts.total === 0 ? 0 : Math.round((counts.checked / counts.total) * 100);
   // List management and adding share one toolbar row, so neither floats over the list.
@@ -217,16 +219,12 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
                   </h2>
                   <Collapsible.Content className={styles.aisleContent}>
                     <ul className={styles.items} data-ui="shop-list">
-                      {uncheckedFirst(g.items).map((item) => (
+                      {g.items.map((item) => (
                         <ItemRow
                           key={item.id}
                           item={item}
                           onToggle={(checkedNow) => check.mutate({ itemId: item.id, checked: checkedNow })}
-                          onEditIcon={
-                            item.ingredientId === null
-                              ? undefined
-                              : () => setIconIngredient({ id: item.ingredientId!, name: item.name, imageUrl: item.imageUrl })
-                          }
+                          onOpen={() => setOpenItemId(item.id)}
                         />
                       ))}
                     </ul>
@@ -243,14 +241,9 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
             <ul className={styles.items}>
               {detail.data.runningLow.map((row) => (
                 <li key={row.ingredientId} className={styles.lowRow}>
-                  <button
-                    type="button"
-                    className={cx(styles.itemIcon, !hasIcon(row.name, row.imageUrl) && styles.noIcon)}
-                    aria-label={`Change the icon for ${row.name}`}
-                    onClick={() => setIconIngredient({ id: row.ingredientId, name: row.name, imageUrl: row.imageUrl })}
-                  >
+                  <span className={cx(styles.itemEmoji, !hasIcon(row.name, row.imageUrl) && styles.noIcon)} aria-hidden="true">
                     <Emoji code={ingredientEmoji(row.name, row.imageUrl)} fallback={ingredientEmoji(row.name)} size={26} />
-                  </button>
+                  </span>
                   <span className={styles.itemBody}>
                     <span className={styles.itemName}>{row.name}</span>
                     <span className={styles.itemWhy}>{row.status === "out" ? "Out" : "Running low"}</span>
@@ -307,7 +300,7 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
         </form>
       </Sheet>
 
-      <IconPicker ingredient={iconIngredient} onClose={() => setIconIngredient(null)} />
+      <ItemSheet listId={list.id} item={openItem} onClose={() => setOpenItemId(null)} />
 
       <DoneSheet
         open={doneOpen}
@@ -336,10 +329,9 @@ export function ShopList({ list, onOpenLists, onClose, onCompleted }: ShopListPr
   );
 }
 
-function ItemRow({ item, onToggle, onEditIcon }: { item: ShoppingItem; onToggle: (checked: boolean) => void; onEditIcon?: () => void }) {
+function ItemRow({ item, onToggle, onOpen }: { item: ShoppingItem; onToggle: (checked: boolean) => void; onOpen: () => void }) {
   const got = item.checkedAt !== null;
   const qty = formatAmount(item.qty, item.unit);
-  const why = item.note ?? item.purposeNote ?? (item.source === "manual" ? "Added by hand" : null);
   const icon = (
     <span className={cx(styles.itemEmoji, !hasIcon(item.name, item.imageUrl) && styles.noIcon)} aria-hidden="true">
       <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
@@ -350,6 +342,7 @@ function ItemRow({ item, onToggle, onEditIcon }: { item: ShoppingItem; onToggle:
     <li
       className={cx(styles.item, styles.swipeRow, got && styles.got)}
       data-ui="shop-item"
+      onClick={onOpen}
       {...swipe.rowProps}
       style={swipe.style}
     >
@@ -357,37 +350,26 @@ function ItemRow({ item, onToggle, onEditIcon }: { item: ShoppingItem; onToggle:
         <Icon name="check" />
         {got ? "Put back" : "Got it"}
       </span>
-      {onEditIcon ? (
-        <button
-          type="button"
-          className={cx(styles.itemIcon, !hasIcon(item.name, item.imageUrl) && styles.noIcon)}
-          aria-label={`Change the icon for ${item.name}`}
-          onClick={onEditIcon}
-        >
-          <Emoji code={ingredientEmoji(item.name, item.imageUrl)} fallback={ingredientEmoji(item.name)} size={26} />
-        </button>
-      ) : (
-        icon
-      )}
+      {icon}
       <Checkbox.Root
         className={styles.itemCheck}
         checked={got}
+        onClick={(e) => e.stopPropagation()}
         onCheckedChange={(next) => onToggle(next === true)}
-        aria-label={item.name}
+        aria-label={`Got ${item.name}`}
       >
         <span className={styles.itemBox} aria-hidden="true">
           <Checkbox.Indicator className={styles.itemCheckMark} forceMount>
             <Icon name="check" />
           </Checkbox.Indicator>
         </span>
-        <span className={styles.itemContent}>
-          <span className={styles.itemBody}>
-            <span className={styles.itemName}>{item.name}</span>
-            {why && <span className={styles.itemWhy}>{why}</span>}
-          </span>
-          {qty && <span className={styles.itemQty}>{qty}</span>}
-        </span>
       </Checkbox.Root>
+      <button type="button" className={styles.itemContent} data-ui="shop-item-open" aria-label={`${item.name}: details`} onClick={onOpen}>
+        <span className={styles.itemBody}>
+          <span className={styles.itemName}>{item.name}</span>
+        </span>
+        {qty && <span className={styles.itemQty}>{qty}</span>}
+      </button>
     </li>
   );
 }

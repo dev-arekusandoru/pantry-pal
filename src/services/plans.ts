@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, gte, inArray, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { Ctx } from "../context.js";
 import {
+  MEAL_TYPES,
   PLAN_STATUSES,
   cookEvents,
   mealPlans,
@@ -1199,6 +1200,168 @@ export function setSlots(ctx: Ctx, planId: string, ops: SetSlotsOp[]): SetSlotsR
     .filter((row) => touched.has(`${row.date}|${row.mealType}`));
 
   return { slots: toSlotViews(ctx, rows), deletedCookEventIds };
+}
+
+// ---------------------------------------------------------------------------
+// Saving a whole draft week
+// ---------------------------------------------------------------------------
+
+/** One eat of a draft batch. */
+export interface DraftSaveEat {
+  id: string;
+  date: string;
+  mealType: MealType;
+  servings: number | null;
+}
+
+/** A cook and the eats it feeds, as the planner draft holds it. */
+export interface DraftSaveBatch {
+  id: string;
+  recipeId: string;
+  cookDate: string;
+  servings: number;
+  eats: DraftSaveEat[];
+}
+
+export interface DraftSaveNote {
+  id: string;
+  date: string;
+  mealType: MealType;
+  kind: "freeform" | "skip";
+  label: string;
+}
+
+export interface SaveDraftInput {
+  batches: DraftSaveBatch[];
+  notes: DraftSaveNote[];
+}
+
+/**
+ * Replace the plan's meal slots and planned cooks with the draft, in one transaction.
+ *
+ * Cooks that are already done or skipped are kept as they are (only their slots follow
+ * the draft); planned cooks are updated, created or deleted. Cook dates may fall before
+ * the plan week, which the slot-level endpoints cannot express.
+ */
+export function saveDraft(ctx: Ctx, planId: string, input: SaveDraftInput): PlanChangeResult {
+  const plan = requirePlanRow(ctx, planId);
+  const timestamp = nowIso(ctx);
+
+  ctx.db.transaction((tx) => {
+    const t = withTx(ctx, tx);
+    const existing = t.db
+      .select()
+      .from(cookEvents)
+      .where(and(eq(cookEvents.householdId, ctx.householdId), eq(cookEvents.mealPlanId, plan.id)))
+      .all();
+    const byId = new Map(existing.map((event) => [event.id, event]));
+    const reused = new Set<string>();
+    const cookIdOf = new Map<string, string>();
+
+    for (const batch of input.batches) {
+      if (batch.eats.length === 0) {
+        throw new AppError("validation", "A draft batch needs at least one eat", { id: batch.id });
+      }
+      assertIsoDate(batch.cookDate, "cookDate");
+      assertPositive(batch.servings, "servings");
+      const recipe = getRecipe(t, batch.recipeId);
+      const event = byId.get(batch.id);
+      if (event !== undefined) {
+        reused.add(event.id);
+        cookIdOf.set(batch.id, event.id);
+        if (event.status === "planned") {
+          t.db
+            .update(cookEvents)
+            .set({ recipeId: recipe.id, cookDate: batch.cookDate, plannedServings: batch.servings, updatedAt: timestamp })
+            .where(eq(cookEvents.id, event.id))
+            .run();
+        }
+      } else {
+        cookIdOf.set(batch.id, insertPlannedCook(t, plan.id, recipe.id, batch.cookDate, batch.servings));
+      }
+      for (const eat of batch.eats) {
+        assertIsoDate(eat.date, "date");
+        assertWithinWeek(eat.date, plan.weekStart);
+        assertPositive(eat.servings ?? undefined, "servings");
+      }
+    }
+
+    // Slots fed by finished cooks the draft does not describe stay as they are.
+    const kept = existing
+      .filter((event) => event.status !== "planned" && !reused.has(event.id))
+      .map((event) => event.id);
+    if (kept.length === 0) {
+      t.db.delete(mealSlots).where(eq(mealSlots.mealPlanId, plan.id)).run();
+    } else {
+      t.db
+        .delete(mealSlots)
+        .where(
+          and(
+            eq(mealSlots.mealPlanId, plan.id),
+            or(isNull(mealSlots.cookEventId), notInArray(mealSlots.cookEventId, kept)),
+          ),
+        )
+        .run();
+    }
+
+    const doomed = existing.filter((event) => event.status === "planned" && !reused.has(event.id));
+    for (const event of doomed) t.db.delete(cookEvents).where(eq(cookEvents.id, event.id)).run();
+
+    type Entry = { date: string; mealType: MealType; spec: SlotSpec };
+    const groups = new Map<string, Entry[]>();
+    const groupOf = (date: string, mealType: MealType) => {
+      const key = `${date}|${mealType}`;
+      const list = groups.get(key) ?? [];
+      groups.set(key, list);
+      return list;
+    };
+    for (const batch of input.batches) {
+      for (const eat of batch.eats) {
+        groupOf(eat.date, eat.mealType).push({
+          date: eat.date,
+          mealType: eat.mealType,
+          spec: { kind: "leftover", cookEventId: cookIdOf.get(batch.id)!, ...(eat.servings === null ? {} : { servings: eat.servings }) },
+        });
+      }
+    }
+    for (const note of input.notes) {
+      assertIsoDate(note.date, "date");
+      assertWithinWeek(note.date, plan.weekStart);
+      const spec: SlotSpec = note.kind === "freeform" ? { kind: "freeform", label: note.label } : { kind: "skip", label: note.label };
+      groupOf(note.date, note.mealType).push({ date: note.date, mealType: note.mealType, spec });
+    }
+
+    const insertEntry = (entry: Entry, position: number): void => {
+      const { spec } = entry;
+      if (spec.kind === "leftover") {
+        insertSlotRow(t, plan.id, plan.weekStart, {
+          date: entry.date,
+          mealType: entry.mealType,
+          kind: "meal",
+          cookEventId: spec.cookEventId,
+          servings: spec.servings ?? null,
+          position,
+        });
+      } else if (spec.kind === "freeform" || spec.kind === "skip") {
+        insertSlotRow(t, plan.id, plan.weekStart, {
+          date: entry.date,
+          mealType: entry.mealType,
+          kind: spec.kind,
+          label: spec.label ?? null,
+          position,
+        });
+      }
+    };
+
+    for (let day = 0; day < DAYS_PER_WEEK; day++) {
+      const date = addDays(plan.weekStart, day);
+      for (const mealType of MEAL_TYPES) {
+        (groups.get(`${date}|${mealType}`) ?? []).forEach(insertEntry);
+      }
+    }
+  });
+
+  return { plan: buildPlanView(ctx, plan), shoppingListStale: planHasStaleShoppingList(ctx, plan.id) };
 }
 
 // ---------------------------------------------------------------------------

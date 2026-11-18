@@ -37,16 +37,22 @@ connect an AI assistant through MCP. Your data stays on your server.
     <th>Shop</th>
   </tr>
   <tr>
-    <td><img src="docs/images/week.png" alt="Weekly meal plan with meals and leftovers" width="360"></td>
-    <td><img src="docs/images/shop.png" alt="Shopping list grouped by food category" width="360"></td>
+    <td><img src="docs/images/week.png" alt="Weekly meal plan with meals and leftovers" width="460"></td>
+    <td><img src="docs/images/shop.png" alt="Shopping list grouped by food category" width="460"></td>
   </tr>
   <tr>
-    <th>Pantry</th>
+    <th>Recipes</th>
     <th>Cook mode</th>
   </tr>
   <tr>
-    <td><img src="docs/images/pantry.png" alt="Pantry stock grouped by food category with amounts" width="360"></td>
-    <td><img src="docs/images/cook.png" alt="Cook mode with one recipe step and large controls" width="360"></td>
+    <td><img src="docs/images/recipes.png" alt="Recipe box with search, filters, and photo cards" width="460"></td>
+    <td><img src="docs/images/cook.png" alt="Cook mode with one recipe step and large controls" width="460"></td>
+  </tr>
+  <tr>
+    <th colspan="2">Cook together</th>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/images/cook-together.png" alt="Cook mode with two cooks, each with their own steps" width="640"></td>
   </tr>
 </table>
 

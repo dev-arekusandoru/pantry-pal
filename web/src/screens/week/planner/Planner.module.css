@@ -1,0 +1,1014 @@
+/* Variant A: week grid with a cook row, recipe drawer docked on the right. */
+
+.wrap {
+  container: planner / inline-size;
+}
+
+.root {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+.root > * {
+  min-width: 0;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-3);
+}
+
+/* Mobile branch: the picker, the save note and the scrollable planner. */
+.mobile {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.saveBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin: 0;
+  min-height: 24px;
+  color: var(--muted);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+.saveBar[data-status="error"] {
+  color: var(--danger-text);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@container planner (min-width: 900px) {
+  .root {
+    grid-template-columns: minmax(0, 1fr) 17.5rem;
+  }
+}
+
+/* Wide screens (set from Grid.tsx): the planner is exactly the space below the page header.
+   The grid body and the drawer list scroll inside it; the page does not. */
+.wrap[data-fit] {
+  height: var(--planner-h);
+}
+
+.wrap[data-fit] .root {
+  height: 100%;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.wrap[data-fit] .main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wrap[data-fit] .board {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wrap[data-fit] .scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+.wrap[data-fit] .cell {
+  min-height: 5rem;
+}
+
+.wrap[data-fit] .cookCell {
+  min-height: 3.5rem;
+}
+
+.wrap[data-fit] .drawer {
+  min-height: 0;
+}
+
+/* ---------- the board ---------- */
+.board {
+  position: relative;
+  padding: var(--sp-2);
+  border-radius: var(--r-xl);
+  background: var(--card) var(--grain);
+  box-shadow: var(--shadow);
+}
+
+.board::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 14%;
+  z-index: 4;
+  width: 88px;
+  height: 20px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--butter) 75%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--bd) 30%, transparent);
+  transform: rotate(-2.5deg);
+  display: var(--head-tape);
+  pointer-events: none;
+}
+
+/* Scrollbars are styled; no painted edge bands (they read as stray white bars). */
+.scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-radius: var(--r-lg);
+  scrollbar-color: var(--bd) transparent;
+}
+
+.grid {
+  --label-w: 4.25rem;
+  --col-min: 6.25rem;
+  --before-w: 2.75rem;
+  display: grid;
+  grid-template-columns: var(--label-w) var(--before-w) repeat(7, minmax(var(--col-min), 1fr));
+  min-width: calc(var(--label-w) + var(--before-w) + 7 * var(--col-min));
+}
+
+.corner,
+.rowLabel {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 3;
+  background: var(--card) var(--grain);
+}
+
+/* Day headers stay put while the grid body scrolls; the corner holds both axes. */
+.corner {
+  inset-block-start: 0;
+  z-index: 5;
+}
+
+.dayHead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 4;
+  background: var(--card) var(--grain);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1px;
+  min-width: 0;
+  padding: var(--sp-2) 4px 6px;
+  text-align: center;
+  border-block-end: 2px solid var(--bd);
+}
+
+.dayHead[data-today] {
+  background: var(--butter-s);
+  border-start-start-radius: var(--r-md);
+  border-start-end-radius: var(--r-md);
+}
+
+.dayHead[data-before] {
+  color: var(--muted);
+}
+
+.dayName {
+  font-family: var(--font-head);
+  font-weight: var(--fw-head);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-head);
+}
+
+.dayHead[data-before] .dayName {
+  font-size: var(--fs-sm);
+  font-family: var(--font-note);
+  font-weight: var(--fw-bold);
+}
+
+.dayDate {
+  min-height: 1.2em;
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.flag {
+  margin-block-start: 2px;
+  padding: 0 9px;
+  border-radius: var(--r-chip);
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  transform: rotate(var(--tilt-b));
+}
+
+.rowLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--sp-2) 4px;
+  border-block-end: 1.5px dashed var(--line);
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
+
+.rowLabel[data-suits] {
+  background: color-mix(in srgb, var(--pistachio-s) 70%, var(--card));
+  box-shadow: inset 4px 0 0 var(--pistachio);
+}
+
+.rowLabel[data-cook] {
+  color: var(--accent-text);
+  border-block-end: 2px solid var(--bd);
+}
+
+.hideRow {
+  width: 28px;
+  height: 28px;
+}
+
+.hideRow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.beforeFill {
+  border-block-end: 1.5px dashed var(--line);
+  background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--line) 45%, transparent) 6px 7.5px);
+}
+
+/* ---------- cells ---------- */
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 6.25rem;
+  padding: 4px;
+  border-block-end: 1.5px dashed var(--line);
+  border-inline-start: 1.5px dashed var(--line);
+}
+
+.cookCell {
+  min-height: 3.5rem;
+  border-block-end: 2px solid var(--bd);
+  background: color-mix(in srgb, var(--peach-s) 38%, transparent);
+}
+
+.cell[data-today] {
+  background-color: color-mix(in srgb, var(--butter-s) 60%, transparent);
+}
+
+/* The picked or dragged recipe suits this meal row. */
+.cell[data-suits] {
+  background-color: color-mix(in srgb, var(--pistachio-s) 45%, transparent);
+}
+
+.cell[data-over] {
+  background: var(--butter-s);
+  outline: 3px dashed var(--bd);
+  outline-offset: -4px;
+}
+
+/* A cook day that would land after the first meal: hatched, and the drop is refused. */
+.cell[data-invalid] {
+  background: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--danger-text) 22%, transparent) 6px 8px);
+}
+
+.cell[data-invalid][data-over] {
+  outline-color: var(--danger-text);
+}
+
+.stack {
+  display: grid;
+  gap: 4px;
+  list-style: none;
+}
+
+.stack > li {
+  min-width: 0;
+}
+
+.place {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  border: 2px dashed var(--bd);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+
+.place[data-fill] {
+  flex: 1;
+  min-height: 56px;
+}
+
+@media (hover: hover) {
+  .place:hover {
+    background: var(--butter-s);
+  }
+}
+
+.scrollHint {
+  margin: var(--sp-2) 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.addRows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding-block-start: var(--sp-2);
+}
+
+/* ---------- chips ---------- */
+.chip {
+  --h: var(--peach);
+  --hs: var(--peach-s);
+  position: relative;
+  border-radius: var(--r-sm);
+  background: var(--hs);
+  box-shadow:
+    inset 4px 0 0 var(--h),
+    0 0 0 1.5px color-mix(in srgb, var(--bd) 55%, transparent);
+}
+
+.chip[data-hue="1"] {
+  --h: var(--pistachio);
+  --hs: var(--pistachio-s);
+}
+.chip[data-hue="2"] {
+  --h: var(--blue);
+  --hs: var(--blue-s);
+}
+.chip[data-hue="3"] {
+  --h: var(--gum);
+  --hs: var(--gum-s);
+}
+.chip[data-hue="4"] {
+  --h: var(--butter);
+  --hs: var(--butter-s);
+}
+.chip[data-hue="5"] {
+  --h: var(--accent);
+  --hs: color-mix(in srgb, var(--accent) 22%, var(--card));
+}
+
+/* The cook is the pot on the stove: heavier pencil line, color along the bottom. */
+.chip[data-kind="cook"] {
+  box-shadow:
+    inset 0 -4px 0 var(--h),
+    0 0 0 2px var(--bd);
+}
+
+.chip[data-kind="note"] {
+  background: var(--card);
+  box-shadow: none;
+  outline: 1.5px dashed var(--bd);
+  outline-offset: -1.5px;
+}
+
+.chip[data-hot] {
+  box-shadow:
+    inset 6px 0 0 var(--h),
+    0 0 0 3px var(--bd);
+}
+
+.chip[data-kind="cook"][data-hot] {
+  box-shadow:
+    inset 0 -6px 0 var(--h),
+    0 0 0 3px var(--bd);
+}
+
+.chip[data-selected] {
+  outline: 3px dashed var(--bd);
+  outline-offset: 2px;
+}
+
+.chip[data-dragging] {
+  opacity: 0.35;
+}
+
+.bodyCol,
+.bodyCook {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px 8px;
+  border-radius: inherit;
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: grab;
+  touch-action: manipulation;
+}
+
+/* Cook row: a compact stub, clearly smaller than a meal chip. */
+.bodyCook {
+  gap: 2px;
+  min-height: 0;
+  padding: 3px 5px 4px;
+}
+
+.chipTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+}
+
+.chipNote {
+  display: block;
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+
+.cookTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  line-height: 1.15;
+}
+
+.cookTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  padding-inline-end: 22px;
+}
+
+.srv {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-radius: var(--r-chip);
+  background: var(--card);
+  font-size: 0.6875rem;
+  font-weight: var(--fw-bold);
+  line-height: 1.4;
+}
+
+/* Recipe photo on the hue chip, with the food icon as a sticker on its corner. */
+.pic {
+  position: relative;
+  flex: none;
+  width: var(--pic);
+  height: var(--pic);
+}
+
+.pic img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  box-shadow: 0 0 0 2px var(--h);
+  object-fit: cover;
+}
+
+.picBadge {
+  position: absolute;
+  inset-block-end: -4px;
+  inset-inline-end: -4px;
+  display: grid;
+  place-items: center;
+  width: var(--badge);
+  height: var(--badge);
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 0 0 1.5px var(--h);
+}
+
+.noteEdit {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--sp-2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--field-bg);
+  color: var(--ink);
+  box-shadow: var(--field-ring);
+  font: inherit;
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+}
+
+.chipX {
+  position: absolute;
+  top: 3px;
+  inset-inline-end: 3px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .chipX:hover {
+    background: var(--card);
+    box-shadow: 0 0 0 1.5px var(--bd);
+  }
+}
+
+.chip[data-kind="cook"] .chipX {
+  top: 2px;
+  inset-inline-end: 2px;
+  width: 22px;
+  height: 22px;
+}
+
+/* ---------- drag overlay ---------- */
+.overlay {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: max-content;
+  max-width: 15rem;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow:
+    var(--shadow),
+    0 0 0 2px var(--bd);
+  transform: rotate(var(--tilt-b));
+  cursor: grabbing;
+}
+
+.overlay > span {
+  display: grid;
+  min-width: 0;
+}
+
+/* ---------- popover ---------- */
+.pop {
+  z-index: var(--z-sheet);
+  display: grid;
+  gap: var(--sp-3);
+  width: min(23rem, calc(100vw - 16px));
+  max-height: var(--radix-popover-content-available-height);
+  overflow: auto;
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--card) var(--grain);
+  color: var(--ink);
+  box-shadow:
+    var(--shadow),
+    0 0 0 1.5px var(--bd);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pop[data-state="open"] {
+    animation: popIn var(--dur-enter) var(--ease-out);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(var(--shift)) scale(0.98);
+  }
+}
+
+.popHead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.popTitleBox {
+  flex: 1;
+  min-width: 0;
+}
+
+.popTitle {
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-head);
+  line-height: var(--lh-head);
+  overflow-wrap: anywhere;
+}
+
+.popClose {
+  display: grid;
+  place-items: center;
+  flex: none;
+  align-self: flex-start;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.popRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.linkBtn {
+  min-height: 32px;
+  padding: 0 4px;
+  color: var(--accent-text);
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.popField {
+  min-width: 0;
+  border: 0;
+}
+
+.popField legend {
+  margin-block-end: var(--sp-1);
+  padding: 0;
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.dayChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dayChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 36px;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: var(--r-chip);
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--line);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.dayChip b {
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+}
+
+.dayChip[aria-pressed="true"] {
+  background: var(--butter);
+  box-shadow: 0 0 0 2px var(--bd);
+}
+
+.dayChip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.popActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* Save is the one primary action; it takes the trailing edge. */
+.popSave {
+  margin-inline-start: auto;
+}
+
+/* ---------- drawer ---------- */
+.drawer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-height: 0;
+  padding: var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--card) var(--grain);
+  box-shadow: var(--shadow);
+}
+
+.drawer::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  right: 18%;
+  width: 76px;
+  height: 20px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--pistachio) 75%, transparent);
+  transform: rotate(3deg);
+  display: var(--head-tape);
+  pointer-events: none;
+}
+
+.drawerHead {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.drawerTitle {
+  font-family: var(--font-head);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-head);
+  line-height: var(--lh-head);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fchip {
+  min-height: 32px;
+  padding: 2px 10px;
+  border-radius: var(--r-chip);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--line);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+
+.fchip[aria-pressed="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: none;
+}
+
+.sec {
+  padding-block-end: var(--sp-2);
+}
+
+/* Sticky divider on the drawer's own paper: blends in, never a white bar. */
+.secHead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  margin: 0;
+  background: var(--card) var(--grain);
+  border-block-end: 1.5px dashed var(--line);
+}
+
+.secBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 38px;
+  padding: 2px 0;
+  color: var(--ink);
+  font-family: var(--font-note);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  text-align: start;
+  cursor: pointer;
+}
+
+.secName {
+  flex: 1;
+}
+
+.secCount {
+  font-family: var(--font-note);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--muted);
+}
+
+.secCaret {
+  color: var(--muted);
+  transition: rotate var(--dur-fast) var(--ease);
+}
+
+.secBtn[aria-expanded="false"] .secCaret {
+  rotate: -90deg;
+}
+
+/* A picked recipe suits this meal. */
+.sec[data-cue] .secHead {
+  background: color-mix(in srgb, var(--pistachio-s) 55%, var(--card));
+  box-shadow: inset 4px 0 0 var(--pistachio);
+}
+
+.drawerList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-inline: calc(-1 * var(--sp-2));
+  padding: 0 var(--sp-2) var(--sp-2);
+  scrollbar-color: var(--bd) transparent;
+}
+
+.cards {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+}
+
+@container planner (max-width: 899px) {
+  .drawerList {
+    overflow: visible;
+  }
+
+  .secHead {
+    position: static;
+  }
+
+  .cards {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  }
+}
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 5px;
+  border-radius: var(--r-md);
+  background: var(--bg);
+  box-shadow: 0 0 0 1.5px var(--line);
+}
+
+.card[data-selected] {
+  box-shadow:
+    0 0 0 2px var(--bd),
+    0 0 0 5px var(--butter);
+}
+
+.card[data-dragging] {
+  opacity: 0.4;
+}
+
+.cardBody {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--r-sm);
+  cursor: grab;
+  touch-action: manipulation;
+}
+
+.thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 11px;
+  background: radial-gradient(circle at 30% 25%, var(--butter-s), var(--peach-s));
+}
+
+.thumb[data-note] {
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--pistachio-s);
+}
+
+.thumbImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardText {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.cardTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  line-height: 1.22;
+}
+
+.cardMeta {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-note);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Small round "Place": the card itself stays the drag handle. */
+.pick {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 0 0 1.5px var(--line);
+  cursor: pointer;
+}
+
+.pick svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pick[aria-pressed="true"] {
+  background: var(--butter);
+  box-shadow: 0 0 0 1.5px var(--bd);
+}
+
+@media (hover: hover) {
+  .pick:hover {
+    background: var(--butter-s);
+  }
+}
+
+.empty {
+  margin-block-start: var(--sp-2);
+  font-family: var(--font-note);
+  font-weight: var(--fw-semibold);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .chip,
+  .card,
+  .cell {
+    transition:
+      box-shadow var(--dur-fast) var(--ease),
+      background-color var(--dur-fast) var(--ease),
+      opacity var(--dur-fast) var(--ease);
+  }
+}

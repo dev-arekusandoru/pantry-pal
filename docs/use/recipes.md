@@ -7,6 +7,8 @@ Use **New recipe** on the Recipes tab, or **Edit recipe** on a recipe page, to
 create and change recipes in the app. An AI assistant or an API client can also
 create and change recipes. See [Create and edit recipes](recipe-editor.md).
 
+![Recipes tab with search, filters, and recipe cards](../images/recipes.png)
+
 ## Browse the box
 
 Cards show the photo, title, total time, and base servings. A recipe that is
@@ -102,6 +104,8 @@ are not saved.
 
 Two to four people can split one recipe. Each cook follows only their own
 steps. This works best on a shared tablet in landscape.
+
+![Cook mode with two cooks: Robin and Sam each have a panel with their own steps](../images/cook-together.png)
 
 1. Add each person in **Settings** > **People**.
 2. Open cook mode. When the household has two or more people, **Who's cooking?**

@@ -12,14 +12,22 @@ export const shopRoute = createRoute({
   component: ShopPage,
 });
 
+const STORAGE_KEY = "pantry-pal:shop-list";
+
 function ShopPage() {
   const { list } = shopRoute.useSearch();
   const navigate = shopRoute.useNavigate();
+  // The URL wins; otherwise the list last picked this session, so leaving the tab and returning keeps it.
+  const listId = list ?? sessionStorage.getItem(STORAGE_KEY) ?? undefined;
   // Same page, new search: keep the scroll position and skip the page crossfade.
   return (
     <ShopScreen
-      listId={list}
-      onSelectList={(id) => void navigate({ search: id === undefined ? {} : { list: id }, replace: true, resetScroll: false, viewTransition: false })}
+      listId={listId}
+      onSelectList={(id) => {
+        if (id === undefined) sessionStorage.removeItem(STORAGE_KEY);
+        else sessionStorage.setItem(STORAGE_KEY, id);
+        void navigate({ search: id === undefined ? {} : { list: id }, replace: true, resetScroll: false, viewTransition: false });
+      }}
     />
   );
 }

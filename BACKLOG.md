@@ -35,6 +35,7 @@
 - Week page: wall tablet layout. The page now allows 1560px, but the week timeline fills only the left part of a 1920px screen; use the free width, for example two days side by side or a week grid beside it
 - Week page: let people edit the meal time windows (breakfast until 10:30, lunch until 15:00) in Settings; keep a week grid view as an option beside the timeline
 - Week page: check other weeks (browsing next and last week), 200% zoom and measured text contrast over recipe photos
+- Living Pal (cozy): Pal reacts to pantry health and cooking, and unlocks outfits. Pal gets sleepy, never sad
 
 ## Tooling
 - CI (typecheck + tests + docker build), linter/formatter config

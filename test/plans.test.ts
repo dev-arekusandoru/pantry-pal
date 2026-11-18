@@ -13,13 +13,15 @@ import {
   getCurrentPlan,
   getPlan,
   listPlans,
+  saveDraft,
+  type SaveDraftInput,
   listPrepTasks,
   setSlots,
   updatePlan,
   updateSlot,
 } from "../src/services/plans.js";
 import { createRecipe } from "../src/services/recipes.js";
-import { skipCookEvent } from "../src/services/cooking.js";
+import { completeCookEvent, skipCookEvent } from "../src/services/cooking.js";
 import { makeTestCtx } from "./helpers.js";
 
 function expectAppError(fn: () => unknown, code: ErrorCode): AppError {
@@ -244,6 +246,120 @@ describe("setSlots", () => {
       "validation",
     );
     expect(getPlan(ctx, plan.id).days[0]!.meals.dinner).toHaveLength(2);
+  });
+});
+
+describe("saveDraft", () => {
+  it("replaces the week with the draft, including a cook day before the week", () => {
+    const { ctx } = makeTestCtx();
+    const chili = emptyRecipe(ctx, "Chili");
+    const plan = createPlan(ctx, { weekStart: "2026-11-02" });
+
+    const saved = saveDraft(ctx, plan.id, {
+      batches: [
+        {
+          id: "cook-draft-1",
+          recipeId: chili.id,
+          cookDate: "2026-11-01",
+          servings: 6,
+          eats: [
+            { id: "eat-draft-1", date: "2026-11-02", mealType: "dinner", servings: 2 },
+            { id: "eat-draft-2", date: "2026-11-03", mealType: "lunch", servings: null },
+          ],
+        },
+      ],
+      notes: [{ id: "note-draft-1", date: "2026-11-04", mealType: "dinner", kind: "freeform", label: "Fridge clean-out" }],
+    });
+
+    expect(saved.plan.cookEvents).toHaveLength(1);
+    expect(saved.plan.cookEvents[0]!.cookDate).toBe("2026-11-01");
+    expect(saved.plan.cookEvents[0]!.plannedServings).toBe(6);
+    expect(saved.plan.days[0]!.meals.dinner[0]!.cookEvent?.recipeTitle).toBe("Chili");
+    expect(saved.plan.days[1]!.meals.lunch[0]!.isLeftover).toBe(true);
+    expect(saved.plan.days[1]!.meals.lunch[0]!.servings).toBeNull();
+    expect(saved.plan.days[2]!.meals.dinner[0]!.label).toBe("Fridge clean-out");
+  });
+
+  it("updates a saved cook instead of adding a second one", () => {
+    const { ctx } = makeTestCtx();
+    const chili = emptyRecipe(ctx, "Chili");
+    const plan = createPlan(ctx, { weekStart: "2026-11-02" });
+    const draft = (servings: number): SaveDraftInput => ({
+      batches: [
+        {
+          id: "cook-draft-1",
+          recipeId: chili.id,
+          cookDate: "2026-11-02",
+          servings,
+          eats: [{ id: "eat-draft-1", date: "2026-11-02", mealType: "dinner", servings: 2 }],
+        },
+      ],
+      notes: [],
+    });
+    saveDraft(ctx, plan.id, draft(4));
+    const cookId = getPlan(ctx, plan.id).cookEvents[0]!.id;
+
+    const saved = saveDraft(ctx, plan.id, {
+      ...draft(8),
+      batches: draft(8).batches.map((b) => ({ ...b, id: cookId })),
+    });
+    expect(saved.plan.cookEvents).toHaveLength(1);
+    expect(saved.plan.cookEvents[0]!.id).toBe(cookId);
+    expect(saved.plan.cookEvents[0]!.plannedServings).toBe(8);
+  });
+
+  it("keeps a finished cook and its slots when the draft leaves it out", () => {
+    const { ctx } = makeTestCtx();
+    const chili = emptyRecipe(ctx, "Chili");
+    const plan = createPlan(ctx, { weekStart: "2026-11-02" });
+    saveDraft(ctx, plan.id, {
+      batches: [
+        {
+          id: "cook-draft-1",
+          recipeId: chili.id,
+          cookDate: "2026-11-02",
+          servings: 4,
+          eats: [{ id: "eat-draft-1", date: "2026-11-02", mealType: "dinner", servings: 2 }],
+        },
+      ],
+      notes: [],
+    });
+    const cookId = getPlan(ctx, plan.id).cookEvents[0]!.id;
+    completeCookEvent(ctx, cookId);
+
+    saveDraft(ctx, plan.id, {
+      batches: [],
+      notes: [{ id: "note-draft-1", date: "2026-11-05", mealType: "dinner", kind: "skip", label: "Eating out" }],
+    });
+    const view = getPlan(ctx, plan.id);
+    expect(view.cookEvents).toHaveLength(1);
+    expect(view.cookEvents[0]!.status).toBe("done");
+    expect(view.days[0]!.meals.dinner).toHaveLength(1);
+    expect(view.days[3]!.meals.dinner[0]!.kind).toBe("skip");
+  });
+
+  it("rejects a meal outside the plan week without changing the plan", () => {
+    const { ctx } = makeTestCtx();
+    const chili = emptyRecipe(ctx, "Chili");
+    const plan = createPlan(ctx, { weekStart: "2026-11-02" });
+
+    expectAppError(
+      () =>
+        saveDraft(ctx, plan.id, {
+          batches: [
+            {
+              id: "cook-draft-1",
+              recipeId: chili.id,
+              cookDate: "2026-11-02",
+              servings: 2,
+              eats: [{ id: "eat-draft-1", date: "2026-11-20", mealType: "dinner", servings: 2 }],
+            },
+          ],
+          notes: [],
+        }),
+      "validation",
+    );
+    expect(getPlan(ctx, plan.id).cookEvents).toHaveLength(0);
   });
 });
 
