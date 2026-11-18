@@ -17,7 +17,7 @@ flowchart LR
 | --- | --- |
 | `web/src/` | React web app, routes, screens, and shared UI |
 | `src/api/` | Hono routes, OpenAPI, and static file serving |
-| `src/auth/` | Bearer tokens, browser sessions, and origin checks |
+| `src/auth/` | Accounts, passwords, bearer tokens, sessions, and origin checks |
 | `src/mcp/` | MCP transport and tool handlers |
 | `src/services/` | Food calculations and data changes |
 | `src/schemas/` | Zod input and output schemas |
@@ -64,7 +64,7 @@ confirmation. `Button` has these variants:
 
 ## Data rules
 
-- Each instance supports one household. Household data carries a household ID.
+- Each account owns one household. Household data carries a household ID; every query filters by it.
 - Stock movements record changes. Pantry rows hold the current stock.
 - Planned cooks determine stock commitments. There is no separate reservation table.
 - One cook can feed several meal slots. Later slots represent leftovers.

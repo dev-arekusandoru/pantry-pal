@@ -19,12 +19,12 @@ The guides mark tasks that need the API or MCP rather than the web app.
 
 ## Limits
 
-- One household per instance. No separate users or access roles.
+- Each account owns one household. There are no roles inside a household.
 - One server process per SQLite database. Store the database on a local disk.
-- The web app can use one shared password. Everyone with the password has full
-  access. API and MCP clients use bearer tokens.
-- Local and private installs can run without a password on a trusted network.
-  Public installs need HTTPS and the password.
+- The web app signs in with an account. API and MCP clients use bearer tokens
+  that grant full access to their household.
+- Public installs need HTTPS and, after you create your accounts,
+  `PANTRYPAL_SIGNUP=closed`.
 - No built-in HTTPS or database encryption. Protect the host and network.
 - An unknown stock amount is not zero. Some amounts need a kitchen check.
 

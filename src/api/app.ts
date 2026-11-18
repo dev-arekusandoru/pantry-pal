@@ -1,9 +1,9 @@
 import { OpenAPIHono, type Hook } from "@hono/zod-openapi";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { createAuthMiddleware, clientAddress, type AppEnv } from "../auth/middleware.js";
+import { createAuthMiddleware, type AppEnv } from "../auth/middleware.js";
 import { registerAuthRoutes } from "../auth/routes.js";
-import { isPasswordConfigured, SESSION_COOKIE_NAME } from "../auth/session.js";
+import { SESSION_COOKIE_NAME } from "../auth/session.js";
 import type { Db } from "../db/client.js";
 import { isAppError } from "../lib/errors.js";
 import { mountMcp as defaultMountMcp, type McpDeps } from "../mcp/mount.js";
@@ -18,32 +18,17 @@ export type App = OpenAPIHono<AppEnv>;
 
 export interface CreateAppOptions {
   db: Db;
-  /** Clock used for request contexts (tests inject a fixed one). */
+  /** Clock used for request contexts and session expiry (tests inject a fixed one). */
   now?: () => Date;
   /**
    * MCP mount point overrides (tests or alternate transports). Defaults to the
    * Streamable HTTP handler in `src/mcp/mount.ts`.
    */
   mountMcp?: (app: App, deps: McpDeps) => void;
-  /**
-   * Network-trust auth for `/api/v1/*` only: requests without an `Authorization`
-   * header act as the instance's single household. Tokens that are sent are still
-   * verified. Never applies to `/mcp`. Default false.
-   */
-  trustNetwork?: boolean;
+  /** Whether `POST /auth/signup` accepts new accounts. Default true. */
+  signupOpen?: boolean;
   /** Directory of the built web app to serve at `/` (SPA fallback). Omit to serve none. */
   webDir?: string;
-  /**
-   * Shared password for browser (cookie) login. When set, `/api/v1` also accepts
-   * a valid 30-day session cookie, anonymous network trust is overridden, and the
-   * `/auth/*` endpoints are enabled. Bearer tokens keep working independently.
-   */
-  browserPassword?: string;
-  /**
-   * Throw when password mode is required but no password was supplied. The
-   * server sets this from `PANTRYPAL_REQUIRE_PASSWORD` before binding a port.
-   */
-  requirePassword?: boolean;
 }
 
 /**
@@ -69,13 +54,6 @@ export function createApp(options: CreateAppOptions): App {
   const { db } = options;
   const now = options.now ?? (() => new Date());
   const mountMcp = options.mountMcp ?? defaultMountMcp;
-  const browserPassword = options.browserPassword === "" ? undefined : options.browserPassword;
-
-  if (options.requirePassword === true && !isPasswordConfigured(browserPassword)) {
-    throw new Error(
-      "PANTRYPAL_PASSWORD is required because PANTRYPAL_REQUIRE_PASSWORD is enabled.",
-    );
-  }
 
   const app = new OpenAPIHono<AppEnv>({ defaultHook });
 
@@ -90,35 +68,26 @@ export function createApp(options: CreateAppOptions): App {
     return c.json({ error: { code: "internal", message: "Internal server error" } }, 500);
   });
 
-  // Everything below /api/v1 requires a bearer token, a browser session (when a
-  // password is configured), or network trust (when enabled and password mode is off).
+  // Everything below /api/v1 requires a bearer token or a browser session.
   const api = new OpenAPIHono<AppEnv>({ defaultHook });
   for (const register of routeRegistrars) register(api);
 
-  const passwordMode = isPasswordConfigured(browserPassword);
-  const bearerAuth = createAuthMiddleware(db, now);
-  const auth = passwordMode ? createAuthMiddleware(db, now, { browserPassword }) : bearerAuth;
-  // Password mode deliberately overrides trustNetwork so anonymous requests can
-  // never become the household just by reaching the server.
-  const apiAuth =
-    !passwordMode && options.trustNetwork === true
-      ? createAuthMiddleware(db, now, { trustNetwork: true })
-      : auth;
-  app.use("/api/v1", apiAuth);
-  app.use("/api/v1/*", apiAuth);
+  const auth = createAuthMiddleware(db, now);
+  app.use("/api/v1", auth);
+  app.use("/api/v1/*", auth);
   app.route("/api/v1", api);
 
-  // Browser login endpoints. Live outside /api/v1 because they must stay public.
+  // Account endpoints. Live outside /api/v1 because they must stay public.
   registerAuthRoutes(app, {
+    db,
     now,
-    ...(browserPassword === undefined ? {} : { browserPassword }),
-    clientKey: clientAddress,
+    signupOpen: options.signupOpen ?? true,
   });
 
-  // MCP transport shares the same service layer, but is bearer-only: it uses
-  // middleware with no password configured, so a browser cookie never works.
-  app.use("/mcp", bearerAuth);
-  app.use("/mcp/*", bearerAuth);
+  // MCP transport shares the same service layer but accepts bearer tokens only.
+  const mcpAuth = createAuthMiddleware(db, now, { allowSession: false });
+  app.use("/mcp", mcpAuth);
+  app.use("/mcp/*", mcpAuth);
   mountMcp(app, { db, now });
 
   // Public endpoints.
@@ -136,7 +105,7 @@ export function createApp(options: CreateAppOptions): App {
     in: "cookie",
     name: SESSION_COOKIE_NAME,
     description:
-      "Browser session cookie set by POST /auth/login when PANTRYPAL_PASSWORD is configured. Valid for 30 days; rotating the password invalidates it. Never accepted by /mcp.",
+      "Browser session cookie set by POST /auth/signup or POST /auth/login. Valid for 30 days; logout or a password reset invalidates it. Never accepted by /mcp.",
   });
 
   app.doc31("/openapi.json", {
@@ -144,12 +113,11 @@ export function createApp(options: CreateAppOptions): App {
     info: {
       title: "PantryPal",
       version: packageVersion(),
-      description: passwordMode
-        ? "Self-hosted household pantry, recipe, meal-plan and shopping backend. /api/v1 accepts a bearer API token or the browser session cookie issued by POST /auth/login (PANTRYPAL_PASSWORD is configured). /mcp is bearer-only."
-        : "Self-hosted household pantry, recipe, meal-plan and shopping backend. All /api/v1 routes require a bearer API token, unless the server runs with PANTRYPAL_TRUST_NETWORK=1 (then requests without a token act as the household).",
+      description:
+        "Self-hosted household pantry, recipe, meal-plan and shopping backend. /api/v1 accepts a bearer API token or the browser session cookie issued by POST /auth/login; each account owns one household. /mcp is bearer-only.",
     },
     tags: [{ name: "meta", description: "Health and API metadata" }],
-    security: passwordMode ? [{ bearerAuth: [] }, { sessionCookie: [] }] : [{ bearerAuth: [] }],
+    security: [{ bearerAuth: [] }, { sessionCookie: [] }],
   });
 
   if (options.webDir !== undefined) app.use("*", createWebMiddleware(options.webDir));

@@ -9,38 +9,32 @@ PantryPal reads its settings from environment variables. It has no configuration
 | `PANTRYPAL_DB_PATH` | `./data/pantrypal.db`; image: `/data/pantrypal.db` | SQLite file. The parent directory is created if needed. Use the same path for the server and the CLI. |
 | `PORT` | Source: `4787`; image: `8787` | HTTP listen port. |
 | `HOST` | `0.0.0.0` | HTTP bind address. `127.0.0.1` accepts only local connections. |
-| `PANTRYPAL_PASSWORD` | Unset; off | Shared browser password. Enables `/auth/*` and makes `/api/v1` accept the session cookie. Bearer tokens still work. Changing it invalidates all browser sessions. |
-| `PANTRYPAL_REQUIRE_PASSWORD` | Off | `1` or `true` makes startup fail when `PANTRYPAL_PASSWORD` is unset. Use it for any public deployment. |
-| `PANTRYPAL_TRUST_NETWORK` | Off; the Compose override sets `1` | `1` or `true` lets `/api/v1` requests without an `Authorization` header act as the household. Ignored when `PANTRYPAL_PASSWORD` is set. `/mcp` always needs a token. |
+| `PANTRYPAL_SIGNUP` | `open` | `open` lets anyone who can reach the app create an account and household at `/auth/signup`. `closed` turns signup off; create accounts with `pantrypal account create`. Login works in both modes. |
 | `PANTRYPAL_WEB_DIR` | `web/dist` under the app root | Built web app directory. If it has no `index.html`, the server serves the API only and writes a log line. |
 
 No other variables are required for normal use. The tunnel stack also reads `CLOUDFLARE_TUNNEL_TOKEN` from `.env`; the app does not read that variable.
 
-## Authentication modes
+## Accounts and access
 
-- With `PANTRYPAL_PASSWORD` set, the browser uses `/auth/login`. `/api/v1` accepts a bearer token or a valid session cookie. Anonymous network trust is disabled, even if `PANTRYPAL_TRUST_NETWORK=1`.
-- Without a password, `PANTRYPAL_TRUST_NETWORK=1` lets `/api/v1` requests without a token act as the household. The web app has no login and relies on this mode or a proxy.
-- `/mcp` always requires a bearer token. It never accepts a browser session or network trust.
+- Each account owns exactly one household. Create an account in the web app, or with `pantrypal account create` when signup is closed.
+- `/api/v1` accepts a bearer API token or the browser session cookie.
 - A sent `Authorization` header is always checked first. An invalid token returns `401`, even with a valid session cookie.
+- An unsafe cookie-authenticated request must come from the app's own origin.
+- `/mcp` accepts bearer tokens only. It never accepts a browser session.
+- Sessions last 30 days. Logout ends the current session; `account reset-password` ends every session of that account.
 
-Use `PANTRYPAL_REQUIRE_PASSWORD=1` on a public instance so a missing password stops startup. See [Access and security](security.md).
+There is no shared password and no network-trust mode. Protect a public instance with HTTPS and, after you create your accounts, set `PANTRYPAL_SIGNUP=closed`. See [Access and security](security.md).
 
 ## Set values
 
-For Compose, edit the `environment` block. With the default stack, `docker-compose.override.yml` sets `PANTRYPAL_TRUST_NETWORK` and the port binding. Change those values in the override; the base file is merged under it. Run `docker compose up -d` after a change so Compose recreates the container. `docker compose restart` keeps the old environment.
+For Compose, edit the `environment` block. With the default stack, `docker-compose.override.yml` sets the port binding. Change those values in the override; the base file is merged under it. Run `docker compose up -d` after a change so Compose recreates the container. `docker compose restart` keeps the old environment.
 
 For the tunnel stack, edit `.env` at the repository root. Compose reads it for interpolation, and `docker-compose.tunnel.yml` passes the values into the container. See [Public access with Cloudflare Tunnel](tunnel.md).
 
 For a source run, set the variables in the shell before `pnpm start`:
 
 ```sh
-HOST=127.0.0.1 PORT=8787 PANTRYPAL_TRUST_NETWORK=0 pnpm start
-```
-
-To use browser login from source instead:
-
-```sh
-HOST=127.0.0.1 PANTRYPAL_PASSWORD='a long random password' PANTRYPAL_REQUIRE_PASSWORD=1 pnpm start
+HOST=127.0.0.1 PORT=8787 PANTRYPAL_SIGNUP=closed pnpm start
 ```
 
 A plain source run does not read `.env`. Export the variable first, or use `node --env-file=.env dist/server.js`.

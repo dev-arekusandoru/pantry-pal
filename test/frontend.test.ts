@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/api/app.js";
-import { households } from "../src/db/schema.js";
 import { AppError, type ErrorCode } from "../src/lib/errors.js";
 import { completeCookEvent } from "../src/services/cooking.js";
 import { resolveIngredient } from "../src/services/ingredients.js";
@@ -37,65 +36,6 @@ function expectAppError(fn: () => unknown, code: ErrorCode): AppError {
   }
   throw new Error(`Expected an AppError with code ${code}`);
 }
-
-// ---------------------------------------------------------------------------
-// Network-trust auth
-// ---------------------------------------------------------------------------
-
-describe("PANTRYPAL_TRUST_NETWORK auth", () => {
-  function trustedApp() {
-    const context = makeTestCtx();
-    const app = createApp({ db: context.db, now: context.ctx.now, trustNetwork: true });
-    return { ...context, app };
-  }
-
-  it("lets /api/v1 requests without a token act as the household", async () => {
-    const { app, household } = trustedApp();
-    const response = await app.request("/api/v1/household");
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ id: household.id });
-  });
-
-  it("still verifies a token that is sent", async () => {
-    const { app, token } = trustedApp();
-
-    const bad = await app.request("/api/v1/household", { headers: { authorization: "Bearer nope" } });
-    expect(bad.status).toBe(401);
-
-    const good = await app.request("/api/v1/household", {
-      headers: { authorization: `Bearer ${token}` },
-    });
-    expect(good.status).toBe(200);
-  });
-
-  it("never applies to /mcp", async () => {
-    const { app } = trustedApp();
-    const response = await app.request("/mcp", { method: "POST" });
-
-    expect(response.status).toBe(401);
-  });
-
-  it("is off by default", async () => {
-    const { app } = makeTestApp();
-    const response = await app.request("/api/v1/household");
-
-    expect(response.status).toBe(401);
-  });
-
-  it("answers 503 with a hint when the instance has no household", async () => {
-    const context = makeTestCtx();
-    context.db.delete(households).run();
-    const app = createApp({ db: context.db, trustNetwork: true });
-
-    const response = await app.request("/api/v1/household");
-
-    expect(response.status).toBe(503);
-    const body = (await response.json()) as { error: { code: string; message: string } };
-    expect(body.error.code).toBe("unavailable");
-    expect(body.error.message).toContain("household init");
-  });
-});
 
 // ---------------------------------------------------------------------------
 // Static web app

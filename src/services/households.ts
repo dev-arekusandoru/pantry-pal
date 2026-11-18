@@ -52,20 +52,6 @@ export function getHousehold(db: Db, id: string): Household {
   return row;
 }
 
-/**
- * The single household of this instance (PantryPal is one household per instance).
- * Throws `not_found` with an init hint when the database has not been set up yet.
- */
-export function getSingleHousehold(db: Db): Household {
-  const row = db.select().from(households).limit(1).get();
-  if (!row) {
-    throw new AppError("not_found", "No household configured", {
-      hint: "Run `pantrypal household init --name <name>` to create one.",
-    });
-  }
-  return row;
-}
-
 // ---------------------------------------------------------------------------
 // Household updates
 // ---------------------------------------------------------------------------

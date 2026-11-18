@@ -12,8 +12,10 @@
 
 ## Platform
 - OAuth 2.1 for remote MCP clients
-- Multiple households per instance (users, membership, token → household scoping)
-- Postgres support
+- Accounts: email verification on signup (open signup accepts any address today)
+- Accounts: password reset over email (needs SMTP; today the admin resets with the CLI)
+- Accounts: share one household between several logins (today 1 account = 1 household)
+- Database for many tenants: Postgres support (all tenants share one SQLite file today; one busy tenant slows the rest, no per-tenant backup/restore)
 - Backups/export (JSON dump, markdown week export)
 - Optional `recipe_step_ingredient` join table, per-step refs in recipe create/update and MCP, a
   server-side whole-word suggester, hand-checked backfill of the seed recipes

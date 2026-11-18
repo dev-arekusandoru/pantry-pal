@@ -16,7 +16,7 @@
 # the shared `rakazo` network (same name as the local stack), so sibling
 # containers on this host — rakazo and homehub — can call it at
 # `http://pantrypal:8787` without leaving the box or crossing Cloudflare.
-# Password mode stays on, so those clients still send a bearer token.
+# Browser sessions are not shared, so those clients send a bearer token.
 services:
   pantrypal:
     build: .
@@ -26,10 +26,9 @@ services:
       PANTRYPAL_DB_PATH: /data/pantrypal.db
       PORT: "8787"
       HOST: 0.0.0.0
-      # Browser login. Password mode takes precedence over network trust.
-      PANTRYPAL_PASSWORD: ${PANTRYPAL_PASSWORD:?Set PANTRYPAL_PASSWORD in .env (see .env.example)}
-      PANTRYPAL_REQUIRE_PASSWORD: "true"
-      PANTRYPAL_TRUST_NETWORK: "0"
+      # Signup for new accounts. Set PANTRYPAL_SIGNUP=closed in .env after you
+      # create your accounts.
+      PANTRYPAL_SIGNUP: ${PANTRYPAL_SIGNUP:-open}
     volumes:
       # Same host directory as the local stack, so existing data carries over.
       - ./data:/data

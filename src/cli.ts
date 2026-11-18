@@ -1,25 +1,37 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
+import { createAccount, getAccountByEmail, listAccounts, normalizeEmail, resetPassword } from "./auth/accounts.js";
 import { createToken, listTokens, revokeToken } from "./auth/tokens.js";
 import { makeCtx } from "./context.js";
 import { openDb, runMigrations, type Db } from "./db/client.js";
+import { households } from "./db/schema.js";
 import { AppError, isAppError } from "./lib/errors.js";
-import { createHousehold, getSingleHousehold, type Household } from "./services/households.js";
+import { createHousehold, getHousehold, type Household } from "./services/households.js";
 
 const USAGE = `pantrypal — household pantry backend CLI
 
 Usage:
   pantrypal migrate
   pantrypal household init --name <name> [--timezone <tz>]
-  pantrypal household show
-  pantrypal token create --name <name>
-  pantrypal token list
-  pantrypal token revoke <token-id>
-  pantrypal seed <file.json> [--force]
+  pantrypal household show [--household-id <id> | --email <email>]
+  pantrypal account create --email <email> --household <name> [--password-stdin]
+  pantrypal account create --email <email> --household-id <id> [--password-stdin]
+  pantrypal account reset-password <email> [--password-stdin]
+  pantrypal account list
+  pantrypal token create --name <name> [--household-id <id> | --email <email>]
+  pantrypal token list [--household-id <id> | --email <email>]
+  pantrypal token revoke <token-id> [--household-id <id> | --email <email>]
+  pantrypal seed <file.json> [--force] [--household-id <id> | --email <email>]
 
 Global options:
   --db <path>   SQLite file (default: $PANTRYPAL_DB_PATH or ./data/pantrypal.db)
   --help        Show this help
+
+Passwords are read from the terminal unless --password-stdin is set, in which
+case the first line of standard input is used.
+
+Household commands take --household-id or --email when the instance has more
+than one household. With exactly one, it is the default.
 
 All commands run pending migrations first.`;
 
@@ -29,8 +41,15 @@ interface ParsedArgs {
   help: boolean;
 }
 
-const VALUE_FLAGS: Record<string, true> = { db: true, name: true, timezone: true };
-const BOOLEAN_FLAGS: Record<string, true> = { force: true };
+const VALUE_FLAGS: Record<string, true> = {
+  db: true,
+  name: true,
+  timezone: true,
+  email: true,
+  household: true,
+  "household-id": true,
+};
+const BOOLEAN_FLAGS: Record<string, true> = { force: true, "password-stdin": true };
 
 function parseArgs(argv: string[]): ParsedArgs {
   const positionals: string[] = [];
@@ -80,19 +99,85 @@ function print(value: unknown): void {
   console.log(JSON.stringify(value, null, 2));
 }
 
-function runHouseholdInit(db: Db, flags: Record<string, string>): void {
-  let existing: Household | null = null;
-  try {
-    existing = getSingleHousehold(db);
-  } catch (error) {
-    if (!(isAppError(error) && error.code === "not_found")) throw error;
-  }
-  if (existing) {
-    throw new AppError("conflict", "A household already exists; this instance supports exactly one.", {
-      hint: "Use `pantrypal household show` to inspect it.",
-    });
+/**
+ * The household a command should act on: an explicit `--household-id` or
+ * `--email`, or the only household when the instance has exactly one.
+ */
+function selectHousehold(db: Db, flags: Record<string, string>): Household {
+  const id = flags["household-id"];
+  if (id !== undefined) return getHousehold(db, id);
+
+  const email = flags.email;
+  if (email !== undefined) {
+    const account = getAccountByEmail(db, email);
+    if (!account) throw new AppError("not_found", `Account not found: ${normalizeEmail(email)}`);
+    return getHousehold(db, account.householdId);
   }
 
+  const rows = db.select().from(households).limit(2).all();
+  if (rows.length === 0) {
+    throw new AppError("not_found", "No household configured", {
+      hint: "Run `pantrypal account create --email <email> --household <name>` to create one.",
+    });
+  }
+  if (rows.length > 1) {
+    throw new AppError(
+      "validation",
+      "This instance has more than one household; pass --household-id <id> or --email <email>.",
+    );
+  }
+  return rows[0]!;
+}
+
+/** Read a hidden password from a TTY, or the first line of piped input. */
+async function readPassword(flags: Record<string, string>): Promise<string> {
+  if (flags["password-stdin"] === "true") {
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk as Buffer));
+    return Buffer.concat(chunks).toString("utf8").split(/\r?\n/)[0] ?? "";
+  }
+  if (!process.stdin.isTTY) {
+    throw new AppError("validation", "No terminal for a password prompt; pass --password-stdin");
+  }
+
+  process.stdout.write("Password: ");
+  process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.setEncoding("utf8");
+  let password = "";
+  for await (const chunk of process.stdin) {
+    for (const char of chunk as string) {
+      if (char === "\r" || char === "\n") {
+        process.stdin.setRawMode(false);
+        process.stdin.pause();
+        process.stdout.write("\n");
+        return password;
+      }
+      if (char === "\u0003") {
+        process.stdin.setRawMode(false);
+        process.stdin.pause();
+        process.stdout.write("\n");
+        throw new AppError("validation", "Cancelled");
+      }
+      if (char === "\u007f") password = password.slice(0, -1);
+      else if (char >= " ") password += char;
+    }
+  }
+  return password;
+}
+
+async function readNewPassword(flags: Record<string, string>): Promise<string> {
+  const password = await readPassword(flags);
+  if (password.length < 8) {
+    throw new AppError("validation", "Password must be at least 8 characters");
+  }
+  if (flags["password-stdin"] !== "true" && (await readPassword(flags)) !== password) {
+    throw new AppError("validation", "Passwords do not match");
+  }
+  return password;
+}
+
+function runHouseholdInit(db: Db, flags: Record<string, string>): void {
   const name = flags.name;
   if (name === undefined) {
     throw new AppError("validation", "Missing required option: --name <name>");
@@ -105,8 +190,56 @@ function runHouseholdInit(db: Db, flags: Record<string, string>): void {
   print(household);
 }
 
-function runHouseholdShow(db: Db): void {
-  print(getSingleHousehold(db));
+function runHouseholdShow(db: Db, flags: Record<string, string>): void {
+  print(selectHousehold(db, flags));
+}
+
+async function runAccountCreate(db: Db, flags: Record<string, string>): Promise<void> {
+  const email = flags.email;
+  if (email === undefined) {
+    throw new AppError("validation", "Missing required option: --email <email>");
+  }
+  const householdId = flags["household-id"];
+  const householdName = flags.household;
+  if ((householdId === undefined) === (householdName === undefined)) {
+    throw new AppError(
+      "validation",
+      "Pass exactly one of --household <name> (new household) or --household-id <id> (existing).",
+    );
+  }
+
+  const password = await readNewPassword(flags);
+  const { account, household } = createAccount(
+    db,
+    email,
+    password,
+    householdId === undefined ? { householdName } : { householdId },
+  );
+  console.log(`Created account ${account.email} for household ${household.name}.`);
+  print({
+    account: { id: account.id, email: account.email },
+    household: { id: household.id, name: household.name },
+  });
+}
+
+async function runAccountResetPassword(
+  db: Db,
+  email: string | undefined,
+  flags: Record<string, string>,
+): Promise<void> {
+  if (email === undefined) {
+    throw new AppError(
+      "validation",
+      "Missing email: pantrypal account reset-password <email>",
+    );
+  }
+  const password = await readNewPassword(flags);
+  const account = resetPassword(db, email, password);
+  console.log(`Password reset for ${account.email}. Existing sessions were ended.`);
+}
+
+function runAccountList(db: Db): void {
+  print({ items: listAccounts(db) });
 }
 
 function runTokenCreate(db: Db, flags: Record<string, string>): void {
@@ -114,7 +247,7 @@ function runTokenCreate(db: Db, flags: Record<string, string>): void {
   if (name === undefined) {
     throw new AppError("validation", "Missing required option: --name <name>");
   }
-  const household = getSingleHousehold(db);
+  const household = selectHousehold(db, flags);
   const created = createToken(db, household.id, name);
   console.log("Token created. Copy it now — it is shown only once:");
   console.log("");
@@ -123,16 +256,16 @@ function runTokenCreate(db: Db, flags: Record<string, string>): void {
   print(created);
 }
 
-function runTokenList(db: Db): void {
-  const household = getSingleHousehold(db);
+function runTokenList(db: Db, flags: Record<string, string>): void {
+  const household = selectHousehold(db, flags);
   print({ items: listTokens(db, household.id) });
 }
 
-function runTokenRevoke(db: Db, id: string | undefined): void {
+function runTokenRevoke(db: Db, id: string | undefined, flags: Record<string, string>): void {
   if (id === undefined) {
     throw new AppError("validation", "Missing token id: pantrypal token revoke <token-id>");
   }
-  const household = getSingleHousehold(db);
+  const household = selectHousehold(db, flags);
   const revoked = revokeToken(db, household.id, id);
   console.log(`Revoked token ${revoked.id}.`);
   print(revoked);
@@ -165,7 +298,7 @@ async function runSeed(
 
   let household: Household;
   try {
-    household = getSingleHousehold(db);
+    household = selectHousehold(db, flags);
   } catch (error) {
     if (!(isAppError(error) && error.code === "not_found")) throw error;
     household = createHousehold(db, {
@@ -200,12 +333,17 @@ async function main(argv: string[]): Promise<void> {
         return;
       case "household":
         if (second === "init") return runHouseholdInit(db, flags);
-        if (second === "show") return runHouseholdShow(db);
+        if (second === "show") return runHouseholdShow(db, flags);
         throw new AppError("validation", `Unknown household command: ${second ?? "(none)"}`);
+      case "account":
+        if (second === "create") return await runAccountCreate(db, flags);
+        if (second === "reset-password") return await runAccountResetPassword(db, rest[0], flags);
+        if (second === "list") return runAccountList(db);
+        throw new AppError("validation", `Unknown account command: ${second ?? "(none)"}`);
       case "token":
         if (second === "create") return runTokenCreate(db, flags);
-        if (second === "list") return runTokenList(db);
-        if (second === "revoke") return runTokenRevoke(db, rest[0]);
+        if (second === "list") return runTokenList(db, flags);
+        if (second === "revoke") return runTokenRevoke(db, rest[0], flags);
         throw new AppError("validation", `Unknown token command: ${second ?? "(none)"}`);
       case "seed":
         return await runSeed(db, second, flags);

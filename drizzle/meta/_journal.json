@@ -36,6 +36,13 @@
       "when": 1794278722654,
       "tag": "0004_typical_black_bolt",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794670856268,
+      "tag": "0005_acoustic_nekra",
+      "breakpoints": true
     }
   ]
 }

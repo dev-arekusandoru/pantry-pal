@@ -65,55 +65,40 @@ Run `docker compose up -d` and open `http://127.0.0.1:9000`.
 
 ## The web app cannot reach the API
 
-- Check `/auth/session`. `{"enabled":false,...}` means no browser password is
-  configured. With the base file alone, network trust is also off and the web
-  app sends no token, so API calls return `401`. Use the default stack on a
-  trusted network, set `PANTRYPAL_PASSWORD`, or use a proxy that supplies a
-  valid bearer token. See [Access and security](security.md).
-- If password mode is on, the web app shows a login screen. Sign in first. A
-  wrong or expired session returns `401`; rotate the password only when you want
-  to sign every browser out.
-- If you see `503` and a message about no household, run `household init` or load the example data:
-
-  ```sh
-  docker compose exec pantrypal node dist/cli.js household init --name "Our House"
-  ```
-
+- Check `/auth/session`. `{"authenticated":false,...}` means the browser has no
+  session. Sign in or sign up first; the web app then sends the session cookie.
 - If a proxy adds an `Authorization` header, it must be a valid token. A sent
   token is always checked, even when a session cookie is present, and a bad token
   returns `401`.
 - With the tunnel stack, use
-  `docker compose -f docker-compose.tunnel.yml exec pantrypal ...` for the
-  command above.
+  `docker compose -f docker-compose.tunnel.yml exec pantrypal ...` for CLI
+  commands.
 
-## Browser login fails
+## Signup and login fail
 
-- `/auth/session` reports `enabled: false`: no password reached the process. Set
-  `PANTRYPAL_PASSWORD` and recreate the container with `docker compose up -d`.
-  With the tunnel stack, edit `.env` and use
-  `docker compose -f docker-compose.tunnel.yml up -d --force-recreate pantrypal`.
-- Startup exits with a message that `PANTRYPAL_PASSWORD` is required:
-  `PANTRYPAL_REQUIRE_PASSWORD` is on and the password is unset. Set the password
-  or remove the requirement.
+- Signup returns `403`: signup is closed. Create the account with
+  `pantrypal account create --email <email> --household <name>`, or set
+  `PANTRYPAL_SIGNUP=open` and restart.
+- `/auth/session` reports `signupOpen: false` for the same reason. Login still
+  works for existing accounts.
+- Signup returns `409`: the email already has an account. Sign in instead, or
+  reset the password with the CLI.
 - Login succeeds but the next request returns `401`: the cookie is `Secure` and
-  needs HTTPS, except on `http://localhost`. Use HTTPS for a LAN address or
+  needs HTTPS, except on `http://localhost`. Use HTTPS for a LAN address or a
   public hostname.
 - Login returns `403`: the request `Origin` host does not match `Host`, the
   origin is not HTTPS (outside loopback), or the proxy removed `Origin`. Preserve
   both headers. `X-Forwarded-Host` does not count.
-- Login returns `401`: wrong password. It returns `429` after 10 failures per
-  minute from one peer or 40 in total; wait for `Retry-After` instead of retrying.
-  A body over 4 KiB returns `413`; a non-JSON body returns `415`.
-- Sessions disappear after a restart only if the password changed. Sessions are
-  signed with the password, so rotating it signs out every browser. A copied
-  cookie otherwise stays valid until it expires.
-- To sign out, use **Settings → Log out**. Closing the tab does not end the
-  session.
+- Login returns `401`: wrong email or password. It returns `429` after 10 attempts
+  per 15 minutes from one peer; wait for `Retry-After` instead of retrying.
+- Forgot the password: run `pantrypal account reset-password <email>`. This also
+  ends every session of that account.
+
 
 ## MCP returns 401
 
-`/mcp` always requires a token, even when network trust or a browser password is
-on. It never accepts a session cookie. Create a token and send it in the
+`/mcp` always requires a token, even when the browser has a signed-in session.
+It never accepts a session cookie. Create a token and send it in the
 `Authorization: Bearer <token>` header. See [MCP setup](../connect/setup.md).
 
 A token in a query parameter does not work. A revoked token also returns `401`.

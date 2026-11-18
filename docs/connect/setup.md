@@ -28,8 +28,7 @@ See [CLI commands](../reference/cli.md) to list or revoke tokens.
 | Header | `Authorization: Bearer <token>` |
 
 Use HTTPS for remote access. Keep tokens out of URLs and committed files. `/mcp`
-always needs a bearer token: network trust and a browser session cookie never
-apply. See [Public access with Cloudflare Tunnel](../host/tunnel.md) for a public
+always needs a bearer token: a browser session cookie never applies. See [Public access with Cloudflare Tunnel](../host/tunnel.md) for a public
 URL.
 
 For clients that use this JSON format:

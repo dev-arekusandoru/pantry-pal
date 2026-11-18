@@ -17,15 +17,57 @@ Use one prefix with the commands below.
 | --- | --- |
 | `--help` | Show command help |
 | `migrate` | Apply pending database migrations |
-| `household init --name "Our House" --timezone Europe/London` | Create the instance's household |
-| `household show` | Show the household |
+| `household init --name "Our House" --timezone Europe/London` | Create an empty household |
+| `household show` | Show a household |
+| `account create --email you@example.com --household "Our House"` | Create an account and a new household |
+| `account create --email you@example.com --household-id HH_ID` | Create an account for an existing household |
+| `account reset-password you@example.com` | Set a new password and end that account's sessions |
+| `account list` | List accounts and their households |
 | `token create --name assistant` | Create a token; copy the secret now |
 | `token list` | List token IDs and usage, without secrets |
 | `token revoke TOKEN_ID` | Revoke a token by its ID, not its secret |
 | `seed seed/example.json` | Import a household snapshot |
 
 `--timezone` is optional when you create a household. The default is UTC.
-An instance supports one household. A second `household init` fails.
+
+`account create` asks for the password twice. Pipe it instead on a headless
+host:
+
+```sh
+printf '%s\n' "$PANTRYPAL_NEW_PASSWORD" | pnpm cli account create \
+  --email you@example.com --household "Our House" --password-stdin
+```
+
+`account reset-password` also accepts `--password-stdin`.
+
+## Select a household
+
+`household show`, `token create`, `token list`, `token revoke`, and `seed` need a
+household. Choose it in one of these ways:
+
+1. `--household-id HH_ID`.
+2. `--email you@example.com` for the household owned by that account.
+3. Nothing, when the instance has exactly one household.
+
+With more than one household and no selector, the command fails and asks for one.
+
+## Migrate a single-household install
+
+Older versions had one household and an optional shared password. After you
+upgrade:
+
+1. Find the household id: `pnpm cli household show`.
+2. Create the owner account for it:
+
+   ```sh
+   pnpm cli account create --email you@example.com --household-id hh_...
+   ```
+
+3. Remove the old shared-password and network-trust variables from your `.env`
+   or Compose environment; they no longer do anything. Set
+   `PANTRYPAL_SIGNUP=closed` if no one else should sign up.
+4. Restart the app and sign in. The household's data, tokens, and members stay
+   with the household.
 
 ## Select a database
 

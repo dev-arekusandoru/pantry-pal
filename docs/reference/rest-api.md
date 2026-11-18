@@ -26,39 +26,34 @@ See [CLI commands](cli.md) to create a token.
 
 1. If an `Authorization` header is present, it must be a valid bearer token. An
    invalid token returns `401`, even if the request also has a session cookie.
-2. With `PANTRYPAL_PASSWORD` configured, a valid browser session cookie
-   authenticates the request. Unsafe methods must also pass the same-origin
-   check.
-3. Without a password, `PANTRYPAL_TRUST_NETWORK=1` lets a request without an
-   authorization header act as the household.
-4. Otherwise the request returns `401`.
+2. A valid browser session cookie authenticates the request as its account's
+   household. Unsafe methods must also pass the same-origin check.
+3. Otherwise the request returns `401`.
 
-Password mode disables anonymous network trust. `/mcp` always needs a bearer
-token; it never accepts a session cookie or network trust. See
-[Access and security](../host/security.md).
+`/mcp` always needs a bearer token; it never accepts a session cookie. Each
+account owns one household, so a token or session reaches exactly one household.
+See [Access and security](../host/security.md).
 
-### Browser session endpoints
+### Account endpoints
 
-These paths are outside `/api/v1`. They are public, but login and logout require
-the app's own origin.
+These paths are outside `/api/v1`. They are public, but signup, login, and logout
+require the app's own origin.
 
 | Endpoint | Behavior |
 | --- | --- |
-| `GET /auth/session` | `{"enabled": boolean, "authenticated": boolean}`. Cache-Control is `no-store`. |
-| `POST /auth/login` | JSON body `{"password": "…"}`. `204` and a session cookie on success; `401` on a wrong password; `403` on a cross-origin request; `404` when no password is configured; `429` with `Retry-After` when throttled. |
-| `POST /auth/logout` | `204`; clears the session cookie. |
+| `POST /auth/signup` | JSON body `{"email", "password", "householdName"}`. `201`, sets the session cookie, and returns `{"account":{"email"},"household":{"id","name"}}`. `403 forbidden` when signup is closed or the request is cross-origin; `409 conflict` when the email already has an account; `400 validation` for a bad email, a password under 8 characters, or an empty household name; `429 rate_limited` when throttled. |
+| `POST /auth/login` | JSON body `{"email", "password"}`. `200` with the same body and a new cookie; `401 unauthorized` on bad credentials (the same answer for an unknown email); `429` when throttled. |
+| `POST /auth/logout` | `204`; deletes the session row and clears the cookie. |
+| `GET /auth/session` | `{"authenticated":true,"account":{"email"},"household":{"id","name"}}`, or `{"authenticated":false,"signupOpen":boolean}`. Cache-Control is `no-store`. |
 
 The cookie is `__Host-pantrypal_session`, valid for 30 days, `HttpOnly`,
-`Secure`, `SameSite=Lax`, and scoped to `/`. Rotating `PANTRYPAL_PASSWORD`
-invalidates every session. Login accepts JSON only (`415` otherwise), limits the
-body to 4 KiB (`413`), and allows 10 failed attempts per minute per socket peer
-plus 40 per minute in total; behind a proxy, clients may share the per-peer
-limit. Safe methods need no origin check; unsafe cookie-authenticated requests
-need an `Origin` equal to `Host`, over HTTPS except for loopback development.
-`X-Forwarded-Host` is ignored and `Sec-Fetch-Site: cross-site` is rejected.
-
-A valid browser session when no household exists returns `503` with code
-`unavailable`. Create one with `household init`.
+`Secure`, `SameSite=Lax`, and scoped to `/`. Logout or a password reset
+invalidates it. Login and signup accept JSON only, limit the body to 8 KiB
+(`413`), and allow 10 attempts per 15 minutes per socket peer; behind a proxy,
+clients may share the per-peer limit. Safe methods need no origin check; unsafe
+cookie-authenticated requests need an `Origin` equal to `Host`, over HTTPS except
+for loopback development. `X-Forwarded-Host` is ignored and
+`Sec-Fetch-Site: cross-site` is rejected.
 
 `GET /health` and `GET /openapi.json` are public. `/api/v1/health` uses API auth.
 

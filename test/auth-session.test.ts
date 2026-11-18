@@ -1,305 +1,182 @@
 import { describe, expect, it } from "vitest";
-import { createApp, type App } from "../src/api/app.js";
+import { resetPassword } from "../src/auth/accounts.js";
 import { SESSION_COOKIE_NAME, SESSION_TTL_SECONDS } from "../src/auth/session.js";
 import { households } from "../src/db/schema.js";
-import { makeTestCtx } from "./helpers.js";
+import { makeAuthApp, sessionCookie, type AppResponse, type AuthTestApp } from "./helpers.js";
 
 const PASSWORD = "correct horse battery candle";
-const DAY_MS = 24 * 60 * 60 * 1000;
 const ORIGIN = "http://localhost";
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-interface PasswordAppOptions {
-  password?: string;
-  trustNetwork?: boolean;
-  now?: () => Date;
+const credentials = {
+  email: "cook@example.com",
+  password: PASSWORD,
+  householdName: "Test Kitchen",
+};
+
+interface SessionBody {
+  account: { email: string };
+  household: { id: string; name: string };
 }
 
-function passwordApp(options: PasswordAppOptions = {}) {
-  const context = makeTestCtx(options.now === undefined ? {} : { now: options.now });
-  const app = createApp({
-    db: context.db,
-    now: context.ctx.now,
-    browserPassword: options.password ?? PASSWORD,
-    ...(options.trustNetwork === true ? { trustNetwork: true } : {}),
-  });
-  return { ...context, app };
-}
-
-function loginAt(app: App, url: string, password: string, headers: Record<string, string> = {}) {
-  return app.request(url, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...headers,
-    },
-    body: JSON.stringify({ password }),
+function signup(app: AuthTestApp, overrides: Record<string, unknown> = {}) {
+  return app.request<SessionBody>("POST", "/auth/signup", {
+    body: { ...credentials, ...overrides },
+    headers: { origin: ORIGIN },
   });
 }
 
-function login(app: App, password: string, headers: Record<string, string> = {}) {
-  return loginAt(app, "/auth/login", password, { origin: ORIGIN, ...headers });
-}
-
-function sessionCookie(response: Response): string {
-  const setCookie = response.headers.get("set-cookie");
-  if (setCookie === null) throw new Error("expected a Set-Cookie header");
-  const pair = setCookie.split(";")[0];
-  if (pair === undefined) throw new Error("expected a cookie pair");
-  return pair.trim();
-}
-
-async function loggedInCookie(app: App, password = PASSWORD): Promise<string> {
-  const response = await login(app, password);
-  expect(response.status).toBe(204);
-  return sessionCookie(response);
-}
-
-function get(app: App, path: string, cookie?: string, extra: Record<string, string> = {}) {
-  return app.request(path, {
-    headers: {
-      ...(cookie === undefined ? {} : { cookie }),
-      ...extra,
-    },
+function login(app: AuthTestApp, email: string, password: string) {
+  return app.request("POST", "/auth/login", {
+    body: { email, password },
+    headers: { origin: ORIGIN },
   });
 }
 
-describe("browser password sessions", () => {
-  it("blocks anonymous /api/v1 access in password mode", async () => {
-    const { app } = passwordApp();
+async function signedUp(app: AuthTestApp, overrides: Record<string, unknown> = {}) {
+  const response = await signup(app, overrides);
+  expect(response.status).toBe(201);
+  return { cookie: sessionCookie(response), body: response.body };
+}
 
-    for (const path of ["/api/v1", "/api/v1/ingredients", "/api/v1/household"]) {
-      const response = await get(app, path);
-      expect(response.status, path).toBe(401);
+describe("signup", () => {
+  it("creates an account and household, signs in and returns the household", async () => {
+    const app = makeAuthApp();
+    const response = await signup(app);
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({
+      account: { email: credentials.email },
+      household: { id: expect.stringMatching(/^hh_/), name: "Test Kitchen" },
+    });
+
+    const cookie = sessionCookie(response);
+
+    const current = await app.request<{
+      authenticated: boolean;
+      account: { email: string };
+      household: { id: string; name: string };
+    }>("GET", "/auth/session", { cookie });
+    expect(current.status).toBe(200);
+    expect(current.headers.get("cache-control")).toBe("no-store");
+    expect(current.body).toMatchObject({
+      authenticated: true,
+      account: { email: credentials.email },
+      household: { name: "Test Kitchen" },
+    });
+
+    const household = await app.request<{ id: string }>("GET", "/api/v1/household", { cookie });
+    expect(household.status).toBe(200);
+    expect(household.body.id).toBe(response.body.household.id);
+  });
+
+  it("sets a 30-day Secure HttpOnly SameSite=Lax cookie", async () => {
+    const app = makeAuthApp();
+    const response = await signup(app);
+    const raw = response.headers.get("set-cookie") ?? "";
+
+    expect(raw).toContain(`${SESSION_COOKIE_NAME}=`);
+    expect(raw).toMatch(/;\s*HttpOnly/i);
+    expect(raw).toMatch(/;\s*SameSite=Lax/i);
+    expect(raw).toMatch(/;\s*Path=\/(?:;|$)/i);
+    expect(raw).toMatch(new RegExp(`;\\s*Max-Age=${SESSION_TTL_SECONDS}(?:;|$)`, "i"));
+    expect(raw).toMatch(/;\s*Secure/i);
+  });
+
+  it("marks the cookie Secure for a non-loopback host", async () => {
+    const app = makeAuthApp();
+    const response = await app.app.request("https://pantry.example/auth/signup", {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: "https://pantry.example" },
+      body: JSON.stringify(credentials),
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.headers.get("set-cookie") ?? "").toMatch(/;\s*Secure/i);
+  });
+
+  it("rejects a duplicate email, case-insensitively", async () => {
+    const app = makeAuthApp();
+    await signedUp(app);
+
+    const duplicate = await signup(app, { email: "COOK@example.com" });
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body).toMatchObject({ error: { code: "conflict" } });
+  });
+
+  it("reports a closed instance and refuses signup", async () => {
+    const app = makeAuthApp({ signupOpen: false });
+
+    const anonymous = await app.request("GET", "/auth/session");
+    expect(anonymous.body).toEqual({ authenticated: false, signupOpen: false });
+
+    const response = await signup(app);
+    expect(response.status).toBe(403);
+    expect(response.body).toMatchObject({ error: { code: "forbidden" } });
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("validates email, password and household name", async () => {
+    const app = makeAuthApp();
+    for (const overrides of [
+      { email: "not-an-email" },
+      { password: "short" },
+      { householdName: "   " },
+    ]) {
+      const response = await signup(app, overrides);
+      expect(response.status, JSON.stringify(overrides)).toBe(400);
+      expect(response.body).toMatchObject({ error: { code: "validation" } });
     }
   });
 
-  it("reports enabled/authenticated state without caching", async () => {
-    const { app, household } = passwordApp();
-
-    const anonymous = await get(app, "/auth/session");
-    expect(anonymous.status).toBe(200);
-    expect(anonymous.headers.get("cache-control")).toBe("no-store");
-    await expect(anonymous.json()).resolves.toEqual({ enabled: true, authenticated: false });
-
-    const cookie = await loggedInCookie(app);
-    const authenticated = await get(app, "/auth/session", cookie);
-    await expect(authenticated.json()).resolves.toEqual({ enabled: true, authenticated: true });
-
-    const api = await get(app, "/api/v1/household", cookie);
-    expect(api.status).toBe(200);
-    expect(api.headers.get("cache-control")).toBe("no-store");
-    await expect(api.json()).resolves.toMatchObject({ id: household.id });
-  });
-
-  it("sets a Secure, HttpOnly, SameSite=Lax 30-day cookie on correct login", async () => {
-    const { app } = passwordApp();
-
-    const response = await login(app, PASSWORD);
-    expect(response.status).toBe(204);
-
-    const raw = response.headers.get("set-cookie") ?? "";
-    expect(raw).toContain(`${SESSION_COOKIE_NAME}=`);
-    expect(raw).toMatch(/;\s*HttpOnly/i);
-    expect(raw).toMatch(/;\s*Secure/i);
-    expect(raw).toMatch(/;\s*SameSite=Lax/i);
-    expect(raw).toMatch(new RegExp(`;\\s*Max-Age=${SESSION_TTL_SECONDS}(?:;|$)`, "i"));
-    expect(raw).toMatch(/;\s*Path=\/(?:;|$)/i);
-  });
-
-  it("rejects a wrong password with 401 and no cookie", async () => {
-    const { app } = passwordApp();
-    const response = await login(app, "wrong");
-
-    expect(response.status).toBe(401);
-    expect(response.headers.get("set-cookie")).toBeNull();
-    await expect(response.json()).resolves.toMatchObject({ error: { code: "unauthorized" } });
-  });
-
-  it("rejects a tampered cookie", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
-    const parts = cookie.split(".");
-    parts[1] = String(Number(parts[1]) + 1);
-    const tampered = parts.join(".");
-
-    expect((await get(app, "/api/v1/household", tampered)).status).toBe(401);
-    expect((await get(app, "/auth/session", tampered)).status).toBe(200);
-    await expect((await get(app, "/auth/session", tampered)).json()).resolves.toMatchObject({
-      authenticated: false,
-    });
-  });
-
-  it("rejects an expired cookie", async () => {
-    let clock = new Date("2026-11-01T12:00:00.000Z");
-    const { app } = passwordApp({ now: () => clock });
-    const cookie = await loggedInCookie(app);
-
-    expect((await get(app, "/api/v1/household", cookie)).status).toBe(200);
-
-    clock = new Date(clock.getTime() + 31 * DAY_MS);
-    expect((await get(app, "/api/v1/household", cookie)).status).toBe(401);
-  });
-
-  it("invalidates every session when the password rotates", async () => {
-    const context = makeTestCtx();
-    const before = createApp({ db: context.db, now: context.ctx.now, browserPassword: "old-password" });
-    const cookie = await loggedInCookie(before, "old-password");
-    expect((await get(before, "/api/v1/household", cookie)).status).toBe(200);
-
-    const after = createApp({ db: context.db, now: context.ctx.now, browserPassword: "new-password" });
-    expect((await get(after, "/api/v1/household", cookie)).status).toBe(401);
-    const fresh = await loggedInCookie(after, "new-password");
-    expect((await get(after, "/api/v1/household", fresh)).status).toBe(200);
-  });
-
-  it("clears the cookie on logout", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
-
-    const response = await app.request("/auth/logout", {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: ORIGIN, cookie },
-    });
-    expect(response.status).toBe(204);
-    const raw = response.headers.get("set-cookie") ?? "";
-    expect(raw).toContain(`${SESSION_COOKIE_NAME}=`);
-    expect(raw).toMatch(/;\s*Max-Age=0(?:;|$)/i);
-
-    const session = await get(app, "/auth/session", `${SESSION_COOKIE_NAME}=`);
-    await expect(session.json()).resolves.toEqual({ enabled: true, authenticated: false });
-  });
-});
-
-describe("session CSRF protection", () => {
-  it("blocks cross-origin login and logout", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
-
-    const crossLogin = await login(app, PASSWORD, { origin: "https://evil.example" });
-    expect(crossLogin.status).toBe(403);
-    expect(crossLogin.headers.get("set-cookie")).toBeNull();
-
-    const crossLogout = await app.request("/auth/logout", {
-      method: "POST",
-      headers: { origin: "https://evil.example", cookie },
-    });
-    expect(crossLogout.status).toBe(403);
-  });
-
-  it("rejects cross-site fetch metadata", async () => {
-    const { app } = passwordApp();
-    const response = await login(app, PASSWORD, { "sec-fetch-site": "cross-site" });
-    expect(response.status).toBe(403);
-  });
-
-  it("requires an Origin header for login, logout and unsafe cookie requests", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
-
-    expect((await login(app, PASSWORD, { origin: "" })).status).toBe(403);
-
-    const logout = await app.request("/auth/logout", {
-      method: "POST",
-      headers: { "content-type": "application/json", cookie },
-    });
-    expect(logout.status).toBe(403);
-
-    const write = await app.request("/api/v1/ingredients", {
-      method: "POST",
-      headers: { cookie, "content-type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    expect(write.status).toBe(403);
-  });
-
-  it("ignores spoofed forwarding headers", async () => {
-    const { app } = passwordApp();
-
-    const spoofedHost = await login(app, PASSWORD, {
-      origin: "https://evil.example",
-      "x-forwarded-host": "evil.example",
-    });
-    expect(spoofedHost.status).toBe(403);
-
-    const httpsOrigin = await login(app, PASSWORD, {
-      origin: "https://localhost",
-      "x-forwarded-proto": "https",
-    });
-    expect(httpsOrigin.status).toBe(204);
-  });
-
-  it("accepts https origins only for non-loopback hosts", async () => {
-    const { app } = passwordApp();
-
-    const plainHttp = await loginAt(app, "http://pantry.example/auth/login", PASSWORD, {
-      origin: "http://pantry.example",
-    });
-    expect(plainHttp.status).toBe(403);
-
-    const secure = await loginAt(app, "https://pantry.example/auth/login", PASSWORD, {
-      origin: "https://pantry.example",
-    });
-    expect(secure.status).toBe(204);
-
-    const localhost = await loginAt(app, "http://127.0.0.1:5173/auth/login", PASSWORD, {
-      origin: "http://127.0.0.1:5173",
-    });
-    expect(localhost.status).toBe(204);
-  });
-
-  it("bounds the login request body", async () => {
-    const { app } = passwordApp();
-    const response = await app.request("/auth/login", {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: ORIGIN },
-      body: JSON.stringify({ password: "x".repeat(5000) }),
+  it("bounds the request body", async () => {
+    const app = makeAuthApp();
+    const response = await app.request("POST", "/auth/signup", {
+      body: { ...credentials, householdName: "x".repeat(9000) },
+      headers: { origin: ORIGIN },
     });
     expect(response.status).toBe(413);
   });
-
-  it("requires JSON for login", async () => {
-    const { app } = passwordApp();
-    const response = await app.request("/auth/login", {
-      method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded", origin: ORIGIN },
-      body: "password=correct%20horse%20battery%20candle",
-    });
-    expect(response.status).toBe(415);
-  });
-
-  it("blocks cookie-authenticated unsafe API requests from another origin", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
-
-    const cross = await app.request("/api/v1/ingredients", {
-      method: "POST",
-      headers: { cookie, origin: "https://evil.example", "content-type": "application/json" },
-      body: JSON.stringify({ name: "evil" }),
-    });
-    expect(cross.status).toBe(403);
-
-    const sameOrigin = await app.request("/api/v1/ingredients", {
-      method: "POST",
-      headers: { cookie, origin: ORIGIN, "content-type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    expect(sameOrigin.status).not.toBe(403);
-  });
-
-  it("allows cookie-authenticated reads without an Origin header", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
-    expect((await get(app, "/api/v1/household", cookie)).status).toBe(200);
-  });
 });
 
-describe("login throttling", () => {
-  it("answers 429 with Retry-After after repeated failures", async () => {
-    const { app } = passwordApp();
+describe("login", () => {
+  it("signs in with the right password, ignoring email case", async () => {
+    const app = makeAuthApp();
+    const created = await signedUp(app);
 
-    let throttled: Response | undefined;
+    const response = await login(app, "COOK@example.com", PASSWORD);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      account: { email: credentials.email },
+      household: created.body.household,
+    });
+
+    const cookie = sessionCookie(response);
+    expect((await app.request("GET", "/api/v1/household", { cookie })).status).toBe(200);
+  });
+
+  it("answers the same error for a wrong password and an unknown email", async () => {
+    const app = makeAuthApp();
+    await signedUp(app);
+
+    const wrong = await login(app, credentials.email, "wrong password");
+    const unknown = await login(app, "nobody@example.com", PASSWORD);
+
+    for (const response of [wrong, unknown]) {
+      expect(response.status).toBe(401);
+      expect(response.body).toMatchObject({ error: { code: "unauthorized" } });
+      expect(response.headers.get("set-cookie")).toBeNull();
+    }
+    expect(wrong.body).toEqual(unknown.body);
+  });
+
+  it("throttles repeated failures and does not let a correct guess through", async () => {
+    const app = makeAuthApp();
+    await signedUp(app);
+
+    let throttled: AppResponse<unknown> | undefined;
     for (let attempt = 0; attempt < 15; attempt += 1) {
-      const response = await login(app, `wrong-${attempt}`);
+      const response = await login(app, credentials.email, `wrong-${attempt}`);
       if (response.status === 429) {
         throttled = response;
         break;
@@ -309,87 +186,161 @@ describe("login throttling", () => {
 
     expect(throttled).toBeDefined();
     expect(Number(throttled?.headers.get("retry-after"))).toBeGreaterThan(0);
-    await expect(throttled?.json()).resolves.toMatchObject({ error: { code: "rate_limited" } });
-
-    // The throttle must not be bypassed by guessing the right password.
-    expect((await login(app, PASSWORD)).status).toBe(429);
-  });
-
-  it("does not throttle a correct login before any failure", async () => {
-    const { app } = passwordApp();
-    expect((await login(app, PASSWORD)).status).toBe(204);
+    expect(throttled?.body).toMatchObject({ error: { code: "rate_limited" } });
+    expect((await login(app, credentials.email, PASSWORD)).status).toBe(429);
   });
 });
 
-describe("bearer coexistence and trust override", () => {
-  it("keeps bearer tokens working in password mode", async () => {
-    const { app, token, household } = passwordApp();
+describe("session lifecycle", () => {
+  it("logout deletes the session and clears the cookie", async () => {
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
 
-    const response = await app.request("/api/v1/household", {
-      headers: { authorization: `Bearer ${token}` },
+    const response = await app.request("POST", "/auth/logout", {
+      cookie,
+      headers: { origin: ORIGIN },
     });
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ id: household.id });
+    expect(response.status).toBe(204);
+
+    const raw = response.headers.get("set-cookie") ?? "";
+    expect(raw).toContain(`${SESSION_COOKIE_NAME}=`);
+    expect(raw).toMatch(/;\s*Max-Age=0(?:;|$)/i);
+
+    expect((await app.request("GET", "/api/v1/household", { cookie })).status).toBe(401);
+    expect((await app.request("GET", "/auth/session", { cookie })).body).toEqual({
+      authenticated: false,
+      signupOpen: true,
+    });
   });
 
-  it("gives a sent (invalid) bearer token precedence over a valid cookie", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
+  it("rejects an expired session", async () => {
+    let clock = new Date("2026-11-01T12:00:00.000Z");
+    const app = makeAuthApp({ now: () => clock });
+    const { cookie } = await signedUp(app);
 
-    const response = await app.request("/api/v1/household", {
-      headers: { authorization: "Bearer nope", cookie },
+    expect((await app.request("GET", "/api/v1/household", { cookie })).status).toBe(200);
+
+    clock = new Date(clock.getTime() + 31 * DAY_MS);
+    expect((await app.request("GET", "/api/v1/household", { cookie })).status).toBe(401);
+    expect((await app.request("GET", "/auth/session", { cookie })).body).toMatchObject({
+      authenticated: false,
+    });
+  });
+
+  it("ends every session when the password is reset", async () => {
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
+
+    resetPassword(app.db, credentials.email, "a brand new password");
+
+    expect((await app.request("GET", "/api/v1/household", { cookie })).status).toBe(401);
+    expect((await login(app, credentials.email, PASSWORD)).status).toBe(401);
+    expect((await login(app, credentials.email, "a brand new password")).status).toBe(200);
+  });
+
+  it("answers 401 when the account's household is gone", async () => {
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
+    app.db.delete(households).run();
+
+    expect((await app.request("GET", "/api/v1/household", { cookie })).status).toBe(401);
+  });
+});
+
+describe("CSRF protection", () => {
+  it("blocks cross-origin signup, login and logout", async () => {
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
+
+    const crossSignup = await app.request("POST", "/auth/signup", {
+      body: { ...credentials, email: "other@example.com" },
+      headers: { origin: "https://evil.example" },
+    });
+    expect(crossSignup.status).toBe(403);
+    expect(crossSignup.headers.get("set-cookie")).toBeNull();
+
+    const crossLogin = await app.request("POST", "/auth/login", {
+      body: { email: credentials.email, password: PASSWORD },
+      headers: { origin: "https://evil.example" },
+    });
+    expect(crossLogin.status).toBe(403);
+
+    const crossLogout = await app.request("POST", "/auth/logout", {
+      cookie,
+      headers: { origin: "https://evil.example" },
+    });
+    expect(crossLogout.status).toBe(403);
+  });
+
+  it("requires an Origin header", async () => {
+    const app = makeAuthApp();
+
+    expect(
+      (await app.request("POST", "/auth/signup", { body: credentials })).status,
+    ).toBe(403);
+    expect(
+      (
+        await app.request("POST", "/auth/login", {
+          body: { email: credentials.email, password: PASSWORD },
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await app.request("POST", "/auth/signup", {
+          body: credentials,
+          headers: { origin: ORIGIN, "sec-fetch-site": "cross-site" },
+        })
+      ).status,
+    ).toBe(403);
+  });
+
+  it("blocks cookie-authenticated unsafe API requests from another origin", async () => {
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
+
+    const cross = await app.request("POST", "/api/v1/ingredients", {
+      body: { name: "evil" },
+      cookie,
+      headers: { origin: "https://evil.example" },
+    });
+    expect(cross.status).toBe(403);
+
+    const sameOrigin = await app.request("POST", "/api/v1/ingredients", {
+      body: {},
+      cookie,
+      headers: { origin: ORIGIN },
+    });
+    expect(sameOrigin.status).not.toBe(403);
+  });
+
+  it("allows cookie reads without an Origin header", async () => {
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
+    expect((await app.request("GET", "/api/v1/household", { cookie })).status).toBe(200);
+  });
+});
+
+describe("bearer and cookie coexistence", () => {
+  it("gives a sent (invalid) bearer token precedence over a valid cookie", async () => {
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
+
+    const response = await app.request("GET", "/api/v1/household", {
+      cookie,
+      token: "nope",
     });
     expect(response.status).toBe(401);
-  });
-
-  it("ignores trustNetwork while password mode is on", async () => {
-    const { app, household } = passwordApp({ trustNetwork: true });
-
-    expect((await get(app, "/api/v1/household")).status).toBe(401);
-
-    const cookie = await loggedInCookie(app);
-    const response = await get(app, "/api/v1/household", cookie);
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ id: household.id });
   });
 
   it("never accepts a session cookie on /mcp", async () => {
-    const { app } = passwordApp();
-    const cookie = await loggedInCookie(app);
+    const app = makeAuthApp();
+    const { cookie } = await signedUp(app);
 
-    const response = await app.request("/mcp", {
-      method: "POST",
-      headers: { cookie, "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+    const response = await app.request("POST", "/mcp", {
+      cookie,
+      body: { jsonrpc: "2.0", id: 1, method: "tools/list" },
     });
     expect(response.status).toBe(401);
-  });
-
-  it("answers 503 for a valid session when no household exists", async () => {
-    const { app, db } = passwordApp();
-    const cookie = await loggedInCookie(app);
-    db.delete(households).run();
-
-    const response = await get(app, "/api/v1/household", cookie);
-    expect(response.status).toBe(503);
-  });
-});
-
-describe("password configuration", () => {
-  it("disables browser login when no password is configured", async () => {
-    const context = makeTestCtx();
-    const app = createApp({ db: context.db, now: context.ctx.now });
-
-    const session = await app.request("/auth/session");
-    await expect(session.json()).resolves.toEqual({ enabled: false, authenticated: false });
-    expect((await login(app, "anything")).status).toBe(404);
-    expect((await get(app, "/api/v1/household")).status).toBe(401);
-  });
-
-  it("throws before the server binds when PANTRYPAL_REQUIRE_PASSWORD is on", () => {
-    const context = makeTestCtx();
-    expect(() =>
-      createApp({ db: context.db, now: context.ctx.now, requirePassword: true }),
-    ).toThrow(/PANTRYPAL_PASSWORD/);
   });
 });

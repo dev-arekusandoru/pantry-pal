@@ -27,7 +27,7 @@ const getHouseholdRoute = createRoute({
   path: "/household",
   tags: ["household"],
   summary: "Get the household",
-  description: "Single household of this instance, including its settings.",
+  description: "The signed-in account's household, including its settings.",
   responses: {
     200: { description: "Household", content: json(householdSchema) },
   },

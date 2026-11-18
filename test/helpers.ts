@@ -93,3 +93,80 @@ export function makeTestApp(options: TestCtxOptions = {}): TestApp {
 
   return { ...context, app, request };
 }
+
+export interface RequestOptions {
+  body?: unknown;
+  /** Cookie header value (`name=value`). */
+  cookie?: string;
+  /** Bearer token; sent as `Authorization` when set. */
+  token?: string;
+  headers?: Record<string, string>;
+}
+
+export interface AppResponse<T> {
+  status: number;
+  body: T;
+  headers: Headers;
+}
+
+export interface AuthTestApp {
+  db: Db;
+  app: OpenAPIHono<AppEnv>;
+  now: () => Date;
+  request<T = unknown>(
+    method: string,
+    path: string,
+    options?: RequestOptions,
+  ): Promise<AppResponse<T>>;
+}
+
+/**
+ * Empty migrated database plus an app, for tests that start from signup. Unlike
+ * {@link makeTestApp}, no household or token exists yet.
+ */
+export function makeAuthApp(
+  options: { signupOpen?: boolean; now?: Date | (() => Date) } = {},
+): AuthTestApp {
+  const { db } = openDb(":memory:");
+  runMigrations(db);
+  const now = clockFrom(options.now);
+  const app = createApp({
+    db,
+    now,
+    ...(options.signupOpen === undefined ? {} : { signupOpen: options.signupOpen }),
+  });
+
+  async function request<T = unknown>(
+    method: string,
+    path: string,
+    requestOptions: RequestOptions = {},
+  ): Promise<AppResponse<T>> {
+    const headers: Record<string, string> = { ...requestOptions.headers };
+    if (requestOptions.body !== undefined) headers["content-type"] = "application/json";
+    if (requestOptions.cookie !== undefined) headers.cookie = requestOptions.cookie;
+    if (requestOptions.token !== undefined) headers.authorization = `Bearer ${requestOptions.token}`;
+
+    const response = await app.request(path, {
+      method,
+      headers,
+      ...(requestOptions.body === undefined ? {} : { body: JSON.stringify(requestOptions.body) }),
+    });
+    const text = await response.text();
+    let parsed: unknown = text;
+    try {
+      parsed = text === "" ? null : JSON.parse(text);
+    } catch {
+      parsed = text;
+    }
+    return { status: response.status, body: parsed as T, headers: response.headers };
+  }
+
+  return { db, app, now, request };
+}
+
+/** The `name=value` pair from a response's `Set-Cookie` header. */
+export function sessionCookie(response: { headers: Headers }): string {
+  const pair = response.headers.get("set-cookie")?.split(";")[0]?.trim();
+  if (pair === undefined || pair === "") throw new Error("expected a Set-Cookie header");
+  return pair;
+}

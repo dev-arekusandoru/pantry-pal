@@ -28,13 +28,19 @@ For the tunnel stack, select its Compose file:
 docker compose -f docker-compose.tunnel.yml exec pantrypal node dist/cli.js seed seed/example.json
 ```
 
-The seed creates the household but no API token. Create one for the API or MCP:
+The seed creates the household but no account or API token. Attach an account
+to the seeded household, then create a token for the API or MCP:
+
+```sh
+docker compose exec pantrypal node dist/cli.js account create \
+  --email you@example.com --household-id HH_ID
+```
 
 ```sh
 docker compose exec pantrypal node dist/cli.js token create --name demo
 ```
 
-With the default Compose stack, open [http://127.0.0.1:8787](http://127.0.0.1:8787). Network trust lets the web app use the API. MCP always needs the token. If the instance has a browser password, sign in with it; the password does not replace the MCP token. See [Connect an AI assistant](../connect/setup.md).
+With the default Compose stack, open [http://127.0.0.1:8787](http://127.0.0.1:8787) and sign in with the account you created. MCP always needs the token; the browser session does not replace it. See [Connect an AI assistant](../connect/setup.md).
 
 ## Load the sample from source
 

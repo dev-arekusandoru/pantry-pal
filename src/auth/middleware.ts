@@ -1,11 +1,10 @@
 import { getCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
 import type { Context, MiddlewareHandler } from "hono";
-import { households } from "../db/schema.js";
 import type { Db } from "../db/client.js";
 import { makeCtx, type Ctx } from "../context.js";
+import { resolveSession, SESSION_COOKIE_NAME } from "./session.js";
 import { verifyToken } from "./tokens.js";
-import { isPasswordConfigured, SESSION_COOKIE_NAME, verifySessionToken } from "./session.js";
 
 /** Hono environment for authenticated routes: `c.var.ctx` is always set. */
 export type AppEnv = { Variables: { ctx: Ctx } };
@@ -74,59 +73,30 @@ export function clientAddress(c: Context): string {
 
 export interface AuthMiddlewareOptions {
   /**
-   * Network-trust mode: a request with no `Authorization` header acts as the
-   * instance's single household. Ignored when browser password login is on.
+   * Accept a browser session cookie. Default true; `/mcp` turns it off so only
+   * bearer tokens reach the MCP endpoint.
    */
-  trustNetwork?: boolean;
-  /**
-   * Shared password for browser sessions. When set, a valid session cookie also
-   * authenticates `/api/v1`; anonymous network trust is disabled.
-   */
-  browserPassword?: string;
+  allowSession?: boolean;
 }
 
 /**
  * Auth middleware for `/api/v1` and `/mcp`.
  *
- * Precedence: a sent `Authorization` header is always verified as a bearer token
- * (an invalid one is a 401 even when a session cookie is present). Otherwise, in
- * password mode, a valid session cookie authenticates the request; cookie-based
- * unsafe requests must pass the same-origin check. Without password mode the
- * legacy network-trust and bearer behaviour applies. `/mcp` never accepts cookies
- * because it is mounted with an auth middleware that has no password configured.
+ * A sent `Authorization` header is always verified as a bearer token (an invalid
+ * one is a 401 even when a session cookie is present). Otherwise a session
+ * cookie authenticates its own account's household; cookie-based unsafe requests
+ * must pass the same-origin check.
  */
 export function createAuthMiddleware(
   db: Db,
   now: () => Date = () => new Date(),
   options: AuthMiddlewareOptions = {},
 ): MiddlewareHandler<AppEnv> {
-  const passwordMode = isPasswordConfigured(options.browserPassword);
-  const password = passwordMode ? options.browserPassword : undefined;
-
   return createMiddleware<AppEnv>(async (c, next) => {
     c.header("Vary", "Authorization, Cookie");
 
-    function singleHousehold(): Ctx | Response {
-      const household = db.select({ id: households.id }).from(households).limit(1).get();
-      if (!household) {
-        return c.json(
-          {
-            error: {
-              code: "unavailable" as const,
-              message:
-                "No household exists yet. Run `pantrypal household init --name <name>` first.",
-            },
-          },
-          503,
-        );
-      }
-      return makeCtx(db, household.id, now);
-    }
-
     const header = c.req.header("authorization");
-    const hasHeader = header !== undefined && header.trim() !== "";
-
-    if (hasHeader) {
+    if (header !== undefined && header.trim() !== "") {
       const token = extractBearerToken(header);
       const verified = token ? verifyToken(db, token) : null;
       if (!verified) {
@@ -140,34 +110,21 @@ export function createAuthMiddleware(
       return;
     }
 
-    if (password !== undefined) {
-      const value = getCookie(c, SESSION_COOKIE_NAME);
-      if (value !== undefined && verifySessionToken(password, value, now())) {
+    const value = options.allowSession === false ? undefined : getCookie(c, SESSION_COOKIE_NAME);
+    if (value !== undefined) {
+      const session = resolveSession(db, value, now());
+      if (session !== null) {
         if (SAFE_METHODS[c.req.method.toUpperCase()] !== true && !isSameOriginRequest(c)) {
           return c.json(
             { error: { code: "forbidden" as const, message: "Cross-origin request blocked" } },
             403,
           );
         }
-        const ctx = singleHousehold();
-        if (ctx instanceof Response) return ctx;
         c.header("Cache-Control", "no-store");
-        c.set("ctx", ctx);
+        c.set("ctx", makeCtx(db, session.household.id, now));
         await next();
         return;
       }
-      return c.json(
-        { error: { code: "unauthorized" as const, message: "Missing or invalid browser session" } },
-        401,
-      );
-    }
-
-    if (options.trustNetwork === true) {
-      const ctx = singleHousehold();
-      if (ctx instanceof Response) return ctx;
-      c.set("ctx", ctx);
-      await next();
-      return;
     }
 
     return c.json(

@@ -1,7 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { Ctx } from "../../context.js";
 import { AppError, isAppError } from "../../lib/errors.js";
-import { findIngredientByName } from "../../services/ingredients.js";
+import { findIngredientByName, getIngredient } from "../../services/ingredients.js";
 
 /** What every PantryPal tool returns: compact JSON in one text block. */
 export type ToolResult = CallToolResult;
@@ -59,7 +59,7 @@ export interface IngredientRefArgs {
  * ingredients implicitly.
  */
 export function requireIngredientId(ctx: Ctx, ref: IngredientRefArgs): string {
-  if (ref.ingredientId !== undefined) return ref.ingredientId;
+  if (ref.ingredientId !== undefined) return getIngredient(ctx, ref.ingredientId).id;
   const name = ref.ingredient?.trim() ?? "";
   if (name === "") {
     throw new AppError("validation", "Provide `ingredientId` or `ingredient`");

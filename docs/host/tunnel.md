@@ -1,8 +1,8 @@
 # Public access with Cloudflare Tunnel
 
 Use the Cloudflare Tunnel stack to reach PantryPal from the internet without
-opening inbound ports. Cloudflare provides HTTPS at the edge, and a shared
-password protects the browser app.
+opening inbound ports. Cloudflare provides HTTPS at the edge, and accounts
+protect the browser app.
 
 `docker-compose.tunnel.yml` is standalone. It does not use
 `docker-compose.override.yml`. Stop the local stack first; do not run both
@@ -14,7 +14,7 @@ PantryPal joins two networks on this host:
   `pantrypal:8787`. No ports are published.
 - `rakazo` (`RAKAZO_NETWORK`, default `rakazo_app`) — shared with the rakazo and
   homehub stacks, so sibling containers can call `http://pantrypal:8787`
-  directly. Because password mode is on, they must send a bearer token.
+  directly. They must send a bearer token.
   `rakazo_app` must already exist (`docker network create rakazo_app`).
 
 ## 1. Create the tunnel
@@ -46,15 +46,15 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-Set both values in `.env`:
+Set the tunnel token in `.env`:
 
 ```dotenv
-PANTRYPAL_PASSWORD='a long random shared password'
 CLOUDFLARE_TUNNEL_TOKEN='the token from the tunnel dashboard'
 ```
 
-Generate the password with `openssl rand -base64 32`. Single quotes protect a `$`
-from Compose interpolation. `.env` is git-ignored; never commit real secrets.
+`.env` is git-ignored; never commit real secrets. Signup is open by default, so
+you can create your account from the browser after the first start. To close the
+instance, add `PANTRYPAL_SIGNUP=closed` to `.env` after you create your accounts.
 
 ## 3. Start the stack
 
@@ -84,18 +84,23 @@ Then start the tunnel stack:
 docker compose -f docker-compose.tunnel.yml up -d --build
 ```
 
-Both secrets are required, so Compose aborts if either is missing. The app also
-fails at startup without a password because the file sets
-`PANTRYPAL_REQUIRE_PASSWORD=true`.
+Compose aborts when the tunnel token is missing.
 
 ## 4. Initialize a fresh instance
 
 Skip this when `./data/pantrypal.db` already holds your household. For a new
 database:
 
+Open `https://pantry.example.com` and use the signup form to create your account
+and household. Set `PANTRYPAL_SIGNUP=closed` in `.env` and recreate `pantrypal`
+when you no longer need signup.
+
+To create the account from the CLI instead (for example on an instance that is
+already closed to signup):
+
 ```sh
 docker compose -f docker-compose.tunnel.yml exec pantrypal \
-  node dist/cli.js household init --name "Our House" --timezone America/New_York
+  node dist/cli.js account create --email you@example.com --household "Our House"
 
 docker compose -f docker-compose.tunnel.yml exec pantrypal \
   node dist/cli.js token create --name laptop
@@ -113,12 +118,12 @@ curl -fsS https://pantry.example.com/health
 curl -fsS https://pantry.example.com/auth/session
 ```
 
-Open `https://pantry.example.com`, enter the password, and confirm the household
-loads. Use **Settings → Log out** to clear the cookie. Password and session
-rules are in [Access and security](security.md) and the
-[REST API reference](../reference/rest-api.md#browser-session-endpoints).
+Open `https://pantry.example.com`, sign in, and confirm the household loads. Use
+**Settings → Log out** to end the session. Account and session rules are in
+[Access and security](security.md) and the
+[REST API reference](../reference/rest-api.md#account-endpoints).
 
-Bearer access is independent of the browser password:
+Bearer access is independent of the browser session:
 
 ```sh
 curl -fsS -H "Authorization: Bearer $PANTRYPAL_TOKEN" \
@@ -143,15 +148,15 @@ docker compose -f docker-compose.tunnel.yml up -d --build
 docker compose -f docker-compose.tunnel.yml logs -f pantrypal
 ```
 
-Rotate the browser password by changing `PANTRYPAL_PASSWORD` in `.env` and
-recreating the app:
+Reset an account password with the CLI:
 
 ```sh
-docker compose -f docker-compose.tunnel.yml up -d --force-recreate pantrypal
+docker compose -f docker-compose.tunnel.yml exec pantrypal \
+  node dist/cli.js account reset-password you@example.com
 ```
 
-This signs out every browser; bearer tokens are unaffected. Rotate the tunnel
-token by changing `CLOUDFLARE_TUNNEL_TOKEN` and recreating `cloudflared`:
+This signs that account out everywhere; bearer tokens are unaffected. Rotate the
+tunnel token by changing `CLOUDFLARE_TUNNEL_TOKEN` and recreating `cloudflared`:
 
 ```sh
 docker compose -f docker-compose.tunnel.yml up -d --force-recreate cloudflared
@@ -162,10 +167,12 @@ delete `data/`. See [Backups and restore](backups.md) and [Updates](updates.md).
 
 ## Limits
 
-- One shared password and no accounts or roles.
-- Logout clears the current browser; rotate the password to invalidate cookies
-  held elsewhere.
+- Each account owns one household; there are no roles inside it.
+- Logout ends the current browser session. A copied cookie stays valid until it
+  expires or the password is reset.
+- Keep `PANTRYPAL_SIGNUP=closed` after you create your accounts, so strangers
+  cannot create households.
 - The tunnel token is a secret. Do not expose a second public route that bypasses
-  the password.
+  authentication.
 
 See [Configuration](configuration.md) and [Troubleshooting](troubleshooting.md).

@@ -1,16 +1,14 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
+import { and, eq, gt, lt } from "drizzle-orm";
+import type { Db } from "../db/client.js";
+import { accounts, households, sessions } from "../db/schema.js";
 
 /**
- * Password-backed browser sessions.
+ * Browser sessions backed by the `session` table.
  *
- * There is no session table: a cookie is a signed
- * `v1.<issued>.<expires>.<nonce>.<mac>` token whose HMAC key is derived from
- * the shared password. Rotating
- * `PANTRYPAL_PASSWORD` therefore invalidates every existing browser session,
- * without a separate server-side secret. Login is stateless, so logout clears
- * the current browser's cookie (ending its access); a copied cookie remains
- * valid until it expires or the password rotates. Use a long random password:
- * anyone holding both a cookie and the ability to guess offline can test guesses.
+ * The cookie holds a random opaque value; only its SHA-256 hash is stored, so a
+ * database copy cannot be replayed as a cookie. Logout deletes the row, and
+ * changing a password deletes that account's rows, so copies stop working.
  */
 
 /**
@@ -23,83 +21,63 @@ export const SESSION_COOKIE_NAME = "__Host-pantrypal_session";
 /** Browser sessions last 30 days. */
 export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 
-const TOKEN_VERSION = "v1";
-const KEY_LABEL = "pantrypal-session-key-v1";
-
-function sessionKey(password: string): Buffer {
-  return createHmac("sha256", KEY_LABEL).update(password, "utf8").digest();
-}
-
-function sign(password: string, payload: string): string {
-  return createHmac("sha256", sessionKey(password)).update(payload, "utf8").digest("base64url");
-}
-
-export interface SessionToken {
-  /** Cookie value to send to the browser. */
+export interface CreatedSession {
+  /** Opaque cookie value. */
   value: string;
-  /** Remaining lifetime in seconds (the cookie `Max-Age`). */
   maxAge: number;
   expiresAt: Date;
 }
 
-/** Create a signed session token valid for {@link SESSION_TTL_SECONDS} from `now`. */
-export function createSessionToken(password: string, now: Date): SessionToken {
-  const issuedAt = Math.floor(now.getTime() / 1000);
-  const expiresAt = issuedAt + SESSION_TTL_SECONDS;
-  // A random nonce makes every login token distinct even within the same second.
-  const nonce = randomBytes(16).toString("base64url");
-  const payload = `${TOKEN_VERSION}.${issuedAt}.${expiresAt}.${nonce}`;
+export function hashSessionId(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+/** Create a session row and return the cookie value for the browser. */
+export function createSession(db: Db, accountId: string, now: Date): CreatedSession {
+  const expiresAt = new Date(now.getTime() + SESSION_TTL_SECONDS * 1000);
+  const value = randomBytes(32).toString("base64url");
+
+  db.delete(sessions).where(lt(sessions.expiresAt, now.toISOString())).run();
+  db.insert(sessions)
+    .values({ id: hashSessionId(value), accountId, expiresAt: expiresAt.toISOString() })
+    .run();
+
+  return { value, maxAge: SESSION_TTL_SECONDS, expiresAt };
+}
+
+export interface SessionInfo {
+  account: { id: string; email: string };
+  household: { id: string; name: string };
+}
+
+/** Resolve a cookie value to its account and household, or `null` when unknown/expired. */
+export function resolveSession(db: Db, value: string, now: Date): SessionInfo | null {
+  if (value === "") return null;
+  const row = db
+    .select({
+      accountId: accounts.id,
+      email: accounts.email,
+      householdId: households.id,
+      householdName: households.name,
+    })
+    .from(sessions)
+    .innerJoin(accounts, eq(accounts.id, sessions.accountId))
+    .innerJoin(households, eq(households.id, accounts.householdId))
+    .where(and(eq(sessions.id, hashSessionId(value)), gt(sessions.expiresAt, now.toISOString())))
+    .get();
+  if (!row) return null;
   return {
-    value: `${payload}.${sign(password, payload)}`,
-    maxAge: SESSION_TTL_SECONDS,
-    expiresAt: new Date(expiresAt * 1000),
+    account: { id: row.accountId, email: row.email },
+    household: { id: row.householdId, name: row.householdName },
   };
 }
 
-function constantTimeEqual(a: string, b: string): boolean {
-  const left = Buffer.from(a, "utf8");
-  const right = Buffer.from(b, "utf8");
-  return left.length === right.length && timingSafeEqual(left, right);
+/** Delete the session for a cookie value, if any. */
+export function deleteSession(db: Db, value: string): void {
+  db.delete(sessions).where(eq(sessions.id, hashSessionId(value))).run();
 }
 
-/**
- * Verify a session cookie value: correct signature, correct version, not expired
- * and not issued implausibly far in the future. Any tampering yields `false`.
- */
-export function verifySessionToken(password: string, value: string, now: Date): boolean {
-  const parts = value.split(".");
-  if (parts.length !== 5) return false;
-
-  const [version, issuedRaw, expiresRaw, nonce, signature] = parts;
-  if (version !== TOKEN_VERSION || signature === undefined) return false;
-  if (nonce === undefined || !/^[A-Za-z0-9_-]{16,64}$/.test(nonce)) return false;
-  if (!/^\d{1,12}$/.test(issuedRaw ?? "") || !/^\d{1,12}$/.test(expiresRaw ?? "")) return false;
-
-  const issuedAt = Number(issuedRaw);
-  const expiresAt = Number(expiresRaw);
-  if (!Number.isSafeInteger(issuedAt) || !Number.isSafeInteger(expiresAt)) return false;
-  if (expiresAt <= issuedAt) return false;
-
-  const nowSeconds = Math.floor(now.getTime() / 1000);
-  if (expiresAt <= nowSeconds) return false;
-  // Allow a small clock skew for the issuing server, but reject future tokens.
-  if (issuedAt > nowSeconds + 60) return false;
-
-  const payload = `${version}.${issuedAt}.${expiresAt}.${nonce}`;
-  return constantTimeEqual(sign(password, payload), signature);
-}
-
-/**
- * Compare a supplied password with the configured one in constant time.
- * Both sides are hashed first so inputs of different lengths are comparable.
- */
-export function passwordMatches(expected: string, supplied: string): boolean {
-  const expectedDigest = createHash("sha256").update(expected, "utf8").digest();
-  const suppliedDigest = createHash("sha256").update(supplied, "utf8").digest();
-  return timingSafeEqual(expectedDigest, suppliedDigest);
-}
-
-/** True when a configured password value enables browser login. */
-export function isPasswordConfigured(password: string | undefined): password is string {
-  return typeof password === "string" && password.length > 0;
+/** Delete every session of an account (password change, account removal). */
+export function deleteAccountSessions(db: Db, accountId: string): void {
+  db.delete(sessions).where(eq(sessions.accountId, accountId)).run();
 }

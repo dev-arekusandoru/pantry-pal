@@ -9,13 +9,7 @@ const dbPath = process.env.PANTRYPAL_DB_PATH ?? "./data/pantrypal.db";
 const hostname = process.env.HOST ?? "0.0.0.0";
 const parsedPort = Number.parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);
 const port = Number.isFinite(parsedPort) ? parsedPort : DEFAULT_PORT;
-const trustNetwork = ["1", "true"].includes(process.env.PANTRYPAL_TRUST_NETWORK?.trim().toLowerCase() ?? "");
-const requirePassword = ["1", "true"].includes(
-  process.env.PANTRYPAL_REQUIRE_PASSWORD?.trim().toLowerCase() ?? "",
-);
-const configuredPassword = process.env.PANTRYPAL_PASSWORD;
-const browserPassword =
-  configuredPassword === undefined || configuredPassword === "" ? undefined : configuredPassword;
+const signupOpen = (process.env.PANTRYPAL_SIGNUP ?? "open").trim().toLowerCase() !== "closed";
 const webDir = defaultWebDir();
 const serveWeb = hasWebApp(webDir);
 
@@ -24,24 +18,15 @@ runMigrations(db);
 
 const app = createApp({
   db,
-  trustNetwork,
-  requirePassword,
-  ...(browserPassword === undefined ? {} : { browserPassword }),
+  signupOpen,
   ...(serveWeb ? { webDir } : {}),
 });
 
-if (browserPassword !== undefined) {
-  console.log(
-    "Browser password login is on: /api/v1 accepts the signed session cookie, bearer tokens still work, and /mcp stays token-only.",
-  );
-  if (trustNetwork) {
-    console.log("PANTRYPAL_TRUST_NETWORK is ignored while PANTRYPAL_PASSWORD is set.");
-  }
-} else if (trustNetwork) {
-  console.log(
-    "PANTRYPAL_TRUST_NETWORK is on: /api/v1 requests without a token act as the household. /mcp still requires a token.",
-  );
-}
+console.log(
+  signupOpen
+    ? "Signup is open: anyone who can reach this instance can create an account and household."
+    : "Signup is closed: existing accounts can sign in. Create accounts with `pantrypal account create`.",
+);
 if (serveWeb) {
   console.log(`Serving web app from ${webDir}`);
 } else {

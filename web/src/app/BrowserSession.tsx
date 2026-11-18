@@ -1,10 +1,12 @@
-import { createContext, useContext, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { toApiError } from "../api/errors";
 import { Button, Emoji } from "../ui";
 import { queryClient } from "./queryClient";
 import styles from "./BrowserSession.module.css";
 
-interface Session { enabled: boolean; authenticated: boolean }
-const SessionContext = createContext<{ enabled: boolean }>({ enabled: false });
+type Session =
+  | { authenticated: true; account: { email: string }; household: { id: string; name: string } }
+  | { authenticated: false; signupOpen: boolean };
 
 async function readSession(signal?: AbortSignal): Promise<Session> {
   const response = await fetch("/auth/session", { cache: "no-store", signal });
@@ -12,6 +14,17 @@ async function readSession(signal?: AbortSignal): Promise<Session> {
   return response.json() as Promise<Session>;
 }
 
+/** The server's `{ error: { code, message } }` message, or a shape-free fallback. */
+async function failureMessage(response: Response, fallback: string): Promise<string> {
+  const body: unknown = await response.json().catch(() => null);
+  const error = toApiError(response.status, body);
+  return error.code === "unknown" ? fallback : error.message;
+}
+
+/**
+ * Keep the app behind a login. Login, signup and logout all end by re-reading
+ * `/auth/session`, so there is one source of truth for "who is this".
+ */
 export function BrowserSession({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session>();
   const [error, setError] = useState("");
@@ -24,7 +37,7 @@ export function BrowserSession({ children }: { children: ReactNode }) {
         if (controller.signal.aborted) return;
         setSession(next);
         setError("");
-        if (next.enabled && !next.authenticated) {
+        if (!next.authenticated) {
           void queryClient.cancelQueries().then(() => queryClient.clear());
         }
       }).catch(() => {
@@ -46,6 +59,11 @@ export function BrowserSession({ children }: { children: ReactNode }) {
     };
   }, [attempt]);
 
+  const reread = () => {
+    setSession(undefined);
+    setAttempt((n) => n + 1);
+  };
+
   if (!session) {
     return <main className={styles.page}><div className={styles.form}>
       <h1 className={styles.title}>PantryPal</h1>
@@ -53,70 +71,95 @@ export function BrowserSession({ children }: { children: ReactNode }) {
       {error && <Button onClick={() => { setError(""); setAttempt((n) => n + 1); }}>Try again</Button>}
     </div></main>;
   }
-  if (session.enabled && !session.authenticated) {
-    return <Login onLogin={() => {
-      // A full navigation also discards router loaders and any component-local data.
-      window.location.replace(window.location.pathname === "/login" ? "/" : window.location.href);
-    }} />;
+  if (!session.authenticated) {
+    return <AuthForm signupOpen={session.signupOpen} onAuthenticated={reread} />;
   }
-  return <SessionContext.Provider value={{ enabled: session.enabled }}>{children}</SessionContext.Provider>;
+  return <>{children}</>;
 }
 
-function Login({ onLogin }: { onLogin: () => void }) {
+function AuthForm({ signupOpen, onAuthenticated }: { signupOpen: boolean; onAuthenticated: () => void }) {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [householdName, setHouseholdName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const signup = mode === "signup";
+  const filled = email.length > 0
+    && (signup ? password.length >= 8 && householdName.trim().length > 0 : password.length > 0);
+
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || !filled) return;
     setBusy(true);
     setError("");
     try {
-      const response = await fetch("/auth/login", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }),
+      const response = await fetch(signup ? "/auth/signup" : "/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signup ? { email, password, householdName: householdName.trim() } : { email, password }),
       });
       if (!response.ok) {
-        setError(response.status === 401 ? "Incorrect password. Try again." : response.status === 429
-          ? "Too many attempts. Wait a few minutes before trying again." : "Couldn't log in. Try again.");
+        setError(await failureMessage(response, signup
+          ? "Couldn't create your account. Try again."
+          : "Couldn't log in. Try again."));
         return;
       }
-      onLogin();
+      onAuthenticated();
     } catch {
       setError("Can't reach PantryPal. Try again.");
     } finally {
       setBusy(false);
     }
   }
+
   return <main className={styles.page}>
     <form className={styles.form} onSubmit={(event) => void submit(event)}>
       <Emoji code="relish" size={72} />
-      <h1 className={styles.title}>Your pantry awaits.</h1>
-      <p className={styles.hint}>Enter your household password to open PantryPal.</p>
-      <label className={styles.label} htmlFor="pantry-password">Password</label>
-      <input id="pantry-password" className={styles.input} type="password" autoComplete="current-password"
-        autoFocus required value={password} onChange={(event) => setPassword(event.target.value)}
-        aria-invalid={!!error} aria-describedby={error ? "login-error" : undefined} />
-      {error && <p id="login-error" className={styles.error} role="alert">{error}</p>}
-      <Button type="submit" variant="primary" loading={busy} disabled={!password || busy}>Open pantry</Button>
+      <h1 className={styles.title}>{signup ? "Start your pantry." : "Your pantry awaits."}</h1>
+      <p className={styles.hint}>{signup
+        ? "Create an account for your household."
+        : "Log in with your email to open PantryPal."}</p>
+      <label className={styles.label} htmlFor="auth-email">Email</label>
+      <input id="auth-email" className={styles.input} type="email" autoComplete="email" autoFocus required
+        value={email} onChange={(event) => setEmail(event.target.value)}
+        aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
+      <label className={styles.label} htmlFor="auth-password">Password</label>
+      <input id="auth-password" className={styles.input} type="password" required
+        autoComplete={signup ? "new-password" : "current-password"} minLength={signup ? 8 : undefined}
+        value={password} onChange={(event) => setPassword(event.target.value)}
+        aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
+      {signup && <>
+        <label className={styles.label} htmlFor="auth-household">Household name</label>
+        <input id="auth-household" className={styles.input} type="text" autoComplete="organization" required
+          value={householdName} onChange={(event) => setHouseholdName(event.target.value)}
+          aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
+      </>}
+      {error && <p id="auth-error" className={styles.error} role="alert">{error}</p>}
+      <Button type="submit" variant="primary" loading={busy} disabled={!filled || busy}>
+        {signup ? "Create account" : "Log in"}
+      </Button>
+      {signup && <p className={styles.hint}>Use at least 8 characters for your password.</p>}
       <p className={styles.hint}>Stay logged in for 30 days on this device.</p>
+      {signupOpen && <Button variant="ghost" onClick={() => { setMode(signup ? "login" : "signup"); setError(""); }}>
+        {signup ? "I already have an account" : "New here? Create an account"}
+      </Button>}
     </form>
   </main>;
 }
 
 export function LogoutButton() {
-  const { enabled } = useContext(SessionContext);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  if (!enabled) return null;
   async function logout() {
     setBusy(true);
     setError("");
     try {
       const response = await fetch("/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" } });
       if (!response.ok) throw new Error();
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      window.location.replace("/login");
+      // No session any more: the listener in BrowserSession clears the cache and
+      // re-reads /auth/session, which swaps the app for the login form.
+      window.dispatchEvent(new Event("pantrypal:unauthorized"));
     } catch {
       setError("Couldn't log out. Check your connection and try again.");
       setBusy(false);

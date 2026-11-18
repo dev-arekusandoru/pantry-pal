@@ -174,6 +174,40 @@ export const apiTokens = sqliteTable(
   (t) => [uniqueIndex("api_token_hash_uq").on(t.tokenHash)],
 );
 
+/** A login. One account owns exactly one household. */
+export const accounts = sqliteTable(
+  "account",
+  {
+    id: id(),
+    /** Always stored lowercased. */
+    email: text("email").notNull(),
+    /** `scrypt$<salt>$<hash>`, base64url parts. */
+    passwordHash: text("password_hash").notNull(),
+    householdId: text("household_id")
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("account_email_uq").on(t.email),
+    uniqueIndex("account_household_uq").on(t.householdId),
+  ],
+);
+
+/** Browser session. `id` is the SHA-256 hex of the opaque cookie value. */
+export const sessions = sqliteTable(
+  "session",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("session_account_idx").on(t.accountId)],
+);
+
 // ---------------------------------------------------------------------------
 // Ingredients & units
 // ---------------------------------------------------------------------------

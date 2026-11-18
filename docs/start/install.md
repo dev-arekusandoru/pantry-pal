@@ -33,18 +33,15 @@ The Compose file builds a local image. It does not pull a prebuilt image.
 
 ### What the default stack does
 
-Compose loads `docker-compose.yml` and `docker-compose.override.yml` together. The override:
+Compose loads `docker-compose.yml` and `docker-compose.override.yml` together. The override publishes the port on `127.0.0.1` only.
 
-- Publishes the port on `127.0.0.1` only.
-- Sets `PANTRYPAL_TRUST_NETWORK=1`, so the web app can call the API without a token.
+Signup is open on a fresh database, so you create your account from the browser. The override replaces the base port list; it does not publish both a public and a loopback binding.
 
-The default stack has no browser password. It relies on network trust and a loopback port. The override replaces the base port list; it does not publish both a public and a loopback binding.
-
-Open [http://127.0.0.1:8787](http://127.0.0.1:8787). Only the host and local proxies can reach this port. If Docker runs on another machine, use an SSH tunnel or VPN; the loopback port is not open to your laptop. Do not put a public proxy in front of this mode without authentication. See [Access and security](../host/security.md).
+Open [http://127.0.0.1:8787](http://127.0.0.1:8787). Only the host and local proxies can reach this port. If Docker runs on another machine, use an SSH tunnel or VPN; the loopback port is not open to your laptop. See [Access and security](../host/security.md).
 
 ### Public access
 
-Use the standalone tunnel stack to publish PantryPal on the internet. It adds a shared browser password and a Cloudflare Tunnel, publishes no host ports, and requires both secrets. It replaces the default stack; do not run both against the same database. See [Public access with Cloudflare Tunnel](../host/tunnel.md).
+Use the standalone tunnel stack to publish PantryPal on the internet. It adds a Cloudflare Tunnel, publishes no host ports, and requires the tunnel token. It replaces the default stack; do not run both against the same database. See [Public access with Cloudflare Tunnel](../host/tunnel.md).
 
 ### Run the base file only
 
@@ -52,20 +49,25 @@ Use the standalone tunnel stack to publish PantryPal on the internet. It adds a 
 docker compose -f docker-compose.yml up -d --build
 ```
 
-This ignores the override. The port is published on all interfaces, and network trust is off. The web app sends no token, so it cannot use the API in this mode. Use it for API and MCP clients that send bearer tokens, behind a firewall or an authenticating proxy.
+This ignores the override, so the port is published on all interfaces. Signup is open by default. Anyone who can reach the port can create an account, so keep it behind a firewall or an authenticating proxy, or set `PANTRYPAL_SIGNUP=closed`.
 
-### Create the first household
+### Create the first account
+
+Create your account in the web app with the signup form, or from the CLI:
 
 ```sh
-docker compose exec pantrypal node dist/cli.js household init --name "Our House" --timezone America/New_York
+docker compose exec pantrypal node dist/cli.js account create \
+  --email you@example.com --household "Our House"
 docker compose exec pantrypal node dist/cli.js token create --name laptop
 ```
 
-`--timezone` is optional. The default is UTC. An instance supports one household. A second `household init` fails.
+The CLI asks for a password twice. The account owns the new household. The token
+is printed once. Copy it now; API and MCP clients need it. To load the sample
+household instead, follow [Example data](example-data.md); the seed creates its
+own household, which you can attach an account to with `--household-id`.
 
-The token is printed once. Copy it now. To load the sample household instead, skip the `household init` command and follow [Example data](example-data.md). The seed creates its own household.
-
-If the instance has `PANTRYPAL_PASSWORD` set, the web app asks for that shared password. The token is still needed for API and MCP clients.
+Signup stays open until you set `PANTRYPAL_SIGNUP=closed`. See
+[Configuration](../host/configuration.md).
 
 ### Check the install
 
@@ -78,13 +80,13 @@ curl -s -H "Authorization: Bearer $PANTRYPAL_TOKEN" http://127.0.0.1:8787/api/v1
 
 The health check needs no token. The household request must return the household JSON. Open the web app at [http://127.0.0.1:8787](http://127.0.0.1:8787).
 
-For a password-protected instance, check the mode and session state:
+Check the session state:
 
 ```sh
 curl -s http://127.0.0.1:8787/auth/session
 ```
 
-It returns `{"enabled":true,"authenticated":false}` before login.
+Without a cookie it returns `{"authenticated":false,"signupOpen":true}`.
 
 Follow the logs with:
 
@@ -103,9 +105,9 @@ git clone https://github.com/dev-arekusandoru/pantry-pal.git
 cd pantry-pal
 pnpm install
 pnpm build
-pnpm cli household init --name "Our House" --timezone America/New_York
+pnpm cli account create --email you@example.com --household "Our House"
 pnpm cli token create --name laptop
-HOST=127.0.0.1 PANTRYPAL_TRUST_NETWORK=1 pnpm start
+HOST=127.0.0.1 pnpm start
 ```
 
 Open [http://127.0.0.1:4787](http://127.0.0.1:4787). The source server defaults to port 4787. The Docker image sets 8787. To use 8787 from source, add `PORT=8787` to the last command.

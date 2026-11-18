@@ -2,20 +2,16 @@ import { bodyLimit } from "hono/body-limit";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import type { OpenAPIHono } from "@hono/zod-openapi";
+import { authenticate, createAccount } from "./accounts.js";
 import type { AppEnv } from "./middleware.js";
-import { isSameOriginRequest } from "./middleware.js";
-import {
-  createSessionToken,
-  isPasswordConfigured,
-  passwordMatches,
-  SESSION_COOKIE_NAME,
-  verifySessionToken,
-} from "./session.js";
+import { clientAddress, isSameOriginRequest } from "./middleware.js";
+import { createSession, deleteSession, resolveSession, SESSION_COOKIE_NAME } from "./session.js";
+import type { Db } from "../db/client.js";
+import { getHousehold } from "../services/households.js";
 
-/** Login failures allowed per peer (and in total) inside one window. */
-const LOGIN_LIMIT = 10;
-const LOGIN_GLOBAL_LIMIT = 40;
-const LOGIN_WINDOW_MS = 60_000;
+/** Signup/login attempts allowed per peer inside one window. */
+const AUTH_LIMIT = 10;
+const AUTH_WINDOW_MS = 15 * 60_000;
 const MAX_THROTTLE_ENTRIES = 2048;
 
 interface ThrottleWindow {
@@ -24,104 +20,108 @@ interface ThrottleWindow {
 }
 
 /**
- * Bounded, in-memory fixed-window throttle for password attempts.
+ * Bounded in-memory fixed-window throttle for signup and login.
  *
  * Keys are socket peer addresses, never `X-Forwarded-For` or similar headers a
- * client can spoof. A global bucket caps distributed attempts; because a tunnel
- * forwards from loopback, that global cap is usually the effective one anyway.
+ * client can spoof.
+ *
+ * shortcut: the counters live in this process only, so a restart clears them and
+ * several server processes do not share a limit. Move to a shared store when the
+ * app runs more than one process.
  */
-class LoginThrottle {
+class Throttle {
   private readonly buckets = new Map<string, ThrottleWindow>();
-  private readonly globalBucket: ThrottleWindow = { count: 0, resetAt: 0 };
 
   retryAfterSeconds(key: string, nowMs: number = Date.now()): number | null {
-    const retry = (bucket: ThrottleWindow, limit: number): number | null =>
-      bucket.count >= limit && bucket.resetAt > nowMs
-        ? Math.max(1, Math.ceil((bucket.resetAt - nowMs) / 1000))
-        : null;
-
-    const global = retry(this.globalBucket, LOGIN_GLOBAL_LIMIT);
-    if (global !== null) return global;
     const bucket = this.buckets.get(key);
-    return bucket === undefined ? null : retry(bucket, LOGIN_LIMIT);
+    if (bucket === undefined || bucket.count < AUTH_LIMIT) return null;
+    return bucket.resetAt > nowMs ? Math.max(1, Math.ceil((bucket.resetAt - nowMs) / 1000)) : null;
   }
 
-  recordFailure(key: string, nowMs: number = Date.now()): void {
-    this.bump(this.globalBucket, nowMs);
-    this.prune(nowMs);
-
+  record(key: string, nowMs: number = Date.now()): void {
     let bucket = this.buckets.get(key);
     if (bucket === undefined) {
       if (this.buckets.size >= MAX_THROTTLE_ENTRIES) {
         const oldest = this.buckets.keys().next();
         if (!oldest.done) this.buckets.delete(oldest.value);
       }
-      bucket = { count: 0, resetAt: nowMs + LOGIN_WINDOW_MS };
+      bucket = { count: 0, resetAt: nowMs + AUTH_WINDOW_MS };
       this.buckets.set(key, bucket);
     }
-    this.bump(bucket, nowMs);
+    if (bucket.resetAt <= nowMs) {
+      bucket.count = 0;
+      bucket.resetAt = nowMs + AUTH_WINDOW_MS;
+    }
+    bucket.count += 1;
   }
 
   reset(key: string): void {
     this.buckets.delete(key);
   }
-
-  private bump(bucket: ThrottleWindow, nowMs: number): void {
-    if (bucket.resetAt <= nowMs) {
-      bucket.count = 0;
-      bucket.resetAt = nowMs + LOGIN_WINDOW_MS;
-    }
-    bucket.count += 1;
-  }
-
-  private prune(nowMs: number): void {
-    if (this.buckets.size < MAX_THROTTLE_ENTRIES) return;
-    for (const [key, bucket] of this.buckets) {
-      if (bucket.resetAt <= nowMs) this.buckets.delete(key);
-    }
-  }
 }
 
 export interface AuthRouteOptions {
-  /** Shared browser password. Omit to disable password login. */
-  browserPassword?: string;
-  /** Clock used to sign and verify sessions (tests inject a fixed one). */
+  db: Db;
+  /** Whether `POST /auth/signup` accepts new accounts. */
+  signupOpen: boolean;
+  /** Clock used for session expiry (tests inject a fixed one). */
   now: () => Date;
-  /** Peer address for throttling; defaults to no useful address. */
+  /** Peer address for throttling; defaults to the socket address. */
   clientKey?: (c: Context<AppEnv>) => string;
 }
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function noStore(c: { header(name: string, value: string): void }): void {
   c.header("Cache-Control", "no-store");
   c.header("Pragma", "no-cache");
 }
 
+async function readJson(c: Context<AppEnv>): Promise<Record<string, unknown> | null> {
+  try {
+    const body: unknown = await c.req.json();
+    return typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+function validation(c: Context<AppEnv>, message: string) {
+  return c.json({ error: { code: "validation" as const, message } }, 400);
+}
+
 /**
- * Register the browser-login endpoints on the root app (paths `/auth/*`).
+ * Register the account endpoints on the root app (paths `/auth/*`).
  *
- * - `GET /auth/session` reports whether password mode is on and whether the
- *   request carries a valid session cookie.
- * - `POST /auth/login` accepts `{ "password": string }` as JSON from the app's
- *   own origin and sets the 30-day session cookie.
- * - `POST /auth/logout` clears the session cookie from the current browser.
+ * - `POST /auth/signup` creates an account, its household and a session.
+ * - `POST /auth/login` signs in an existing account.
+ * - `POST /auth/logout` deletes the session row and clears the cookie.
+ * - `GET /auth/session` reports the signed-in account or whether signup is open.
  */
 export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteOptions): void {
-  const passwordEnabled = isPasswordConfigured(options.browserPassword);
-  const password = passwordEnabled ? options.browserPassword : undefined;
-  const throttle = new LoginThrottle();
+  const { db, now } = options;
+  const throttle = new Throttle();
+  const clientKey = (c: Context<AppEnv>) => options.clientKey?.(c) ?? clientAddress(c);
 
-  app.get("/auth/session", (c) => {
-    noStore(c);
-    const authenticated =
-      password !== undefined &&
-      verifySessionToken(password, getCookie(c, SESSION_COOKIE_NAME) ?? "", options.now());
-    return c.json({ enabled: passwordEnabled, authenticated }, 200);
+  // The `__Host-` cookie prefix requires Secure even on plain-HTTP loopback,
+  // which browsers treat as a secure context.
+  const cookieOptions = (maxAge: number) => ({
+    path: "/",
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax" as const,
+    maxAge,
   });
 
+  function startSession(c: Context<AppEnv>, accountId: string): void {
+    const session = createSession(db, accountId, now());
+    setCookie(c, SESSION_COOKIE_NAME, session.value, cookieOptions(session.maxAge));
+  }
+
   app.use(
-    "/auth/login",
+    "/auth/*",
     bodyLimit({
-      maxSize: 4096,
+      maxSize: 8192,
       onError: (c) =>
         c.json(
           { error: { code: "validation" as const, message: "Request body too large" } },
@@ -130,87 +130,120 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
     }),
   );
 
-  app.post("/auth/login", async (c) => {
+  app.get("/auth/session", (c) => {
     noStore(c);
-    if (password === undefined) {
-      return c.json(
-        { error: { code: "not_found" as const, message: "Browser login is not configured" } },
-        404,
-      );
+    const value = getCookie(c, SESSION_COOKIE_NAME);
+    const session = value === undefined ? null : resolveSession(db, value, now());
+    if (session === null) {
+      return c.json({ authenticated: false as const, signupOpen: options.signupOpen }, 200);
     }
+    return c.json(
+      {
+        authenticated: true as const,
+        account: { email: session.account.email },
+        household: session.household,
+      },
+      200,
+    );
+  });
+
+  app.post("/auth/signup", async (c) => {
+    noStore(c);
     if (!isSameOriginRequest(c)) {
       return c.json(
         { error: { code: "forbidden" as const, message: "Cross-origin request blocked" } },
         403,
       );
     }
-    const contentType = c.req.header("content-type")?.toLowerCase() ?? "";
-    if (!contentType.startsWith("application/json")) {
-      return c.json(
-        {
-          error: {
-            code: "unsupported_media_type" as const,
-            message: "Content-Type must be application/json",
-          },
-        },
-        415,
-      );
+    if (!options.signupOpen) {
+      return c.json({ error: { code: "forbidden" as const, message: "Signup is closed" } }, 403);
     }
 
-    const clientKey = options.clientKey?.(c) ?? "unknown";
-    const nowMs = Date.now();
-    const retryAfter = throttle.retryAfterSeconds(clientKey, nowMs);
+    const key = clientKey(c);
+    const retryAfter = throttle.retryAfterSeconds(key);
     if (retryAfter !== null) {
       c.header("Retry-After", String(retryAfter));
       return c.json(
-        {
-          error: {
-            code: "rate_limited" as const,
-            message: "Too many login attempts. Try again later.",
-          },
-        },
+        { error: { code: "rate_limited" as const, message: "Too many attempts. Try again later." } },
+        429,
+      );
+    }
+    throttle.record(key);
+
+    const body = await readJson(c);
+    if (body === null) return validation(c, "Expected a JSON object");
+
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    const householdName =
+      typeof body.householdName === "string" ? body.householdName.trim() : "";
+
+    if (!EMAIL_PATTERN.test(email)) return validation(c, "Enter a valid email address");
+    if (password.length < 8) return validation(c, "Password must be at least 8 characters");
+    if (householdName === "") return validation(c, "Household name is required");
+
+    try {
+      const { account, household } = createAccount(db, email, password, { householdName });
+      startSession(c, account.id);
+      return c.json(
+        { account: { email: account.email }, household: { id: household.id, name: household.name } },
+        201,
+      );
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "conflict") {
+        return c.json(
+          { error: { code: "conflict" as const, message: "An account with this email already exists" } },
+          409,
+        );
+      }
+      throw error;
+    }
+  });
+
+  app.post("/auth/login", async (c) => {
+    noStore(c);
+    if (!isSameOriginRequest(c)) {
+      return c.json(
+        { error: { code: "forbidden" as const, message: "Cross-origin request blocked" } },
+        403,
+      );
+    }
+
+    const key = clientKey(c);
+    const retryAfter = throttle.retryAfterSeconds(key);
+    if (retryAfter !== null) {
+      c.header("Retry-After", String(retryAfter));
+      return c.json(
+        { error: { code: "rate_limited" as const, message: "Too many attempts. Try again later." } },
         429,
       );
     }
 
-    let supplied: unknown;
-    try {
-      const body: unknown = await c.req.json();
-      if (typeof body === "object" && body !== null && "password" in body) {
-        supplied = body.password;
-      }
-    } catch {
-      return c.json(
-        { error: { code: "validation" as const, message: "Expected a JSON body with a password" } },
-        400,
-      );
-    }
-    if (typeof supplied !== "string") {
-      return c.json(
-        { error: { code: "validation" as const, message: "password must be a string" } },
-        400,
-      );
-    }
+    const body = await readJson(c);
+    if (body === null) return validation(c, "Expected a JSON object");
 
-    if (!passwordMatches(password, supplied)) {
-      throttle.recordFailure(clientKey, nowMs);
+    const email = typeof body.email === "string" ? body.email : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    const account = email === "" || password === "" ? null : authenticate(db, email, password);
+    if (account === null) {
+      throttle.record(key);
       return c.json(
-        { error: { code: "unauthorized" as const, message: "Invalid password" } },
+        { error: { code: "unauthorized" as const, message: "Invalid email or password" } },
         401,
       );
     }
 
-    throttle.reset(clientKey);
-    const now = options.now();
-    const token = createSessionToken(password, now);
-    setCookie(c, SESSION_COOKIE_NAME, token.value, {
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
-      maxAge: token.maxAge,
-    });
-    return c.body(null, 204);
+    throttle.reset(key);
+    startSession(c, account.id);
+    const household = getHousehold(db, account.householdId);
+    return c.json(
+      {
+        account: { email: account.email },
+        household: { id: household.id, name: household.name },
+      },
+      200,
+    );
   });
 
   app.post("/auth/logout", (c) => {
@@ -221,12 +254,9 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
         403,
       );
     }
-    deleteCookie(c, SESSION_COOKIE_NAME, {
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
-    });
+    const value = getCookie(c, SESSION_COOKIE_NAME);
+    if (value !== undefined) deleteSession(db, value);
+    deleteCookie(c, SESSION_COOKIE_NAME, cookieOptions(0));
     return c.body(null, 204);
   });
 }
