@@ -58,9 +58,16 @@ says **Added by hand**. In the sheet you can:
 - Change **Quantity to buy** and, for an item with an ingredient, its **Unit**.
   Tap **Save**. Choose a unit of that ingredient, or add a measure for a new unit.
   A free-text item has no **Unit** list. See [Units and measures](units.md).
-- Tap **I have it**. Confirm **How much goes into the
-  pantry?** (it starts at the list amount; clear it to mark the item on hand),
-  then tap **Add to pantry and remove**.
+- Tap **I have it** to record what you have, then remove the item. A free-text
+  item has no **I have it**, because the pantry only holds ingredients. Choose how:
+  - **Add to pantry** adds the amount to what the pantry holds.
+  - **Set what I have** sets the pantry to exactly that amount.
+
+  The amount starts at the list amount. Clear it to mark the item on hand with
+  no amount. For an item with an ingredient, pick the **Unit** too. Any unit
+  that converts works, so 2 cups of Baby Spinach is stored in the stock unit.
+  A unit with no weight shows **Add a measure for** it. Tap **Add to pantry and
+  remove** or **Set in pantry and remove**.
 - Tap **Remove** to take the item off without a pantry change.
 
 Tap **Add item** above the aisles, type a name, and tap **Add**. The app matches

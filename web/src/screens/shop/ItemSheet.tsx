@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { errorMessage } from "@/api";
-import { Button, Emoji, Icon, IconPicker, Sheet, buttonClass, ingredientEmoji, toast } from "@/ui";
+import { Button, Emoji, Icon, IconPicker, SegmentedControl, Sheet, buttonClass, ingredientEmoji, toast } from "@/ui";
 import type { ShoppingItem } from "./cart";
 import { UnitPicker } from "../ingredients/UnitPicker";
 import { UnitProblems } from "../ingredients/UnitProblems";
 import { unitProblems, unitText, type UnitProblem } from "../ingredients/units";
 import { parseQty, qtyToInput, unitLabel } from "./format";
 import styles from "./Shop.module.css";
-import { useRemoveItem, useUpdateItemQty } from "./queries";
+import { useRemoveItem, useUpdateItemQty, type PantryMode } from "./queries";
 
 export interface ItemSheetProps {
   listId: string;
@@ -81,6 +81,8 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
   const [issues, setIssues] = useState<UnitProblem[]>([]);
   // Set once "I have it" is tapped: the amount to add to the pantry, which can differ from the list.
   const [pantryText, setPantryText] = useState<string | null>(null);
+  const [pantryUnit, setPantryUnit] = useState(item.unit === null || item.unit === "count" ? "" : unitText(item.unit));
+  const [pantryMode, setPantryMode] = useState<PantryMode>("add");
   const update = useUpdateItemQty(listId);
   const remove = useRemoveItem(listId);
   const qty = parseOptionalQty(text);
@@ -166,7 +168,7 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
           </Button>
         </span>
       </div>
-      {item.ingredientId !== null && (
+      {item.ingredientId !== null && pantryText === null && (
         <>
           <UnitPicker
             label="Unit"
@@ -190,13 +192,15 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
       )}
       {pantryText === null ? (
         <div className={styles.sheetActions}>
-          <Button
-            icon={<Icon name="pantry" />}
-            disabled={remove.isPending}
-            onClick={() => setPantryText(item.qty === null ? "" : qtyToInput(item.qty))}
-          >
-            I have it
-          </Button>
+          {item.ingredientId !== null && (
+            <Button
+              icon={<Icon name="pantry" />}
+              disabled={remove.isPending}
+              onClick={() => setPantryText(item.qty === null ? "" : qtyToInput(item.qty))}
+            >
+              I have it
+            </Button>
+          )}
           <Button
             variant="dangerGhost"
             icon={<Icon name="trash" />}
@@ -208,7 +212,18 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
         </div>
       ) : (
         <div className={styles.addField}>
-          <label htmlFor="shop-item-pantry-qty">How much goes into the pantry?</label>
+          <SegmentedControl<PantryMode>
+            label="Record it as"
+            value={pantryMode}
+            onChange={(next) => setPantryMode(next)}
+            options={[
+              { value: "add", label: "Add to pantry" },
+              { value: "set", label: "Set what I have" },
+            ]}
+          />
+          <label htmlFor="shop-item-pantry-qty">
+            {pantryMode === "add" ? "How much goes into the pantry?" : "How much do you have now?"}
+          </label>
           <span className={styles.qtyEdit}>
             <input
               id="shop-item-pantry-qty"
@@ -222,15 +237,52 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
               onChange={(e) => setPantryText(e.target.value)}
               onFocus={(e) => e.currentTarget.select()}
             />
-            {pantryQty != null && <span className={styles.qtyUnit}>{unitLabel(item.unit, pantryQty)}</span>}
+            {item.ingredientId === null && pantryQty != null && (
+              <span className={styles.qtyUnit}>{unitLabel(item.unit, pantryQty)}</span>
+            )}
           </span>
+          {item.ingredientId !== null && (
+            <>
+              <UnitPicker
+                label="Unit"
+                ingredientId={item.ingredientId}
+                value={pantryUnit}
+                invalid={issues.length > 0}
+                onChange={(next) => {
+                  setPantryUnit(next);
+                  setIssues([]);
+                }}
+              />
+              <UnitProblems
+                problems={issues}
+                onUseUnit={(next) => {
+                  setPantryUnit(next);
+                  setIssues([]);
+                }}
+                onMeasureAdded={() => setIssues([])}
+              />
+            </>
+          )}
           <Button
             variant="primary"
             loading={remove.isPending}
             disabled={pantryQty === undefined}
-            onClick={() => run(remove.mutateAsync({ item, pantry: { qty: pantryQty! } }), `${item.name} added to your pantry`)}
+            onClick={() => {
+              setIssues([]);
+              void run(
+                remove.mutateAsync({
+                  item,
+                  pantry: {
+                    qty: pantryQty!,
+                    mode: pantryMode,
+                    ...(item.ingredientId !== null ? { unit: pantryUnit.trim() === "" ? null : pantryUnit.trim() } : {}),
+                  },
+                }),
+                `${item.name} ${pantryMode === "add" ? "added to" : "set in"} your pantry`,
+              );
+            }}
           >
-            Add to pantry and remove
+            {pantryMode === "add" ? "Add to pantry and remove" : "Set in pantry and remove"}
           </Button>
           <Button variant="ghost" disabled={remove.isPending} onClick={() => setPantryText(null)}>
             Back

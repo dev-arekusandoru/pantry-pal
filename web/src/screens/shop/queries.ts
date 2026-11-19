@@ -105,20 +105,32 @@ export function useUpdateItemQty(listId: string) {
   });
 }
 
+/** How "I have it" records stock: add to what the pantry holds, or set the total on hand. */
+export type PantryMode = "add" | "set";
+
 /** Take an item off the list. With `pantry`, first record it as stock: that amount, or "on hand" when null. */
 export function useRemoveItem(listId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ item, pantry }: { item: ShoppingItem; pantry?: { qty: number | null } }) => {
+    mutationFn: async ({
+      item,
+      pantry,
+    }: {
+      item: ShoppingItem;
+      pantry?: { qty: number | null; unit?: string | null; mode?: PantryMode };
+    }) => {
       if (pantry) {
+        const ref =
+          item.ingredientId !== null
+            ? { ingredientId: item.ingredientId }
+            : { ingredient: item.name, category: item.category };
+        const unit = pantry.unit === undefined ? item.unit : pantry.unit;
         await unwrap(
-          pantry.qty !== null
-            ? client.POST("/pantry/adjust", {
-                body: { ingredient: item.name, category: item.category, delta: pantry.qty, unit: item.unit },
-              })
-            : client.POST("/pantry/set", {
-                body: { ingredient: item.name, category: item.category, qty: null, status: "on_hand" },
-              }),
+          pantry.qty === null
+            ? client.POST("/pantry/set", { body: { ...ref, qty: null, status: "on_hand" } })
+            : pantry.mode === "set"
+              ? client.POST("/pantry/set", { body: { ...ref, qty: pantry.qty, unit } })
+              : client.POST("/pantry/adjust", { body: { ...ref, delta: pantry.qty, unit } }),
         );
       }
       await unwrap(client.DELETE("/shopping-lists/{id}/items/{itemId}", { params: { path: { id: listId, itemId: item.id } } }));

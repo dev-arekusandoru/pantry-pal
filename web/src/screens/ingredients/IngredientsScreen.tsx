@@ -4,7 +4,7 @@ import { Button, Card, EmptyState, ErrorState, Icon, PageHeader, Pill, SearchInp
 import { aisleLabel } from "../aisles";
 import { IngredientPicker } from "./IngredientPicker";
 import styles from "./Ingredients.module.css";
-import { buildRows, countFilters, filterRows, groupByAisle, type LibraryFilter, type LibraryRow } from "./library";
+import { buildRows, countFilters, filterRows, groupByAisle, LIBRARY_FILTERS, type LibraryFilter, type LibraryRow } from "./library";
 import { useIngredientLibrary, useReviewList, useUsageCounts } from "./queries";
 import { usePageEntry } from "./usePageEntry";
 
@@ -12,12 +12,14 @@ const FILTER_LABELS: Record<LibraryFilter, string> = {
   all: "All",
   attention: "Needs attention",
   custom: "Custom",
+  measures: "No measures",
   unused: "Unused",
 };
 
 const EMPTY_FILTER: Record<Exclude<LibraryFilter, "all">, { title: string; text: string }> = {
   attention: { title: "Nothing needs attention", text: "Every ingredient has a USDA food or a custom entry you accepted." },
   custom: { title: "No custom ingredients", text: "Every ingredient is linked to a USDA food." },
+  measures: { title: "Every ingredient has a measure", text: "Cups, spoons and counts can convert to grams for each one." },
   unused: { title: "Every ingredient is in use", text: "Each one is in a recipe, the pantry, a shopping list or a dietary rule." },
 };
 
@@ -82,7 +84,7 @@ export function IngredientsScreen({ filter, onFilter }: IngredientsScreenProps) 
   const counts = countFilters(rows);
   const shown = filterRows(rows, filter, query);
   const groups = groupByAisle(shown);
-  const options: Array<SegmentOption<LibraryFilter>> = (["all", "attention", "custom", "unused"] as const).map((value) => ({
+  const options: Array<SegmentOption<LibraryFilter>> = LIBRARY_FILTERS.map((value) => ({
     value,
     label: `${FILTER_LABELS[value]} (${counts[value]})`,
   }));
@@ -162,7 +164,7 @@ export function IngredientsScreen({ filter, onFilter }: IngredientsScreenProps) 
 }
 
 function IngredientRow({ row }: { row: LibraryRow }) {
-  const { ingredient, linked, attention, unused } = row;
+  const { ingredient, linked, attention, noMeasures, unused } = row;
   return (
     <li>
       <Link to="/ingredients/$id" params={{ id: ingredient.id }} className={styles.row}>
@@ -174,6 +176,7 @@ function IngredientRow({ row }: { row: LibraryRow }) {
         <span className={styles.badges}>
           {attention && <Pill tone="gum">Needs attention</Pill>}
           <Pill tone={linked ? "pistachio" : "peach"}>{linked ? "Linked" : "Custom"}</Pill>
+          {noMeasures && <Pill tone="butter">No measures</Pill>}
           {unused && <Pill>Unused</Pill>}
         </span>
       </Link>

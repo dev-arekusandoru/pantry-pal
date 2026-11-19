@@ -3,7 +3,7 @@
 import { CATEGORY_ORDER } from "../aisles";
 import type { IngredientView } from "./queries";
 
-export const LIBRARY_FILTERS = ["all", "attention", "custom", "unused"] as const;
+export const LIBRARY_FILTERS = ["all", "attention", "custom", "measures", "unused"] as const;
 export type LibraryFilter = (typeof LIBRARY_FILTERS)[number];
 
 /** One ingredient with what the chips need to know about it. */
@@ -12,6 +12,8 @@ export interface LibraryRow {
   /** Linked to a USDA food. A custom ingredient is not. */
   linked: boolean;
   attention: boolean;
+  /** No measure at all: no USDA serving size and none of your own. Cups, spoons and counts cannot convert to grams. */
+  noMeasures: boolean;
   /** In no recipe, pantry row, open shopping list or rule. */
   unused: boolean;
 }
@@ -25,6 +27,7 @@ export function buildRows(
     ingredient,
     linked: ingredient.nutrition?.fdcId != null,
     attention: attentionIds.has(ingredient.id),
+    noMeasures: ingredient.measures.length === 0,
     unused: !usedIds.has(ingredient.id),
   }));
 }
@@ -33,6 +36,7 @@ const MATCHES: Record<LibraryFilter, (row: LibraryRow) => boolean> = {
   all: () => true,
   attention: (row) => row.attention,
   custom: (row) => !row.linked,
+  measures: (row) => row.noMeasures,
   unused: (row) => row.unused,
 };
 
@@ -41,6 +45,7 @@ export function countFilters(rows: readonly LibraryRow[]): Record<LibraryFilter,
     all: rows.length,
     attention: rows.filter(MATCHES.attention).length,
     custom: rows.filter(MATCHES.custom).length,
+    measures: rows.filter(MATCHES.measures).length,
     unused: rows.filter(MATCHES.unused).length,
   };
 }

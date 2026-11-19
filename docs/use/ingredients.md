@@ -29,8 +29,8 @@ it.
 ![Ingredients page with search, filter chips, and ingredients grouped by aisle](../images/ingredients-library.png)
 
 Each row shows the icon, the name, and the linked USDA food. Pills show the
-state: **Linked** or **Custom**, **Needs attention**, and **Unused**. Tap a row
-to open the ingredient page.
+state: **Linked** or **Custom**, **Needs attention**, **No measures**, and
+**Unused**. Tap a row to open the ingredient page.
 
 Use **Search ingredients** to filter by name or other name. The chips filter the
 list. Each chip shows its count.
@@ -40,6 +40,7 @@ list. Each chip shows its count.
 | **All** | Every ingredient that is not archived. |
 | **Needs attention** | Ingredients that need a look. See [Needs attention](#needs-attention). |
 | **Custom** | Ingredients with no USDA food. |
+| **No measures** | Ingredients with no [measure](units.md) at all: no USDA serving size and none of your own. Cups, spoons, and counts cannot turn into grams for them. Add a measure on the ingredient page. |
 | **Unused** | Ingredients that no recipe, pantry row, open shopping list, or dietary rule uses. |
 
 The chip is part of the address, for example `/ingredients?filter=attention`.
