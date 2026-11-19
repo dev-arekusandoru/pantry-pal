@@ -8,7 +8,6 @@ import {
   NUTRITION_SOURCE,
   autoMatchFood,
   getFood,
-  gramsFor,
   searchFoods,
   type Food,
   type Nutrients,
@@ -133,6 +132,8 @@ export interface RecipeNutritionLine {
   food: { fdcId: number; description: string } | null;
   nutrients: Nutrients | null;
   status: NutritionLineStatus;
+  /** For `no_conversion`: what to add so the line counts, e.g. "Add a measure: 1 cup = ? g". */
+  hint?: string;
 }
 
 export interface RecipeNutrition {
@@ -159,7 +160,6 @@ export function getRecipeNutrition(ctx: Ctx, idOrSlug: string): RecipeNutrition 
       line: recipeIngredients,
       name: ingredients.name,
       fdcId: ingredients.nutritionFdcId,
-      defaultPortion: ingredients.defaultPortion,
     })
     .from(recipeIngredients)
     .innerJoin(ingredients, eq(ingredients.id, recipeIngredients.ingredientId))
@@ -173,7 +173,7 @@ export function getRecipeNutrition(ctx: Ctx, idOrSlug: string): RecipeNutrition 
   let counted = 0;
   let missing = 0;
 
-  const lines = rows.map(({ line, name, fdcId, defaultPortion }): RecipeNutritionLine => {
+  const lines = rows.map(({ line, name, fdcId }): RecipeNutritionLine => {
     const food = fdcId === null ? null : getFood(fdcId);
     const base = {
       recipeIngredientId: line.id,
@@ -196,9 +196,11 @@ export function getRecipeNutrition(ctx: Ctx, idOrSlug: string): RecipeNutrition 
     if (food === null) return done("no_match");
 
     const qty = line.qtyMax === null ? line.qty : (line.qty + line.qtyMax) / 2;
-    const grams =
-      convert(ctx, qty, line.unit, "g", line.ingredientId) ?? gramsFor(food, qty, line.unit, defaultPortion);
-    if (grams === null) return done("no_conversion");
+    const grams = convert(ctx, qty, line.unit, "g", line.ingredientId);
+    if (grams === null) {
+      missing += 1;
+      return { ...base, status: "no_conversion", hint: `Add a measure: 1 ${line.unit ?? "count"} = ? g` };
+    }
 
     const nutrients = emptyNutrients();
     for (const key of NUTRIENT_KEYS) {

@@ -21,7 +21,7 @@ import {
   updateIngredient,
 } from "../src/services/ingredients.js";
 import { listMovements, listPantry, setStock } from "../src/services/pantry.js";
-import { createConversion, convert } from "../src/services/units.js";
+import { convert, setMeasure } from "../src/services/units.js";
 import { makeTestCtx } from "./helpers.js";
 
 function expectAppError(fn: () => unknown, code: string): AppError {
@@ -43,7 +43,7 @@ describe("createIngredient", () => {
       name: "  Yellow   onion ",
       category: "produce",
       aliases: ["Onion", "yellow onions"],
-      defaultUnit: "pounds",
+      stockUnit: "pounds",
       parQty: 2,
       parUnit: "lb",
     });
@@ -51,7 +51,7 @@ describe("createIngredient", () => {
     expect(created.name).toBe("Yellow Onion");
     expect(created.normalizedName).toBe("yellow onion");
     expect(created.category).toBe("produce");
-    expect(created.defaultUnit).toBe("lb");
+    expect(created.stockUnit).toBe("lb");
     expect(created.parQty).toBe(2);
     expect(created.aliases.map((alias) => alias.alias)).toEqual(["onion", "yellow onions"]);
     expect(created.pantry).toEqual([]);
@@ -76,7 +76,7 @@ describe("createIngredient", () => {
 
   it("rejects unknown units", () => {
     const { ctx } = makeTestCtx();
-    expectAppError(() => createIngredient(ctx, { custom: true, name: "Mystery", defaultUnit: "smidgen" }), "validation");
+    expectAppError(() => createIngredient(ctx, { custom: true, name: "Mystery", stockUnit: "smidgen" }), "unprocessable");
   });
 
   it("validates and clears the ingredient icon", () => {
@@ -115,21 +115,18 @@ describe("listIngredients / getIngredient", () => {
     expect(listIngredients(ctx, { query: "nothing" })).toHaveLength(0);
   });
 
-  it("returns aliases, conversions and pantry stock", () => {
+  it("returns aliases, measures and pantry stock", () => {
     const { ctx } = makeTestCtx();
     const ingredient = createIngredient(ctx, { custom: true, name: "Coconut milk", aliases: ["coco milk"] });
+    setMeasure(ctx, ingredient.id, "can", { grams: 400 });
     setStock(ctx, { ingredientId: ingredient.id, qty: 2, unit: "can" });
-    createConversion(ctx, {
-      ingredientId: ingredient.id,
-      fromUnit: "can",
-      toUnit: "fl oz",
-      factor: 13.5,
-    });
 
     const view = getIngredient(ctx, ingredient.id);
     expect(view.aliases.map((alias) => alias.alias)).toEqual(["coco milk"]);
-    expect(view.conversions).toHaveLength(1);
-    expect(view.conversions[0]).toMatchObject({ fromUnit: "can", toUnit: "fl_oz", factor: 13.5 });
+    expect(view.measures).toHaveLength(1);
+    expect(view.measures[0]).toMatchObject({ unit: "can", grams: 400, source: "user" });
+    expect(view.stockUnit).toBe("can");
+    expect(view.units.slice(0, 2)).toEqual(["can", "count"]);
     expect(view.pantry).toHaveLength(1);
     expect(view.pantry[0]).toMatchObject({ qty: 2, unit: "can" });
 
@@ -180,13 +177,12 @@ describe("updateIngredient", () => {
     const updated = updateIngredient(ctx, ingredient.id, {
       parQty: 2,
       parUnit: "liters",
-      defaultUnit: "ml",
+      stockUnit: "ml",
       shelfLifeDays: 365,
       description: "Extra virgin",
     });
-    expect(updated.parQty).toBe(2);
-    expect(updated.parUnit).toBe("l");
-    expect(updated.defaultUnit).toBe("ml");
+    expect(updated.parQty).toBe(2000);
+    expect(updated.stockUnit).toBe("ml");
     expect(updated.shelfLifeDays).toBe(365);
   });
 });
@@ -246,19 +242,9 @@ describe("mergeIngredients", () => {
       qty: 14.5,
       unit: "oz",
     });
+    setMeasure(ctx, source.id, "can", { grams: 14.5 * 28.349523125 });
+    setMeasure(ctx, target.id, "bag", { grams: 100 });
     setStock(ctx, { ingredientId: source.id, qty: 2, unit: "can" });
-    createConversion(ctx, {
-      ingredientId: target.id,
-      fromUnit: "can",
-      toUnit: "oz",
-      factor: 14.5,
-    });
-    createConversion(ctx, {
-      ingredientId: source.id,
-      fromUnit: "can",
-      toUnit: "g",
-      factor: 400,
-    });
 
     ctx.db
       .insert(recipes)
@@ -320,7 +306,7 @@ describe("mergeIngredients", () => {
       pantryItems: 1,
       shoppingItems: 1,
       rules: 1,
-      conversions: 1,
+      measures: 1,
       aliases: 2,
     });
 
@@ -331,10 +317,7 @@ describe("mergeIngredients", () => {
 
     const view = merged.ingredient;
     expect(view.aliases.map((alias) => alias.alias)).toEqual(["canned tomato", "tinned tomato"]);
-    expect(view.conversions.map((row) => `${row.fromUnit}->${row.toUnit}`).sort()).toEqual([
-      "can->g",
-      "can->oz",
-    ]);
+    expect(view.measures.map((row) => row.unit).sort()).toEqual(["bag", "can"]);
 
     const pantry = view.pantry;
     expect(pantry).toHaveLength(1);
@@ -368,19 +351,14 @@ describe("mergeIngredients", () => {
     expect(getIngredient(ctx, target.id)).toBeDefined();
   });
 
-  it("converts stock with the source ingredient's own conversions", () => {
+  it("converts stock with the source ingredient's own measures", () => {
     const { ctx } = makeTestCtx();
     const source = createIngredient(ctx, { custom: true, name: "Canned tomato", category: "canned" });
     const target = createIngredient(ctx, { custom: true, name: "Tomato", category: "produce" });
     setStock(ctx, { ingredientId: target.id, qty: 14.5, unit: "oz" });
-    setStock(ctx, { ingredientId: source.id, qty: 2, unit: "can" });
     // Only the source knows cans: 1 can = 400 g, which chains into oz via the built-in table.
-    createConversion(ctx, {
-      ingredientId: source.id,
-      fromUnit: "can",
-      toUnit: "g",
-      factor: 400,
-    });
+    setMeasure(ctx, source.id, "can", { grams: 400 });
+    setStock(ctx, { ingredientId: source.id, qty: 2, unit: "can" });
 
     const expected = 14.5 + convert(ctx, 800, "g", "oz")!;
     const merged = mergeIngredients(ctx, source.id, target.id);
@@ -401,6 +379,7 @@ describe("mergeIngredients", () => {
       qty: 1,
       unit: "cup",
     });
+    setMeasure(ctx, source.id, "bottle", { grams: 500 });
     setStock(ctx, { ingredientId: source.id, qty: 1, unit: "bottle" });
 
     const error = expectAppError(

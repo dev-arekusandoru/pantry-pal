@@ -3,6 +3,7 @@ import { createApp } from "./api/app.js";
 import { defaultWebDir, hasWebApp } from "./api/web.js";
 import { openDb, runMigrations } from "./db/client.js";
 import { titleCaseIngredientNames } from "./services/ingredients.js";
+import { migrateLegacyUnits } from "./services/legacyUnits.js";
 import { backfillNutritionMatches } from "./services/nutrition.js";
 
 const DEFAULT_PORT = 4787;
@@ -21,6 +22,17 @@ const backfilled = backfillNutritionMatches(db);
 if (backfilled > 0) console.log(`Matched ${backfilled} ingredient(s) to USDA foods.`);
 const renamed = titleCaseIngredientNames(db);
 if (renamed > 0) console.log(`Set ${renamed} ingredient name(s) to Title Case.`);
+// After the USDA backfill: the data step reads the linked foods' measures. It drops the legacy
+// unit tables, so it runs once; see migrateLegacyUnits.
+const units = migrateLegacyUnits(db);
+if (units.migrated) {
+  console.log(
+    `Units migration: ${units.measuresCreated} measure(s) created, ${units.conversionsDropped} conversion(s) dropped, ` +
+      `${units.stockUnitsSet} stock unit(s) set, ${units.pantryConverted} pantry row(s) converted, ` +
+      `${units.pantryNotConverted} left unconverted, ${units.parConverted} par level(s) converted, ${units.parDropped} cleared.`,
+  );
+  for (const line of units.lines) console.log(`  ${line}`);
+}
 
 const app = createApp({
   db,

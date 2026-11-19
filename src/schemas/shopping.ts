@@ -75,7 +75,7 @@ export const demandLineSchema = z
       .string()
       .nullable()
       .describe(
-        "Target unit: pantry stock unit, else ingredient default unit, else the most common line unit.",
+        "Target unit: the ingredient's stock unit, else the most common line unit.",
       ),
     qty: z
       .number()
@@ -254,7 +254,13 @@ export const addItemSchema = z
       .optional()
       .describe("Display name, or the free-text item name when nothing resolves."),
     qty: z.number().nonnegative().nullable().optional().describe("Quantity to buy."),
-    unit: z.string().nullable().optional().describe("Unit for `qty`."),
+    unit: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        "Unit for `qty`. For an ingredient item it must be valid for the ingredient and is converted into its stock unit; free-text items keep the text as written.",
+      ),
     note: z.string().optional().describe("Free-form note for the shopper."),
     purposeNote: z.string().optional(),
     category: ingredientCategorySchema.optional(),

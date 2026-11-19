@@ -12,7 +12,8 @@ import {
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { scaleRecipeIngredients } from "./recipes.js";
-import { convert, normalizeUnit } from "./units.js";
+import { canonicalUnit } from "./unitNames.js";
+import { convert } from "./units.js";
 
 /** One planned cook that needs an ingredient. */
 export interface DemandUse {
@@ -40,7 +41,7 @@ export interface DemandLine {
   ingredientId: string;
   ingredientName: string;
   category: IngredientCategory;
-  /** Target unit: pantry stock unit, else the ingredient default unit, else the most common line unit. */
+  /** Target unit: the ingredient's stock unit, else the most common line unit. */
   unit: string | null;
   /** Sum of line quantities converted into `unit`; null when no line carried a quantity. */
   qty: number | null;
@@ -100,44 +101,11 @@ export function roundQty(value: number, dp = 4): number {
 export function normalizeUnitLoose(raw: string | null | undefined): string | null {
   if (raw === null || raw === undefined) return null;
   const trimmed = raw.trim();
-  if (trimmed === "") return normalizeUnit("");
-  return normalizeUnit(trimmed) ?? trimmed.toLowerCase();
+  if (trimmed === "") return canonicalUnit("");
+  return canonicalUnit(trimmed) ?? trimmed.toLowerCase();
 }
 
 type PantryRow = typeof pantryItems.$inferSelect;
-
-function pantryRowsFor(ctx: Ctx, ingredientIds: string[]): Map<string, PantryRow[]> {
-  const grouped = new Map<string, PantryRow[]>();
-  if (ingredientIds.length === 0) return grouped;
-
-  const rows = ctx.db
-    .select()
-    .from(pantryItems)
-    .where(
-      and(
-        eq(pantryItems.householdId, ctx.householdId),
-        inArray(pantryItems.ingredientId, ingredientIds),
-      ),
-    )
-    .all();
-
-  for (const row of rows) {
-    const bucket = grouped.get(row.ingredientId);
-    if (bucket) bucket.push(row);
-    else grouped.set(row.ingredientId, [row]);
-  }
-  return grouped;
-}
-
-/** Unit of the best-stocked pantry row (largest known quantity), if any row has a unit. */
-function pantryUnitFor(rows: PantryRow[]): string | null {
-  const sorted = [...rows].sort((a, b) => (b.qty ?? -1) - (a.qty ?? -1));
-  for (const row of sorted) {
-    const unit = normalizeUnitLoose(row.unit);
-    if (unit !== null) return unit;
-  }
-  return null;
-}
 
 /** Most common non-null unit among recipe lines; ties keep the first-seen unit. */
 function mostCommonUnit(units: Array<string | null>): string | null {
@@ -156,17 +124,9 @@ function mostCommonUnit(units: Array<string | null>): string | null {
   return best;
 }
 
-/** Target unit priority: pantry stock unit → ingredient default unit → most common line unit. */
-function targetUnitFor(
-  defaultUnit: string | null | undefined,
-  lineUnits: Array<string | null>,
-  pantryRows: PantryRow[],
-): string | null {
-  return (
-    pantryUnitFor(pantryRows) ??
-    normalizeUnitLoose(defaultUnit ?? null) ??
-    mostCommonUnit(lineUnits)
-  );
+/** Target unit: the ingredient's stock unit, else the most common line unit. */
+function targetUnitFor(stockUnit: string | null | undefined, lineUnits: Array<string | null>): string | null {
+  return normalizeUnitLoose(stockUnit ?? null) ?? mostCommonUnit(lineUnits);
 }
 
 function assertPlanExists(ctx: Ctx, mealPlanId: string): void {
@@ -270,7 +230,6 @@ export function computeDemand(ctx: Ctx, input: DemandInput = {}): DemandLine[] {
   if (groups.size === 0) return [];
 
   const ingredientIds = [...groups.keys()];
-  const pantryByIngredient = pantryRowsFor(ctx, ingredientIds);
   const ingredientRows = ctx.db
     .select()
     .from(ingredients)
@@ -281,15 +240,13 @@ export function computeDemand(ctx: Ctx, input: DemandInput = {}): DemandLine[] {
       ),
     )
     .all();
-  const defaultUnits = new Map(ingredientRows.map((row) => [row.id, row.defaultUnit] as const));
+  const stockUnits = new Map(ingredientRows.map((row) => [row.id, row.stockUnit] as const));
 
   const lines: DemandLine[] = [];
   for (const group of groups.values()) {
-    const pantryRows = pantryByIngredient.get(group.ingredientId) ?? [];
     const target = targetUnitFor(
-      defaultUnits.get(group.ingredientId) ?? null,
+      stockUnits.get(group.ingredientId) ?? null,
       group.entries.map((entry) => entry.unit),
-      pantryRows,
     );
 
     let qtySum = 0;
@@ -389,7 +346,7 @@ export function availabilityFor(ctx: Ctx, demand: DemandLine[]): AvailabilityLin
     const demandLine = demandByIngredient.get(id) ?? null;
     const unit = demandLine
       ? demandLine.unit
-      : targetUnitFor(ingredient.defaultUnit, [], rows);
+      : targetUnitFor(ingredient.stockUnit, []);
 
     let onHandSum = 0;
     let stockUnknown = false;

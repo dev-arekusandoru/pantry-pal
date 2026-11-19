@@ -21,7 +21,7 @@ import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
 import { resolveIngredientRefs, type IngredientRefInput } from "./ingredients.js";
-import { normalizeUnit } from "./units.js";
+import { validateUnits } from "./units.js";
 
 export type Recipe = typeof recipes.$inferSelect;
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
@@ -290,6 +290,16 @@ function insertIngredientRows(
     })),
   );
   let cursor = 0;
+  // Every line's unit is checked together, so one 422 lists all the unknown units.
+  let at = 0;
+  const units = validateUnits(
+    ctx,
+    inputs.map((input) => {
+      const ingredientId = resolved[at]!.id;
+      at += 1 + (input.alternatives?.length ?? 0);
+      return { ingredientId, unit: input.unit ?? null };
+    }),
+  );
 
   const rows = inputs.map((input, index) => {
     const ingredient = resolved[cursor++]!;
@@ -304,7 +314,7 @@ function insertIngredientRows(
       ingredientId: ingredient.id,
       qty,
       qtyMax,
-      unit: normalizeUnit(input.unit ?? null),
+      unit: units[index] ?? null,
       prepNote: input.prepNote ?? null,
       originalText: input.originalText ?? null,
       optional: input.optional ?? false,

@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { VisuallyHidden } from "radix-ui";
 import { useId, useState } from "react";
-import { Button, Icon, SegmentedControl, Skeleton, cx, type SegmentOption } from "@/ui";
+import { Button, Icon, SegmentedControl, Sheet, Skeleton, cx, toast, type SegmentOption } from "@/ui";
+import { MeasureForm } from "../ingredients/MeasureForm";
+import { unitText } from "../ingredients/units";
 import { NutritionMatchSheet } from "./NutritionMatchSheet";
 import { NO_VALUE, formatNutrient, formatWhole, lineDetail, partialLabel, type NutritionLine, type Nutrients } from "./nutrition";
 import { useRecipeNutrition } from "./queries";
@@ -39,6 +41,12 @@ function Value({ value, nutrient }: { value: number | null; nutrient: keyof Nutr
   return <>{formatNutrient(value, nutrient)}</>;
 }
 
+/** The unit a no_conversion line needs a measure for; a line with no unit counts pieces. */
+function measureUnit(line: NutritionLine): string {
+  const unit = line.unit?.trim();
+  return unit ? unit : "count";
+}
+
 /**
  * Recipe nutrition from USDA FoodData Central: calories up front, the rest in a
  * quiet grid, and a per-ingredient breakdown that stays closed until asked for.
@@ -49,6 +57,7 @@ export function NutritionPanel({ slug }: { slug: string }) {
   const [basis, setBasis] = useState<Basis>("serving");
   const [open, setOpen] = useState(false);
   const [matching, setMatching] = useState<NutritionLine | null>(null);
+  const [measuring, setMeasuring] = useState<NutritionLine | null>(null);
   const headingId = useId();
   const breakdownId = useId();
 
@@ -155,6 +164,17 @@ export function NutritionPanel({ slug }: { slug: string }) {
                   <Value value={line.nutrients?.calories ?? null} nutrient="calories" />
                 </span>
                 <span className={styles.lineDetail}>{lineDetail(line)}</span>
+                {line.status === "no_conversion" && line.hint !== undefined && <span className={styles.lineHint}>{line.hint}</span>}
+                {line.status === "no_conversion" && (
+                  <button
+                    type="button"
+                    className={styles.addMeasure}
+                    onClick={() => setMeasuring(line)}
+                    aria-label={`Add measure for ${unitText(measureUnit(line))} of ${line.name}`}
+                  >
+                    Add measure
+                  </button>
+                )}
                 {line.status !== "optional" && (
                   <button
                     type="button"
@@ -174,6 +194,29 @@ export function NutritionPanel({ slug }: { slug: string }) {
       <p className={styles.credit}>Source: {data.source}</p>
 
       <NutritionMatchSheet line={matching} onClose={() => setMatching(null)} />
+      <Sheet
+        open={measuring !== null}
+        onClose={() => setMeasuring(null)}
+        title={measuring === null ? "Add a measure" : `Add a measure for ${measuring.name}`}
+      >
+        {measuring !== null && (
+          <>
+            <p className={styles.measureIntro}>
+              The weight of one {unitText(measureUnit(measuring))} lets {measuring.name} count in the nutrition of this recipe.
+            </p>
+            <MeasureForm
+              ingredientId={measuring.ingredientId}
+              unit={measureUnit(measuring)}
+              title={`Weight of 1 ${unitText(measureUnit(measuring))}`}
+              onCancel={() => setMeasuring(null)}
+              onSaved={(measure) => {
+                setMeasuring(null);
+                toast.show({ message: `1 ${unitText(measure.unit)} of ${measuring.name} is saved. Nutrition is updated.` });
+              }}
+            />
+          </>
+        )}
+      </Sheet>
     </section>
   );
 }

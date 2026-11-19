@@ -26,7 +26,8 @@ import {
   scaleRecipeIngredients,
   updateRecipe,
 } from "../src/services/recipes.js";
-import { convert, normalizeUnit, unitFamily } from "../src/services/units.js";
+import { normalizeUnit, unitFamily } from "../src/services/unitNames.js";
+import { convert } from "../src/services/units.js";
 import { addIngredient, makeAuthApp, makeTestApp, makeTestCtx, sessionCookie } from "./helpers.js";
 
 /** Real bundled USDA foods (fdcId of a known description). */

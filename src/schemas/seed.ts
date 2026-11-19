@@ -15,7 +15,7 @@ import {
 import { AppError } from "../lib/errors.js";
 import { isIsoDate } from "../lib/time.js";
 import { normalizeName } from "../services/ingredients.js";
-import { normalizeUnit } from "../services/units.js";
+import { canonicalUnit } from "../services/unitNames.js";
 import { householdSettingsSchema } from "./household.js";
 import { nutritionSchema } from "./recipes.js";
 
@@ -33,9 +33,9 @@ const seedTimestampSchema = text.refine(
   { message: "Expected an ISO-8601 timestamp" },
 );
 
-/** Units must be understood by `normalizeUnit()`; the loader aborts otherwise. */
-const unitSchema = text.refine((value) => normalizeUnit(value) !== null, {
-  message: "Unknown unit",
+/** Units must be unit-like text; the loader checks them against each ingredient's measures and aborts otherwise. */
+const unitSchema = text.refine((value) => canonicalUnit(value) !== null, {
+  message: "Not a unit name",
 });
 const nullableUnitSchema = unitSchema.nullable();
 
@@ -58,13 +58,13 @@ export const seedIngredientSchema = z
   .object({
     name: text,
     category: z.enum(INGREDIENT_CATEGORIES),
-    defaultUnit: nullableUnitSchema,
+    stockUnit: nullableUnitSchema,
     aliases: z.array(text),
     description: z.string().optional(),
     imageUrl: nullableText.optional(),
     shelfLifeDays: z.number().int().nonnegative().optional(),
     parQty: z.number().finite().nonnegative().optional(),
-    parUnit: unitSchema.optional(),
+    parUnit: unitSchema.optional().describe("Unit of `parQty`; par is stored in the stock unit."),
     fdcId: z
       .number()
       .int()
@@ -90,12 +90,11 @@ export const seedIngredientSchema = z
     }
   });
 
-export const seedUnitConversionSchema = z
+export const seedMeasureSchema = z
   .object({
-    ingredient: text.nullable().optional(),
-    fromUnit: unitSchema,
-    toUnit: unitSchema,
-    factor: z.number().finite().positive(),
+    ingredient: text,
+    unit: unitSchema,
+    grams: z.number().finite().positive().describe("Weight of ONE unit in grams."),
     note: nullableText.optional(),
   })
   .strict();
@@ -366,7 +365,7 @@ export const seedSchema = z
   .object({
     household: seedHouseholdSchema,
     ingredients: z.array(seedIngredientSchema),
-    unitConversions: z.array(seedUnitConversionSchema),
+    measures: z.array(seedMeasureSchema),
     pantry: z.array(seedPantryRowSchema),
     rules: z.array(seedRuleSchema),
     recipes: z.array(seedRecipeSchema),
@@ -400,12 +399,9 @@ export const seedSchema = z
     }
 
     addDuplicateIssues(
-      seed.unitConversions.map(
-        (row) =>
-          `${row.ingredient === null || row.ingredient === undefined ? "*" : normalizeName(row.ingredient)}|${row.fromUnit}|${row.toUnit}`,
-      ),
-      ["unitConversions"],
-      "unit conversion",
+      seed.measures.map((row) => `${normalizeName(row.ingredient)}|${canonicalUnit(row.unit)}`),
+      ["measures"],
+      "measure",
     );
 
     addDuplicateIssues(

@@ -191,7 +191,7 @@ describe("updateRecipe", () => {
       title: "Soup",
       ingredients: [
         { ingredient: "Carrot", qty: 3, unit: "each" },
-        { ingredient: "Celery", qty: 2, unit: "stalks" },
+        { ingredient: "Celery", qty: 2, unit: "cup" },
         { ingredient: "Onion", qty: 1, unit: "each" },
       ],
       steps: [{ text: "Chop everything." }, { text: "Simmer." }],

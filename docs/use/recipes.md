@@ -156,9 +156,11 @@ Each person cannot yet follow along on their own phone.
 - Otherwise it records an ad-hoc cook, outside the plan.
 
 The done screen shows how many pantry items were used or reduced. The server
-deducts the scaled, non-optional ingredients from the pantry. It never records
-more than the stock on hand. A line with no quantity, no stock row, or an
-incomparable unit is left unchanged and may appear under **Heads up**. A stock
+deducts the scaled, non-optional ingredients from the pantry. It converts each
+line into the ingredient's [stock unit](units.md#stock-unit-and-measures). It
+never records more than the stock on hand. A line with no quantity, no stock row,
+or a unit with no weight is left unchanged and may appear under **Heads up**.
+Add a [measure](units.md#add-a-measure-for-a-new-unit) to fix a unit. A stock
 row with an unknown amount stays unknown.
 
 **Undo** is on the done screen and in the toast. It restores the stock the cook

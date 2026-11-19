@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, isNull, like, ne, or, sql } from "drizzle-orm";
 import type { Ctx } from "../context.js";
 import type { Db } from "../db/client.js";
 import {
@@ -12,7 +12,6 @@ import {
   shoppingListItems,
   shoppingLists,
   stockMovements,
-  unitConversions,
   type IngredientCategory,
   type PantryStatus,
   type RuleSeverity,
@@ -31,7 +30,16 @@ import {
   splitAlternatives,
   suggestedNameForFood,
 } from "./ingredientNames.js";
-import { convert, normalizeUnit } from "./units.js";
+import {
+  convert,
+  convertOrThrow,
+  converterFor,
+  effectiveMeasures,
+  moveMeasures,
+  unitsForPicker,
+  validateUnits,
+  type Measure,
+} from "./units.js";
 
 export type Ingredient = typeof ingredients.$inferSelect;
 
@@ -244,7 +252,7 @@ export interface IngredientMatch {
   id: string;
   name: string;
   category: IngredientCategory;
-  defaultUnit: string | null;
+  stockUnit: string | null;
   defaultPortion: string | null;
   aliases: string[];
   /** Linked to a USDA food (false = custom). */
@@ -285,7 +293,7 @@ export function findIngredientCandidates(
       id: row.id,
       name: row.name,
       category: row.category,
-      defaultUnit: row.defaultUnit,
+      stockUnit: row.stockUnit,
       defaultPortion: row.defaultPortion,
       aliases,
       linked: row.nutritionFdcId !== null,
@@ -428,16 +436,6 @@ export interface IngredientAliasView {
   createdAt: string;
 }
 
-export interface IngredientConversionView {
-  id: string;
-  ingredientId: string | null;
-  fromUnit: string;
-  toUnit: string;
-  factor: number;
-  note: string | null;
-  createdAt: string;
-}
-
 export interface IngredientStockView {
   id: string;
   qty: number | null;
@@ -455,13 +453,16 @@ export interface IngredientNutritionView {
   portions: FoodPortion[];
 }
 
-/** Ingredient row plus its aliases, custom conversions, pantry stock and USDA match. */
+/** Ingredient row plus its aliases, measures, pantry stock and USDA match. */
 export interface IngredientView
   extends Omit<Ingredient, "householdId" | "nutritionFdcId" | "nutritionSource"> {
   /** null = no USDA food matched (never matched, or auto-match found nothing confident). */
   nutrition: IngredientNutritionView | null;
   aliases: IngredientAliasView[];
-  conversions: IngredientConversionView[];
+  /** What one unit weighs: the linked food's measures, overridden by the household's own. */
+  measures: Measure[];
+  /** Valid units for pickers: the stock unit first, then the measures, then the built-in units. */
+  units: string[];
   pantry: IngredientStockView[];
 }
 
@@ -502,26 +503,6 @@ export function ingredientView(ctx: Ctx, row: Ingredient): IngredientView {
     .orderBy(asc(ingredientAliases.alias))
     .all();
 
-  const conversions = ctx.db
-    .select({
-      id: unitConversions.id,
-      ingredientId: unitConversions.ingredientId,
-      fromUnit: unitConversions.fromUnit,
-      toUnit: unitConversions.toUnit,
-      factor: unitConversions.factor,
-      note: unitConversions.note,
-      createdAt: unitConversions.createdAt,
-    })
-    .from(unitConversions)
-    .where(
-      and(
-        eq(unitConversions.householdId, ctx.householdId),
-        eq(unitConversions.ingredientId, row.id),
-      ),
-    )
-    .orderBy(asc(unitConversions.fromUnit), asc(unitConversions.toUnit))
-    .all();
-
   const pantry = ctx.db
     .select({
       id: pantryItems.id,
@@ -536,7 +517,15 @@ export function ingredientView(ctx: Ctx, row: Ingredient): IngredientView {
     )
     .all();
 
-  return { ...rest, nutrition: nutritionView(row), aliases, conversions, pantry };
+  const measures = effectiveMeasures(ctx, row);
+  return {
+    ...rest,
+    nutrition: nutritionView(row),
+    aliases,
+    measures,
+    units: unitsForPicker(row.stockUnit, measures),
+    pantry,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -576,13 +565,70 @@ function findAliasRow(
   );
 }
 
-function normalizeUnitInput(raw: string | null | undefined, field: string): string | null {
-  if (raw === null || raw === undefined) return null;
-  const normalized = normalizeUnit(raw);
-  if (normalized === null) {
-    throw new AppError("validation", `Unknown ${field}: ${raw}`);
+interface StockInput {
+  stockUnit?: string | null | undefined;
+  parQty?: number | null | undefined;
+  /** Unit `parQty` is written in; it is converted into the stock unit (par is stored in it). */
+  parUnit?: string | null | undefined;
+}
+
+/**
+ * The stock unit and par an ingredient ends up with after `input`. A par written in another unit
+ * is converted into the stock unit; the first par unit sets the stock unit. Changing the stock unit
+ * converts the par and the pantry row into the new unit, or fails with a 422 and nothing changes.
+ */
+function resolveStock(
+  ctx: Ctx,
+  row: Ingredient,
+  input: StockInput,
+): { stockUnit: string | null; parQty: number | null } {
+  const [stockInput = null, parUnit = null] = validateUnits(ctx, [
+    { ingredientId: row.id, unit: input.stockUnit },
+    { ingredientId: row.id, unit: input.parUnit },
+  ]);
+  const newPar = input.parQty === undefined ? undefined : requireParQty(input.parQty);
+  let stockUnit = input.stockUnit === undefined ? row.stockUnit : (stockInput ?? null);
+  let parQty = newPar === undefined ? row.parQty : newPar;
+
+  if (parUnit !== null) {
+    if (newPar === undefined || newPar === null) {
+      throw new AppError("validation", "parUnit needs parQty: send both");
+    }
+    if (stockUnit === null) stockUnit = parUnit;
   }
-  return normalized;
+
+  if (stockUnit !== row.stockUnit && stockUnit !== null) {
+    if (newPar === undefined && parQty !== null) {
+      parQty = convertOrThrow(ctx, parQty, row.stockUnit, stockUnit, row.id, "the par level");
+    }
+    const stocked = ctx.db
+      .select()
+      .from(pantryItems)
+      .where(and(eq(pantryItems.householdId, ctx.householdId), eq(pantryItems.ingredientId, row.id)))
+      .all();
+    for (const item of stocked) {
+      if (item.unit === stockUnit) continue;
+      const qty =
+        item.qty === null
+          ? null
+          : convertOrThrow(ctx, item.qty, item.unit, stockUnit, row.id, "the amount in the pantry");
+      ctx.db
+        .update(pantryItems)
+        .set({
+          qty,
+          unit: stockUnit,
+          status:
+            item.qty === null ? item.status : statusFor(ctx, { ...row, stockUnit, parQty }, qty, stockUnit),
+          updatedAt: nowIso(ctx),
+        })
+        .where(eq(pantryItems.id, item.id))
+        .run();
+    }
+  }
+  if (newPar !== undefined && newPar !== null && parUnit !== null && stockUnit !== null) {
+    parQty = convertOrThrow(ctx, newPar, parUnit, stockUnit, row.id, "the par level");
+  }
+  return { stockUnit, parQty };
 }
 
 function requireParQty(raw: number | null | undefined): number | null {
@@ -595,14 +641,15 @@ function requireParQty(raw: number | null | undefined): number | null {
 
 function statusFor(
   ctx: Ctx,
-  ingredient: Ingredient,
+  ingredient: Pick<Ingredient, "id" | "parQty" | "stockUnit">,
   qty: number | null,
   unit: string | null,
 ): PantryStatus {
   if (qty === null) return "unknown";
   if (qty <= 0) return "out";
   if (ingredient.parQty !== null) {
-    const par = convert(ctx, ingredient.parQty, ingredient.parUnit, unit, ingredient.id);
+    // Par is in the stock unit.
+    const par = convert(ctx, ingredient.parQty, ingredient.stockUnit, unit, ingredient.id);
     if (par !== null && qty <= par) return "low";
   }
   return "on_hand";
@@ -675,10 +722,12 @@ export interface CreateIngredientInput {
   description?: string | null;
   category?: IngredientCategory;
   aliases?: string[];
-  defaultUnit?: string | null;
+  /** The one unit the ingredient is stocked in. Unset: the first pantry write or par unit sets it. */
+  stockUnit?: string | null;
   imageUrl?: string | null;
   shelfLifeDays?: number | null;
   parQty?: number | null;
+  /** Par amount, in the stock unit. */
   parUnit?: string | null;
   notes?: string | null;
   /** Link the new ingredient to this USDA food (a linked ingredient). */
@@ -748,11 +797,9 @@ function insertIngredient(ctx: Ctx, input: CreateIngredientInput): Ingredient {
       normalizedName: normalized,
       description: input.description ?? null,
       category: input.category ?? "other",
-      defaultUnit: normalizeUnitInput(input.defaultUnit, "unit"),
+      stockUnit: null,
       imageUrl: normalizeImageUrl(input.imageUrl),
       shelfLifeDays: input.shelfLifeDays ?? null,
-      parQty: requireParQty(input.parQty),
-      parUnit: normalizeUnitInput(input.parUnit, "unit"),
       notes: input.notes ?? null,
       // A deliberate choice: renaming never re-matches (a custom has no food, a linked one keeps its food).
       nutritionFdcId: fdcId,
@@ -788,7 +835,7 @@ function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientV
     }
   }
 
-  const row = insertIngredient(ctx, input);
+  const row = settleStock(ctx, insertIngredient(ctx, input), input);
   const seen = new Set<string>();
   for (const raw of input.aliases ?? []) {
     const alias = normalizeName(raw);
@@ -812,7 +859,7 @@ export interface UpdateIngredientInput {
   name?: string;
   description?: string | null;
   category?: IngredientCategory;
-  defaultUnit?: string | null;
+  stockUnit?: string | null;
   imageUrl?: string | null;
   shelfLifeDays?: number | null;
   parQty?: number | null;
@@ -878,16 +925,14 @@ function updateIngredientIn(
   }
   if (input.description !== undefined) patch.description = input.description;
   if (input.category !== undefined) patch.category = input.category;
-  if (input.defaultUnit !== undefined) {
-    patch.defaultUnit = normalizeUnitInput(input.defaultUnit, "unit");
-  }
   if (input.imageUrl !== undefined) patch.imageUrl = normalizeImageUrl(input.imageUrl);
   if (input.shelfLifeDays !== undefined) patch.shelfLifeDays = input.shelfLifeDays;
-  if (input.parQty !== undefined) patch.parQty = requireParQty(input.parQty);
-  if (input.parUnit !== undefined) {
-    patch.parUnit = normalizeUnitInput(input.parUnit, "unit");
-  }
   if (input.notes !== undefined) patch.notes = input.notes;
+  if (input.stockUnit !== undefined || input.parQty !== undefined || input.parUnit !== undefined) {
+    const stock = resolveStock(ctx, row, input);
+    patch.stockUnit = stock.stockUnit;
+    patch.parQty = stock.parQty;
+  }
 
   const fdcId = patch.nutritionFdcId === undefined ? row.nutritionFdcId : patch.nutritionFdcId;
   if (input.defaultPortion !== undefined) {
@@ -1002,7 +1047,7 @@ export interface MergeIngredientsResult {
     pantryItems: number;
     shoppingItems: number;
     rules: number;
-    conversions: number;
+    measures: number;
     aliases: number;
   };
 }
@@ -1097,11 +1142,23 @@ function movePantryRows(tx: Ctx, source: Ingredient, target: Ingredient, timesta
   let pantryItemsMoved = 0;
   for (const src of sourceRows) {
     if (!dst) {
-      tx.db
-        .update(pantryItems)
-        .set({ ingredientId: target.id, updatedAt: timestamp })
-        .where(eq(pantryItems.id, src.id))
-        .run();
+      // The row follows the ingredient into its stock unit when the units compare; otherwise it
+      // keeps its own unit and the review list flags it.
+      const stock = target.stockUnit ?? source.stockUnit ?? src.unit;
+      const set: Partial<typeof pantryItems.$inferInsert> = { ingredientId: target.id, updatedAt: timestamp };
+      if (src.qty !== null && src.unit !== stock) {
+        const converted =
+          convert(tx, src.qty, src.unit, stock, target.id) ?? convert(tx, src.qty, src.unit, stock, source.id);
+        if (converted !== null) {
+          set.qty = converted;
+          set.unit = stock;
+        }
+      }
+      tx.db.update(pantryItems).set(set).where(eq(pantryItems.id, src.id)).run();
+      if (target.stockUnit === null && stock !== null) {
+        target.stockUnit = stock;
+        tx.db.update(ingredients).set({ stockUnit: stock }).where(eq(ingredients.id, target.id)).run();
+      }
       pantryItemsMoved += 1;
       continue;
     }
@@ -1114,8 +1171,8 @@ function movePantryRows(tx: Ctx, source: Ingredient, target: Ingredient, timesta
       unit = src.unit;
       changed = true;
     } else if (qty !== null && src.qty !== null) {
-      // The source's own conversion rows are still in scope here (they move to the
-      // target later), so a conversion defined only on the source is still usable.
+      // The source's own measures are still in scope here (they move to the
+      // target later), so a measure defined only on the source is still usable.
       const converted =
         convert(tx, src.qty, src.unit, unit, target.id) ??
         convert(tx, src.qty, src.unit, unit, source.id);
@@ -1235,41 +1292,7 @@ export function mergeIngredients(
       )
       .run().changes;
 
-    const sourceConversions = tx.db
-      .select()
-      .from(unitConversions)
-      .where(
-        and(
-          eq(unitConversions.householdId, tx.householdId),
-          eq(unitConversions.ingredientId, source.id),
-        ),
-      )
-      .all();
-    let conversionsMoved = 0;
-    for (const row of sourceConversions) {
-      const clash = tx.db
-        .select({ id: unitConversions.id })
-        .from(unitConversions)
-        .where(
-          and(
-            eq(unitConversions.householdId, tx.householdId),
-            eq(unitConversions.ingredientId, target.id),
-            eq(unitConversions.fromUnit, row.fromUnit),
-            eq(unitConversions.toUnit, row.toUnit),
-          ),
-        )
-        .get();
-      if (clash) {
-        tx.db.delete(unitConversions).where(eq(unitConversions.id, row.id)).run();
-      } else {
-        tx.db
-          .update(unitConversions)
-          .set({ ingredientId: target.id })
-          .where(eq(unitConversions.id, row.id))
-          .run();
-        conversionsMoved += 1;
-      }
-    }
+    const measuresMoved = moveMeasures(tx, source.id, target.id);
 
     const sourceAliases = tx.db
       .select()
@@ -1325,7 +1348,7 @@ export function mergeIngredients(
         pantryItems: pantryItemsMoved,
         shoppingItems: shoppingItemsMoved,
         rules: rulesMoved,
-        conversions: conversionsMoved,
+        measures: measuresMoved,
         aliases: aliasesMoved,
       },
     };
@@ -1336,35 +1359,117 @@ export function mergeIngredients(
 // Review
 // ---------------------------------------------------------------------------
 
-export type ReviewReason = "unlinked" | "lint" | "custom_unreviewed";
+export type ReviewReason = "unlinked" | "lint" | "custom_unreviewed" | "unit";
 
 export interface ReviewItem {
   ingredient: IngredientView;
   reasons: ReviewReason[];
   /** Why the name fails the lint (when `reasons` has "lint"). */
   lint?: { reason: string; hint: string };
+  /** The units a recipe line or pantry row uses that convert to neither grams nor the stock unit (when `reasons` has "unit"). */
+  units?: string[];
   /** Ways to fix an unlinked or badly named ingredient: existing ingredients and USDA foods. */
   suggestions: Suggestion[];
 }
 
+interface UsedUnits {
+  recipe: Set<string | null>;
+  pantry: Set<string | null>;
+}
+
+/** The units recipe lines and pantry rows use, per ingredient (one ingredient, or all of the household). */
+function loadUsedUnits(ctx: Ctx, ingredientId?: string): Map<string, UsedUnits> {
+  const used = new Map<string, UsedUnits>();
+  const entry = (id: string): UsedUnits => {
+    let item = used.get(id);
+    if (!item) {
+      item = { recipe: new Set(), pantry: new Set() };
+      used.set(id, item);
+    }
+    return item;
+  };
+  const lines = ctx.db
+    .selectDistinct({ ingredientId: recipeIngredients.ingredientId, unit: recipeIngredients.unit })
+    .from(recipeIngredients)
+    .where(
+      and(
+        eq(recipeIngredients.householdId, ctx.householdId),
+        isNotNull(recipeIngredients.qty),
+        ingredientId === undefined ? undefined : eq(recipeIngredients.ingredientId, ingredientId),
+      ),
+    )
+    .all();
+  for (const line of lines) entry(line.ingredientId).recipe.add(line.unit);
+  const stock = ctx.db
+    .selectDistinct({ ingredientId: pantryItems.ingredientId, unit: pantryItems.unit })
+    .from(pantryItems)
+    .where(
+      and(
+        eq(pantryItems.householdId, ctx.householdId),
+        isNotNull(pantryItems.qty),
+        ingredientId === undefined ? undefined : eq(pantryItems.ingredientId, ingredientId),
+      ),
+    )
+    .all();
+  for (const item of stock) entry(item.ingredientId).pantry.add(item.unit);
+  return used;
+}
+
+/**
+ * Units in use that nothing converts: a recipe line unit that reaches neither grams nor the stock
+ * unit (so no nutrition, no pantry comparison), or a pantry row that is not in, or convertible
+ * into, the stock unit.
+ */
+function badUnitsFor(ctx: Ctx, row: Ingredient, used: UsedUnits | undefined): string[] {
+  if (used === undefined) return [];
+  const converter = converterFor(ctx, row.id);
+  const bad = new Set<string>();
+  for (const unit of used.recipe) {
+    if (converter(1, unit, "g") !== null) continue;
+    if (converter(1, unit, row.stockUnit ?? "count") !== null) continue;
+    bad.add(unit ?? "count");
+  }
+  if (row.stockUnit !== null) {
+    for (const unit of used.pantry) {
+      if (converter(1, unit, row.stockUnit) === null) bad.add(unit ?? "count");
+    }
+  }
+  return [...bad];
+}
+
 /** The review entry for an ingredient, or null when nothing needs attention. */
-function reviewItemFor(ctx: Ctx, row: Ingredient): ReviewItem | null {
+function reviewItemFor(ctx: Ctx, row: Ingredient, used?: UsedUnits): ReviewItem | null {
   const lint = lintIngredientName(row.name);
-  if (!row.needsReview && lint.ok) return null;
+  const units = badUnitsFor(ctx, row, used ?? loadUsedUnits(ctx, row.id).get(row.id));
+  if (!row.needsReview && lint.ok && units.length === 0) return null;
 
   const reasons: ReviewReason[] = [];
-  if (row.nutritionFdcId === null) reasons.push("unlinked");
+  if (row.nutritionFdcId === null && (row.needsReview || !lint.ok)) reasons.push("unlinked");
   if (!lint.ok) reasons.push("lint");
   if (row.needsReview) reasons.push("custom_unreviewed");
+  if (units.length > 0) reasons.push("unit");
   return {
     ingredient: ingredientView(ctx, row),
     reasons,
     ...(lint.ok ? {} : { lint: { reason: lint.reason, hint: lint.hint } }),
+    ...(units.length === 0 ? {} : { units }),
     suggestions:
-      row.nutritionFdcId === null || !lint.ok
+      reasons.includes("unlinked") || !lint.ok
         ? suggestForName(ctx, row.name, { excludeId: row.id })
         : [],
   };
+}
+
+/** Write the resolved stock unit and par of a new ingredient; returns the stored row. */
+function settleStock(ctx: Ctx, row: Ingredient, input: StockInput): Ingredient {
+  if (input.stockUnit === undefined && input.parQty === undefined && input.parUnit === undefined) return row;
+  const stock = resolveStock(ctx, row, input);
+  return ctx.db
+    .update(ingredients)
+    .set({ stockUnit: stock.stockUnit, parQty: stock.parQty })
+    .where(eq(ingredients.id, row.id))
+    .returning()
+    .get();
 }
 
 /**
@@ -1379,8 +1484,9 @@ export function listIngredientsForReview(ctx: Ctx): ReviewItem[] {
     .where(and(eq(ingredients.householdId, ctx.householdId), isNull(ingredients.archivedAt)))
     .orderBy(asc(ingredients.normalizedName))
     .all();
+  const used = loadUsedUnits(ctx);
   return rows.flatMap((row) => {
-    const item = reviewItemFor(ctx, row);
+    const item = reviewItemFor(ctx, row, used.get(row.id) ?? { recipe: new Set(), pantry: new Set() });
     return item === null ? [] : [item];
   });
 }
@@ -1719,7 +1825,15 @@ export function getIngredientDetail(ctx: Ctx, id: string): IngredientDetail {
       shoppingItems: shoppingUsage(ctx, row.id),
       rules,
     },
-    review: review === null ? null : { reasons: review.reasons, ...(review.lint === undefined ? {} : { lint: review.lint }), suggestions: review.suggestions },
+    review:
+      review === null
+        ? null
+        : {
+            reasons: review.reasons,
+            ...(review.lint === undefined ? {} : { lint: review.lint }),
+            ...(review.units === undefined ? {} : { units: review.units }),
+            suggestions: review.suggestions,
+          },
   };
 }
 

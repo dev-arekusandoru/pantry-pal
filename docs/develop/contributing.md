@@ -54,3 +54,11 @@ the system temporary directory, and writes the snapshot. Commit the new file.
 To use newer archives, change the URLs in `scripts/nutrition-data.ts` and the
 `NUTRITION_SOURCE` text in `src/services/foods.ts`. Run `pnpm test` afterward.
 The Docker image copies the `nutrition/` directory.
+
+Many Foundation foods list no portions. The script copies the portions of the
+closest SR Legacy food: the same food in the same form (raw, cooked, canned),
+found by matching the description words. It marks each copied portion as
+estimated and stores the source as `portionsFrom`. A food with no confident
+match keeps no portions. Hand-checked matches are in `BORROW_OVERRIDES` in the
+script. Run `pnpm nutrition:data --report` to list every match and every
+food left without portions.

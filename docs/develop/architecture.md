@@ -80,7 +80,9 @@ confirmation. `Button` has these variants:
   browser session counts as a web request; every other request counts as API.
 - Quantities can be unknown. Do not treat an unknown amount as zero.
 - Size units (`small`, `medium`, `large`, `extra-large`, `jumbo`) are count units. An ingredient can set `defaultPortion` to a size that a bare count means.
-- Use defined unit conversions. Do not guess a weight from a volume.
+- One converter (`convert` in `src/services/units.ts`) serves nutrition, the pantry, cooking, shopping demand, and the review list. It uses the built-in unit tables first. Then it goes through grams with the ingredient's measures: the linked USDA food's portions, overridden by the household's `ingredient_measure` rows. It never guesses across families, so a volume with no density does not convert.
+- Each ingredient has one stock unit (`stock_unit`). Pantry amounts, par levels, and shopping quantities are stored in it. A write in another unit is converted first. A unit that the ingredient does not accept is `unprocessable` with `details.unresolvedUnits`.
+- USDA measures are derived at read time and are never copied into the database. A re-link changes them.
 
 ## Schema changes
 

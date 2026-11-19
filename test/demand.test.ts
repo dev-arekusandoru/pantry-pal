@@ -20,7 +20,7 @@ import { makeTestCtx } from "./helpers.js";
 interface IngredientOptions {
   name: string;
   category?: IngredientCategory;
-  defaultUnit?: string | null;
+  stockUnit?: string | null;
 }
 
 function addIngredient(ctx: Ctx, options: IngredientOptions): string {
@@ -34,7 +34,7 @@ function addIngredient(ctx: Ctx, options: IngredientOptions): string {
       name: options.name,
       normalizedName: normalizeName(options.name),
       category: options.category ?? "other",
-      defaultUnit: options.defaultUnit ?? null,
+      stockUnit: options.stockUnit ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
     })
@@ -174,7 +174,7 @@ describe("computeDemand", () => {
     const beef = addIngredient(ctx, {
       name: "Ground beef",
       category: "protein",
-      defaultUnit: "lb",
+      stockUnit: "lb",
     });
 
     const chili = addRecipe(ctx, { title: "Slow Cooker Chili", servings: 4 });
@@ -215,9 +215,9 @@ describe("computeDemand", () => {
     ]);
   });
 
-  it("prefers the pantry row unit as the target unit", () => {
+  it("targets the ingredient's stock unit", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: 8, unit: "oz", status: "on_hand" });
 
     const recipe = addRecipe(ctx, { title: "Chili", servings: 4 });
@@ -231,14 +231,14 @@ describe("computeDemand", () => {
     });
 
     const demand = computeDemand(ctx, { mealPlanId: plan });
-    expect(demand[0]!.unit).toBe("oz");
-    expect(demand[0]!.qty).toBe(16);
+    expect(demand[0]!.unit).toBe("lb");
+    expect(demand[0]!.qty).toBe(1);
   });
 
   it("excludes optional ingredients unless includeOptional is set", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
-    const cheese = addIngredient(ctx, { name: "Cheddar", category: "dairy", defaultUnit: "oz" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
+    const cheese = addIngredient(ctx, { name: "Cheddar", category: "dairy", stockUnit: "oz" });
 
     const recipe = addRecipe(ctx, { title: "Cheeseburger bowl", servings: 2 });
     addRecipeLine(ctx, { recipeId: recipe, ingredientId: beef, qty: 1, unit: "lb", position: 0 });
@@ -297,7 +297,7 @@ describe("computeDemand", () => {
 
   it("ignores done cooks and honours plan and cook-date filters", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     const recipe = addRecipe(ctx, { title: "Beef", servings: 1 });
     addRecipeLine(ctx, { recipeId: recipe, ingredientId: beef, qty: 1, unit: "lb", position: 0 });
 
@@ -385,7 +385,7 @@ describe("computeDemand", () => {
 describe("computeAvailability", () => {
   it("subtracts committed demand from known stock", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: 0.5, unit: "lb", status: "on_hand" });
 
     const recipe = addRecipe(ctx, { title: "Chili", servings: 4 });
@@ -411,7 +411,7 @@ describe("computeAvailability", () => {
 
   it("marks unknown stock as incomparable without guessing", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: null, unit: "lb", status: "on_hand" });
 
     const recipe = addRecipe(ctx, { title: "Chili", servings: 4 });
@@ -436,7 +436,7 @@ describe("computeAvailability", () => {
 
   it("includes stocked ingredients with no demand as fully available", () => {
     const { ctx } = makeTestCtx();
-    const rice = addIngredient(ctx, { name: "Rice", category: "pantry", defaultUnit: "lb" });
+    const rice = addIngredient(ctx, { name: "Rice", category: "pantry", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: rice, qty: 3, unit: "lb", status: "on_hand" });
 
     const line = computeAvailability(ctx).find((candidate) => candidate.ingredientId === rice)!;
@@ -470,13 +470,13 @@ describe("computeAvailability", () => {
     expect(line.available).toBeNull();
   });
 
-  it("uses the stock row's unit for availability", () => {
+  it("reports availability in the stock unit", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: 16, unit: "oz", status: "on_hand" });
 
     const line = computeAvailability(ctx).find((candidate) => candidate.ingredientId === beef)!;
-    expect(line.unit).toBe("oz");
-    expect(line.onHand).toBe(16);
+    expect(line.unit).toBe("lb");
+    expect(line.onHand).toBe(1);
   });
 });

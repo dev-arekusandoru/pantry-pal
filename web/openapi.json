@@ -68,7 +68,7 @@
               "string",
               "null"
             ],
-            "description": "Target unit: pantry stock unit, else ingredient default unit, else the most common line unit."
+            "description": "Target unit: the ingredient's stock unit, else the most common line unit."
           },
           "qty": {
             "type": [
@@ -667,7 +667,7 @@
               "string",
               "null"
             ],
-            "description": "Unit for `qty`."
+            "description": "Unit for `qty`. For an ingredient item it must be valid for the ingredient and is converted into its stock unit; free-text items keep the text as written."
           },
           "note": {
             "type": "string",
@@ -1068,12 +1068,19 @@
                   "$ref": "#/components/schemas/IngredientAlias"
                 }
               },
-              "conversions": {
+              "measures": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/UnitConversion"
+                  "$ref": "#/components/schemas/Measure"
                 },
-                "description": "Custom conversions for this ingredient."
+                "description": "What one unit weighs: the linked USDA food's measures, overridden by your own."
+              },
+              "units": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Valid units for pickers: the stock unit first, then the measures, then the built-in units."
               },
               "pantry": {
                 "type": "array",
@@ -1086,7 +1093,8 @@
             "required": [
               "nutrition",
               "aliases",
-              "conversions",
+              "measures",
+              "units",
               "pantry"
             ]
           }
@@ -1215,11 +1223,24 @@
           "grams": {
             "type": "number",
             "description": "Grams in one such portion."
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The app unit this portion measures (\"cup\", \"tbsp\", \"large\", \"clove\"...); null when the label names no unit."
+          },
+          "estimated": {
+            "type": "boolean",
+            "description": "True when the portion is borrowed from a similar USDA food, not measured on this one."
           }
         },
         "required": [
           "label",
-          "grams"
+          "grams",
+          "unit",
+          "estimated"
         ]
       },
       "IngredientAlias": {
@@ -1244,31 +1265,36 @@
           "createdAt"
         ]
       },
-      "UnitConversion": {
+      "Measure": {
         "type": "object",
         "properties": {
-          "id": {
+          "unit": {
             "type": "string",
-            "description": "Conversion id (uc_...)."
+            "description": "Normalized unit, e.g. \"cup\", \"clove\", \"can\", \"handful\"."
           },
-          "ingredientId": {
+          "grams": {
+            "type": "number",
+            "description": "Weight of ONE unit in grams."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "usda",
+              "usda_estimated",
+              "user"
+            ],
+            "description": "usda = a portion of the linked USDA food; usda_estimated = a portion borrowed from a similar USDA food; user = your own measure (it overrides the USDA one for the same unit)."
+          },
+          "estimated": {
+            "type": "boolean",
+            "description": "True when the weight is borrowed from a similar food (source usda_estimated)."
+          },
+          "label": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Owning ingredient; null = household-global conversion."
-          },
-          "fromUnit": {
-            "type": "string",
-            "description": "Normalized source unit."
-          },
-          "toUnit": {
-            "type": "string",
-            "description": "Normalized target unit."
-          },
-          "factor": {
-            "type": "number",
-            "description": "1 fromUnit = factor toUnit."
+            "description": "The USDA portion label (\"cup, chopped\"); null for your own measures."
           },
           "note": {
             "type": [
@@ -1276,18 +1302,22 @@
               "null"
             ]
           },
-          "createdAt": {
-            "type": "string"
+          "usdaGrams": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "On a user measure that overrides a USDA one: the USDA weight, so a client can offer a reset."
           }
         },
         "required": [
-          "id",
-          "ingredientId",
-          "fromUnit",
-          "toUnit",
-          "factor",
+          "unit",
+          "grams",
+          "source",
+          "estimated",
+          "label",
           "note",
-          "createdAt"
+          "usdaGrams"
         ]
       },
       "IngredientStock": {
@@ -1373,12 +1403,12 @@
             ],
             "description": "Ingredient category used for grouping and shopping aisles."
           },
-          "defaultUnit": {
+          "stockUnit": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Unit used for stock and shopping by default."
+            "description": "The one unit this ingredient is stocked in. Pantry amounts, par and shopping quantities are stored in it. Null until the first pantry write sets it."
           },
           "imageUrl": {
             "type": [
@@ -1399,13 +1429,7 @@
               "number",
               "null"
             ],
-            "description": "Desired minimum stock."
-          },
-          "parUnit": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "description": "Desired minimum stock, in the stock unit."
           },
           "notes": {
             "type": [
@@ -1444,11 +1468,10 @@
           "normalizedName",
           "description",
           "category",
-          "defaultUnit",
+          "stockUnit",
           "imageUrl",
           "shelfLifeDays",
           "parQty",
-          "parUnit",
           "notes",
           "defaultPortion",
           "needsReview",
@@ -1513,12 +1536,12 @@
             },
             "description": "Alternate names (\"onion\", \"yellow onions\"); stored lowercase."
           },
-          "defaultUnit": {
+          "stockUnit": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Unit used for stock and shopping, e.g. \"g\" or \"can\"."
+            "description": "The one unit the ingredient is stocked in, e.g. \"g\" or \"can\". It must be a built-in unit or one the ingredient has a measure for. Unset: the first pantry write sets it."
           },
           "imageUrl": {
             "type": [
@@ -1540,14 +1563,14 @@
               "null"
             ],
             "minimum": 0,
-            "description": "Desired minimum stock."
+            "description": "Desired minimum stock, in the stock unit."
           },
           "parUnit": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Unit of parQty."
+            "description": "Optional unit `parQty` is written in; it is converted into the stock unit."
           },
           "notes": {
             "type": [
@@ -1589,7 +1612,7 @@
                   ],
                   "description": "Ingredient category used for grouping and shopping aisles."
                 },
-                "defaultUnit": {
+                "stockUnit": {
                   "type": [
                     "string",
                     "null"
@@ -1628,7 +1651,7 @@
                 "id",
                 "name",
                 "category",
-                "defaultUnit",
+                "stockUnit",
                 "defaultPortion",
                 "aliases",
                 "linked",
@@ -1707,9 +1730,10 @@
               "enum": [
                 "unlinked",
                 "lint",
-                "custom_unreviewed"
+                "custom_unreviewed",
+                "unit"
               ],
-              "description": "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet."
+              "description": "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet; unit = a recipe line or pantry row uses a unit that converts to neither grams nor the stock unit (add a measure)."
             }
           },
           "lint": {
@@ -1727,6 +1751,13 @@
               "hint"
             ],
             "description": "Present when `reasons` has lint."
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Present when `reasons` has unit: the units that do not convert."
           },
           "suggestions": {
             "type": "array",
@@ -1873,9 +1904,10 @@
                       "enum": [
                         "unlinked",
                         "lint",
-                        "custom_unreviewed"
+                        "custom_unreviewed",
+                        "unit"
                       ],
-                      "description": "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet."
+                      "description": "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet; unit = a recipe line or pantry row uses a unit that converts to neither grams nor the stock unit (add a measure)."
                     }
                   },
                   "lint": {
@@ -1892,6 +1924,13 @@
                       "reason",
                       "hint"
                     ]
+                  },
+                  "units": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Present when `reasons` has unit: the units that do not convert."
                   },
                   "suggestions": {
                     "type": "array",
@@ -2144,11 +2183,12 @@
             ],
             "description": "Ingredient category used for grouping and shopping aisles."
           },
-          "defaultUnit": {
+          "stockUnit": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Changes the stock unit and converts the pantry amount and par into it; 422 when they do not convert. null clears it."
           },
           "imageUrl": {
             "type": [
@@ -2169,13 +2209,15 @@
               "number",
               "null"
             ],
-            "minimum": 0
+            "minimum": 0,
+            "description": "Desired minimum stock, in the stock unit."
           },
           "parUnit": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Optional unit `parQty` is written in; it is converted into the stock unit."
           },
           "notes": {
             "type": [
@@ -2244,7 +2286,7 @@
               "rules": {
                 "type": "integer"
               },
-              "conversions": {
+              "measures": {
                 "type": "integer"
               },
               "aliases": {
@@ -2256,7 +2298,7 @@
               "pantryItems",
               "shoppingItems",
               "rules",
-              "conversions",
+              "measures",
               "aliases"
             ]
           }
@@ -2403,13 +2445,13 @@
         },
         "description": "Becomes the ingredient of every recipe line that used this one."
       },
-      "UnitConversionList": {
+      "MeasureList": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UnitConversion"
+              "$ref": "#/components/schemas/Measure"
             }
           }
         },
@@ -2417,30 +2459,13 @@
           "items"
         ]
       },
-      "CreateUnitConversion": {
+      "SetMeasure": {
         "type": "object",
         "properties": {
-          "ingredientId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Owning ingredient; omit or null for a household-global conversion."
-          },
-          "fromUnit": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Source unit, e.g. \"can\"."
-          },
-          "toUnit": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Target unit, e.g. \"oz\"."
-          },
-          "factor": {
+          "grams": {
             "type": "number",
             "exclusiveMinimum": 0,
-            "description": "1 fromUnit = factor toUnit."
+            "description": "Weight of ONE unit in grams."
           },
           "note": {
             "type": [
@@ -2450,9 +2475,7 @@
           }
         },
         "required": [
-          "fromUnit",
-          "toUnit",
-          "factor"
+          "grams"
         ]
       },
       "ConvertUnitResult": {
@@ -2510,7 +2533,7 @@
           },
           "ingredientId": {
             "type": "string",
-            "description": "Use this ingredient's custom conversions (e.g. can → oz)."
+            "description": "Use this ingredient's measures (USDA portions and your own) to cross families, e.g. cup → g or can → oz."
           }
         },
         "required": [
@@ -2599,14 +2622,14 @@
               "number",
               "null"
             ],
-            "description": "Cached quantity; null = present but unknown."
+            "description": "Cached quantity, in the ingredient's stock unit; null = present but unknown."
           },
           "unit": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Normalized unit."
+            "description": "The ingredient's stock unit."
           },
           "qtyApprox": {
             "type": "boolean"
@@ -2731,10 +2754,6 @@
           },
           "movement": {
             "$ref": "#/components/schemas/StockMovement"
-          },
-          "warning": {
-            "type": "string",
-            "description": "e.g. \"units not comparable\"."
           }
         },
         "required": [
@@ -2795,7 +2814,7 @@
               "string",
               "null"
             ],
-            "description": "Unit, e.g. \"lb\", \"g\", \"can\"."
+            "description": "Unit of `qty`, e.g. \"lb\", \"g\", \"can\". Converted into the ingredient's stock unit (the first write sets it). 422 when the unit is unknown for the ingredient or does not convert."
           },
           "status": {
             "type": "string",
@@ -2924,7 +2943,7 @@
               "string",
               "null"
             ],
-            "description": "Unit of the delta; defaults to the item unit."
+            "description": "Unit of the delta; defaults to the stock unit. Converted into the stock unit; 422 when unknown or not convertible."
           },
           "note": {
             "type": [
@@ -4194,7 +4213,7 @@
               "string",
               "null"
             ],
-            "description": "Unit as written (\"Tbsp\", \"pounds\", \"large\"); normalized to a canonical unit. Sizes (small, medium, large, extra-large, jumbo) are count units: \"2 large eggs\" is qty 2, unit \"large\"."
+            "description": "Unit as written (\"Tbsp\", \"pounds\", \"large\", \"cloves\"); normalized to a canonical unit. It must be a built-in mass, volume or count unit, a size (small, medium, large, extra-large, jumbo) or a unit the ingredient has a measure for (see GET /ingredients/{id}/measures); anything else is a 422 with suggestions. Sizes are count units: \"2 large eggs\" is qty 2, unit \"large\"."
           },
           "prepNote": {
             "type": [
@@ -5030,6 +5049,10 @@
               "no_conversion"
             ],
             "description": "ok = counted; optional = excluded; no_match = no USDA food; no_quantity = to taste; no_conversion = amount not convertible to grams."
+          },
+          "hint": {
+            "type": "string",
+            "description": "Present on no_conversion: what to add so the line counts, e.g. \"Add a measure: 1 cup = ? g\"."
           }
         },
         "required": [
@@ -8466,7 +8489,7 @@
           "ingredients"
         ],
         "summary": "List ingredients",
-        "description": "Every ingredient with aliases, custom conversions and pantry stock.",
+        "description": "Every ingredient with aliases, measures, stock unit and pantry stock.",
         "parameters": [
           {
             "schema": {
@@ -8654,7 +8677,7 @@
           "ingredients"
         ],
         "summary": "Get an ingredient",
-        "description": "The ingredient with aliases, conversions and pantry stock, plus where it is used (recipes, pantry, items on open shopping lists, dietary rules) and why it needs attention, if it does.",
+        "description": "The ingredient with aliases, measures and pantry stock, plus where it is used (recipes, pantry, items on open shopping lists, dietary rules) and why it needs attention, if it does.",
         "parameters": [
           {
             "schema": {
@@ -8829,7 +8852,7 @@
           "ingredients"
         ],
         "summary": "Merge an ingredient into another",
-        "description": "Repoints recipes, pantry stock, shopping items, rules and conversions to `intoId`, turns the source name into an alias of the target and deletes the source.",
+        "description": "Repoints recipes, pantry stock, shopping items, rules and your measures to `intoId`, turns the source name into an alias of the target and deletes the source.",
         "parameters": [
           {
             "schema": {
@@ -8939,91 +8962,18 @@
         }
       }
     },
-    "/api/v1/unit-conversions": {
+    "/api/v1/ingredients/{id}/measures": {
       "get": {
         "tags": [
           "units"
         ],
-        "summary": "List custom unit conversions",
+        "summary": "List an ingredient's measures",
+        "description": "What one unit of the ingredient weighs, in grams: the linked USDA food's portions (derived at read time, so they follow a re-link), overridden by your own measures for the same unit. `source` tells them apart; `estimated` marks portions borrowed from a similar USDA food.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Restrict to one ingredient's conversions."
-            },
-            "required": false,
-            "description": "Restrict to one ingredient's conversions.",
-            "name": "ingredientId",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "enum": [
-                "true",
-                "false"
-              ],
-              "description": "With ingredientId, also include household-global rows."
-            },
-            "required": false,
-            "description": "With ingredientId, also include household-global rows.",
-            "name": "includeGlobal",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Stored conversions",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnitConversionList"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "units"
-        ],
-        "summary": "Create a custom unit conversion",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUnitConversion"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created conversion",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnitConversion"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/unit-conversions/{id}": {
-      "delete": {
-        "tags": [
-          "units"
-        ],
-        "summary": "Delete a custom unit conversion",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "example": "uc_4m8n2p"
+              "example": "ing_2f7k9m"
             },
             "required": true,
             "name": "id",
@@ -9031,8 +8981,100 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Effective measures",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasureList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingredients/{id}/measures/{unit}": {
+      "put": {
+        "tags": [
+          "units"
+        ],
+        "summary": "Set your measure for a unit",
+        "description": "Creates or updates your measure for the unit: the weight of ONE unit in grams. It overrides the USDA measure for the same unit. A volume unit defines the density (1 cup = 30 g), so every volume unit converts. Mass units (g, kg, oz, lb) are fixed and cannot be set. The unit may be new (\"handful\"); it is valid for the ingredient from then on.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "ing_2f7k9m"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "cup"
+            },
+            "required": true,
+            "name": "unit",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMeasure"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The effective measure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Measure"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "units"
+        ],
+        "summary": "Delete your measure for a unit",
+        "description": "Deletes your own measure; the USDA measure for the unit (if any) shows again. 404 when you have no measure for the unit (USDA measures cannot be deleted).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "ing_2f7k9m"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "cup"
+            },
+            "required": true,
+            "name": "unit",
+            "in": "path"
+          }
+        ],
+        "responses": {
           "204": {
-            "description": "Conversion deleted"
+            "description": "Measure deleted"
           }
         }
       }
@@ -9043,7 +9085,7 @@
           "units"
         ],
         "summary": "Convert a quantity between units",
-        "description": "Built-in mass/volume/count tables, then per-ingredient conversions, then household-global conversions. Incomparable units return qty=null and comparable=false rather than a guess.",
+        "description": "The same converter pantry, cooking, shopping and nutrition use: built-in mass/volume/count tables, then through grams with the ingredient's measures (when `ingredientId` is sent). Incomparable units return qty=null and comparable=false rather than a guess.",
         "requestBody": {
           "required": true,
           "content": {

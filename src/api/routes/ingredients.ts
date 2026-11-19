@@ -3,11 +3,8 @@ import type { AppEnv } from "../../auth/middleware.js";
 import {
   addAliasSchema,
   aliasParamsSchema,
-  conversionListSchema,
-  conversionParamsSchema,
   convertUnitResultSchema,
   convertUnitSchema,
-  createConversionSchema,
   createIngredientSchema,
   findIngredientsQuerySchema,
   findIngredientsResultSchema,
@@ -17,14 +14,16 @@ import {
   ingredientParamsSchema,
   ingredientViewSchema,
   ingredientUsageCountsSchema,
-  listConversionsQuerySchema,
+  measureListSchema,
+  measureParamsSchema,
+  measureSchema,
   listIngredientsQuerySchema,
   mergeIngredientSchema,
   mergeResultSchema,
   reviewListSchema,
   splitIngredientSchema,
   splitResultSchema,
-  unitConversionSchema,
+  setMeasureSchema,
   updateIngredientSchema,
 } from "../../schemas/ingredients.js";
 import {
@@ -42,13 +41,8 @@ import {
   splitIngredient,
   updateIngredient,
 } from "../../services/ingredients.js";
-import {
-  convert,
-  createConversion,
-  deleteConversion,
-  listConversions,
-  normalizeUnit,
-} from "../../services/units.js";
+import { canonicalUnit } from "../../services/unitNames.js";
+import { convert, deleteMeasure, listMeasures, setMeasure } from "../../services/units.js";
 
 const aliasResultSchema = z
   .object({ alias: ingredientAliasSchema })
@@ -63,7 +57,7 @@ const listIngredientsRoute = createRoute({
   path: "/ingredients",
   tags: ["ingredients"],
   summary: "List ingredients",
-  description: "Every ingredient with aliases, custom conversions and pantry stock.",
+  description: "Every ingredient with aliases, measures, stock unit and pantry stock.",
   request: { query: listIngredientsQuerySchema },
   responses: {
     200: {
@@ -230,7 +224,7 @@ const getIngredientRoute = createRoute({
   tags: ["ingredients"],
   summary: "Get an ingredient",
   description:
-    "The ingredient with aliases, conversions and pantry stock, plus where it is used (recipes, pantry, " +
+    "The ingredient with aliases, measures and pantry stock, plus where it is used (recipes, pantry, " +
     "items on open shopping lists, dietary rules) and why it needs attention, if it does.",
   request: { params: ingredientParamsSchema },
   responses: {
@@ -333,7 +327,7 @@ const mergeIngredientsRoute = createRoute({
   tags: ["ingredients"],
   summary: "Merge an ingredient into another",
   description:
-    "Repoints recipes, pantry stock, shopping items, rules and conversions to `intoId`, " +
+    "Repoints recipes, pantry stock, shopping items, rules and your measures to `intoId`, " +
     "turns the source name into an alias of the target and deletes the source.",
   request: {
     params: ingredientParamsSchema,
@@ -357,65 +351,75 @@ const mergeIngredientsHandler: RouteHandler<typeof mergeIngredientsRoute, AppEnv
   );
 
 // ---------------------------------------------------------------------------
-// Unit conversions
+// Measures and unit conversion
 // ---------------------------------------------------------------------------
 
-const listConversionsRoute = createRoute({
+const listMeasuresRoute = createRoute({
   method: "get",
-  path: "/unit-conversions",
+  path: "/ingredients/{id}/measures",
   tags: ["units"],
-  summary: "List custom unit conversions",
-  request: { query: listConversionsQuerySchema },
+  summary: "List an ingredient's measures",
+  description:
+    "What one unit of the ingredient weighs, in grams: the linked USDA food's portions (derived at read time, " +
+    "so they follow a re-link), overridden by your own measures for the same unit. `source` tells them apart; " +
+    "`estimated` marks portions borrowed from a similar USDA food.",
+  request: { params: ingredientParamsSchema },
   responses: {
     200: {
-      description: "Stored conversions",
-      content: { "application/json": { schema: conversionListSchema } },
+      description: "Effective measures",
+      content: { "application/json": { schema: measureListSchema } },
     },
   },
 });
 
-const listConversionsHandler: RouteHandler<typeof listConversionsRoute, AppEnv> = (c) => {
-  const query = c.req.valid("query");
-  const items = listConversions(c.var.ctx, {
-    ...(query.ingredientId === undefined ? {} : { ingredientId: query.ingredientId }),
-    includeGlobal: query.includeGlobal === "true",
-  });
-  return c.json({ items }, 200);
-};
+const listMeasuresHandler: RouteHandler<typeof listMeasuresRoute, AppEnv> = (c) =>
+  c.json({ items: listMeasures(c.var.ctx, c.req.valid("param").id) }, 200);
 
-const createConversionRoute = createRoute({
-  method: "post",
-  path: "/unit-conversions",
+const setMeasureRoute = createRoute({
+  method: "put",
+  path: "/ingredients/{id}/measures/{unit}",
   tags: ["units"],
-  summary: "Create a custom unit conversion",
+  summary: "Set your measure for a unit",
+  description:
+    "Creates or updates your measure for the unit: the weight of ONE unit in grams. It overrides the USDA " +
+    "measure for the same unit. A volume unit defines the density (1 cup = 30 g), so every volume unit converts. " +
+    "Mass units (g, kg, oz, lb) are fixed and cannot be set. The unit may be new (\"handful\"); it is valid for " +
+    "the ingredient from then on.",
   request: {
+    params: measureParamsSchema,
     body: {
-      content: { "application/json": { schema: createConversionSchema } },
+      content: { "application/json": { schema: setMeasureSchema } },
       required: true,
     },
   },
   responses: {
-    201: {
-      description: "Created conversion",
-      content: { "application/json": { schema: unitConversionSchema } },
+    200: {
+      description: "The effective measure",
+      content: { "application/json": { schema: measureSchema } },
     },
   },
 });
 
-const createConversionHandler: RouteHandler<typeof createConversionRoute, AppEnv> = (c) =>
-  c.json(createConversion(c.var.ctx, c.req.valid("json")), 201);
+const setMeasureHandler: RouteHandler<typeof setMeasureRoute, AppEnv> = (c) => {
+  const { id, unit } = c.req.valid("param");
+  return c.json(setMeasure(c.var.ctx, id, unit, c.req.valid("json")), 200);
+};
 
-const deleteConversionRoute = createRoute({
+const deleteMeasureRoute = createRoute({
   method: "delete",
-  path: "/unit-conversions/{id}",
+  path: "/ingredients/{id}/measures/{unit}",
   tags: ["units"],
-  summary: "Delete a custom unit conversion",
-  request: { params: conversionParamsSchema },
-  responses: { 204: { description: "Conversion deleted" } },
+  summary: "Delete your measure for a unit",
+  description:
+    "Deletes your own measure; the USDA measure for the unit (if any) shows again. 404 when you have no " +
+    "measure for the unit (USDA measures cannot be deleted).",
+  request: { params: measureParamsSchema },
+  responses: { 204: { description: "Measure deleted" } },
 });
 
-const deleteConversionHandler: RouteHandler<typeof deleteConversionRoute, AppEnv> = (c) => {
-  deleteConversion(c.var.ctx, c.req.valid("param").id);
+const deleteMeasureHandler: RouteHandler<typeof deleteMeasureRoute, AppEnv> = (c) => {
+  const { id, unit } = c.req.valid("param");
+  deleteMeasure(c.var.ctx, id, unit);
   return c.body(null, 204);
 };
 
@@ -425,8 +429,9 @@ const convertUnitRoute = createRoute({
   tags: ["units"],
   summary: "Convert a quantity between units",
   description:
-    "Built-in mass/volume/count tables, then per-ingredient conversions, then household-global " +
-    "conversions. Incomparable units return qty=null and comparable=false rather than a guess.",
+    "The same converter pantry, cooking, shopping and nutrition use: built-in mass/volume/count tables, then " +
+    "through grams with the ingredient's measures (when `ingredientId` is sent). Incomparable units return " +
+    "qty=null and comparable=false rather than a guess.",
   request: {
     body: {
       content: { "application/json": { schema: convertUnitSchema } },
@@ -447,8 +452,8 @@ const convertUnitHandler: RouteHandler<typeof convertUnitRoute, AppEnv> = (c) =>
   return c.json(
     {
       qty,
-      fromUnit: normalizeUnit(input.from),
-      toUnit: normalizeUnit(input.to),
+      fromUnit: canonicalUnit(input.from),
+      toUnit: canonicalUnit(input.to),
       comparable: qty !== null,
     },
     200,
@@ -470,8 +475,8 @@ export function registerIngredientRoutes(app: OpenAPIHono<AppEnv>): void {
   app.openapi(mergeIngredientsRoute, mergeIngredientsHandler);
   app.openapi(acceptIngredientRoute, acceptIngredientHandler);
   app.openapi(splitIngredientRoute, splitIngredientHandler);
-  app.openapi(listConversionsRoute, listConversionsHandler);
-  app.openapi(createConversionRoute, createConversionHandler);
-  app.openapi(deleteConversionRoute, deleteConversionHandler);
+  app.openapi(listMeasuresRoute, listMeasuresHandler);
+  app.openapi(setMeasureRoute, setMeasureHandler);
+  app.openapi(deleteMeasureRoute, deleteMeasureHandler);
   app.openapi(convertUnitRoute, convertUnitHandler);
 }

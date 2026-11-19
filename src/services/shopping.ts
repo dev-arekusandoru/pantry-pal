@@ -28,7 +28,7 @@ import {
 } from "./demand.js";
 import { findIngredientByName } from "./ingredients.js";
 import { applyMovement } from "./pantry.js";
-import { convert } from "./units.js";
+import { convertOrThrow, validateUnit } from "./units.js";
 
 export type ShoppingListRow = typeof shoppingLists.$inferSelect;
 /** A list as exposed to callers: the row without internals, plus the derived `stale` flag. */
@@ -454,7 +454,7 @@ interface ResolvedItemTarget {
   ingredientId: string | null;
   name: string;
   category: IngredientCategory;
-  defaultUnit: string | null;
+  stockUnit: string | null;
 }
 
 function resolveItemTarget(ctx: Ctx, input: AddItemInput): ResolvedItemTarget {
@@ -483,7 +483,7 @@ function resolveItemTarget(ctx: Ctx, input: AddItemInput): ResolvedItemTarget {
       ingredientId: ingredient.id,
       name: explicitName === "" ? ingredient.name : explicitName,
       category: input.category ?? ingredient.category,
-      defaultUnit: ingredient.defaultUnit,
+      stockUnit: ingredient.stockUnit,
     };
   }
 
@@ -497,7 +497,7 @@ function resolveItemTarget(ctx: Ctx, input: AddItemInput): ResolvedItemTarget {
       ingredientId: ingredient.id,
       name: explicitName === "" ? ingredient.name : explicitName,
       category: input.category ?? ingredient.category,
-      defaultUnit: ingredient.defaultUnit,
+      stockUnit: ingredient.stockUnit,
     };
   }
 
@@ -505,8 +505,37 @@ function resolveItemTarget(ctx: Ctx, input: AddItemInput): ResolvedItemTarget {
     ingredientId: null,
     name: displayName,
     category: input.category ?? "other",
-    defaultUnit: null,
+    stockUnit: null,
   };
+}
+
+/** A unit for an item: validated against a linked ingredient, free text otherwise. */
+function itemUnitFor(ctx: Ctx, ingredientId: string | null, raw: string | null | undefined): string | null {
+  if (raw === null || raw === undefined) return null;
+  return ingredientId === null ? normalizeUnitLoose(raw) : validateUnit(ctx, ingredientId, raw);
+}
+
+/**
+ * A linked item's amount in its ingredient's stock unit. Free-text items, ingredients without a
+ * stock unit and amounts without a quantity keep their own unit; a unit that cannot convert is a 422.
+ */
+function inStockUnit(
+  ctx: Ctx,
+  ingredientId: string | null,
+  qty: number | null,
+  unit: string | null,
+): { qty: number | null; unit: string | null } {
+  if (ingredientId === null) return { qty, unit };
+  const stockUnit =
+    ctx.db
+      .select({ stockUnit: ingredients.stockUnit })
+      .from(ingredients)
+      .where(and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.id, ingredientId)))
+      .get()?.stockUnit ?? null;
+  if (stockUnit === null) return { qty, unit };
+  if (qty === null) return { qty, unit: unit ?? stockUnit };
+  if (unit === null || unit === stockUnit) return { qty, unit: stockUnit };
+  return { qty: convertOrThrow(ctx, qty, unit, stockUnit, ingredientId, "the shopping quantity"), unit: stockUnit };
 }
 
 function nextPosition(items: ShoppingListItemRow[]): number {
@@ -521,13 +550,14 @@ function insertItem(
   timestamp: string,
 ): ShoppingListItemRow {
   const target = resolveItemTarget(ctx, input);
-  const qty = input.qty ?? null;
-  const unit =
-    input.unit !== undefined && input.unit !== null
-      ? normalizeUnitLoose(input.unit)
-      : qty === null
-        ? null
-        : normalizeUnitLoose(target.defaultUnit);
+  const qtyGiven = input.qty ?? null;
+  const given = itemUnitFor(ctx, target.ingredientId, input.unit);
+  const { qty, unit } = inStockUnit(
+    ctx,
+    target.ingredientId,
+    qtyGiven,
+    given ?? (qtyGiven === null ? null : normalizeUnitLoose(target.stockUnit)),
+  );
 
   return ctx.db
     .insert(shoppingListItems)
@@ -711,7 +741,7 @@ export function updateItem(
 ): ShoppingListItem {
   const list = loadList(ctx, listId);
   assertMutable(list);
-  loadItem(ctx, listId, itemId);
+  const item = loadItem(ctx, listId, itemId);
 
   const patch: Partial<typeof shoppingListItems.$inferInsert> = {};
   if (input.name !== undefined) {
@@ -721,12 +751,24 @@ export function updateItem(
   }
   if (input.category !== undefined) patch.category = input.category;
   if (input.qty !== undefined) patch.qty = input.qty;
-  if (input.unit !== undefined) patch.unit = normalizeUnitLoose(input.unit);
+  if (input.unit !== undefined) patch.unit = itemUnitFor(ctx, item.ingredientId, input.unit);
+  if (item.ingredientId !== null && (input.qty !== undefined || input.unit !== undefined)) {
+    const settled = inStockUnit(
+      ctx,
+      item.ingredientId,
+      patch.qty !== undefined ? patch.qty : item.qty,
+      patch.unit !== undefined ? patch.unit : item.unit,
+    );
+    patch.qty = settled.qty;
+    patch.unit = settled.unit;
+  }
   if (input.note !== undefined) patch.note = input.note;
   if (input.purposeNote !== undefined) patch.purposeNote = input.purposeNote;
   if (input.needsCheck !== undefined) patch.needsCheck = input.needsCheck;
   if (input.actualQty !== undefined) patch.actualQty = input.actualQty;
-  if (input.actualUnit !== undefined) patch.actualUnit = normalizeUnitLoose(input.actualUnit);
+  if (input.actualUnit !== undefined) {
+    patch.actualUnit = itemUnitFor(ctx, item.substituteIngredientId ?? item.ingredientId, input.actualUnit);
+  }
   if (input.substituteIngredient !== undefined) {
     patch.substituteIngredientId =
       input.substituteIngredient === null || input.substituteIngredient.trim() === ""
@@ -801,7 +843,7 @@ export function checkItems(
             : (item.actualQty ?? item.qty);
         const actualUnit =
           change.actualUnit !== undefined
-            ? normalizeUnitLoose(change.actualUnit)
+            ? itemUnitFor(scoped, item.substituteIngredientId ?? item.ingredientId, change.actualUnit)
             : (item.actualUnit ?? item.unit);
         patch.actualQty = actualQty;
         patch.actualUnit = actualUnit;
@@ -809,7 +851,7 @@ export function checkItems(
         patch.checkedAt = null;
         if (change.actualQty !== undefined) patch.actualQty = change.actualQty;
         if (change.actualUnit !== undefined) {
-          patch.actualUnit = normalizeUnitLoose(change.actualUnit);
+          patch.actualUnit = itemUnitFor(scoped, item.substituteIngredientId ?? item.ingredientId, change.actualUnit);
         }
       }
 
@@ -927,7 +969,7 @@ export function completeShoppingList(
             : (item.actualQty ?? item.qty);
         const unit =
           received !== undefined && received.unit !== undefined
-            ? normalizeUnitLoose(received.unit)
+            ? itemUnitFor(scoped, targetIngredientId, received.unit)
             : (item.actualUnit ?? item.unit);
         const movement =
           qty === null || qty === undefined
@@ -951,9 +993,6 @@ export function completeShoppingList(
                 refId: listId,
               });
         movements.push(movement.movement);
-        if (movement.warning !== undefined) {
-          warnings.push(`${item.name}: ${movement.warning}`);
-        }
 
         // A purchase sets the dates: bought today, best before today + shelf life.
         const shelfLife = scoped.db
@@ -980,7 +1019,7 @@ export function completeShoppingList(
         if (received !== undefined) {
           if (received.qty !== undefined) patch.actualQty = received.qty;
           if (received.unit !== undefined) {
-            patch.actualUnit = normalizeUnitLoose(received.unit);
+            patch.actualUnit = itemUnitFor(scoped, targetIngredientId, received.unit);
           }
         }
         scoped.db

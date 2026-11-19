@@ -72,7 +72,7 @@ export const recipeIngredientInputSchema = z
       .nullable()
       .optional()
       .describe(
-        'Unit as written ("Tbsp", "pounds", "large"); normalized to a canonical unit. Sizes (small, medium, large, extra-large, jumbo) are count units: "2 large eggs" is qty 2, unit "large".',
+        'Unit as written ("Tbsp", "pounds", "large", "cloves"); normalized to a canonical unit. It must be a built-in mass, volume or count unit, a size (small, medium, large, extra-large, jumbo) or a unit the ingredient has a measure for (see GET /ingredients/{id}/measures); anything else is a 422 with suggestions. Sizes are count units: "2 large eggs" is qty 2, unit "large".',
       ),
     prepNote: z.string().nullable().optional().describe('Preparation note, e.g. "diced".'),
     originalText: z

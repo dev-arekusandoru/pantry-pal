@@ -1,28 +1,34 @@
 import { describe, expect, it } from "vitest";
+import type { Ctx } from "../src/context.js";
 import { AppError } from "../src/lib/errors.js";
-import { createIngredient, listIngredients } from "../src/services/ingredients.js";
+import { createIngredient } from "../src/services/ingredients.js";
+import { canonicalUnit, normalizeUnit, unitFamily } from "../src/services/unitNames.js";
 import {
   convert,
-  createConversion,
-  deleteConversion,
-  listConversions,
-  normalizeUnit,
-  unitFamily,
+  deleteMeasure,
+  listMeasures,
+  setMeasure,
+  validateUnit,
+  validateUnits,
 } from "../src/services/units.js";
 import { makeTestCtx } from "./helpers.js";
 
 const OZ_IN_G = 28.349523125;
 const LB_IN_G = 453.59237;
 
-function expectAppError(fn: () => unknown, code: string): void {
+function expectAppError(fn: () => unknown, code: string): AppError {
   try {
     fn();
   } catch (error) {
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe(code);
-    return;
+    return error as AppError;
   }
   throw new Error(`Expected an AppError with code ${code}`);
+}
+
+function custom(ctx: Ctx, name: string): string {
+  return createIngredient(ctx, { custom: true, name }).id;
 }
 
 describe("normalizeUnit", () => {
@@ -55,55 +61,32 @@ describe("normalizeUnit", () => {
 
   it("normalizes fluid ounces and packaging units", () => {
     expect(normalizeUnit("fl oz")).toBe("fl_oz");
+    expect(normalizeUnit("fl_oz")).toBe("fl_oz");
     expect(normalizeUnit("fl. oz")).toBe("fl_oz");
     expect(normalizeUnit("fluid ounces")).toBe("fl_oz");
     expect(normalizeUnit("cans")).toBe("can");
-    expect(normalizeUnit("jars")).toBe("jar");
-    expect(normalizeUnit("bunches")).toBe("bunch");
-    expect(normalizeUnit("boxes")).toBe("box");
-    expect(normalizeUnit("pkg")).toBe("package");
-    expect(normalizeUnit("packages")).toBe("package");
-    expect(normalizeUnit("cloves")).toBe("clove");
-    expect(normalizeUnit("slices")).toBe("slice");
-    expect(normalizeUnit("fillets")).toBe("fillet");
-    expect(normalizeUnit("sticks")).toBe("stick");
-    expect(normalizeUnit("dozen")).toBe("dozen");
-  });
-
-  it("maps count synonyms and the empty string to count", () => {
-    expect(normalizeUnit("each")).toBe("count");
-    expect(normalizeUnit("whole")).toBe("count");
-    expect(normalizeUnit("ea")).toBe("count");
-    expect(normalizeUnit("x")).toBe("count");
-    expect(normalizeUnit("")).toBe("count");
-    expect(normalizeUnit("   ")).toBe("count");
-  });
-
-  it("keeps null for absent units and rejects unknown ones", () => {
-    expect(normalizeUnit(null)).toBeNull();
-    expect(normalizeUnit(undefined)).toBeNull();
-    expect(normalizeUnit("smidgen")).toBeNull();
-  });
-});
-
-describe("unitFamily", () => {
-  it("classifies units into the built-in families", () => {
-    expect(unitFamily("lb")).toBe("mass");
-    expect(unitFamily("kg")).toBe("mass");
-    expect(unitFamily("cup")).toBe("volume");
-    expect(unitFamily("fl oz")).toBe("volume");
     expect(unitFamily("dozen")).toBe("count");
     expect(unitFamily("count")).toBe("count");
     expect(unitFamily("can")).toBeNull();
     expect(unitFamily(null)).toBeNull();
   });
+
+  it("canonicalUnit keeps unknown units as a singular lowercase name", () => {
+    expect(canonicalUnit("cups")).toBe("cup");
+    expect(canonicalUnit("Handfuls")).toBe("handful");
+    expect(canonicalUnit("big  Pinches")).toBe("big pinch");
+    expect(canonicalUnit("3 cups")).toBeNull();
+    expect(canonicalUnit("")).toBe("count");
+  });
 });
 
 describe("convert", () => {
-  it("returns the quantity for identical units and for two null units", () => {
+  it("returns the quantity for identical units and treats no unit as a plain count", () => {
     const { ctx } = makeTestCtx();
     expect(convert(ctx, 2.5, "lb", "lb")).toBe(2.5);
     expect(convert(ctx, 3, null, null)).toBe(3);
+    expect(convert(ctx, 3, null, "count")).toBe(3);
+    expect(convert(ctx, 3, "", null)).toBe(3);
     expect(convert(ctx, 3, null, "g")).toBeNull();
     expect(convert(ctx, 3, "g", null)).toBeNull();
   });
@@ -118,190 +101,148 @@ describe("convert", () => {
     expect(convert(ctx, 1, "gallon", "quart")).toBeCloseTo(4, 9);
     expect(convert(ctx, 1, "dozen", "count")).toBe(12);
     expect(convert(ctx, 1, "count", "dozen")).toBeCloseTo(1 / 12, 12);
+    expect(convert(ctx, 2, "large", "count")).toBe(2);
+    expect(convert(ctx, 1, "dozen", "large")).toBe(12);
   });
 
   it("never guesses across families", () => {
     const { ctx } = makeTestCtx();
-    expect(convert(ctx, 1, "lb", "ml")).toBeNull();
-    expect(convert(ctx, 1, "cup", "g")).toBeNull();
-    expect(convert(ctx, 1, "can", "count")).toBeNull();
-  });
-
-  it("chains a per-ingredient packaging conversion through a built-in family", () => {
-    const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { custom: true, name: "Canned tomatoes" });
-    createConversion(ctx, {
-      ingredientId: ingredient.id,
-      fromUnit: "can",
-      toUnit: "oz",
-      factor: 14.5,
-    });
-
-    const lb = convert(ctx, 1, "can", "lb", ingredient.id);
-    expect(lb).toBeCloseTo((14.5 * OZ_IN_G) / LB_IN_G, 9);
-    expect(convert(ctx, 1, "oz", "can", ingredient.id)).toBeCloseTo(1 / 14.5, 12);
-    // Not comparable for an ingredient without its own conversion.
-    const other = createIngredient(ctx, { custom: true, name: "Canned beans" });
-    expect(convert(ctx, 1, "can", "lb", other.id)).toBeNull();
-  });
-
-  it("uses household-global conversions when the ingredient has none", () => {
-    const { ctx } = makeTestCtx();
-    createConversion(ctx, { fromUnit: "can", toUnit: "oz", factor: 12 });
-    expect(convert(ctx, 2, "can", "oz")).toBe(24);
-    expect(convert(ctx, 1, "oz", "can")).toBeCloseTo(1 / 12, 12);
-    expect(convert(ctx, 1, "can", "lb")).toBeCloseTo((12 * OZ_IN_G) / LB_IN_G, 9);
-  });
-
-  it("prefers the per-ingredient conversion over the global one", () => {
-    const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { custom: true, name: "Tomato paste" });
-    createConversion(ctx, { fromUnit: "can", toUnit: "oz", factor: 12 });
-    createConversion(ctx, {
-      ingredientId: ingredient.id,
-      fromUnit: "can",
-      toUnit: "oz",
-      factor: 6,
-    });
-    expect(convert(ctx, 1, "can", "oz", ingredient.id)).toBe(6);
-    expect(convert(ctx, 1, "can", "oz")).toBe(12);
-  });
-
-  it("supports the inverse of a stored conversion", () => {
-    const { ctx } = makeTestCtx();
-    createConversion(ctx, { fromUnit: "dozen", toUnit: "count", factor: 12 });
-    expect(convert(ctx, 24, "count", "dozen")).toBeCloseTo(2, 12);
+    const id = custom(ctx, "Mystery");
+    for (const ingredientId of [undefined, id]) {
+      expect(convert(ctx, 1, "lb", "ml", ingredientId)).toBeNull();
+      expect(convert(ctx, 1, "cup", "g", ingredientId)).toBeNull();
+      expect(convert(ctx, 1, "can", "count", ingredientId)).toBeNull();
+      expect(convert(ctx, 3, "large", "g", ingredientId)).toBeNull();
+    }
   });
 });
 
-describe("conversion rows", () => {
-  it("normalizes units, lists and deletes rows", () => {
+describe("measures", () => {
+  it("convert through grams in both directions and chain through a built-in family", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { custom: true, name: "Coconut milk" });
-    const created = createConversion(ctx, {
-      ingredientId: ingredient.id,
-      fromUnit: "Cans",
-      toUnit: "fl oz",
-      factor: 13.5,
-    });
-    expect(created.fromUnit).toBe("can");
-    expect(created.toUnit).toBe("fl_oz");
+    const tomatoes = custom(ctx, "Canned tomatoes");
+    const other = custom(ctx, "Other");
+    setMeasure(ctx, tomatoes, "can", { grams: 14.5 * OZ_IN_G });
 
-    const list = listConversions(ctx, { ingredientId: ingredient.id });
-    expect(list).toHaveLength(1);
-    expect(listConversions(ctx)).toHaveLength(1);
-
-    deleteConversion(ctx, created.id);
-    expect(listConversions(ctx)).toHaveLength(0);
-    expect(convert(ctx, 1, "can", "oz", ingredient.id)).toBeNull();
-    expectAppError(() => deleteConversion(ctx, created.id), "not_found");
+    expect(convert(ctx, 2, "can", "oz", tomatoes)).toBeCloseTo(29, 9);
+    expect(convert(ctx, 1, "oz", "can", tomatoes)).toBeCloseTo(1 / 14.5, 12);
+    expect(convert(ctx, 1, "can", "lb", tomatoes)).toBeCloseTo((14.5 * OZ_IN_G) / LB_IN_G, 9);
+    expect(convert(ctx, 1, "can", "g", tomatoes)).toBeCloseTo(14.5 * OZ_IN_G, 9);
+    // Measures belong to one ingredient.
+    expect(convert(ctx, 1, "can", "lb", other)).toBeNull();
+    expect(convert(ctx, 1, "can", "lb")).toBeNull();
   });
 
-  it("rejects duplicates (including global rows where NULLs are distinct in SQL)", () => {
+  it("a volume measure defines the density, so every volume unit converts", () => {
     const { ctx } = makeTestCtx();
-    createConversion(ctx, { fromUnit: "can", toUnit: "oz", factor: 12 });
-    expectAppError(
-      () => createConversion(ctx, { fromUnit: "cans", toUnit: "ounces", factor: 10 }),
-      "conflict",
-    );
+    const spinach = custom(ctx, "Baby spinach");
+    expect(convert(ctx, 1, "cup", "g", spinach)).toBeNull();
+
+    setMeasure(ctx, spinach, "cup", { grams: 30 });
+
+    expect(convert(ctx, 3, "cup", "g", spinach)).toBe(90);
+    expect(convert(ctx, 1, "tbsp", "g", spinach)).toBeCloseTo((30 * 14.78676478125) / 236.5882365, 9);
+    expect(convert(ctx, 1, "oz", "cup", spinach)).toBeCloseTo(OZ_IN_G / 30, 9);
+    expect(convert(ctx, 1, "pint", "cup", spinach)).toBeCloseTo(2, 9);
   });
 
-  it("rejects identical units, unknown units and unknown ingredients", () => {
+  it("a count measure sets what a plain count weighs", () => {
     const { ctx } = makeTestCtx();
-    expectAppError(
-      () => createConversion(ctx, { fromUnit: "cup", toUnit: "cup", factor: 1 }),
-      "validation",
-    );
-    expectAppError(
-      () => createConversion(ctx, { fromUnit: "blorp", toUnit: "oz", factor: 1 }),
-      "validation",
-    );
-    expectAppError(
-      () => createConversion(ctx, { fromUnit: "cup", toUnit: "oz", factor: 0 }),
-      "validation",
-    );
-    expectAppError(
+    const chicken = custom(ctx, "Chicken breast");
+    setMeasure(ctx, chicken, "count", { grams: 8 * OZ_IN_G });
+
+    expect(convert(ctx, 2, "count", "lb", chicken)).toBeCloseTo(1, 9);
+    expect(convert(ctx, 2, null, "oz", chicken)).toBeCloseTo(16, 9);
+    expect(convert(ctx, 1, "lb", "count", chicken)).toBeCloseTo(2, 9);
+    expect(convert(ctx, 1, "dozen", "oz", chicken)).toBeCloseTo(96, 9);
+    // A size with no measure of its own weighs what a plain count does.
+    expect(convert(ctx, 1, "large", "oz", chicken)).toBeCloseTo(8, 9);
+  });
+
+  it("list, update and delete measures; a unit can be new", () => {
+    const { ctx } = makeTestCtx();
+    const id = custom(ctx, "Parsley");
+
+    expect(listMeasures(ctx, id)).toEqual([]);
+    const created = setMeasure(ctx, id, "Bunches", { grams: 40, note: "supermarket bunch" });
+    expect(created).toMatchObject({ unit: "bunch", grams: 40, source: "user", estimated: false, note: "supermarket bunch" });
+
+    const updated = setMeasure(ctx, id, "bunch", { grams: 50 });
+    expect(updated.grams).toBe(50);
+    expect(updated.note).toBe("supermarket bunch");
+    expect(listMeasures(ctx, id)).toHaveLength(1);
+
+    deleteMeasure(ctx, id, "bunch");
+    expect(listMeasures(ctx, id)).toEqual([]);
+    expect(convert(ctx, 1, "bunch", "g", id)).toBeNull();
+    expectAppError(() => deleteMeasure(ctx, id, "bunch"), "not_found");
+  });
+
+  it("rejects mass units, a dozen, bad grams and unknown ingredients", () => {
+    const { ctx } = makeTestCtx();
+    const id = custom(ctx, "Parsley");
+    expectAppError(() => setMeasure(ctx, id, "oz", { grams: 28 }), "validation");
+    expectAppError(() => setMeasure(ctx, id, "kg", { grams: 1000 }), "validation");
+    expectAppError(() => setMeasure(ctx, id, "dozen", { grams: 500 }), "validation");
+    expectAppError(() => setMeasure(ctx, id, "cup", { grams: 0 }), "validation");
+    expectAppError(() => setMeasure(ctx, id, "cup", { grams: Number.NaN }), "validation");
+    expectAppError(() => setMeasure(ctx, id, "2 cups!", { grams: 30 }), "validation");
+    expectAppError(() => setMeasure(ctx, "ing_missing", "cup", { grams: 30 }), "not_found");
+  });
+});
+
+describe("unit validation", () => {
+  it("accepts built-in units, sizes and plural spellings", () => {
+    const { ctx } = makeTestCtx();
+    const id = custom(ctx, "Parsley");
+    expect(validateUnit(ctx, id, "Tbsp")).toBe("tbsp");
+    expect(validateUnit(ctx, id, "pounds")).toBe("lb");
+    expect(validateUnit(ctx, id, "large")).toBe("large");
+    expect(validateUnit(ctx, id, "")).toBe("count");
+    expect(validateUnit(ctx, id, null)).toBeNull();
+    expect(validateUnit(ctx, id, undefined)).toBeNull();
+  });
+
+  it("accepts a valid unit that cannot convert (cup with no density)", () => {
+    const { ctx } = makeTestCtx();
+    const id = custom(ctx, "Parsley");
+    expect(validateUnit(ctx, id, "cups")).toBe("cup");
+    expect(convert(ctx, 1, "cup", "g", id)).toBeNull();
+  });
+
+  it("rejects an unknown unit with suggestions and a hint, listing every offender at once", () => {
+    const { ctx } = makeTestCtx();
+    const parsley = custom(ctx, "Parsley");
+    const sage = custom(ctx, "Sage");
+    setMeasure(ctx, sage, "sprig", { grams: 2 });
+
+    const error = expectAppError(
       () =>
-        createConversion(ctx, {
-          ingredientId: "ing_missing",
-          fromUnit: "can",
-          toUnit: "oz",
-          factor: 12,
-        }),
-      "not_found",
+        validateUnits(ctx, [
+          { ingredientId: parsley, unit: "handful" },
+          { ingredientId: sage, unit: "Handfuls" },
+          { ingredientId: sage, unit: "sprigs" },
+          { ingredientId: parsley, unit: "handful" },
+          { ingredientId: parsley, unit: "tbs" },
+        ]),
+      "unprocessable",
     );
-    expect(listIngredients(ctx)).toHaveLength(0);
+    const details = error.details as { unresolvedUnits: Array<Record<string, unknown>> };
+    expect(details.unresolvedUnits).toHaveLength(2);
+    expect(details.unresolvedUnits[0]).toMatchObject({ unit: "handful", ingredientId: parsley, ingredientName: "Parsley" });
+    expect(details.unresolvedUnits[1]).toMatchObject({ ingredientId: sage, ingredientName: "Sage" });
+    const sageSuggestions = details.unresolvedUnits[1]!.suggestions as string[];
+    expect(sageSuggestions).toContain("sprig");
+    expect(sageSuggestions.length).toBeGreaterThan(1);
+    expect(String(details.unresolvedUnits[0]!.hint)).toContain("measure");
+    expect(String(details.unresolvedUnits[0]!.hint)).toContain(`/ingredients/${parsley}/measures/handful`);
   });
 
-  it("rejects a conversion whose reverse pair already exists in the same scope", () => {
+  it("accepts a unit once the ingredient has a measure for it", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { custom: true, name: "Canned tomato" });
-    createConversion(ctx, {
-      ingredientId: ingredient.id,
-      fromUnit: "can",
-      toUnit: "lb",
-      factor: 1,
-    });
-
-    // The reverse pair (units normalized) must not contradict the stored factor.
-    expectAppError(
-      () =>
-        createConversion(ctx, {
-          ingredientId: ingredient.id,
-          fromUnit: "pounds",
-          toUnit: "cans",
-          factor: 2,
-        }),
-      "conflict",
-    );
-    // The same pair in the same direction is still a duplicate after normalization.
-    expectAppError(
-      () =>
-        createConversion(ctx, {
-          ingredientId: ingredient.id,
-          fromUnit: "cans",
-          toUnit: "lbs",
-          factor: 1,
-        }),
-      "conflict",
-    );
-    expect(listConversions(ctx, { ingredientId: ingredient.id })).toHaveLength(1);
-    expect(convert(ctx, 1, "can", "lb", ingredient.id)).toBeCloseTo(1, 9);
-    expect(convert(ctx, 1, "lb", "can", ingredient.id)).toBeCloseTo(1, 9);
-
-    // Same-scope only: the global scope is a different conversion.
-    createConversion(ctx, { fromUnit: "lb", toUnit: "can", factor: 0.5 });
-    expect(listConversions(ctx)).toHaveLength(2);
-  });
-
-  it("walks multi-path conversions deterministically regardless of insertion order", () => {
-    function graph(rows: Array<[string, string, number]>) {
-      const { ctx } = makeTestCtx();
-      const ingredient = createIngredient(ctx, { custom: true, name: "Flour bag" });
-      for (const [fromUnit, toUnit, factor] of rows) {
-        createConversion(ctx, { ingredientId: ingredient.id, fromUnit, toUnit, factor });
-      }
-      return { ctx, ingredient };
-    }
-
-    const forwardOrder = graph([
-      ["bag", "oz", 32],
-      ["bag", "g", 1000],
-    ]);
-    const reverseOrder = graph([
-      ["bag", "g", 1000],
-      ["bag", "oz", 32],
-    ]);
-
-    const forwardKg = convert(forwardOrder.ctx, 1, "bag", "kg", forwardOrder.ingredient.id)!;
-    const reverseKg = convert(reverseOrder.ctx, 1, "bag", "kg", reverseOrder.ingredient.id)!;
-
-    // Rows are ordered by unit pair, so the `bag -> g` path always wins: 1 bag = 1 kg.
-    expect(forwardKg).toBeCloseTo(1, 9);
-    expect(reverseKg).toBeCloseTo(1, 9);
-    expect(convert(forwardOrder.ctx, 1, "kg", "bag", forwardOrder.ingredient.id)).toBeCloseTo(
-      1 / forwardKg,
-      9,
-    );
+    const id = custom(ctx, "Parsley");
+    expectAppError(() => validateUnit(ctx, id, "handful"), "unprocessable");
+    setMeasure(ctx, id, "handful", { grams: 25 });
+    expect(validateUnit(ctx, id, "Handfuls")).toBe("handful");
   });
 });

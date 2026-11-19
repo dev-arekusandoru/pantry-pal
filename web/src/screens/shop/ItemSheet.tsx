@@ -3,6 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { errorMessage } from "@/api";
 import { Button, Emoji, Icon, IconPicker, Sheet, buttonClass, ingredientEmoji, toast } from "@/ui";
 import type { ShoppingItem } from "./cart";
+import { UnitPicker } from "../ingredients/UnitPicker";
+import { UnitProblems } from "../ingredients/UnitProblems";
+import { unitProblems, unitText, type UnitProblem } from "../ingredients/units";
 import { parseQty, qtyToInput, unitLabel } from "./format";
 import styles from "./Shop.module.css";
 import { useRemoveItem, useUpdateItemQty } from "./queries";
@@ -74,6 +77,8 @@ function UsedIn({ item }: { item: ShoppingItem }) {
 function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingItem; onClose: () => void }) {
   const [text, setText] = useState(item.qty === null ? "" : qtyToInput(item.qty));
   const [pickingIcon, setPickingIcon] = useState(false);
+  const [unit, setUnit] = useState(item.unit === null || item.unit === "count" ? "" : unitText(item.unit));
+  const [issues, setIssues] = useState<UnitProblem[]>([]);
   // Set once "I have it" is tapped: the amount to add to the pantry, which can differ from the list.
   const [pantryText, setPantryText] = useState<string | null>(null);
   const update = useUpdateItemQty(listId);
@@ -81,13 +86,19 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
   const qty = parseOptionalQty(text);
   const pantryQty = pantryText === null ? null : parseOptionalQty(pantryText);
 
+  const unitChanged = unit.trim() !== (item.unit === null || item.unit === "count" ? "" : unitText(item.unit));
+
   const run = (promise: Promise<unknown>, message?: string) =>
     promise.then(
       () => {
         if (message) toast.show({ message });
         onClose();
       },
-      (error) => toast.error(errorMessage(error)),
+      (error) => {
+        const found = unitProblems(error);
+        setIssues(found);
+        if (found.length === 0) toast.error(errorMessage(error));
+      },
     );
 
   return (
@@ -135,17 +146,48 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
             onChange={(e) => setText(e.target.value)}
             onFocus={(e) => e.currentTarget.select()}
           />
-          {qty != null && <span className={styles.qtyUnit}>{unitLabel(item.unit, qty)}</span>}
+          {item.ingredientId === null && qty != null && <span className={styles.qtyUnit}>{unitLabel(item.unit, qty)}</span>}
           <Button
             variant="primary"
             loading={update.isPending}
-            disabled={qty === undefined || qty === item.qty}
-            onClick={() => run(update.mutateAsync({ itemId: item.id, qty: qty! }))}
+            disabled={qty === undefined || (qty === item.qty && !unitChanged)}
+            onClick={() => {
+              setIssues([]);
+              void run(
+                update.mutateAsync({
+                  itemId: item.id,
+                  qty: qty!,
+                  ...(item.ingredientId !== null && unitChanged ? { unit: unit.trim() === "" ? null : unit.trim() } : {}),
+                }),
+              );
+            }}
           >
             Save
           </Button>
         </span>
       </div>
+      {item.ingredientId !== null && (
+        <>
+          <UnitPicker
+            label="Unit"
+            ingredientId={item.ingredientId}
+            value={unit}
+            invalid={issues.length > 0}
+            onChange={(next) => {
+              setUnit(next);
+              setIssues([]);
+            }}
+          />
+          <UnitProblems
+            problems={issues}
+            onUseUnit={(next) => {
+              setUnit(next);
+              setIssues([]);
+            }}
+            onMeasureAdded={() => setIssues([])}
+          />
+        </>
+      )}
       {pantryText === null ? (
         <div className={styles.sheetActions}>
           <Button

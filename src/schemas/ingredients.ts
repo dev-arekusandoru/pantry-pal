@@ -32,20 +32,24 @@ export const ingredientStockSchema = z
   })
   .openapi("IngredientStock");
 
-export const unitConversionSchema = z
+export const measureSchema = z
   .object({
-    id: z.string().describe("Conversion id (uc_...)."),
-    ingredientId: z
-      .string()
-      .nullable()
-      .describe("Owning ingredient; null = household-global conversion."),
-    fromUnit: z.string().describe("Normalized source unit."),
-    toUnit: z.string().describe("Normalized target unit."),
-    factor: z.number().describe("1 fromUnit = factor toUnit."),
+    unit: z.string().describe('Normalized unit, e.g. "cup", "clove", "can", "handful".'),
+    grams: z.number().describe("Weight of ONE unit in grams."),
+    source: z
+      .enum(["usda", "usda_estimated", "user"])
+      .describe(
+        "usda = a portion of the linked USDA food; usda_estimated = a portion borrowed from a similar USDA food; user = your own measure (it overrides the USDA one for the same unit).",
+      ),
+    estimated: z.boolean().describe("True when the weight is borrowed from a similar food (source usda_estimated)."),
+    label: z.string().nullable().describe('The USDA portion label ("cup, chopped"); null for your own measures.'),
     note: z.string().nullable(),
-    createdAt: z.string(),
+    usdaGrams: z
+      .number()
+      .nullable()
+      .describe("On a user measure that overrides a USDA one: the USDA weight, so a client can offer a reset."),
   })
-  .openapi("UnitConversion");
+  .openapi("Measure");
 
 export const ingredientSchema = z
   .object({
@@ -54,7 +58,12 @@ export const ingredientSchema = z
     normalizedName: z.string().describe("Lowercased uniqueness key."),
     description: z.string().nullable(),
     category: ingredientCategorySchema,
-    defaultUnit: z.string().nullable().describe("Unit used for stock and shopping by default."),
+    stockUnit: z
+      .string()
+      .nullable()
+      .describe(
+        "The one unit this ingredient is stocked in. Pantry amounts, par and shopping quantities are stored in it. Null until the first pantry write sets it.",
+      ),
     imageUrl: z
       .string()
       .nullable()
@@ -62,8 +71,7 @@ export const ingredientSchema = z
         'Bundled ingredient icon name (e.g. "garlic", see list_icons) or http(s) image URL; null = automatic icon.',
       ),
     shelfLifeDays: z.number().int().nullable().describe("Typical shelf life after purchase."),
-    parQty: z.number().nullable().describe("Desired minimum stock."),
-    parUnit: z.string().nullable(),
+    parQty: z.number().nullable().describe("Desired minimum stock, in the stock unit."),
     notes: z.string().nullable(),
     defaultPortion: z
       .string()
@@ -84,7 +92,12 @@ export const ingredientViewSchema = ingredientSchema
   .extend({
     nutrition: ingredientNutritionSchema,
     aliases: z.array(ingredientAliasSchema),
-    conversions: z.array(unitConversionSchema).describe("Custom conversions for this ingredient."),
+    measures: z
+      .array(measureSchema)
+      .describe("What one unit weighs: the linked USDA food's measures, overridden by your own."),
+    units: z
+      .array(z.string())
+      .describe("Valid units for pickers: the stock unit first, then the measures, then the built-in units."),
     pantry: z.array(ingredientStockSchema).describe("Stock rows for this ingredient."),
   })
   .openapi("IngredientView");
@@ -163,9 +176,9 @@ export const ingredientRefSchema = z
   });
 
 export const reviewReasonSchema = z
-  .enum(["unlinked", "lint", "custom_unreviewed"])
+  .enum(["unlinked", "lint", "custom_unreviewed", "unit"])
   .describe(
-    "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet.",
+    "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet; unit = a recipe line or pantry row uses a unit that converts to neither grams nor the stock unit (add a measure).",
   );
 
 export const reviewItemSchema = z
@@ -176,6 +189,10 @@ export const reviewItemSchema = z
       .object({ reason: z.string(), hint: z.string() })
       .optional()
       .describe("Present when `reasons` has lint."),
+    units: z
+      .array(z.string())
+      .optional()
+      .describe("Present when `reasons` has unit: the units that do not convert."),
     suggestions: z.array(suggestionSchema).describe("Ways to fix it: existing ingredients and USDA foods."),
   })
   .openapi("IngredientReviewItem");
@@ -243,6 +260,10 @@ export const ingredientDetailSchema = ingredientViewSchema
       .object({
         reasons: z.array(reviewReasonSchema),
         lint: z.object({ reason: z.string(), hint: z.string() }).optional(),
+        units: z
+          .array(z.string())
+          .optional()
+          .describe("Present when `reasons` has unit: the units that do not convert."),
         suggestions: z.array(suggestionSchema),
       })
       .nullable()
@@ -302,7 +323,7 @@ export const findIngredientsResultSchema = z
           id: z.string(),
           name: z.string(),
           category: ingredientCategorySchema,
-          defaultUnit: z.string().nullable(),
+          stockUnit: z.string().nullable(),
           defaultPortion: z.string().nullable(),
           aliases: z.array(z.string()),
           linked: z.boolean().describe("Linked to a USDA food (false = custom)."),
@@ -337,7 +358,7 @@ export const mergeResultSchema = z
       pantryItems: z.number().int(),
       shoppingItems: z.number().int(),
       rules: z.number().int(),
-      conversions: z.number().int(),
+      measures: z.number().int(),
       aliases: z.number().int(),
     }),
   })
@@ -380,10 +401,12 @@ export const createIngredientSchema = z
       .array(z.string().min(1))
       .optional()
       .describe('Alternate names ("onion", "yellow onions"); stored lowercase.'),
-    defaultUnit: z
+    stockUnit: z
       .string()
       .nullish()
-      .describe('Unit used for stock and shopping, e.g. "g" or "can".'),
+      .describe(
+        'The one unit the ingredient is stocked in, e.g. "g" or "can". It must be a built-in unit or one the ingredient has a measure for. Unset: the first pantry write sets it.',
+      ),
     imageUrl: z
       .string()
       .nullish()
@@ -391,8 +414,11 @@ export const createIngredientSchema = z
         'Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL.',
       ),
     shelfLifeDays: z.number().int().nonnegative().nullish(),
-    parQty: z.number().nonnegative().nullish().describe("Desired minimum stock."),
-    parUnit: z.string().nullish().describe("Unit of parQty."),
+    parQty: z.number().nonnegative().nullish().describe("Desired minimum stock, in the stock unit."),
+    parUnit: z
+      .string()
+      .nullish()
+      .describe("Optional unit `parQty` is written in; it is converted into the stock unit."),
     notes: z.string().nullish(),
   })
   .openapi("CreateIngredient");
@@ -402,7 +428,12 @@ export const updateIngredientSchema = z
     name: z.string().min(1).optional().describe("Renaming updates what aliases resolve to."),
     description: z.string().nullish(),
     category: ingredientCategorySchema.optional(),
-    defaultUnit: z.string().nullish(),
+    stockUnit: z
+      .string()
+      .nullish()
+      .describe(
+        "Changes the stock unit and converts the pantry amount and par into it; 422 when they do not convert. null clears it.",
+      ),
     imageUrl: z
       .string()
       .nullish()
@@ -410,8 +441,11 @@ export const updateIngredientSchema = z
         'Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL.',
       ),
     shelfLifeDays: z.number().int().nonnegative().nullish(),
-    parQty: z.number().nonnegative().nullish(),
-    parUnit: z.string().nullish(),
+    parQty: z.number().nonnegative().nullish().describe("Desired minimum stock, in the stock unit."),
+    parUnit: z
+      .string()
+      .nullish()
+      .describe("Optional unit `parQty` is written in; it is converted into the stock unit."),
     notes: z.string().nullish(),
     defaultPortion: z
       .string()
@@ -454,37 +488,38 @@ export const aliasParamsSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Unit conversions
+// Measures and unit conversion
 // ---------------------------------------------------------------------------
 
-export const createConversionSchema = z
+export const measureListSchema = z.object({ items: z.array(measureSchema) }).openapi("MeasureList");
+
+export const setMeasureSchema = z
   .object({
-    ingredientId: z
-      .string()
-      .nullish()
-      .describe("Owning ingredient; omit or null for a household-global conversion."),
-    fromUnit: z.string().min(1).describe('Source unit, e.g. "can".'),
-    toUnit: z.string().min(1).describe('Target unit, e.g. "oz".'),
-    factor: z.number().positive().describe("1 fromUnit = factor toUnit."),
+    grams: z.number().positive().describe("Weight of ONE unit in grams."),
     note: z.string().nullish(),
   })
-  .openapi("CreateUnitConversion");
+  .openapi("SetMeasure");
 
-export const conversionListSchema = z
-  .object({ items: z.array(unitConversionSchema) })
-  .openapi("UnitConversionList");
-
-export const listConversionsQuerySchema = z.object({
-  ingredientId: z.string().optional().describe("Restrict to one ingredient's conversions."),
-  includeGlobal: z
-    .enum(["true", "false"])
-    .optional()
-    .describe("With ingredientId, also include household-global rows."),
+export const measureParamsSchema = z.object({
+  id: z.string().openapi({ param: { name: "id", in: "path" }, example: "ing_2f7k9m" }),
+  unit: z.string().min(1).openapi({ param: { name: "unit", in: "path" }, example: "cup" }),
 });
 
-export const conversionParamsSchema = z.object({
-  id: z.string().openapi({ param: { name: "id", in: "path" }, example: "uc_4m8n2p" }),
-});
+export const unresolvedUnitsDetailsSchema = z
+  .object({
+    unresolvedUnits: z.array(
+      z.object({
+        unit: z.string().describe("The unit that is not valid for the ingredient."),
+        ingredientId: z.string(),
+        ingredientName: z.string(),
+        suggestions: z.array(z.string()).describe("Close built-in units plus the ingredient's measures."),
+        hint: z.string().describe("What to do: add a measure for the unit, or use a suggested one."),
+      }),
+    ),
+  })
+  .openapi("UnresolvedUnitsDetails", {
+    description: "`details` of the 422 returned when a write uses a unit the ingredient does not accept.",
+  });
 
 export const convertUnitSchema = z
   .object({
@@ -494,7 +529,7 @@ export const convertUnitSchema = z
     ingredientId: z
       .string()
       .optional()
-      .describe("Use this ingredient's custom conversions (e.g. can → oz)."),
+      .describe("Use this ingredient's measures (USDA portions and your own) to cross families, e.g. cup → g or can → oz."),
   })
   .openapi("ConvertUnit");
 

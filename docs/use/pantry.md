@@ -21,7 +21,9 @@ the screen. Then fill in:
   [Ingredients](ingredients.md#choose-an-ingredient). If you typed in **Search
   the pantry** first, the box starts with that text.
 - **How much? (optional)**
-- **Unit**
+- **Unit**: a list of the units of that ingredient. It is empty until you choose
+  an ingredient. Type a unit that is not in the list to add a measure for it. See
+  [Units and measures](units.md#choose-a-unit).
 
 The sheet does not make an ingredient from a typed name. To add food that is
 not in your ingredients, choose a USDA food under **USDA foods**, or choose
@@ -31,6 +33,8 @@ To change the aisle of an ingredient you already have, use **Category** in the
 row's amount sheet, or **Aisle** on the [ingredient page](ingredients.md#the-ingredient-page).
 
 With an amount, the app adds to the stock already recorded for that ingredient.
+The app converts the amount into the ingredient's [stock unit](units.md#stock-unit-and-measures).
+The first amount you add sets the stock unit.
 Without an amount, the app records the item as **On hand** and leaves the
 quantity unknown. If the ingredient is already in the pantry and you give no
 amount, the sheet says so and does not add a second row.
@@ -46,7 +50,13 @@ A measured row has **−** and **+** buttons. One tap changes the amount by:
 | Any other unit, or no unit | 1 |
 
 The amount cannot go below zero. Tap the amount or the row name to open a sheet
-and type an exact amount. Tap **Save**.
+and type an exact amount. Choose the **Unit** of the amount. It can be any unit
+that the ingredient converts. A row is always stored in the stock unit, so "3
+cups" of Baby Spinach with an `oz` stock unit is saved as ounces. Tap **Save**.
+
+If the unit is not known, or has no weight, the sheet stays open. It says which
+unit failed and shows **Add a measure for** that unit. See
+[When a unit is not known](units.md#when-a-unit-is-not-known).
 
 The same sheet shows **Category**, **Best before**, and **Shelf life in days**.
 Change any value, then tap **Save**. Change **Category** to move the ingredient to
@@ -187,9 +197,11 @@ These tasks have no web screen:
 - Mark stock as checked: `pantry_update` with `action: "verify"`.
 - Add notes, purchase dates, or open dates.
 - Read stock history: `pantry_history`.
-- Set ingredient aliases, par levels, default units, or categories
-  (`ingredient_upsert` with `action: "update"`). The web item sheet changes the
+- Set ingredient aliases, par levels (`parQty`), stock units (`stockUnit`), or
+  categories (`ingredient_upsert` with `action: "update"`). The ingredient page
+  sets the stock unit and the minimum, and the web item sheet changes the
   category for you.
+- Set measures: `ingredient_measures`. See [Units and measures](units.md).
 - Create an ingredient from a USDA food with `fdcId`, or a custom one with
   `create_custom_ingredient`. The pantry tools do not create ingredients from a
   name. See [Ingredients](ingredients.md#through-the-api-or-mcp).

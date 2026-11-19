@@ -29,14 +29,14 @@ import {
   updateItem,
   updateShoppingList,
 } from "../src/services/shopping.js";
+import { setMeasure } from "../src/services/units.js";
 import { makeTestApp, makeTestCtx } from "./helpers.js";
 
 interface IngredientOptions {
   name: string;
   category?: IngredientCategory;
-  defaultUnit?: string | null;
+  stockUnit?: string | null;
   parQty?: number | null;
-  parUnit?: string | null;
   shelfLifeDays?: number | null;
   imageUrl?: string | null;
 }
@@ -52,9 +52,8 @@ function addIngredient(ctx: Ctx, options: IngredientOptions): string {
       name: options.name,
       normalizedName: normalizeName(options.name),
       category: options.category ?? "other",
-      defaultUnit: options.defaultUnit ?? null,
+      stockUnit: options.stockUnit ?? null,
       parQty: options.parQty ?? null,
-      parUnit: options.parUnit ?? null,
       shelfLifeDays: options.shelfLifeDays ?? null,
       imageUrl: options.imageUrl ?? null,
       createdAt: timestamp,
@@ -191,13 +190,13 @@ function pantryRow(
     .get();
 }
 
-function expectAppError(fn: () => unknown, code: ErrorCode): void {
+function expectAppError(fn: () => unknown, code: ErrorCode): AppError {
   try {
     fn();
   } catch (error) {
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).code).toBe(code);
-    return;
+    return error as AppError;
   }
   throw new Error(`Expected AppError(${code}) but nothing was thrown`);
 }
@@ -237,7 +236,7 @@ describe("generateShoppingList", () => {
   it("lists only the net need and explains it with the planned cooks", () => {
     const { ctx } = makeTestCtx();
     const { ingredientId, planId } = plannedNeed(ctx, {
-      ingredient: { name: "Ground beef", category: "protein", defaultUnit: "lb" },
+      ingredient: { name: "Ground beef", category: "protein", stockUnit: "lb" },
       recipeTitle: "Slow Cooker Chili",
       qty: 2,
       unit: "lb",
@@ -265,7 +264,7 @@ describe("generateShoppingList", () => {
   it("does not list demand that stock already covers", () => {
     const { ctx } = makeTestCtx();
     const { ingredientId, planId } = plannedNeed(ctx, {
-      ingredient: { name: "Rice", category: "pantry", defaultUnit: "lb" },
+      ingredient: { name: "Rice", category: "pantry", stockUnit: "lb" },
       qty: 2,
       unit: "lb",
     });
@@ -278,7 +277,7 @@ describe("generateShoppingList", () => {
   it("marks unknown stock as needsCheck with the full demand", () => {
     const { ctx } = makeTestCtx();
     const { ingredientId, planId } = plannedNeed(ctx, {
-      ingredient: { name: "Ground beef", defaultUnit: "lb" },
+      ingredient: { name: "Ground beef", stockUnit: "lb" },
       recipeTitle: "Chili",
       qty: 2,
       unit: "lb",
@@ -297,7 +296,7 @@ describe("generateShoppingList", () => {
   it("rounds countable needs up to whole units", () => {
     const { ctx } = makeTestCtx();
     const { planId } = plannedNeed(ctx, {
-      ingredient: { name: "Eggs", category: "dairy", defaultUnit: "count" },
+      ingredient: { name: "Eggs", category: "dairy", stockUnit: "count" },
       qty: 2.5,
       unit: "count",
     });
@@ -310,7 +309,7 @@ describe("generateShoppingList", () => {
   it("lists low or out demand at the full committed amount when stock is unmeasured", () => {
     const { ctx } = makeTestCtx();
     const { ingredientId, planId } = plannedNeed(ctx, {
-      ingredient: { name: "Rice", category: "pantry", defaultUnit: "lb" },
+      ingredient: { name: "Rice", category: "pantry", stockUnit: "lb" },
       recipeTitle: "Chili",
       qty: 2,
       unit: "lb",
@@ -327,7 +326,7 @@ describe("generateShoppingList", () => {
   it("nets known low stock against demand", () => {
     const { ctx } = makeTestCtx();
     const { ingredientId, planId } = plannedNeed(ctx, {
-      ingredient: { name: "Rice", category: "pantry", defaultUnit: "lb" },
+      ingredient: { name: "Rice", category: "pantry", stockUnit: "lb" },
       qty: 2,
       unit: "lb",
     });
@@ -341,8 +340,8 @@ describe("generateShoppingList", () => {
 
   it("regenerates without duplicating manual or checked ingredients", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", category: "protein", defaultUnit: "lb" });
-    const onion = addIngredient(ctx, { name: "Yellow onion", category: "produce", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", category: "protein", stockUnit: "lb" });
+    const onion = addIngredient(ctx, { name: "Yellow onion", category: "produce", stockUnit: "lb" });
     const recipe = addRecipe(ctx, { title: "Chili", servings: 2 });
     addRecipeLine(ctx, { recipeId: recipe, ingredientId: beef, qty: 1, unit: "lb", position: 0 });
     addRecipeLine(ctx, { recipeId: recipe, ingredientId: onion, qty: 1, unit: "lb", position: 1 });
@@ -400,7 +399,7 @@ describe("generateShoppingList", () => {
 describe("shopping list CRUD", () => {
   it("creates, edits, checks and deletes a manual list", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
 
     const created = createShoppingList(ctx, {
       title: "Corner store",
@@ -471,7 +470,7 @@ describe("shopping list CRUD", () => {
 describe("list staleness", () => {
   it("keeps the stale flag honest and lets a later regenerate clear it", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", category: "protein", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", category: "protein", stockUnit: "lb" });
     const recipeId = addRecipe(ctx, { title: "Chili", servings: 4 });
     addRecipeLine(ctx, { recipeId, ingredientId: beef, qty: 2, unit: "lb", position: 0 });
     const planId = addPlan(ctx, "2026-11-02");
@@ -508,9 +507,9 @@ describe("list staleness", () => {
 describe("completeShoppingList", () => {
   it("writes purchase movements for actual quantities, substitutes and unknown amounts", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
-    const onion = addIngredient(ctx, { name: "Yellow onion", defaultUnit: "lb" });
-    const shallot = addIngredient(ctx, { name: "Shallot", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
+    const onion = addIngredient(ctx, { name: "Yellow onion", stockUnit: "lb" });
+    const shallot = addIngredient(ctx, { name: "Shallot", stockUnit: "lb" });
     const salt = addIngredient(ctx, { name: "Salt", category: "spice" });
 
     addPantryItem(ctx, { ingredientId: beef, qty: 0, unit: "lb", status: "out" });
@@ -568,8 +567,8 @@ describe("completeShoppingList", () => {
 
   it("dates received ingredients from their shelf life", () => {
     const { ctx } = makeTestCtx();
-    const yogurt = addIngredient(ctx, { name: "Yogurt", defaultUnit: "g", shelfLifeDays: 10 });
-    const pasta = addIngredient(ctx, { name: "Pasta", defaultUnit: "g" });
+    const yogurt = addIngredient(ctx, { name: "Yogurt", stockUnit: "g", shelfLifeDays: 10 });
+    const pasta = addIngredient(ctx, { name: "Pasta", stockUnit: "g" });
     const detail = createShoppingList(ctx, {
       items: [
         { ingredient: "Yogurt", qty: 500, unit: "g" },
@@ -591,7 +590,7 @@ describe("completeShoppingList", () => {
 
   it("stocks checked items for ingredients that have no pantry row yet", () => {
     const { ctx } = makeTestCtx();
-    const eggs = addIngredient(ctx, { name: "Eggs", defaultUnit: "count" });
+    const eggs = addIngredient(ctx, { name: "Eggs", stockUnit: "count" });
     expect(pantryRow(ctx, eggs)).toBeUndefined();
 
     const detail = createShoppingList(ctx, {
@@ -618,7 +617,7 @@ describe("completeShoppingList", () => {
 
   it("uses received quantity and unit overrides", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: 0, unit: "lb", status: "out" });
 
     const detail = createShoppingList(ctx, {
@@ -638,7 +637,7 @@ describe("completeShoppingList", () => {
 
   it("only converts checked items by default but can take every item", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: 0, unit: "lb", status: "out" });
 
     const detail = createShoppingList(ctx, {
@@ -669,7 +668,7 @@ describe("completeShoppingList", () => {
 
   it("completes without purchase movements when the pantry already reflects the trip", () => {
     const { ctx } = makeTestCtx();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
     addPantryItem(ctx, { ingredientId: beef, qty: 3, unit: "lb" });
 
     const detail = createShoppingList(ctx, {
@@ -700,33 +699,40 @@ describe("completeShoppingList", () => {
     expect(stored.actualUnit).toBe("lb");
   });
 
-  it("surfaces a warning when a purchase cannot be compared with the pantry unit", () => {
+  it("rejects a purchase that cannot convert into the stock unit and writes nothing", () => {
     const { ctx } = makeTestCtx();
-    const oil = addIngredient(ctx, { name: "Olive oil", defaultUnit: "cup" });
+    const oil = addIngredient(ctx, { name: "Olive oil", stockUnit: "cup" });
     addPantryItem(ctx, { ingredientId: oil, qty: 1, unit: "cup" });
+    setMeasure(ctx, oil, "bottle", { grams: 750 });
+
+    // An item for an ingredient is stored in its stock unit, so it cannot be added in a unit that does not convert.
+    expectAppError(
+      () => createShoppingList(ctx, { items: [{ ingredient: "Olive oil", qty: 1, unit: "bottle" }] }),
+      "unprocessable",
+    );
 
     const detail = createShoppingList(ctx, {
-      items: [{ ingredient: "Olive oil", qty: 1, unit: "bottle" }],
+      items: [{ ingredient: "Olive oil", qty: 1, unit: "cup" }],
     });
     const item = detail.items[0]!;
     checkItems(ctx, detail.list.id, [{ itemId: item.id, checked: true }]);
 
-    const result = completeShoppingList(ctx, detail.list.id);
-
-    expect(result.list.status).toBe("done");
-    expect(result.warnings).toHaveLength(1);
-    expect(result.warnings[0]).toContain("Olive oil");
-    expect(result.warnings[0]).toContain("units not comparable");
-    // The stock is untouched, but the caller can now see why.
+    // A bottle has a weight but a cup has no density: the two cannot be compared.
+    const error = expectAppError(
+      () => completeShoppingList(ctx, detail.list.id, { received: [{ itemId: item.id, qty: 1, unit: "bottle" }] }),
+      "unprocessable",
+    );
+    expect(error.details).toMatchObject({ ingredientId: oil, unit: "bottle", toUnit: "cup" });
+    expect(String(error.details?.hint)).toContain("measure");
+    expect(getShoppingList(ctx, detail.list.id).list.status).not.toBe("done");
     expect(pantryRow(ctx, oil)!.qty).toBe(1);
-    expect(result.movements[0]!.qtyAfter).toBe(1);
   });
 });
 
 describe("shopping quantity validation", () => {
   it("rejects negative quantities on every write path with 400", async () => {
     const { ctx, request } = makeTestApp();
-    const beef = addIngredient(ctx, { name: "Ground beef", defaultUnit: "lb" });
+    const beef = addIngredient(ctx, { name: "Ground beef", stockUnit: "lb" });
 
     const created = await request<{ list: { id: string }; items: { id: string }[] }>(
       "POST",

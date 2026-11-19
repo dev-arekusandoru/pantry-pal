@@ -57,6 +57,13 @@
       "when": 1795042908947,
       "tag": "0007_controlled_ingredients",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795117313270,
+      "tag": "0008_units_measures",
+      "breakpoints": true
     }
   ]
 }

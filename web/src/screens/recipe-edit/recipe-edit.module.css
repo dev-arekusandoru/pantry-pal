@@ -285,3 +285,9 @@
   flex-wrap: wrap;
   padding: 4px 0 0;
 }
+
+/* An open unit list or the add-measure form needs the full row. */
+.unitField:has([role="listbox"]),
+.unitField:has([role="group"]) {
+  grid-column: 1 / -1;
+}

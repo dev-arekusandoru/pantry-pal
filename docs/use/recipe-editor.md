@@ -39,9 +39,12 @@ Use **Add line** to add a line. Each line has:
   same search box. The recipe page shows them as **Milk (or Water)**. Tap `×` to
   remove one. See [Alternatives](ingredients.md#alternatives).
 - **Qty** and **Max qty**: a range uses both, for example 1 to 2 heads.
-- **Unit**: for example `cup`, `tbsp`, `g`. The server normalizes the unit. The
-  field suggests the sizes `small`, `medium`, `large`, `extra-large`, and
-  `jumbo`. For "2 large eggs", enter Qty `2` and Unit `large`. See
+- **Unit**: a list of the units of the chosen ingredient, for example `cup`,
+  `tbsp`, `g`, and the sizes `small`, `medium`, `large`, `extra-large`, and
+  `jumbo`. The box is not available until you choose an ingredient. Type a unit that is
+  not in the list, such as `handful`, and choose **Add a measure: 1 handful = ?
+  g** to give it a weight. See [Units and measures](units.md). For "2 large
+  eggs", enter Qty `2` and Unit `large`. See
   [Sizes and default portion](ingredients.md#sizes-and-default-portion).
 - **Prep note**: for example `diced`.
 - **Group**: a section header such as `Sauce`.
@@ -49,6 +52,11 @@ Use **Add line** to add a line. Each line has:
 - **Does not scale**: the amount stays the same when servings change.
 
 Use the arrows to reorder a line. Use the trash button to remove it.
+
+When you tap **Save recipe**, the server checks every unit. A unit that its
+ingredient does not accept stops the save. The page shows which unit failed, the
+units that work, and **Add a measure for** the unit. Choose **Use** a unit to
+replace it on the line, or add the measure. Then tap **Save recipe** again.
 
 ## Add steps and step ingredients
 

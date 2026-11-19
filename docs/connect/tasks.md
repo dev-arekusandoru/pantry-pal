@@ -123,8 +123,10 @@ again. `delete_item` removes one item; it does not change the pantry.
    for review.
 5. Call `recipe_save` with `title`, `servings`, the ingredient lines, and the
    ordered steps.
-6. Call `unit_conversions` with `action: "create"` when a package unit such as
-   `can` must compare to a pantry unit.
+6. Call `ingredient_measures` with `action: "set"` when a unit such as `can` or
+   `handful` needs a weight. A recipe line with a unit that the ingredient does
+   not accept fails with `unprocessable` and `unresolvedUnits`. Add the measure,
+   then send the recipe again.
 7. Call `recipe_check`, then `recipe_set_status` with `want_to_try` or
    `rotation`.
 

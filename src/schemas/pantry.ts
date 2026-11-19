@@ -36,8 +36,8 @@ export const pantryItemViewSchema = z
         .describe("Bundled icon name or http(s) URL; null = automatic icon."),
       shelfLifeDays: z.number().int().nullable().describe("Typical shelf life after purchase."),
     }),
-    qty: z.number().nullable().describe("Cached quantity; null = present but unknown."),
-    unit: z.string().nullable().describe("Normalized unit."),
+    qty: z.number().nullable().describe("Cached quantity, in the ingredient's stock unit; null = present but unknown."),
+    unit: z.string().nullable().describe("The ingredient's stock unit."),
     qtyApprox: z.boolean(),
     status: pantryStatusSchema,
     rawText: z.string().nullable().describe('Original free text, e.g. "1 small jar".'),
@@ -87,7 +87,6 @@ export const movementResultSchema = z
   .object({
     item: pantryItemViewSchema,
     movement: stockMovementSchema,
-    warning: z.string().optional().describe('e.g. "units not comparable".'),
   })
   .openapi("MovementResult");
 
@@ -105,7 +104,12 @@ export const setStockSchema = z
   .object({
     ...stockRefFields,
     qty: z.number().nullable().describe("Absolute quantity; null = present but unknown."),
-    unit: z.string().nullish().describe('Unit, e.g. "lb", "g", "can".'),
+    unit: z
+      .string()
+      .nullish()
+      .describe(
+        'Unit of `qty`, e.g. "lb", "g", "can". Converted into the ingredient\'s stock unit (the first write sets it). 422 when the unit is unknown for the ingredient or does not convert.',
+      ),
     status: pantryStatusSchema
       .optional()
       .describe("Overrides the computed status for this set."),
@@ -125,7 +129,12 @@ export const adjustStockSchema = z
   .object({
     ...stockRefFields,
     delta: z.number().describe("Relative change (negative consumes)."),
-    unit: z.string().nullish().describe("Unit of the delta; defaults to the item unit."),
+    unit: z
+      .string()
+      .nullish()
+      .describe(
+        "Unit of the delta; defaults to the stock unit. Converted into the stock unit; 422 when unknown or not convertible.",
+      ),
     note: z.string().nullish(),
     reason: movementReasonSchema.optional().describe('Defaults to "adjust".'),
     refType: movementRefTypeSchema.optional(),

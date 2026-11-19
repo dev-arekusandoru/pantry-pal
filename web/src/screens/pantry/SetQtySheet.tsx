@@ -1,15 +1,21 @@
 import { useId, useState, type FormEvent } from "react";
 import { Label, Select } from "radix-ui";
 import { Link } from "@tanstack/react-router";
-import { Button, Icon, Sheet, Sticker, buttonClass, hasIcon, ingredientEmoji } from "@/ui";
+import { errorMessage } from "@/api";
+import { Button, Icon, Sheet, Sticker, buttonClass, hasIcon, ingredientEmoji, toast } from "@/ui";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { CATEGORY_ORDER, aisleLabel } from "../aisles";
-import { parseQty, qtyToInput, unitLabel } from "../shop/format";
+import { UnitPicker } from "../ingredients/UnitPicker";
+import { UnitProblems } from "../ingredients/UnitProblems";
+import { unitProblems, unitText, type UnitProblem } from "../ingredients/units";
+import { parseQty, qtyToInput } from "../shop/format";
 import styles from "./Pantry.module.css";
 import { type PantryCategory, type PantryItem } from "./stock";
 
 export interface PantryChanges {
   qty: number;
+  /** The unit the amount is written in; the pantry stores it in the stock unit. Null = the row's own unit. */
+  unit: string | null;
   expiresOn: string | null;
   category: PantryCategory;
   shelfLifeDays: number | null;
@@ -19,7 +25,7 @@ export interface SetQtySheetProps {
   /** The item being edited; null closes the sheet. */
   item: PantryItem | null;
   onClose: () => void;
-  onSave: (item: PantryItem, changes: PantryChanges) => void;
+  onSave: (item: PantryItem, changes: PantryChanges) => Promise<void>;
   /** Remove the row from the pantry entirely; the caller confirms with an Undo toast. */
   onRemove: (item: PantryItem) => void;
   /** Open the icon picker for this item's ingredient. */
@@ -49,7 +55,7 @@ export function SetQtySheet({ item, onClose, onSave, onRemove, onEditIcon }: Set
 interface FormProps {
   item: PantryItem;
   onClose: () => void;
-  onSave: (item: PantryItem, changes: PantryChanges) => void;
+  onSave: (item: PantryItem, changes: PantryChanges) => Promise<void>;
   onRemove: (item: PantryItem) => void;
   onEditIcon: (item: PantryItem) => void;
 }
@@ -62,21 +68,39 @@ function Form({ item, onClose, onSave, onRemove, onEditIcon }: FormProps) {
     item.ingredient.shelfLifeDays === null ? "" : String(item.ingredient.shelfLifeDays),
   );
   const [confirming, setConfirming] = useState(false);
+  const [unit, setUnit] = useState(item.unit === null || item.unit === "count" ? "" : unitText(item.unit));
+  const [issues, setIssues] = useState<UnitProblem[]>([]);
+  const [saving, setSaving] = useState(false);
   const amountId = useId();
   const expiryId = useId();
   const shelfId = useId();
   const categoryId = useId();
   const qty = parseQty(text);
-  const unit = unitLabel(item.unit, qty);
   const name = item.ingredient.name;
   const shelfLifeDays = shelfText.trim() === "" ? null : Number(shelfText);
   const shelfBad = shelfLifeDays !== null && (!Number.isInteger(shelfLifeDays) || shelfLifeDays < 0);
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
-    if (qty === null || shelfBad) return;
-    onSave(item, { qty, expiresOn: expiresOn === "" ? null : expiresOn, category, shelfLifeDays });
-    onClose();
+    if (qty === null || shelfBad || saving) return;
+    setIssues([]);
+    setSaving(true);
+    try {
+      await onSave(item, {
+        qty,
+        unit: unit.trim() === "" ? null : unit.trim(),
+        expiresOn: expiresOn === "" ? null : expiresOn,
+        category,
+        shelfLifeDays,
+      });
+      onClose();
+    } catch (error) {
+      const found = unitProblems(error);
+      setIssues(found);
+      if (found.length === 0) toast.error(errorMessage(error));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -96,8 +120,29 @@ function Form({ item, onClose, onSave, onRemove, onEditIcon }: FormProps) {
           onChange={(e) => setText(e.target.value)}
           onFocus={(e) => e.currentTarget.select()}
         />
-        {unit !== "" && <span className={styles.setUnit}>{unit}</span>}
       </div>
+      <UnitPicker
+        label="Unit"
+        ingredientId={item.ingredientId}
+        value={unit}
+        placeholder={item.unit === null ? "Choose a unit" : unitText(item.unit)}
+        invalid={issues.length > 0}
+        onChange={(next) => {
+          setUnit(next);
+          setIssues([]);
+        }}
+      />
+      <p className={styles.hint}>
+        {item.ingredient.name} is stored in {item.unit === null || item.unit === "count" ? "its first unit" : unitText(item.unit)}. Another unit is converted.
+      </p>
+      <UnitProblems
+        problems={issues}
+        onUseUnit={(next) => {
+          setUnit(next);
+          setIssues([]);
+        }}
+        onMeasureAdded={() => setIssues([])}
+      />
       <div className={styles.field}>
         <Label.Root className={styles.fieldLabel} htmlFor={expiryId}>
           Best before

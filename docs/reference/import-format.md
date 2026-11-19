@@ -16,15 +16,15 @@ See [Data import](import.md) for commands and safety checks.
   (`key`, `household.members`, `plan` on a shopping list) are marked below.
 - **Dates are `YYYY-MM-DD`**; timestamps are ISO-8601 UTC strings. Quantities are JSON numbers or
   `null` (unknown amount, e.g. "to taste" / "on hand").
-- **Units are already normalized** to the names accepted by `normalizeUnit()`:
-  `lb, oz, g, kg, ml, l, cup, tbsp, tsp, fl_oz, pint, quart, gallon, count` and the package/count
-  units `can, jar, bag, bunch, head, clove, sprig, stalk, package, bottle, box, slice, piece`, and the sizes
-  `small, medium, large, extra-large, jumbo`.
-  The loader still runs `normalizeUnit()` on every unit and aborts on an unknown one.
+- **Units are normalized by the loader** (`cups` becomes `cup`). Every unit must be valid for its
+  ingredient: a built-in unit (`lb, oz, g, kg, ml, l, cup, tbsp, tsp, fl_oz, pint, quart, gallon, count,
+  dozen`), a size (`small, medium, large, extra-large, jumbo`), or a unit the ingredient has a
+  measure for, from its USDA food (for example `clove` for garlic) or from `measures[]` below (for
+  example `can`, `bunch`, `jar`). The loader aborts with a 422 and `details.unresolvedUnits` on any other unit.
 - **Enums match `schema.ts` exactly**; see [Enumerations](#enumerations). The loader validates every
   enum value and aborts with `AppError("validation", …)` before writing anything.
 - **Every ingredient used anywhere in the file is declared in `ingredients[]`**: recipe lines,
-  pantry rows, shopping items, unit conversions, and ingredient-scoped rules. Unresolved names are a
+  pantry rows, shopping items, measures, and ingredient-scoped rules. Unresolved names are a
   hard error (`{ unresolved: [names] }`), because the seed must not silently create shadow
   ingredients.
 - **Every ingredient declares its food.** Set `fdcId` (a USDA food from `search_foods`) or
@@ -37,7 +37,7 @@ See [Data import](import.md) for commands and safety checks.
 {
   "household": { … },
   "ingredients": [ … ],
-  "unitConversions": [ … ],
+  "measures": [ … ],
   "pantry": [ … ],
   "rules": [ … ],
   "recipes": [ … ],
@@ -75,28 +75,29 @@ All eight top-level keys are required; the arrays may be empty but are not omitt
 | `fdcId` | integer | one of `fdcId`, `custom` | USDA FoodData Central ID of the linked food. Two ingredients may share one food in a seed (for example Red onion and Yellow onion). |
 | `custom` | `true` | one of `fdcId`, `custom` | An ingredient with no USDA food. Use it as a last resort. |
 | `defaultPortion` | size \| null | no | Size that a bare count means, for example `large` for Egg. The linked food must have that portion. |
-| `defaultUnit` | unit \| null | yes | Used for stock/shopping when nothing else is specified. |
+| `stockUnit` | unit \| null | yes | The one unit the ingredient is stocked in. Pantry amounts, par and shopping quantities are stored in it. Must be valid for the ingredient (see `measures[]`); `null` lets the first pantry row set it. |
 | `aliases` | string[] | yes | May be `[]`. Lowercased by the loader; must not collide with any alias or ingredient name. Each becomes an `ingredient_alias` row. |
 | `description` | string | no | Optional prose description. |
 | `imageUrl` | string \| null | no | Icon: a bundled icon name, an `http(s)` link, or `null` for automatic. See [Ingredient icons](../use/icons.md). |
 | `shelfLifeDays` | integer | no | Typical shelf life once purchased. Shopping completion uses it to set the expiry date. |
 | `parQty` | number | no | Desired minimum stock. **Unset in this seed** so imported quantities cannot flip a row to `low`. |
-| `parUnit` | unit | no | Unit for `parQty`. |
+| `parUnit` | unit | no | Optional unit of `parQty`; par is converted into the stock unit. |
 
-### `unitConversions[]` (required)
+### `measures[]` (required)
+
+A measure is the weight of ONE unit of an ingredient. Measures from the linked USDA food need no
+row; add a row for a unit the food lacks (`can`, `bunch`) or to override the food's weight.
 
 | Field | Type | Notes |
 |---|---|---|
-| `ingredient` | string \| null | Ingredient name, or `null`/omitted for a household-global conversion. |
-| `fromUnit` | unit | |
-| `toUnit` | unit | |
-| `factor` | number | `1 fromUnit = factor toUnit`, stored as `unit_conversion.factor`. May be fractional. Must be `> 0`. |
+| `ingredient` | string | Declared ingredient name. |
+| `unit` | unit | Not a mass unit (`g, kg, oz, lb` are fixed). A volume unit sets the density (1 cup = 30 g). `count` sets what one plain count weighs. A new name such as `handful` is allowed. |
+| `grams` | number | Weight of one unit in grams. Must be `> 0`. |
 | `note` | string \| null | Human explanation ("one 14.5 oz can"). |
 
-Unique per `(ingredient, fromUnit, toUnit)`. The service already handles the inverse direction, so
-only one direction is seeded. These rows are what make recipe units comparable to pantry units, e.g.
-`can → oz` for canned tomatoes, `count → lb` for chicken breast, `head → clove` for garlic,
-`head → cup` for broccoli, `clove → tsp` for minced garlic, `bunch → sprig` for dill.
+Unique per `(ingredient, unit)`. Measures make recipe units comparable to pantry units, for example
+`can` for canned tomatoes (411 g, which is 14.5 oz), `count` for chicken breast, `head` and `clove`
+for garlic, `bunch` and `sprig` for dill.
 
 ### `pantry[]` (required)
 
@@ -325,7 +326,7 @@ not encode timestamps for individual rows.
 |---|---|
 | household members | 2 |
 | ingredients | 65 |
-| unit conversions | 16 |
+| measures | 17 |
 | pantry rows | 46 |
 | rules | 11 |
 | recipes | 8 (5 sourced + 3 authored breakfasts) |

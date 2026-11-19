@@ -19,7 +19,7 @@ const TOOL_NAMES = [
   "create_custom_ingredient",
   "review_ingredients",
   "list_icons",
-  "unit_conversions",
+  "ingredient_measures",
   "pantry_query",
   "pantry_update",
   "pantry_history",
@@ -297,14 +297,14 @@ describe("MCP endpoint", () => {
     const recipe = createRecipe(ctx, {
       title: "Bean Bowl",
       servings: 2,
-      ingredients: [{ ingredient: "Black beans", qty: 1, unit: "can" }],
+      ingredients: [{ ingredient: "Black beans", qty: 1, unit: "count" }],
     });
     const beans = recipe.ingredients[0]!.ingredientId;
     applyMovement(ctx, {
       ingredientId: beans,
       kind: "set",
       qty: 3,
-      unit: "can",
+      unit: "count",
       reason: "purchase",
     });
 
@@ -327,7 +327,7 @@ describe("MCP endpoint", () => {
       ingredientId: beans,
       ingredientName: "Black Beans",
       qty: -1,
-      unit: "can",
+      unit: "count",
       qtyAfter: 2,
     });
   });

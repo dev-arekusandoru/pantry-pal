@@ -3,7 +3,10 @@ import { useMemo, useState, type FormEvent } from "react";
 import { errorMessage } from "@/api";
 import { Button, ErrorState, Icon, PageHeader, Skeleton, buttonClass, toast } from "@/ui";
 import { IngredientPicker } from "../ingredients/IngredientPicker";
-import { ingredientErrorMessage, UNIT_SUGGESTIONS, type IngredientPick } from "../ingredients/refs";
+import { ingredientErrorMessage, type IngredientPick } from "../ingredients/refs";
+import { UnitPicker } from "../ingredients/UnitPicker";
+import { UnitProblems } from "../ingredients/UnitProblems";
+import { unitProblems, type UnitProblem } from "../ingredients/units";
 import type { RecipeDetail } from "../recipe/lib";
 import { useRecipe } from "../recipe/queries";
 import { useCreateRecipe, useTagSuggestions, useUpdateRecipe, type RecipeSaveInput } from "./queries";
@@ -231,6 +234,8 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
   const [draft, setDraft] = useState<DraftState>(() => initialState(recipe));
   const [tagText, setTagText] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  /** Units the server rejected on the last save, with the ways to fix them. */
+  const [unitIssues, setUnitIssues] = useState<UnitProblem[]>([]);
   /** Line whose "add an alternative" picker is open. */
   const [addingAlternative, setAddingAlternative] = useState<string | null>(null);
 
@@ -335,12 +340,17 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
     };
 
     setFormError(null);
+    setUnitIssues([]);
     save.mutate(input, {
       onSuccess: (saved) => {
         toast.show({ message: recipe === undefined ? "Recipe created" : "Recipe saved" });
         void navigate({ to: "/recipes/$slug", params: { slug: saved.slug }, replace: recipe !== undefined });
       },
-      onError: (error) => setFormError(ingredientErrorMessage(error, errorMessage(error))),
+      onError: (error) => {
+        const issues = unitProblems(error);
+        setUnitIssues(issues);
+        setFormError(issues.length > 0 ? "Some units are not known yet. Nothing was saved." : ingredientErrorMessage(error, errorMessage(error)));
+      },
     });
   }
 
@@ -512,14 +522,10 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
           </Button>
         </div>
         <p className={styles.hint}>
-          Pick each ingredient from the list. Sizes (small, medium, large, extra-large, jumbo) work as units: 2 large
-          eggs is Qty 2, Unit large.
+          Pick each ingredient from the list, then choose a unit. The list shows the units of that ingredient. If a unit is
+          missing, type it and add a measure: the weight of one unit in grams. Sizes (small, medium, large, extra-large,
+          jumbo) work as units: 2 large eggs is Qty 2, Unit large.
         </p>
-        <datalist id="recipe-unit-suggestions">
-          {UNIT_SUGGESTIONS.map((unit) => (
-            <option key={unit} value={unit} />
-          ))}
-        </datalist>
         <ol className={styles.rows}>
           {draft.lines.map((line, index) => (
             <li key={line.key} className={styles.row}>
@@ -600,10 +606,21 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
                   <span className={styles.label}>Max qty</span>
                   <input className={styles.input} inputMode="decimal" value={line.qtyMax} onChange={(e) => patchLine(line.key, { qtyMax: e.target.value })} />
                 </label>
-                <label className={styles.field}>
-                  <span className={styles.label}>Unit</span>
-                  <input className={styles.input} list="recipe-unit-suggestions" value={line.unit} onChange={(e) => patchLine(line.key, { unit: e.target.value })} />
-                </label>
+                {line.ingredient === null ? (
+                  <label className={styles.field}>
+                    <span className={styles.label}>Unit</span>
+                    <input className={styles.input} value="" disabled placeholder="Pick an ingredient first" readOnly />
+                  </label>
+                ) : (
+                  <UnitPicker
+                    label="Unit"
+                    className={styles.unitField}
+                    ingredientId={line.ingredient.id}
+                    value={line.unit}
+                    invalid={unitIssues.some((issue) => issue.ingredientId === line.ingredient?.id)}
+                    onChange={(unit) => patchLine(line.key, { unit })}
+                  />
+                )}
                 <label className={styles.field}>
                   <span className={styles.label}>Prep note</span>
                   <input className={styles.input} value={line.prepNote} onChange={(e) => patchLine(line.key, { prepNote: e.target.value })} />
@@ -771,6 +788,24 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
           {formError}
         </p>
       )}
+      <UnitProblems
+        problems={unitIssues}
+        onUseUnit={(unit, problem) => {
+          const same = (value: string) => value.trim().toLowerCase().replace(/(es|s)$/, "") === problem.unit.replace(/(es|s)$/, "");
+          setDraft((current) => ({
+            ...current,
+            lines: current.lines.map((line) =>
+              line.ingredient?.id === problem.ingredientId && same(line.unit) ? { ...line, unit } : line,
+            ),
+          }));
+          setUnitIssues((current) => current.filter((issue) => issue !== problem));
+          setFormError(null);
+        }}
+        onMeasureAdded={(_measure, problem) => {
+          setUnitIssues((current) => current.filter((issue) => issue !== problem));
+          setFormError(null);
+        }}
+      />
 
       <div className={styles.actions}>
         <Link

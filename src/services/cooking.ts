@@ -14,7 +14,8 @@ import { isIsoDate, nowIso } from "../lib/time.js";
 import { applyMovement, getStockForIngredient } from "./pantry.js";
 import { addAdHocCookEvent, getCookEvent, type CookEventView, type RecipeRef } from "./plans.js";
 import { scaleRecipeIngredients } from "./recipes.js";
-import { convert, normalizeUnit } from "./units.js";
+import { convert, isValidUnitFor } from "./units.js";
+import { normalizeUnit } from "./unitNames.js";
 
 export type StockMovement = typeof stockMovements.$inferSelect;
 type PantryRow = typeof pantryItems.$inferSelect;
@@ -164,10 +165,22 @@ export function completeCookEvent(
         const wanted = Math.abs(ingredient.qty);
         // Never record more than the pantry actually holds: the ledger row is what
         // reopenCookEvent reverses, so an over-recorded decrement would create stock.
+        if (!isValidUnitFor(t, ingredient.ingredientId, ingredient.unit)) {
+          warnings.push(
+            `${ingredient.ingredientName}: "${ingredient.unit}" is not a valid unit for this ingredient; nothing was decremented.`,
+          );
+          continue;
+        }
         const available =
           target.qty === null
             ? null
             : convert(t, target.qty, target.unit, ingredient.unit, ingredient.ingredientId);
+        if (target.qty !== null && available === null) {
+          warnings.push(
+            `${ingredient.ingredientName}: ${ingredient.unit ?? "count"} does not convert to the pantry unit (${target.unit ?? "count"}); add a measure. Nothing was decremented.`,
+          );
+          continue;
+        }
         const requested = available === null ? wanted : Math.min(wanted, Math.abs(available));
         if (requested <= 0) continue;
 
@@ -182,9 +195,6 @@ export function completeCookEvent(
           note: `Cook ${existing.id} (${actualServings} servings)`,
         });
         movements.push(result.movement);
-        if (result.warning !== undefined) {
-          warnings.push(`${ingredient.ingredientName}: ${result.warning}`);
-        }
       }
 
       if (unmeasured.length > 0) {
@@ -324,7 +334,6 @@ function reverseCookMovements(
       note,
     });
     movements.push(result.movement);
-    if (result.warning !== undefined) warnings.push(result.warning);
   }
 
   return { movements, warnings };

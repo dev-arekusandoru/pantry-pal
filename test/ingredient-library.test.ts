@@ -59,7 +59,7 @@ describe("Title Case names", () => {
     expect(created.body.normalizedName).toBe("birria paste");
 
     const list = createShoppingList(app.ctx, { title: "Run" });
-    addItems(app.ctx, list.list.id, [{ ingredientId: created.body.id, qty: 1, unit: "jar" }]);
+    addItems(app.ctx, list.list.id, [{ ingredientId: created.body.id, qty: 1, unit: "count" }]);
     expect(getShoppingList(app.ctx, list.list.id).items[0]!.name).toBe("Birria Paste");
 
     const renamed = await app.request<{ name: string }>("PATCH", `/api/v1/ingredients/${created.body.id}`, {
@@ -107,7 +107,7 @@ describe("titleCaseIngredientNames migration", () => {
         .where(eq(ingredients.id, bad.id))
         .run();
       const list = createShoppingList(ctx, { title: "Run" });
-      addItems(ctx, list.list.id, [{ ingredientId: paste.id, qty: 1, unit: "jar" }]);
+      addItems(ctx, list.list.id, [{ ingredientId: paste.id, qty: 1, unit: "count" }]);
       db.update(ingredients).set({ name: "birria paste" }).where(eq(ingredients.id, paste.id)).run();
     }
 

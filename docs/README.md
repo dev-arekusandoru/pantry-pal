@@ -22,6 +22,7 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 - [Recipes](use/recipes.md) — servings, recipe status, cook mode, and cooking together.
 - [Create and edit recipes](use/recipe-editor.md) — the editor, step ingredient links, delete and archive.
 - [Ingredients](use/ingredients.md) — the ingredient list and ingredient pages, Title Case names, choosing and custom ingredients, alternatives, sizes, and Needs attention.
+- [Units and measures](use/units.md) — the stock unit, measures in grams, and the unit list.
 - [Nutrition](use/nutrition.md) — calories and nutrients, blank lines, and food matches.
 - [Meal plans](use/meal-plans.md) — meals, leftovers, swaps, and prep tasks.
 - [Ingredient icons](use/icons.md) — how icons are chosen, and how to change one.

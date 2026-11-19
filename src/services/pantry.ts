@@ -15,7 +15,7 @@ import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
 import { resolveIngredientRefs, type Ingredient, type IngredientRefInput } from "./ingredients.js";
-import { convert, normalizeUnit } from "./units.js";
+import { convert, convertOrThrow, validateUnit } from "./units.js";
 
 export type PantryItem = typeof pantryItems.$inferSelect;
 export type StockMovement = typeof stockMovements.$inferSelect;
@@ -34,7 +34,6 @@ export interface PantryItemView extends PantryItem {
 export interface MovementResult {
   item: PantryItemView;
   movement: StockMovement;
-  warning?: string;
 }
 
 export interface StockMovementView extends StockMovement {
@@ -104,24 +103,17 @@ function pantryItemView(ctx: Ctx, item: PantryItem): PantryItemView {
   return { ...item, ingredient };
 }
 
-function normalizeUnitInput(raw: string | null | undefined): string | null {
-  if (raw === null || raw === undefined) return null;
-  const normalized = normalizeUnit(raw);
-  if (normalized === null) throw new AppError("validation", `Unknown unit: ${raw}`);
-  return normalized;
-}
-
-/** 0 → out, at/below par (converted) → low, otherwise on_hand. */
+/** 0 → out, at/below par (in the stock unit) → low, otherwise on_hand. */
 function computeStatus(
   ctx: Ctx,
-  ingredient: Ingredient,
+  ingredient: Pick<Ingredient, "id" | "parQty" | "stockUnit">,
   qty: number | null,
   unit: string | null,
 ): PantryStatus {
   if (qty === null) return "unknown";
   if (qty <= 0) return "out";
   if (ingredient.parQty !== null) {
-    const par = convert(ctx, ingredient.parQty, ingredient.parUnit, unit, ingredient.id);
+    const par = convert(ctx, ingredient.parQty, ingredient.stockUnit, unit, ingredient.id);
     if (par !== null && qty <= par) return "low";
   }
   return "on_hand";
@@ -140,7 +132,7 @@ function applyMovementIn(ctx: Ctx, input: ApplyMovementInput): MovementResult {
   }
 
   const ingredient = requireIngredient(ctx, input.ingredientId);
-  const unit = normalizeUnitInput(input.unit);
+  const unit = validateUnit(ctx, ingredient.id, input.unit);
   const existing = ctx.db
     .select()
     .from(pantryItems)
@@ -156,44 +148,54 @@ function applyMovementIn(ctx: Ctx, input: ApplyMovementInput): MovementResult {
   let qtyAfter: number | null;
   let itemUnit: string | null;
   let statusAfter: PantryStatus;
-  let warning: string | undefined;
+
+  // One stock unit per ingredient: the first write sets it, every write converts into it.
+  const stockUnit = ingredient.stockUnit ?? existing?.unit ?? unit;
+  if (stockUnit !== ingredient.stockUnit) {
+    ctx.db
+      .update(ingredients)
+      .set({ stockUnit, updatedAt: timestamp })
+      .where(and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.id, ingredient.id)))
+      .run();
+    ingredient.stockUnit = stockUnit;
+  }
+  const intoStock = (qty: number, from: string | null, what: string): number =>
+    from === null || from === stockUnit
+      ? qty
+      : convertOrThrow(ctx, qty, from, stockUnit, ingredient.id, what);
+  itemUnit = stockUnit;
 
   if (input.kind === "set") {
     if (input.qty !== null && input.qty < 0) {
       throw new AppError("validation", "qty cannot be negative for a set movement");
     }
-    qtyAfter = input.qty;
-    itemUnit =
-      unit ??
-      existing?.unit ??
-      (input.qty === null ? null : normalizeUnit(ingredient.defaultUnit));
+    qtyAfter = input.qty === null ? null : intoStock(input.qty, unit, "the amount");
     if (input.status !== undefined) statusAfter = input.status;
     else if (qtyAfter === null) statusAfter = existing?.status ?? "unknown";
     else statusAfter = computeStatus(ctx, ingredient, qtyAfter, itemUnit);
   } else {
     const delta = input.qty as number;
-    itemUnit = existing?.unit ?? unit;
     if (existing === undefined) {
       // No row yet: the household is known to have zero of it, so the delta is
-      // the starting amount in the movement's own unit. Clamped at 0 like any
-      // other delta.
-      qtyAfter = Math.max(0, delta);
+      // the starting amount. Clamped at 0 like any other delta.
+      qtyAfter = Math.max(0, intoStock(delta, unit, "the amount"));
       statusAfter = computeStatus(ctx, ingredient, qtyAfter, itemUnit);
     } else if (existing.qty === null) {
       // Unknown amounts stay unknown; a positive delta means "we know we have it".
       qtyAfter = null;
       statusAfter = delta > 0 ? "on_hand" : existing.status;
     } else {
-      const converted = convert(ctx, delta, unit ?? itemUnit, itemUnit, ingredient.id);
-      if (converted === null) {
-        qtyAfter = existing.qty;
-        statusAfter = existing.status;
-        warning = "units not comparable";
-      } else {
-        qtyAfter = Math.max(0, existing.qty + converted);
-        statusAfter = computeStatus(ctx, ingredient, qtyAfter, itemUnit);
-      }
+      const have =
+        existing.unit === stockUnit
+          ? existing.qty
+          : convertOrThrow(ctx, existing.qty, existing.unit, stockUnit, ingredient.id, "the amount in the pantry");
+      qtyAfter = Math.max(0, have + intoStock(delta, unit, "the amount"));
+      statusAfter = computeStatus(ctx, ingredient, qtyAfter, itemUnit);
     }
+  }
+  // A row with an unknown amount keeps the unit it was written with; only amounts live in the stock unit.
+  if (qtyAfter === null) {
+    itemUnit = input.kind === "set" ? (unit ?? existing?.unit ?? null) : (existing?.unit ?? null);
   }
 
   // A set or a purchase is a direct observation of stock; deltas from cooking or waste are not.
@@ -251,7 +253,6 @@ function applyMovementIn(ctx: Ctx, input: ApplyMovementInput): MovementResult {
     item: pantryItemView(ctx, requirePantryItem(ctx, itemId)),
     movement,
   };
-  if (warning !== undefined) result.warning = warning;
   return result;
 }
 

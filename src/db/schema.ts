@@ -223,14 +223,16 @@ export const ingredients = sqliteTable(
     normalizedName: text("normalized_name").notNull(),
     description: text("description"),
     category: text("category").$type<IngredientCategory>().notNull().default("other"),
-    /** Unit used for pantry stock and shopping when nothing else is specified. */
-    defaultUnit: text("default_unit"),
+    /**
+     * The one unit this ingredient is stocked in. Pantry amounts, par and shopping quantities are
+     * stored in it. null until the first pantry write (or par/stock unit write) sets it.
+     */
+    stockUnit: text("stock_unit"),
     imageUrl: text("image_url"),
     /** Typical shelf life once purchased, used to set expiry dates. */
     shelfLifeDays: integer("shelf_life_days"),
-    /** Desired minimum stock; below it the item is "low". */
+    /** Desired minimum stock, in the stock unit; at or below it the item is "low". */
     parQty: real("par_qty"),
-    parUnit: text("par_unit"),
     notes: text("notes"),
     /** USDA FoodData Central id; null with source "auto" = nothing confident, with "manual" = user cleared it. */
     nutritionFdcId: integer("nutrition_fdc_id"),
@@ -265,21 +267,30 @@ export const ingredientAliases = sqliteTable(
   ],
 );
 
-export const unitConversions = sqliteTable(
-  "unit_conversion",
+/**
+ * What one unit of an ingredient weighs: a household override of (or addition to) the linked USDA
+ * food's measures. USDA measures are never copied here; they are read from the food at use time.
+ */
+export const ingredientMeasures = sqliteTable(
+  "ingredient_measure",
   {
     id: id(),
     householdId: householdId(),
-    /** NULL = applies to every ingredient (household-level custom unit). */
-    ingredientId: text("ingredient_id").references(() => ingredients.id, { onDelete: "cascade" }),
-    fromUnit: text("from_unit").notNull(),
-    toUnit: text("to_unit").notNull(),
-    /** 1 fromUnit = factor toUnit. */
-    factor: real("factor").notNull(),
+    ingredientId: text("ingredient_id")
+      .notNull()
+      .references(() => ingredients.id, { onDelete: "cascade" }),
+    /** Normalized unit ("cup", "can", "handful"). Built-in mass units are not allowed. */
+    unit: text("unit").notNull(),
+    /** Weight of ONE unit in grams. */
+    grams: real("grams").notNull(),
     note: text("note"),
     createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex("unit_conversion_uq").on(t.householdId, t.ingredientId, t.fromUnit, t.toUnit)],
+  (t) => [
+    uniqueIndex("ingredient_measure_uq").on(t.ingredientId, t.unit),
+    index("ingredient_measure_household_idx").on(t.householdId),
+  ],
 );
 
 // ---------------------------------------------------------------------------

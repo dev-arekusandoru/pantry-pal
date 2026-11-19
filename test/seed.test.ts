@@ -51,7 +51,7 @@ describe("loadSeed(seed/example.json)", () => {
     expect(result.summary).toMatchObject({
       householdMembers: 2,
       ingredients: 65,
-      unitConversions: 16,
+      measures: 17,
       pantryItems: 46,
       stockMovements: 46,
       dietaryRules: 11,
@@ -213,8 +213,8 @@ describe("loadSeed(seed/example.json)", () => {
   it("makes recipe units comparable to pantry units", () => {
     const tomatoes = findIngredientByName(test.ctx, "Diced tomatoes with green chilies");
     const garlic = findIngredientByName(test.ctx, "Garlic");
-    expect(convert(test.ctx, 2, "can", "oz", tomatoes!.id)).toBeCloseTo(29);
-    expect(convert(test.ctx, 1, "head", "clove", garlic!.id)).toBe(10);
+    expect(convert(test.ctx, 2, "can", "oz", tomatoes!.id)).toBeCloseTo(29, 3);
+    expect(convert(test.ctx, 1, "head", "clove", garlic!.id)).toBeCloseTo(10, 9);
   });
 
   it("imports the historical shopping list as done, fully checked, with no stock changes", () => {
@@ -316,8 +316,8 @@ describe("loadSeed validation", () => {
     data.recipes[0]!.ingredients[0]!.unit = "furlong";
 
     const error = asAppError(errorFrom(() => loadSeed(test.ctx, data)));
-    expect(error.code).toBe("validation");
-    expect(Array.isArray(error.details?.issues)).toBe(true);
+    expect(error.code).toBe("unprocessable");
+    expect(error.details).toMatchObject({ unresolvedUnits: [expect.objectContaining({ unit: "furlong" })] });
     expect(listIngredients(test.ctx)).toHaveLength(0);
   });
 

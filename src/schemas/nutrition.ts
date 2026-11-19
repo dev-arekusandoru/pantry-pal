@@ -16,6 +16,11 @@ export const foodPortionSchema = z
   .object({
     label: z.string().describe('Portion label, e.g. "cup" or "medium".'),
     grams: z.number().describe("Grams in one such portion."),
+    unit: z
+      .string()
+      .nullable()
+      .describe('The app unit this portion measures ("cup", "tbsp", "large", "clove"...); null when the label names no unit.'),
+    estimated: z.boolean().describe("True when the portion is borrowed from a similar USDA food, not measured on this one."),
   })
   .openapi("FoodPortion");
 
@@ -87,6 +92,10 @@ export const recipeNutritionLineSchema = z
       .describe(
         "ok = counted; optional = excluded; no_match = no USDA food; no_quantity = to taste; no_conversion = amount not convertible to grams.",
       ),
+    hint: z
+      .string()
+      .optional()
+      .describe('Present on no_conversion: what to add so the line counts, e.g. "Add a measure: 1 cup = ? g".'),
   })
   .openapi("RecipeNutritionLine");
 

@@ -240,3 +240,34 @@ export function useArchiveIngredient() {
     onSuccess: refresh,
   });
 }
+
+/** Set your own measure for a unit: what one unit weighs, in grams. A new unit becomes valid for the ingredient. */
+export function useSetMeasure() {
+  const refresh = useRefreshIngredients();
+  return useMutation({
+    meta: { silent: true },
+    mutationFn: (input: { ingredientId: string; unit: string; grams: number }) =>
+      unwrap(
+        client.PUT("/ingredients/{id}/measures/{unit}", {
+          params: { path: { id: input.ingredientId, unit: input.unit } },
+          body: { grams: input.grams },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+}
+
+/** Delete your own measure; the USDA weight for the unit, if there is one, shows again. */
+export function useDeleteMeasure() {
+  const refresh = useRefreshIngredients();
+  return useMutation({
+    meta: { silent: true },
+    mutationFn: (input: { ingredientId: string; unit: string }) =>
+      unwrap(
+        client.DELETE("/ingredients/{id}/measures/{unit}", {
+          params: { path: { id: input.ingredientId, unit: input.unit } },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+}

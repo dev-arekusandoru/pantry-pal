@@ -5,6 +5,7 @@ import { autoMatchFood } from "../src/services/foods.js";
 import {
   addAlias,
   createIngredient,
+  getIngredient,
   listIngredients,
 } from "../src/services/ingredients.js";
 import {
@@ -20,6 +21,7 @@ import {
   updatePantryItem,
   verifyItem,
 } from "../src/services/pantry.js";
+import { setMeasure } from "../src/services/units.js";
 import { addIngredient, makeTestApp, makeTestCtx } from "./helpers.js";
 
 function makeClock(start = "2026-11-01T12:00:00.000Z") {
@@ -100,7 +102,8 @@ describe("applyMovement ledger", () => {
 
   it("keeps an unknown quantity unknown on a delta", () => {
     const { ctx } = makeClock();
-    addIngredient(ctx, "Tomato paste");
+    const paste = addIngredient(ctx, "Tomato paste");
+    setMeasure(ctx, paste.id, "can", { grams: 170 });
     const set = setStock(ctx, { ingredient: "Tomato paste", qty: null, unit: "can" });
     expect(set.item.qty).toBeNull();
     expect(set.item.status).toBe("unknown");
@@ -110,21 +113,38 @@ describe("applyMovement ledger", () => {
     expect(delta.item.status).toBe("on_hand");
     expect(delta.movement.qtyAfter).toBeNull();
     expect(delta.movement.statusAfter).toBe("on_hand");
-    expect(delta.warning).toBeUndefined();
   });
 
-  it("records an incomparable delta with a warning and leaves the quantity alone", () => {
+  it("rejects a delta in a unit that does not convert into the stock unit and writes nothing", () => {
     const { ctx } = makeClock();
     addIngredient(ctx, "Milk");
     const set = setStock(ctx, { ingredient: "Milk", qty: 5, unit: "cup" });
-    const delta = adjustStock(ctx, { ingredientId: set.item.ingredientId, delta: 1, unit: "lb" });
 
-    expect(delta.warning).toBe("units not comparable");
-    expect(delta.item.qty).toBe(5);
-    expect(delta.item.status).toBe("on_hand");
-    expect(delta.movement.qty).toBe(1);
-    expect(delta.movement.unit).toBe("lb");
-    expect(delta.movement.qtyAfter).toBe(5);
+    expect(() => adjustStock(ctx, { ingredientId: set.item.ingredientId, delta: 1, unit: "lb" })).toThrowError(
+      /Cannot convert/,
+    );
+    const row = listPantry(ctx)[0]!;
+    expect(row.qty).toBe(5);
+    expect(row.unit).toBe("cup");
+    expect(listMovements(ctx)).toHaveLength(1);
+  });
+
+  it("converts a write in another unit into the stock unit; the first write sets it", () => {
+    const { ctx } = makeClock();
+    const flour = createIngredient(ctx, { custom: true, name: "Flour" });
+    expect(flour.stockUnit).toBeNull();
+
+    const first = setStock(ctx, { ingredientId: flour.id, qty: 2, unit: "lb" });
+    expect(first.item.unit).toBe("lb");
+    expect(getIngredient(ctx, flour.id).stockUnit).toBe("lb");
+
+    const second = setStock(ctx, { ingredientId: flour.id, qty: 16, unit: "oz" });
+    expect(second.item.qty).toBeCloseTo(1, 9);
+    expect(second.item.unit).toBe("lb");
+    expect(second.movement.unit).toBe("oz");
+
+    const delta = adjustStock(ctx, { ingredientId: flour.id, delta: 8, unit: "oz" });
+    expect(delta.item.qty).toBeCloseTo(1.5, 9);
   });
 
   it("uses par (converted) to decide low vs on_hand", () => {
@@ -175,7 +195,7 @@ describe("applyMovement ledger", () => {
     addIngredient(ctx, "Salt");
     expectAppError(
       () => setStock(ctx, { ingredient: "Salt", qty: 1, unit: "blorp" }),
-      "validation",
+      "unprocessable",
     );
     expectAppError(
       () => setStock(ctx, { ingredient: "Salt", qty: -1, unit: "g" }),
@@ -235,7 +255,7 @@ describe("applyMovement ledger", () => {
 
   it("starts a missing row at zero so a purchase delta becomes the quantity", () => {
     const { ctx } = makeClock();
-    const eggs = createIngredient(ctx, { custom: true, name: "Eggs", defaultUnit: "count" }).id;
+    const eggs = createIngredient(ctx, { custom: true, name: "Eggs", stockUnit: "count" }).id;
 
     const purchase = applyMovement(ctx, {
       ingredientId: eggs,
@@ -250,11 +270,10 @@ describe("applyMovement ledger", () => {
     expect(purchase.item.status).toBe("on_hand");
     expect(purchase.movement.qtyAfter).toBe(16);
     expect(purchase.movement.statusAfter).toBe("on_hand");
-    expect(purchase.warning).toBeUndefined();
 
     // A negative delta on a row that never existed clamps at 0 and reads as out.
     const removed = applyMovement(ctx, {
-      ingredientId: createIngredient(ctx, { custom: true, name: "Saffron", defaultUnit: "g" }).id,
+      ingredientId: createIngredient(ctx, { custom: true, name: "Saffron", stockUnit: "g" }).id,
       kind: "delta",
       qty: -3,
       unit: "g",

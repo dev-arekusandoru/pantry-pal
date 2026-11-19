@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, client, qk, unwrap } from "@/api";
-import { toast } from "@/ui";
 import { restoreBody, type PantryCategory, type PantryItem, type PantryStatus } from "./stock";
 
 const listKey = [...qk.pantry, "list"] as const;
@@ -22,12 +21,15 @@ function useStockEdit<TVars, TResult>(options: {
   optimistic: (vars: TVars) => { id: string; apply: Patch };
   /** Undo for one failed edit. Receives what `apply` saw. */
   undo: (vars: TVars, before: PantryItem | undefined) => Patch;
+  /** Skip the global error toast when the caller shows the error itself. */
+  silent?: boolean;
 }) {
   const qc = useQueryClient();
   const patchItem = (id: string, fn: Patch) =>
     qc.setQueryData<PantryItem[]>(listKey, (items) => items?.map((i) => (i.id === id ? fn(i) : i)));
   return useMutation({
     mutationKey: editKey,
+    ...(options.silent ? { meta: { silent: true } } : {}),
     mutationFn: options.mutationFn,
     onMutate: async (vars: TVars) => {
       await qc.cancelQueries({ queryKey: listKey });
@@ -65,18 +67,24 @@ export function useAdjustItem() {
   });
 }
 
-/** Type in an exact amount. */
+/**
+ * Type in an exact amount. `unit` can be any unit the ingredient converts; the server stores
+ * the amount in the stock unit. The caller shows a rejected unit next to the field.
+ */
 export function useSetQty() {
   return useStockEdit({
-    mutationFn: ({ item, qty }: { item: PantryItem; qty: number }) =>
+    silent: true,
+    mutationFn: ({ item, qty, unit }: { item: PantryItem; qty: number; unit?: string | null }) =>
       unwrap(
         client.POST("/pantry/set", {
-          body: { ingredientId: item.ingredientId, qty, unit: item.unit },
+          body: { ingredientId: item.ingredientId, qty, unit: unit ?? item.unit },
         }),
       ),
-    optimistic: ({ item, qty }) => ({
+    optimistic: ({ item, qty, unit }) => ({
       id: item.id,
-      apply: (i) => ({ ...i, qty, status: qty === 0 ? "out" : i.status === "out" ? "on_hand" : i.status }),
+      // Another unit is converted by the server; show the new amount once it answers.
+      apply: (i) =>
+        unit === undefined || unit === item.unit ? { ...i, qty, status: qty === 0 ? "out" : i.status === "out" ? "on_hand" : i.status } : i,
     }),
     undo: (_vars, before) => (i) => (before ? { ...i, qty: before.qty, status: before.status } : i),
   });
@@ -212,7 +220,6 @@ export function useAddStock() {
                 body: { ingredientId: n.ingredientId, qty: null, status: "on_hand" },
               }),
             );
-      if (result.warning) toast.show({ message: `Added, but ${result.warning}` });
       return result;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.pantry }),

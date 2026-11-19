@@ -4,7 +4,7 @@ Each recipe page has a **Nutrition** panel. It shows calories, protein, carbs,
 fat, fiber, sugar, and sodium. PantryPal adds up the ingredient lines of the
 recipe. It does not guess: a line it cannot calculate stays blank.
 
-![Nutrition panel with calories, nutrients, and a partial count](../images/nutrition.png)
+![Nutrition panel with calories, a partial count, the ingredient breakdown, and an Add measure button on a blank line](../images/nutrition.png)
 
 ## Read the panel
 
@@ -16,7 +16,9 @@ recipe. It does not guess: a line it cannot calculate stays blank.
   The totals cover only the counted lines, so the true values are higher.
   Optional ingredients are never counted and are not part of this number.
 - **Show ingredient breakdown** opens one row for each ingredient. A row shows
-  the grams used, the calories, and the matched USDA food. Tap the ingredient
+  the grams used, the calories, and the matched USDA food. A line that uses an
+  estimated USDA size counts like any other line. Its grams come from a similar
+  food. See [Estimated USDA sizes](units.md#estimated-usda-sizes). Tap the ingredient
   name to open its [ingredient page](ingredients.md#the-ingredient-page).
 
 ## Why a line is blank
@@ -25,10 +27,24 @@ recipe. It does not guess: a line it cannot calculate stays blank.
 | --- | --- | --- |
 | **No matching food** | The ingredient has no USDA food. | Choose a food. See [Change a food match](#change-a-food-match). A custom ingredient has no food by design. |
 | **No amount, not counted** | The recipe line has no quantity, such as "salt, to taste". | Nothing. PantryPal does not guess an amount. |
-| **Can't convert cup to grams** | The unit has no known gram weight for this ingredient. | Choose a food that has a portion for the unit. Or add a custom unit conversion through the API or MCP. |
+| **Can't convert cup to grams** | The unit has no known gram weight for this ingredient. The row also shows a hint, such as **Add a measure: 1 cup = ? g**. | Tap **Add measure** on the row, enter the weight of one unit in grams, and tap **Save measure**. The line counts at once. See [Add a measure from a blank line](#add-a-measure-from-a-blank-line). |
 | **Optional, not counted** | The line is marked optional. | Nothing. |
 
 A quantity range, such as 1–2 cloves, uses the middle of the range.
+
+### Add a measure from a blank line
+
+A line with **Can't convert** has an **Add measure** button. A line with no unit
+needs the weight of one piece, so its unit is `count`.
+
+1. Tap **Show ingredient breakdown**.
+2. On the blank row, tap **Add measure**. The sheet shows the unit, for example
+   **1 count**.
+3. In **Weight in grams**, enter the weight of one unit, and tap **Save measure**.
+
+The measure belongs to the ingredient. Every recipe that uses the ingredient
+counts the line now. The weight shows as **Yours** under **Measures** on the
+[ingredient page](units.md#the-measures-section).
 
 ## Change a food match
 

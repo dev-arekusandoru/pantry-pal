@@ -108,25 +108,3 @@ export function splitNameParts(name: string): string[] {
     .map((part) => part.replace(/[()[\]]/g, "").trim())
     .filter((part) => part !== "");
 }
-
-/** Units the line editor suggests; sizes count as units ("2 large" eggs). */
-export const SIZE_UNITS = ["small", "medium", "large", "extra-large", "jumbo"] as const;
-
-export const UNIT_SUGGESTIONS: readonly string[] = [
-  ...SIZE_UNITS,
-  "tsp",
-  "tbsp",
-  "cup",
-  "ml",
-  "l",
-  "g",
-  "kg",
-  "oz",
-  "lb",
-  "clove",
-  "slice",
-  "pinch",
-  "can",
-  "bunch",
-  "piece",
-];

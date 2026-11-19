@@ -92,8 +92,15 @@ export function useAddItem(listId: string) {
 export function useUpdateItemQty(listId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ itemId, qty }: { itemId: string; qty: number | null }) =>
-      unwrap(client.PATCH("/shopping-lists/{id}/items/{itemId}", { params: { path: { id: listId, itemId } }, body: { qty } })),
+    // The item sheet shows a rejected unit next to the field.
+    meta: { silent: true },
+    mutationFn: ({ itemId, qty, unit }: { itemId: string; qty: number | null; unit?: string | null }) =>
+      unwrap(
+        client.PATCH("/shopping-lists/{id}/items/{itemId}", {
+          params: { path: { id: listId, itemId } },
+          body: unit === undefined ? { qty } : { qty, unit },
+        }),
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.shoppingLists }),
   });
 }

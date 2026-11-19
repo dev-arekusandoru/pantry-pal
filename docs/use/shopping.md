@@ -22,7 +22,9 @@ list, or delete one.
 
 A plan list is built from planned meals minus stock on hand. Stock that is known
 and covers a need is left off. An item whose amount is unknown, or whose units do
-not convert, gets a **check the pantry** note instead of a guessed amount. If the
+not convert, gets a **check the pantry** note instead of a guessed amount. The
+list shows the amount of an ingredient in its
+[stock unit](units.md#stock-unit-and-measures). If the
 pantry marks the item as **Running low** or **Out** and the amount is unknown,
 the list gets the full committed amount.
 
@@ -53,7 +55,9 @@ says **Added by hand**. In the sheet you can:
 - Tap **Ingredient page** to open the
   [ingredient page](ingredients.md#the-ingredient-page). Free-text items do not
   have one.
-- Change **Quantity to buy** and tap **Save**.
+- Change **Quantity to buy** and, for an item with an ingredient, its **Unit**.
+  Tap **Save**. Choose a unit of that ingredient, or add a measure for a new unit.
+  A free-text item has no **Unit** list. See [Units and measures](units.md).
 - Tap **I have it**. Confirm **How much goes into the
   pantry?** (it starts at the list amount; clear it to mark the item on hand),
   then tap **Add to pantry and remove**.

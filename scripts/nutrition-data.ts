@@ -84,6 +84,8 @@ const SKIPPED_UNITS: Record<string, true> = {
 interface Portion {
   label: string;
   grams: number;
+  /** Present (true) only on portions borrowed from another food. */
+  estimated?: true;
 }
 interface Nutrients {
   calories: number | null;
@@ -100,6 +102,8 @@ interface OutFood {
   dataType: DataType;
   per100g: Nutrients;
   portions: Portion[];
+  /** fdcId of the SR Legacy food whose portions this food borrowed. */
+  portionsFrom?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -242,8 +246,13 @@ function portionLabel(unitName: string, modifier: string, description: string): 
   return mod ? `${base}, ${mod}` : base;
 }
 
-function buildFoods(source: Source, entries: Map<string, () => Buffer>): OutFood[] {
-  const wanted = new Map<string, { description: string }>();
+interface BuiltFood {
+  food: OutFood;
+  categoryId: string;
+}
+
+function buildFoods(source: Source, entries: Map<string, () => Buffer>): BuiltFood[] {
+  const wanted = new Map<string, { description: string; categoryId: string }>();
   for (const rec of csvRecords(csvFromZip(entries, "food.csv"))) {
     if (rec.data_type !== source.csvType) continue;
     if ((rec.food_category_id ?? "") in EXCLUDED_CATEGORIES) continue;
@@ -252,7 +261,7 @@ function buildFoods(source: Source, entries: Map<string, () => Buffer>): OutFood
       .trim();
     // Foundation dry-bean entries are on a 0 % moisture basis, not as eaten.
     if (!description || description.includes("(0% moisture)")) continue;
-    wanted.set(rec.fdc_id as string, { description });
+    wanted.set(rec.fdc_id as string, { description, categoryId: rec.food_category_id ?? "" });
   }
 
   const nutrientValues = new Map<string, Map<number, number>>();
@@ -285,8 +294,8 @@ function buildFoods(source: Source, entries: Map<string, () => Buffer>): OutFood
     portions.set(id, list);
   }
 
-  const out: OutFood[] = [];
-  for (const [id, { description }] of wanted) {
+  const out: BuiltFood[] = [];
+  for (const [id, { description, categoryId }] of wanted) {
     const values = nutrientValues.get(id);
     const per100g = {} as Nutrients;
     for (const key of NUTRIENT_KEYS) {
@@ -302,19 +311,265 @@ function buildFoods(source: Source, entries: Map<string, () => Buffer>): OutFood
     }
     // Entries with no nutrient values at all cannot contribute to nutrition math.
     if (NUTRIENT_KEYS.every((key) => per100g[key] === null)) continue;
-    out.push({ fdcId: Number(id), description, dataType: source.dataType, per100g, portions: portions.get(id) ?? [] });
+    out.push({
+      categoryId,
+      food: { fdcId: Number(id), description, dataType: source.dataType, per100g, portions: portions.get(id) ?? [] },
+    });
   }
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Borrowing portions: Foundation foods without portions take them from the closest SR Legacy food
+// ---------------------------------------------------------------------------
+
+/**
+ * Preparation / preservation words, mapped to a state class. Two foods match only when their classes are equal:
+ * raw carrots never borrow from cooked or canned carrots. No state word at all means "raw" (the plain food).
+ */
+const STATE_CLASS: Record<string, string> = {
+  raw: "raw",
+  fresh: "raw",
+  unprepared: "raw",
+  cooked: "cooked",
+  boiled: "cooked",
+  baked: "cooked",
+  roasted: "cooked",
+  fried: "cooked",
+  steamed: "cooked",
+  braised: "cooked",
+  broiled: "cooked",
+  grilled: "cooked",
+  microwaved: "cooked",
+  stewed: "cooked",
+  sauteed: "cooked",
+  simmered: "cooked",
+  pan: "cooked",
+  heated: "cooked",
+  prepared: "cooked",
+  canned: "canned",
+  frozen: "frozen",
+  dried: "dried",
+  dehydrated: "dried",
+  pickled: "pickled",
+  smoked: "smoked",
+  cured: "cured",
+  toasted: "toasted",
+};
+/** Descriptive words that never separate two foods. */
+const NOISE_WORDS: Record<string, true> = Object.fromEntries(
+  [
+    "and", "or", "with", "without", "the", "of", "in", "to", "added", "includes", "type", "style", "all", "purpose",
+    "commercial", "commercially", "ns", "nfs", "usda", "year", "round", "average", "regular", "pack", "solid",
+    "solids", "liquid", "liquids", "drained", "undrained", "from", "made", "ready", "serve", "packed", "salt", "water",
+    "enriched", "unenriched", "fortified", "vitamin", "meat", "only", "trimmed", "separable", "bulk", "retail",
+    "pasteurized", "organic", "boneless", "bone", "less", "than", "not", "no", "dry", "refrigerated", "shelf",
+    "stable", "shelf-stable", "concentrate", "variety", "sodium", "rinsed", "mature", "seed", "fluid", "whipping",
+    "cultured", "european", "peeled", "seeded", "dehusked", "destemmed", "removed", "root", "unsalted",
+  ].map((word) => [word, true] as const),
+);
+/** Colour words. A source never borrows across different colours ("black" is not "white"). */
+const COLOR_WORDS: Record<string, true> = Object.fromEntries(
+  ["white", "red", "green", "yellow", "black", "brown", "purple", "pink", "dark", "light"].map((word) => [word, true] as const),
+);
+/** Source words the target may lack: "Wheat flour, white, ..." is plain "Flour, wheat, ...". At most one. */
+const SOFT_WORDS: Record<string, true> = { white: true, ripe: true };
+
+/** Fewest word overlap (Dice) a borrowed match may have. */
+const BORROW_MIN_SCORE = 0.55;
+
+/**
+ * Hand-checked matches where the SR wording is too different for the rules (target description → SR description).
+ * Each source must exist; the build fails otherwise.
+ */
+const BORROW_OVERRIDES: Record<string, string> = {
+  "Tomato, roma": "Tomatoes, red, ripe, raw, year round average",
+  "Lettuce, romaine, green, raw": "Lettuce, cos or romaine, raw",
+  "Watermelon, seedless, flesh only, raw": "Watermelon, raw",
+  "Peanut butter, creamy": "Peanut butter, smooth style, with salt",
+  "Almond butter, creamy": "Nuts, almond butter, plain, without salt added",
+  "Potatoes, russet, without skin, raw": "Potatoes, russet, flesh and skin, raw",
+  "Potatoes, red, without skin, raw": "Potatoes, red, flesh and skin, raw",
+  "Flour, bread, white, enriched, unbleached": "Wheat flour, white, bread, enriched",
+  "Flour, whole wheat, unenriched": "Wheat flour, whole-grain",
+  "Flour, semolina, fine": "Semolina, unenriched",
+  "Flour, semolina, coarse and semi-coarse": "Semolina, unenriched",
+  "Beans, black, canned, sodium added, drained and rinsed": "Beans, black turtle, mature seeds, canned",
+  "Beans, cannellini, canned, sodium added, drained and rinsed": "Beans, white, mature seeds, canned",
+  "Beans, cannellini, dry": "Beans, white, mature seeds, raw",
+  "Blackeye pea, dry": "Cowpeas, common (blackeyes, crowder, southern), mature seeds, raw",
+  "Blackeye pea, canned, sodium added, drained and rinsed": "Cowpeas, common (blackeyes, crowder, southern), mature seeds, canned, plain",
+  "Cottage cheese, full fat, large or small curd": "Cheese, cottage, creamed, large or small curd",
+  "Cheese, pasteurized process cheese food or product, American, singles": "Cheese, pasteurized process, American, without added vitamin D",
+  "Cranberry juice, not fortified, from concentrate, shelf stable": "Cranberry juice, unsweetened",
+  "Apple juice, with added vitamin C, from concentrate, shelf stable": "Apple juice, canned or bottled, unsweetened, with added ascorbic acid",
+  "Grape juice, purple, with added vitamin C, from concentrate, shelf stable": "Grape juice, canned or bottled, unsweetened, with added ascorbic acid",
+  "Grape juice, white, with added vitamin C, from concentrate, shelf stable": "Grape juice, canned or bottled, unsweetened, with added ascorbic acid",
+  "Applesauce, unsweetened, with added vitamin C": "Applesauce, canned, unsweetened, with added ascorbic acid",
+  "Tomato, paste, canned, without salt added": "Tomato products, canned, paste, without salt added",
+  "Tomato, puree, canned": "Tomato products, canned, puree, without salt added",
+  "Tomatoes, whole, canned, solids and liquids, with salt added": "Tomatoes, red, ripe, canned, packed in tomato juice",
+  "Yogurt, plain, nonfat": "Yogurt, plain, skim milk",
+  "Seeds, pumpkin seeds (pepitas), raw": "Seeds, pumpkin and squash seed kernels, dried",
+  "Seeds, sunflower seed, kernel, raw": "Seeds, sunflower seed kernels, dried",
+  "Nuts, pine nuts, raw": "Nuts, pine nuts, dried",
+  "Nuts, brazilnuts, raw": "Nuts, brazilnuts, dried, unblanched",
+  "Mushroom, crimini": "Mushrooms, brown, italian, or crimini, raw",
+  "Squash, pie pumpkin, peeled, seeded, raw": "Pumpkin, raw",
+  "Green onion, (scallion), bulb and greens, root removed, raw": "Onions, spring or scallions (includes tops and bulb), raw",
+  "Leeks, bulb and greens, root removed, raw": "Leeks, (bulb and lower leaf-portion), raw",
+  "Mango, Tommy Atkins, peeled, raw": "Mangos, raw",
+  "Mandarin, seedless, peeled, raw": "Tangerines, (mandarin oranges), raw",
+  "Plum, black, with skin, raw": "Plums, raw",
+};
+
+function stemWord(word: string): string {
+  if (word.length > 4 && word.endsWith("ies")) return `${word.slice(0, -3)}y`;
+  if (word.length > 4 && /(ches|shes|oes|sses|xes)$/.test(word)) return word.slice(0, -2);
+  if (word.length > 3 && word.endsWith("s") && !word.endsWith("ss") && !word.endsWith("us")) return word.slice(0, -1);
+  return word;
+}
+
+interface Signature {
+  /** Stemmed words of the first comma segment: the food's name ("spinach", "onion"). */
+  head: Set<string>;
+  /** Every content word (head included), noise and state words removed. */
+  tokens: Set<string>;
+  /** Sorted state classes joined, e.g. "canned" or "cooked,frozen". */
+  state: string;
+}
+
+function signature(description: string): Signature {
+  const segments = description
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/whole[- ](?:wheat|grain)/g, "wholegrain")
+    .replace(/\b(?:sweet|bell) pepper/g, "pepper")
+    .replace(/peppers, (?:sweet|bell)/g, "peppers")
+    // "with skin", "includes skin", "meat and skin" are the food with its skin; a bare "skin" entry is only the skin.
+    .replace(/\bwithout skin\b/g, "noskin")
+    .replace(/\b(?:with|includes|and) skin\b/g, "withskin")
+    .split(",")
+    .map((segment) => segment.split(/[^a-z0-9%]+/).filter(Boolean).map(stemWord));
+  const head = new Set(segments[0] ?? []);
+  const tokens = new Set<string>();
+  const states = new Set<string>();
+  const isJuice = segments.some((tokens) => tokens.includes("juice"));
+  for (const segment of segments) {
+    for (const token of segment) {
+      const cls = Object.hasOwn(STATE_CLASS, token) ? STATE_CLASS[token] : undefined;
+      // SR files bottled juice as "canned or bottled"; Foundation says "shelf stable".
+      if (cls !== undefined) {
+        if (!(isJuice && cls === "canned")) states.add(cls);
+      } else if (!Object.hasOwn(NOISE_WORDS, token) && !/^\d/.test(token)) tokens.add(token);
+    }
+  }
+  // "red or green": the source names no single colour, so colour does not separate foods.
+  if (/ or /.test(description.toLowerCase())) {
+    const colors = [...tokens].filter((token) => Object.hasOwn(COLOR_WORDS, token));
+    if (colors.length >= 2) for (const color of colors) tokens.delete(color);
+  }
+  if (states.size === 0) states.add("raw");
+  return { head, tokens, state: [...states].sort().join(",") };
+}
+
+function dice(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 && b.size === 0) return 1;
+  let shared = 0;
+  for (const token of a) if (b.has(token)) shared++;
+  return (2 * shared) / (a.size + b.size);
+}
+
+interface Candidate {
+  food: OutFood;
+  categoryId: string;
+  sig: Signature;
+}
+
+/**
+ * Closest SR Legacy food with portions. A source qualifies when it is the same food in the same form:
+ * same category, same state class (raw, cooked, canned...), the target's name words all appear in the source,
+ * and every other source word also appears in the target (so "Onions, raw" serves "Onions, white, raw",
+ * while "Squash, zucchini" does not serve yellow squash). The best word overlap wins.
+ * `null` when no candidate is a confident match.
+ */
+function closestPortionSource(target: Candidate, pool: Candidate[]): { source: Candidate; score: number } | null {
+  let best: { source: Candidate; score: number } | null = null;
+  for (const source of pool) {
+    if (source.categoryId !== target.categoryId) continue;
+    if (source.sig.state !== target.sig.state) continue;
+    if (![...target.sig.head].every((token) => source.sig.tokens.has(token))) continue;
+    if (![...source.sig.tokens].every((token) => target.sig.tokens.has(token) || Object.hasOwn(SOFT_WORDS, token))) continue;
+    const targetColors = [...target.sig.tokens].filter((token) => Object.hasOwn(COLOR_WORDS, token));
+    const sourceColors = [...source.sig.tokens].filter((token) => Object.hasOwn(COLOR_WORDS, token));
+    if (targetColors.length > 0 && sourceColors.length > 0 && !sourceColors.some((token) => targetColors.includes(token))) continue;
+    const softMissing = [...source.sig.tokens].filter((token) => !target.sig.tokens.has(token)).length;
+    if (softMissing > 1) continue;
+    const score = dice(target.sig.tokens, source.sig.tokens);
+    if (score < BORROW_MIN_SCORE) continue;
+    // Equal scores: the entry with more portions, then the lower id, for a stable result.
+    const better =
+      best === null ||
+      score > best.score ||
+      (score === best.score &&
+        (source.food.portions.length > best.source.food.portions.length ||
+          (source.food.portions.length === best.source.food.portions.length && source.food.fdcId < best.source.food.fdcId)));
+    if (better) best = { source, score };
+  }
+  return best;
+}
+
+function borrowPortions(sr: BuiltFood[], foundation: BuiltFood[], report: boolean): void {
+  const pool: Candidate[] = sr
+    .filter((b) => b.food.portions.length > 0)
+    .map((b) => ({ food: b.food, categoryId: b.categoryId, sig: signature(b.food.description) }));
+  let borrowed = 0;
+  const before = foundation.filter((b) => b.food.portions.length > 0).length;
+  const byDescription = new Map(sr.map((b) => [b.food.description, b.food]));
+  for (const built of foundation) {
+    if (built.food.portions.length > 0) continue;
+    const override = Object.hasOwn(BORROW_OVERRIDES, built.food.description)
+      ? BORROW_OVERRIDES[built.food.description]
+      : undefined;
+    let source: OutFood | undefined;
+    let score = 1;
+    if (override !== undefined) {
+      source = byDescription.get(override);
+      if (!source || source.portions.length === 0) throw new Error(`Borrow override source missing: ${override}`);
+    } else {
+      const target: Candidate = { food: built.food, categoryId: built.categoryId, sig: signature(built.food.description) };
+      const match = closestPortionSource(target, pool);
+      source = match?.source.food;
+      score = match?.score ?? 0;
+    }
+    if (!source) {
+      if (report) console.log(`  none    ${built.food.description}`);
+      continue;
+    }
+    built.food.portions = source.portions.map((p) => ({ label: p.label, grams: p.grams, estimated: true }));
+    built.food.portionsFrom = source.fdcId;
+    borrowed++;
+    if (report) {
+      console.log(
+        `  ${score.toFixed(2)}  ${built.food.description}  <=  ${source.description}  [${source.portions.map((p) => p.label).join(" | ")}]`,
+      );
+    }
+  }
+  const total = foundation.length;
+  console.log(`foundation foods with portions: ${before}/${total} before, ${before + borrowed}/${total} after borrowing`);
+}
+
 async function main(): Promise<void> {
-  const foods: OutFood[] = [];
+  const report = process.argv.includes("--report");
+  const built = new Map<DataType, BuiltFood[]>();
   for (const source of SOURCES) {
     const entries = readZipEntries(await fetchCached(source.url));
-    const built = buildFoods(source, entries);
-    console.log(`${source.dataType}: ${built.length} foods`);
-    foods.push(...built);
+    const list = buildFoods(source, entries);
+    console.log(`${source.dataType}: ${list.length} foods`);
+    built.set(source.dataType, list);
   }
+  borrowPortions(built.get("sr_legacy") ?? [], built.get("foundation") ?? [], report);
+  const foods = [...built.values()].flatMap((list) => list.map((b) => b.food));
   foods.sort((a, b) => a.fdcId - b.fdcId);
 
   mkdirSync(path.dirname(outFile), { recursive: true });

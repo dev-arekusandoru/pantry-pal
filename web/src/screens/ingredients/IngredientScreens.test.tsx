@@ -16,11 +16,10 @@ function view(id: string, name: string, category: string, fdcId: number | null) 
     normalizedName: name.toLowerCase(),
     description: null,
     category,
-    defaultUnit: null,
+    stockUnit: null,
     imageUrl: null,
     shelfLifeDays: null,
     parQty: null,
-    parUnit: null,
     notes: null,
     defaultPortion: null,
     needsReview: fdcId === null,
@@ -29,7 +28,8 @@ function view(id: string, name: string, category: string, fdcId: number | null) 
     updatedAt: NOW,
     nutrition: fdcId === null ? null : { source: "manual", fdcId, description: "Eggs, raw", per100g: null, portions: [] },
     aliases: [],
-    conversions: [],
+    measures: [],
+    units: ["count", "g", "oz", "cup"],
     pantry: [],
   };
 }

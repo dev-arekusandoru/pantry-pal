@@ -166,8 +166,8 @@ export function PantryScreen() {
       <SetQtySheet
         item={editing}
         onClose={() => setEditingId(null)}
-        onSave={(item, changes) => {
-          setQty.mutate({ item, qty: changes.qty });
+        onSave={async (item, changes) => {
+          await setQty.mutateAsync({ item, qty: changes.qty, unit: changes.unit });
           if (changes.expiresOn !== item.expiresOn) setExpiry.mutate({ item, expiresOn: changes.expiresOn });
           if (changes.category !== item.ingredient.category) {
             setCategory.mutate({ ingredientId: item.ingredient.id, category: changes.category });

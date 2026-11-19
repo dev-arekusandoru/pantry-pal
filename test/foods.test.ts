@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { autoMatchFood, getFood, gramsFor, NUTRITION_SOURCE, searchFoods, type Food } from "../src/services/foods.js";
+import {
+  autoMatchFood,
+  foodMeasures,
+  getFood,
+  gramsFor,
+  NUTRITION_SOURCE,
+  searchFoods,
+  type Food,
+} from "../src/services/foods.js";
 
 function food(name: string): Food {
   const match = autoMatchFood(name);
   if (!match) throw new Error(`No auto-match for "${name}"`);
   return match;
+}
+
+/** A food by its exact USDA description (searchFoods ranks it first or near first). */
+function byDescription(description: string): Food {
+  const match = searchFoods(description, 10).find((entry) => entry.food.description === description);
+  if (!match) throw new Error(`No food "${description}"`);
+  return match.food;
 }
 
 describe("autoMatchFood", () => {
@@ -129,6 +144,116 @@ describe("dataset", () => {
 
   it("credits USDA FoodData Central", () => {
     expect(NUTRITION_SOURCE).toContain("USDA FoodData Central");
+  });
+});
+
+describe("portions", () => {
+  it("maps USDA labels to app units and keeps the label", () => {
+    const unitOf = (food: Food, label: string) => food.portions.find((p) => p.label === label)?.unit;
+    const onion = food("Onion");
+    expect(unitOf(onion, "cup, chopped")).toBe("cup");
+    expect(unitOf(onion, "tbsp chopped")).toBe("tbsp");
+    expect(unitOf(onion, "slice, large")).toBe("slice");
+    expect(unitOf(onion, "large")).toBe("large");
+    expect(unitOf(food("Eggs"), "extra large")).toBe("extra-large");
+    expect(unitOf(food("Olive oil"), "tablespoon")).toBe("tbsp");
+    expect(food("Garlic").portions.find((p) => p.label === "clove")?.unit).toBe("clove");
+    expect(food("Bread").portions.some((p) => p.unit === "slice")).toBe(true);
+    expect(food("Butter").portions.some((p) => p.unit === "stick")).toBe(true);
+    expect(food("Kidney beans").portions.some((p) => p.unit === "can")).toBe(true);
+    // Labels that name no app unit keep unit null.
+    const strawberries = byDescription("Strawberries, raw");
+    expect(strawberries.portions.find((p) => p.label === "nlea serving")?.unit).toBeNull();
+    expect(food("Celery").portions.find((p) => p.label === "nlea serving")?.unit).toBeNull();
+  });
+
+  it("marks measured portions as not estimated", () => {
+    const onion = food("Onion");
+    expect(onion.portionsFrom).toBeUndefined();
+    expect(onion.portions.length).toBeGreaterThan(0);
+    expect(onion.portions.every((p) => !p.estimated)).toBe(true);
+  });
+
+  it("lets Foundation foods without portions borrow them from the same SR Legacy food", () => {
+    const spinach = byDescription("Spinach, baby");
+    expect(spinach.dataType).toBe("foundation");
+    expect(spinach.portionsFrom).toBeDefined();
+    expect(getFood(spinach.portionsFrom as number)?.description).toBe("Spinach, raw");
+    expect(spinach.portions.length).toBeGreaterThan(0);
+    expect(spinach.portions.every((p) => p.estimated)).toBe(true);
+    expect(foodMeasures(spinach).find((m) => m.unit === "cup")).toMatchObject({ grams: 30, estimated: true });
+    expect(gramsFor(spinach, 3, "cup")).toBeCloseTo(90, 0);
+  });
+
+  it.each([
+    ["Onions, white, raw", "Onions, raw"],
+    ["Carrots, mature, raw", "Carrots, raw"],
+    ["Squash, summer, green, zucchini, includes skin, raw", "Squash, summer, zucchini, includes skin, raw"],
+    ["Squash, summer, yellow, includes skin, raw", "Squash, summer, all varieties, raw"],
+    ["Flour, wheat, all-purpose, enriched, bleached", "Wheat flour, white, all-purpose, enriched, bleached"],
+    ["Beans, kidney, dark red, canned, sodium added, sugar added, drained and rinsed", "Beans, kidney, red, mature seeds, canned, solids and liquids"],
+    ["Potatoes, russet, without skin, raw", "Potatoes, russet, flesh and skin, raw"],
+  ])("borrows for %s from %s", (description, source) => {
+    const target = byDescription(description);
+    expect(target.portionsFrom).toBeDefined();
+    expect(getFood(target.portionsFrom as number)?.description).toBe(source);
+    const from = getFood(target.portionsFrom as number) as Food;
+    expect(target.portions.map((p) => [p.label, p.grams])).toEqual(from.portions.map((p) => [p.label, p.grams]));
+    expect(target.portions.every((p) => p.estimated)).toBe(true);
+  });
+
+  it("keeps portions empty when no similar food is a confident match", () => {
+    for (const description of ["Mushroom, lion's mane", "Cabbage, napa, leaf, destemmed, raw", "Watermelon, seedless, rind only, raw"]) {
+      const target = byDescription(description);
+      expect(target.portions).toEqual([]);
+      expect(target.portionsFrom).toBeUndefined();
+    }
+  });
+
+  it("never borrows from a different form or a part of the food", () => {
+    // Raw carrots are not borrowed from cooked/canned ones; a peeled potato is not borrowed from "skin" only.
+    for (const description of ["Carrots, mature, raw", "Potatoes, gold, without skin, raw", "Chicken, breast, meat and skin, raw"]) {
+      const source = byDescription(description).portionsFrom;
+      if (source !== undefined) expect(getFood(source)?.description).not.toMatch(/cooked|boiled|canned|frozen|, skin\b/i);
+    }
+  });
+});
+
+describe("foodMeasures", () => {
+  const portion = (label: string, grams: number, unit: string | null, estimated = false) => ({ label, grams, unit, estimated });
+  const sample = (portions: Food["portions"]): Food => ({ ...food("Onion"), portions });
+
+  it("returns one measure per unit with the label it came from", () => {
+    const measures = foodMeasures(food("Onion"));
+    expect(new Set(measures.map((m) => m.unit)).size).toBe(measures.length);
+    expect(measures.find((m) => m.unit === "medium")).toEqual({ unit: "medium", grams: 110, estimated: false, label: "medium" });
+    expect(measures.find((m) => m.unit === "large")?.grams).toBe(150);
+    expect(foodMeasures(food("Eggs")).find((m) => m.unit === "large")).toMatchObject({ grams: 50, estimated: false });
+    expect(foodMeasures(food("All-purpose flour")).find((m) => m.unit === "cup")?.grams).toBeCloseTo(125, 0);
+    expect(foodMeasures(food("Olive oil")).find((m) => m.unit === "tbsp")?.grams).toBeCloseTo(13.5, 1);
+  });
+
+  it("leaves out portions without a unit and mass units", () => {
+    const measures = foodMeasures(
+      sample([portion("oz", 28.4, "oz"), portion("lb", 454, "lb"), portion("nlea serving", 85, null), portion("clove", 3, "clove")]),
+    );
+    expect(measures).toEqual([{ unit: "clove", grams: 3, estimated: false, label: "clove" }]);
+  });
+
+  it("prefers a measured portion, then the label with no modifier, then the first", () => {
+    const picked = foodMeasures(
+      sample([
+        portion("cup, sliced", 100, "cup", true),
+        portion("cup, chopped", 140, "cup"),
+        portion("cup", 130, "cup"),
+        portion("tbsp, packed", 9, "tbsp"),
+        portion("tbsp, loose", 7, "tbsp"),
+      ]),
+    );
+    expect(picked.find((m) => m.unit === "cup")).toEqual({ unit: "cup", grams: 130, estimated: false, label: "cup" });
+    expect(picked.find((m) => m.unit === "tbsp")?.label).toBe("tbsp, packed");
+    const onlyEstimated = foodMeasures(sample([portion("cup, sliced", 100, "cup", true), portion("cup", 90, "cup", true)]));
+    expect(onlyEstimated).toEqual([{ unit: "cup", grams: 90, estimated: true, label: "cup" }]);
   });
 });
 

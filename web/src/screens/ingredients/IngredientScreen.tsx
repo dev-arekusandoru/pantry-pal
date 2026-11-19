@@ -24,6 +24,8 @@ import { formatAmount } from "../shop/format";
 import { DefaultPortionField } from "./DefaultPortionField";
 import styles from "./Ingredient.module.css";
 import { LinkSheet, MergeSheet, SplitSheet } from "./IngredientSheets";
+import { MeasureForm } from "./MeasureForm";
+import { MeasuresCard } from "./MeasuresCard";
 import {
   useAcceptIngredient,
   useAddAlias,
@@ -36,7 +38,10 @@ import {
   type IngredientSuggestion,
   type UpdateIngredientBody,
 } from "./queries";
-import { UNIT_SUGGESTIONS, ingredientErrorMessage, nameProblem, nameProblemText, type IngredientPick } from "./refs";
+import { ingredientErrorMessage, nameProblem, nameProblemText, type IngredientPick } from "./refs";
+import { UnitPicker } from "./UnitPicker";
+import { UnitProblems } from "./UnitProblems";
+import { unitProblems, unitText, type UnitProblem } from "./units";
 import { usePageEntry } from "./usePageEntry";
 
 type Reason = NonNullable<IngredientDetail["review"]>["reasons"][number];
@@ -45,6 +50,7 @@ const REASONS: Record<Reason, { label: string; tone: "peach" | "gum" | "butter" 
   unlinked: { label: "No USDA food", tone: "peach" },
   lint: { label: "Name needs a fix", tone: "gum" },
   custom_unreviewed: { label: "Custom, not reviewed", tone: "butter" },
+  unit: { label: "Unit has no weight", tone: "peach" },
 };
 
 type Open = { sheet: "link" } | { sheet: "split" } | { sheet: "merge"; target: IngredientPick | null };
@@ -128,6 +134,7 @@ function IngredientPage({ ingredient }: { ingredient: IngredientDetail }) {
         {ingredient.review !== null && !archived && <AttentionCard ingredient={ingredient} onOpen={setOpen} />}
         <DetailsCard ingredient={ingredient} />
         <FoodCard ingredient={ingredient} onOpen={setOpen} />
+        <MeasuresCard ingredient={ingredient} />
         <AliasesCard ingredient={ingredient} />
         <UsageCard ingredient={ingredient} />
         {!archived && (
@@ -205,6 +212,7 @@ function AttentionCard({ ingredient, onOpen }: { ingredient: IngredientDetail; o
         ))}
       </ul>
       {review.lint !== undefined && <p className={styles.lint}>{nameProblemText(review.lint)}</p>}
+      {review.units !== undefined && review.units.length > 0 && <UnitReasons ingredient={ingredient} units={review.units} />}
 
       {review.suggestions.length > 0 && (
         <div className={styles.suggestions}>
@@ -267,6 +275,44 @@ function AttentionCard({ ingredient, onOpen }: { ingredient: IngredientDetail; o
   );
 }
 
+/** Units a recipe line or pantry row uses that cannot turn into grams or the stock unit. */
+function UnitReasons({ ingredient, units }: { ingredient: IngredientDetail; units: string[] }) {
+  const [adding, setAdding] = useState<string | null>(null);
+  return (
+    <div className={styles.suggestions}>
+      <p className={styles.smallLabel}>Units with no weight</p>
+      <p className={styles.hint}>
+        {ingredient.name} cannot turn these units into grams or {ingredient.stockUnit === null ? "a stock unit" : unitText(ingredient.stockUnit)}.
+        Nutrition and the pantry skip them until you add a measure.
+      </p>
+      <ul className={styles.reasonUnits}>
+        {units.map((unit) => (
+          <li key={unit}>
+            {adding === unit ? (
+              <MeasureForm
+                ingredientId={ingredient.id}
+                unit={unit}
+                onCancel={() => setAdding(null)}
+                onSaved={(saved) => {
+                  setAdding(null);
+                  toast.show({ message: `1 ${unitText(saved.unit)} of ${ingredient.name} is saved` });
+                }}
+              />
+            ) : (
+              <span className={styles.reasonUnit}>
+                <b>{unitText(unit)}</b>
+                <Button aria-label={`Add measure for ${unitText(unit)}`} onClick={() => setAdding(unit)}>
+                  Add measure
+                </Button>
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function suggestionKey(suggestion: IngredientSuggestion): string {
   return suggestion.kind === "ingredient" ? `i-${suggestion.ingredientId}` : `f-${suggestion.fdcId}`;
 }
@@ -288,7 +334,8 @@ function DetailsCard({ ingredient }: { ingredient: IngredientDetail }) {
   const [category, setCategory] = useState<IngredientCategory>(ingredient.category);
   const [shelfText, setShelfText] = useState(ingredient.shelfLifeDays === null ? "" : String(ingredient.shelfLifeDays));
   const [parText, setParText] = useState(ingredient.parQty === null ? "" : String(ingredient.parQty));
-  const [parUnit, setParUnit] = useState(ingredient.parUnit ?? "");
+  const [stockUnit, setStockUnit] = useState(ingredient.stockUnit === null ? "" : unitText(ingredient.stockUnit));
+  const [unitIssues, setUnitIssues] = useState<UnitProblem[]>([]);
   const [notes, setNotes] = useState(ingredient.notes ?? "");
   const [problems, setProblems] = useState<{ name?: string; shelf?: string; par?: string; form?: string }>({});
   const [pickingIcon, setPickingIcon] = useState(false);
@@ -300,8 +347,7 @@ function DetailsCard({ ingredient }: { ingredient: IngredientDetail }) {
   const categoryId = `${ids}-category`;
   const shelfId = `${ids}-shelf`;
   const parId = `${ids}-par`;
-  const parUnitId = `${ids}-par-unit`;
-  const unitsId = `${ids}-units`;
+  const stockHintId = `${ids}-stock-hint`;
   const notesId = `${ids}-notes`;
   const statusId = `${ids}-status`;
   const [saved, setSaved] = useState("");
@@ -322,14 +368,18 @@ function DetailsCard({ ingredient }: { ingredient: IngredientDetail }) {
       return;
     }
     setProblems({});
+    setUnitIssues([]);
 
     const changes: UpdateIngredientBody = {};
     if (trimmedName !== ingredient.name) changes.name = trimmedName;
     if (category !== ingredient.category) changes.category = category;
     if (shelf !== ingredient.shelfLifeDays) changes.shelfLifeDays = shelf as number | null;
     if (par !== ingredient.parQty) changes.parQty = par as number | null;
-    const unit = parUnit.trim() === "" ? null : parUnit.trim();
-    if (unit !== ingredient.parUnit) changes.parUnit = unit;
+    const stock = stockUnit.trim() === "" ? null : stockUnit.trim();
+    const stockChanged = stock !== (ingredient.stockUnit === null ? null : unitText(ingredient.stockUnit)) && stock !== ingredient.stockUnit;
+    if (stockChanged) changes.stockUnit = stock;
+    // A new par is written in the unit shown beside it, even when the stock unit changes in the same save.
+    if (changes.parQty !== undefined && changes.parQty !== null && stock !== null && stockChanged) changes.parUnit = stock;
     const noteText = notes.trim() === "" ? null : notes.trim();
     if (noteText !== ingredient.notes) changes.notes = noteText;
     if (Object.keys(changes).length === 0) {
@@ -343,11 +393,18 @@ function DetailsCard({ ingredient }: { ingredient: IngredientDetail }) {
         onSuccess: (saved) => {
           setName(saved.name);
           setNotes(saved.notes ?? "");
-          setParUnit(saved.parUnit ?? "");
+          setStockUnit(saved.stockUnit === null ? "" : unitText(saved.stockUnit));
+          setParText(saved.parQty === null ? "" : String(saved.parQty));
           setSaved(`Saved ${saved.name}.`);
         },
         onError: (error) => {
-          const problem = nameProblem(error);
+          const issues = unitProblems(error);
+          const problem = issues.length > 0 ? null : nameProblem(error);
+          if (issues.length > 0) {
+            setUnitIssues(issues);
+            setProblems({ form: "The stock unit did not change. Nothing was saved." });
+            return;
+          }
           if (problem !== null) {
             setProblems({ name: nameProblemText(problem) });
             nameRef.current?.focus();
@@ -428,43 +485,49 @@ function DetailsCard({ ingredient }: { ingredient: IngredientDetail }) {
           </select>
         </div>
 
-        <div className={styles.pair}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor={parId}>
-              Keep at least
-            </label>
-            <input
-              ref={parRef}
-              id={parId}
-              className={styles.input}
-              inputMode="decimal"
-              autoComplete="off"
-              placeholder="No minimum"
-              value={parText}
-              aria-invalid={problems.par !== undefined || undefined}
-              aria-describedby={problems.par === undefined ? undefined : `${parId}-problem`}
-              onChange={(event) => setParText(event.target.value)}
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor={parUnitId}>
-              Unit
-            </label>
-            <input
-              id={parUnitId}
-              className={styles.input}
-              list={unitsId}
-              autoComplete="off"
-              placeholder="cup, lb, can"
-              value={parUnit}
-              onChange={(event) => setParUnit(event.target.value)}
-            />
-            <datalist id={unitsId}>
-              {UNIT_SUGGESTIONS.map((unit) => (
-                <option key={unit} value={unit} />
-              ))}
-            </datalist>
-          </div>
+        <div className={styles.field}>
+          <UnitPicker
+            label="Stock unit"
+            ingredientId={ingredient.id}
+            value={stockUnit}
+            onChange={(unit) => {
+              setStockUnit(unit);
+              setUnitIssues([]);
+            }}
+            describedBy={stockHintId}
+          />
+          <p id={stockHintId} className={styles.hint}>
+            Pantry amounts and the minimum use this unit. Changing it converts what is in the pantry, or says which measure is missing.
+          </p>
+          <UnitProblems
+            problems={unitIssues}
+            onUseUnit={(unit) => {
+              setStockUnit(unit);
+              setUnitIssues([]);
+            }}
+            onMeasureAdded={() => {
+              setUnitIssues([]);
+              setProblems({});
+            }}
+          />
+        </div>
+
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor={parId}>
+            Keep at least{stockUnit.trim() === "" ? "" : ` (${stockUnit.trim()})`}
+          </label>
+          <input
+            ref={parRef}
+            id={parId}
+            className={styles.input}
+            inputMode="decimal"
+            autoComplete="off"
+            placeholder="No minimum"
+            value={parText}
+            aria-invalid={problems.par !== undefined || undefined}
+            aria-describedby={problems.par === undefined ? undefined : `${parId}-problem`}
+            onChange={(event) => setParText(event.target.value)}
+          />
         </div>
         {problems.par !== undefined && (
           <p id={`${parId}-problem`} className={styles.problem}>

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
 import { packageRoot } from "../db/client.js";
-import { builtinFactor, normalizeUnit } from "./units.js";
+import { builtinFactor, normalizeUnit } from "./unitNames.js";
 
 /** Nutrient amounts. Per 100 g inside `Food`; absolute amounts elsewhere. */
 export interface Nutrients {
@@ -15,10 +15,17 @@ export interface Nutrients {
   sodium: number | null; // mg
 }
 
-/** Grams for ONE unit, e.g. `{ label: "cup", grams: 128 }`, `{ label: "medium", grams: 110 }`. */
+/**
+ * Grams for ONE unit, e.g. `{ label: "cup", grams: 128 }`, `{ label: "medium", grams: 110 }`.
+ * `unit` is the label's head word mapped to an app unit (`"cup"`, `"tbsp"`, `"large"`, `"clove"`...), or `null`
+ * for labels that name no usable unit ("NLEA serving", "steak"). `estimated` marks a portion borrowed from a
+ * similar food (`Food.portionsFrom`) instead of measured on this food.
+ */
 export interface FoodPortion {
   label: string;
   grams: number;
+  unit: string | null;
+  estimated: boolean;
 }
 
 export interface Food {
@@ -28,6 +35,13 @@ export interface Food {
   dataType: "sr_legacy" | "foundation";
   per100g: Nutrients;
   portions: FoodPortion[];
+  /** fdcId of the SR Legacy food whose portions this food borrowed (all its portions are `estimated`). */
+  portionsFrom?: number;
+}
+
+/** A portion as stored in `nutrition/usda-foods.json.gz`: `estimated` is only present (true) on borrowed ones. */
+interface StoredFood extends Omit<Food, "portions"> {
+  portions: Array<{ label: string; grams: number; estimated?: true }>;
 }
 
 export interface FoodMatch {
@@ -273,8 +287,16 @@ function isBranded(description: string): boolean {
 function loadIndex(): FoodIndex {
   if (cachedIndex) return cachedIndex;
   const file = path.join(packageRoot(), "nutrition", "usda-foods.json.gz");
-  const foods = JSON.parse(gunzipSync(readFileSync(file)).toString("utf8")) as Food[];
-
+  const stored = JSON.parse(gunzipSync(readFileSync(file)).toString("utf8")) as StoredFood[];
+  const foods: Food[] = stored.map((item) => ({
+    ...item,
+    portions: item.portions.map((portion) => ({
+      label: portion.label,
+      grams: portion.grams,
+      unit: portionUnit(portion.label),
+      estimated: portion.estimated === true,
+    })),
+  }));
   const index: FoodIndex = { byId: new Map(), foods: [], postings: new Map() };
   for (const food of foods) {
     const notes: string[] = [];
@@ -545,6 +567,50 @@ function parseLabel(portion: FoodPortion): ParsedLabel {
   const unit = normalizeUnit(first);
   const volume = unit !== null && builtinFactor(unit, "volume") !== null ? unit : null;
   return { portion, head: volume ?? stem(first), modifier, volume };
+}
+
+/** Head word and the rest of a portion label: "cup, chopped" → cup / chopped, "extra large" → extra large / "". */
+function splitLabel(label: string): { head: string; modifier: string } {
+  const text = label.toLowerCase().trim();
+  const special = /^(?:fl\.? ?oz|extra[- ]large)\b/.exec(text)?.[0];
+  const head = special ?? /^[a-z0-9]+/.exec(text)?.[0] ?? "";
+  return { head, modifier: text.slice(head.length).replace(/^[\s,]+/, "") };
+}
+
+/** App unit for a portion label: "cup, chopped" → cup, "tablespoon" → tbsp, "extra large" → extra-large, "NLEA serving" → null. */
+function portionUnit(label: string): string | null {
+  const { head } = splitLabel(label);
+  return head === "" ? null : normalizeUnit(head);
+}
+
+/** One gram weight per unit the food gives portions for. */
+export interface FoodMeasure {
+  unit: string;
+  grams: number;
+  estimated: boolean;
+  /** The USDA label this weight came from, e.g. "cup, chopped". */
+  label: string;
+}
+
+/**
+ * The food's portions as unit measures, one per unit. Portions without a unit and mass units (g, oz, lb: fixed by
+ * definition) are left out. Per unit the pick is: measured over estimated, then the label with no modifier
+ * ("cup" over "cup, chopped"), then the first listed.
+ */
+export function foodMeasures(food: Food): FoodMeasure[] {
+  const picked = new Map<string, { measure: FoodMeasure; plain: boolean }>();
+  for (const portion of food.portions) {
+    const unit = portion.unit;
+    if (unit === null || builtinFactor(unit, "mass") !== null) continue;
+    const plain = splitLabel(portion.label).modifier === "";
+    const current = picked.get(unit);
+    const better =
+      current === undefined ||
+      (current.measure.estimated && !portion.estimated) ||
+      (current.measure.estimated === portion.estimated && !current.plain && plain);
+    if (better) picked.set(unit, { measure: { unit, grams: portion.grams, estimated: portion.estimated, label: portion.label }, plain });
+  }
+  return [...picked.values()].map((entry) => entry.measure);
 }
 
 /** Lowest index of the preferred portion: no modifier, then "medium", then listing order. */

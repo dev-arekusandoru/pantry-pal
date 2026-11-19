@@ -66,7 +66,7 @@ Paths below are relative to `/api/v1`.
 | `/household`, `/household/members` | Read and update settings and members |
 | `/tokens` | List, create, and revoke API tokens. Needs a browser session; a bearer token gets `403`. The secret is only in the create response |
 | `/ingredients` | Find, create, update, archive, alias, merge, review, and split ingredients; set an ingredient's USDA food |
-| `/unit-conversions`, `/units/convert` | Manage conversions and convert amounts |
+| `/ingredients/{id}/measures`, `/units/convert` | Manage the weight of one unit of an ingredient, and convert amounts |
 | `/pantry` | Read stock, set amounts, record changes, and check availability |
 | `/recipes` | Manage recipes and step ingredient links, scale servings, read nutrition, check rules, and set status |
 | `/nutrition` | Search the bundled USDA foods |
@@ -149,8 +149,8 @@ A name fails when it has any of these:
 
 ### Create, custom, and review
 
-`POST /ingredients` takes `name`, `category`, `aliases`, `defaultUnit`, and
-`defaultPortion`, plus one of:
+`POST /ingredients` takes `name`, `category`, `aliases`, `stockUnit`, `parQty`,
+`parUnit`, and `defaultPortion`, plus one of:
 
 | Field | Result |
 | --- | --- |
@@ -164,14 +164,14 @@ request with no `Authorization` header, counts as an API request. Linking a food
 clears `needsReview`.
 
 `PATCH /ingredients/{id}` also takes `defaultPortion`, which must exist on the
-linked food.
+linked food, and `stockUnit`. See [Units and measures](#units-and-measures).
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /ingredients/find?query=&limit=` | Search ingredients and USDA foods together. Returns `{ingredients: [{id, name, category, defaultUnit, defaultPortion, aliases, linked, fdcId, needsReview, score}], foods: [{fdcId, description, suggestedName, score, ingredientId}]}`. `ingredientId` is `null` when no ingredient links the food. |
-| `GET /ingredients/{id}` | The ingredient view plus `usage` and `review`. `usage` has `recipes` (`id`, `slug`, `title`, `lines`, `asMain`, `asAlternative`), `pantryItem` (`id`, `qty`, `unit`, `qtyApprox`, `status`, or `null`), `shoppingItems` (`itemId`, `listId`, `listTitle`, `listStatus`, `name`, `qty`, `unit`, `checked`; only lists that are not done), and `rules` (ingredient-scoped dietary rules). `review` is `{reasons, lint?, suggestions}`, or `null` when nothing needs attention. |
+| `GET /ingredients/find?query=&limit=` | Search ingredients and USDA foods together. Returns `{ingredients: [{id, name, category, stockUnit, defaultPortion, aliases, linked, fdcId, needsReview, score}], foods: [{fdcId, description, suggestedName, score, ingredientId}]}`. `ingredientId` is `null` when no ingredient links the food. |
+| `GET /ingredients/{id}` | The ingredient view plus `usage` and `review`. `usage` has `recipes` (`id`, `slug`, `title`, `lines`, `asMain`, `asAlternative`), `pantryItem` (`id`, `qty`, `unit`, `qtyApprox`, `status`, or `null`), `shoppingItems` (`itemId`, `listId`, `listTitle`, `listStatus`, `name`, `qty`, `unit`, `checked`; only lists that are not done), and `rules` (ingredient-scoped dietary rules). `review` is `{reasons, lint?, units?, suggestions}`, or `null` when nothing needs attention. |
 | `GET /ingredients/usage` | List `{items: [{ingredientId, recipes, pantry, shopping, rules}]}` with counts for every ingredient that is used. An ingredient that is not listed is unused. |
-| `GET /ingredients/review` | List `{items: [{ingredient, reasons, lint?, suggestions}]}`. `reasons` has `unlinked`, `lint`, or `custom_unreviewed`. A lint problem stays listed until the name is fixed. |
+| `GET /ingredients/review` | List `{items: [{ingredient, reasons, lint?, suggestions}]}`. `reasons` has `unlinked`, `lint`, `custom_unreviewed`, or `unit`. A lint problem stays listed until the name is fixed. With `unit`, `units` lists the units of a recipe line or pantry row that convert to neither grams nor the stock unit. |
 | `POST /ingredients/{id}/review` | Clear `needsReview`. |
 | `POST /ingredients/{id}/split` | Body `{main, alternatives?}` with references. Moves recipe lines, alternative lines, pantry items, and shopping items to `main` and the alternatives, then archives the source. Returns `{source, main, alternatives, moved}`. |
 
@@ -186,6 +186,64 @@ line of "2 large" Egg has `qty: 2` and `unit: "large"`. "extra large" and "xl"
 normalize to `extra-large`. An ingredient with `defaultPortion: "large"` reads a
 bare count as that size. `GET /nutrition/foods` items have `suggestedName`, and
 an ingredient's `nutrition` has `portions`.
+
+### Units and measures
+
+A **measure** is the weight of one unit of an ingredient in grams. An ingredient
+has one **stock unit**. Pantry amounts, `parQty`, and shopping quantities are stored in it.
+See [Units and measures](../use/units.md) for what the web app shows.
+
+The ingredient view has these fields:
+
+| Field | Meaning |
+| --- | --- |
+| `stockUnit` | The stock unit, or `null` until the first pantry write sets it. |
+| `measures[]` | The effective measures. Each has `unit`, `grams`, `source`, `estimated`, `label`, `note`, and `usdaGrams`. |
+| `units[]` | The units a picker can offer: the stock unit, then the measures, then the built-in units. |
+
+`source` is `usda` (a portion of the linked food), `usda_estimated` (a portion
+borrowed from a similar food, with `estimated: true`), or `user` (your own
+measure). USDA measures are derived when you read them, so a new link changes them.
+Your measure replaces the USDA one for the same unit. On such a measure,
+`usdaGrams` holds the USDA weight, so a client can offer a reset.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /ingredients/{id}/measures` | Returns `{items: Measure[]}`. |
+| `PUT /ingredients/{id}/measures/{unit}` | Body `{grams, note?}`. Creates or changes your measure for the unit. Returns the effective measure. The unit can be new, such as `handful`. A mass unit (`g`, `kg`, `oz`, `lb`) is fixed and cannot be set. |
+| `DELETE /ingredients/{id}/measures/{unit}` | Deletes your measure (`204`). A USDA measure shows again. The response is `not_found` when you have no measure for the unit. |
+| `POST /units/convert` | Body `{qty, from, to, ingredientId?}`. With `ingredientId`, the ingredient's measures cross families, for example cup to g. Units that do not compare return `qty: null` and `comparable: false`. |
+
+A volume measure such as `{"unit": "cup", "grams": 30}` also sets the weight for
+every other volume unit of that ingredient.
+
+**Stock unit changes.** `PATCH /ingredients/{id}` with `stockUnit` converts the
+pantry amount and `parQty` into the new unit. If a value cannot convert, the
+response is `unprocessable` (422) and nothing changes. Its `details` name the
+`unit`, the `toUnit`, and a `hint`. `parUnit` is an optional input: it converts
+`parQty` into the stock unit. It sets the stock unit when there is none. The view
+has no `parUnit`.
+
+**Unknown units.** These writes check every unit: recipe lines, pantry set,
+adjust, bulk, and verify, `parUnit`, `stockUnit`, shopping items that have an
+ingredient, and measures. A unit is valid when it is a built-in mass, volume, or
+count unit, a size, or a unit with a measure on this ingredient. Names such as
+`cups` and `Tbsp` are normalized first. An unknown unit returns `unprocessable`
+(422). Nothing is written, and all failures are in one response:
+
+```json
+{"error":{"code":"unprocessable","message":"...","details":{"unresolvedUnits":[
+  {"unit":"handful","ingredientId":"ing_...","ingredientName":"Baby Spinach",
+   "suggestions":["cup","oz","bunch"],"hint":"Add a measure for handful first (PUT /ingredients/ing_.../measures/handful, or the ingredient_measures tool), or use a suggested unit."}]}}}
+```
+
+Add the measure with `PUT`, or use a suggestion, and send the request again.
+
+A valid unit that cannot convert, such as `cup` with no density, is accepted.
+Nutrition marks the line `no_conversion`, and `GET /ingredients/review` lists the
+ingredient with the `unit` reason. A pantry write that cannot convert into the
+stock unit is `unprocessable` with `details` that name the `unit` and the `toUnit`.
+A cook that finishes skips such a line with a warning.
 
 ### Recipe step links
 
@@ -232,11 +290,12 @@ A line `status` is one of these. The server checks them in this order:
 | `optional` | The line is optional. It is not counted. |
 | `no_quantity` | The line has no quantity. |
 | `no_match` | The ingredient has no USDA food. |
-| `no_conversion` | The amount cannot be turned into grams. |
+| `no_conversion` | The amount cannot be turned into grams. The line has a `hint`, such as `Add a measure: 1 cup = ? g`. |
 | `ok` | The line is counted in the totals. |
 
-A quantity range uses its middle. The server converts to grams with the
-household unit conversions first, then with the portions of the USDA food.
+A quantity range uses its middle. The server converts to grams with the same
+converter as the pantry. See [Units and measures](#units-and-measures). Add a
+measure for the unit to make a `no_conversion` line count.
 
 Food search items have `fdcId`, `description`, `dataType`, `per100g`,
 `portions`, and a `score` from 0 to 1. Nutrients are for 100 g.

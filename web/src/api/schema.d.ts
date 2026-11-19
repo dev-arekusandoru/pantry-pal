@@ -1374,7 +1374,7 @@ export interface paths {
         };
         /**
          * List ingredients
-         * @description Every ingredient with aliases, custom conversions and pantry stock.
+         * @description Every ingredient with aliases, measures, stock unit and pantry stock.
          */
         get: {
             parameters: {
@@ -1569,7 +1569,7 @@ export interface paths {
         };
         /**
          * Get an ingredient
-         * @description The ingredient with aliases, conversions and pantry stock, plus where it is used (recipes, pantry, items on open shopping lists, dietary rules) and why it needs attention, if it does.
+         * @description The ingredient with aliases, measures and pantry stock, plus where it is used (recipes, pantry, items on open shopping lists, dietary rules) and why it needs attention, if it does.
          */
         get: {
             parameters: {
@@ -1742,7 +1742,7 @@ export interface paths {
         put?: never;
         /**
          * Merge an ingredient into another
-         * @description Repoints recipes, pantry stock, shopping items, rules and conversions to `intoId`, turns the source name into an alias of the target and deletes the source.
+         * @description Repoints recipes, pantry stock, shopping items, rules and your measures to `intoId`, turns the source name into an alias of the target and deletes the source.
          */
         post: {
             parameters: {
@@ -1862,83 +1862,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/unit-conversions": {
+    "/ingredients/{id}/measures": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List custom unit conversions */
+        /**
+         * List an ingredient's measures
+         * @description What one unit of the ingredient weighs, in grams: the linked USDA food's portions (derived at read time, so they follow a re-link), overridden by your own measures for the same unit. `source` tells them apart; `estimated` marks portions borrowed from a similar USDA food.
+         */
         get: {
-            parameters: {
-                query?: {
-                    /** @description Restrict to one ingredient's conversions. */
-                    ingredientId?: string;
-                    /** @description With ingredientId, also include household-global rows. */
-                    includeGlobal?: "true" | "false";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Stored conversions */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UnitConversionList"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /** Create a custom unit conversion */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CreateUnitConversion"];
-                };
-            };
-            responses: {
-                /** @description Created conversion */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UnitConversion"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/unit-conversions/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a custom unit conversion */
-        delete: {
             parameters: {
                 query?: never;
                 header?: never;
@@ -1949,7 +1884,82 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Conversion deleted */
+                /** @description Effective measures */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MeasureList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingredients/{id}/measures/{unit}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set your measure for a unit
+         * @description Creates or updates your measure for the unit: the weight of ONE unit in grams. It overrides the USDA measure for the same unit. A volume unit defines the density (1 cup = 30 g), so every volume unit converts. Mass units (g, kg, oz, lb) are fixed and cannot be set. The unit may be new ("handful"); it is valid for the ingredient from then on.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    unit: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetMeasure"];
+                };
+            };
+            responses: {
+                /** @description The effective measure */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Measure"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Delete your measure for a unit
+         * @description Deletes your own measure; the USDA measure for the unit (if any) shows again. 404 when you have no measure for the unit (USDA measures cannot be deleted).
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    unit: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Measure deleted */
                 204: {
                     headers: {
                         [name: string]: unknown;
@@ -1974,7 +1984,7 @@ export interface paths {
         put?: never;
         /**
          * Convert a quantity between units
-         * @description Built-in mass/volume/count tables, then per-ingredient conversions, then household-global conversions. Incomparable units return qty=null and comparable=false rather than a guess.
+         * @description The same converter pantry, cooking, shopping and nutrition use: built-in mass/volume/count tables, then through grams with the ingredient's measures (when `ingredientId` is sent). Incomparable units return qty=null and comparable=false rather than a guess.
          */
         post: {
             parameters: {
@@ -7911,7 +7921,7 @@ export interface components {
              * @enum {string}
              */
             category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
-            /** @description Target unit: pantry stock unit, else ingredient default unit, else the most common line unit. */
+            /** @description Target unit: the ingredient's stock unit, else the most common line unit. */
             unit: string | null;
             /** @description Total needed in `unit` (sum of converted lines); null when no line carried a quantity. */
             qty: number | null;
@@ -8072,7 +8082,7 @@ export interface components {
             name?: string;
             /** @description Quantity to buy. */
             qty?: number | null;
-            /** @description Unit for `qty`. */
+            /** @description Unit for `qty`. For an ingredient item it must be valid for the ingredient and is converted into its stock unit; free-text items keep the text as written. */
             unit?: string | null;
             /** @description Free-form note for the shopper. */
             note?: string;
@@ -8178,8 +8188,10 @@ export interface components {
         IngredientView: components["schemas"]["Ingredient"] & {
             nutrition: components["schemas"]["IngredientNutrition"];
             aliases: components["schemas"]["IngredientAlias"][];
-            /** @description Custom conversions for this ingredient. */
-            conversions: components["schemas"]["UnitConversion"][];
+            /** @description What one unit weighs: the linked USDA food's measures, overridden by your own. */
+            measures: components["schemas"]["Measure"][];
+            /** @description Valid units for pickers: the stock unit first, then the measures, then the built-in units. */
+            units: string[];
             /** @description Stock rows for this ingredient. */
             pantry: components["schemas"]["IngredientStock"][];
         };
@@ -8218,6 +8230,10 @@ export interface components {
             label: string;
             /** @description Grams in one such portion. */
             grams: number;
+            /** @description The app unit this portion measures ("cup", "tbsp", "large", "clove"...); null when the label names no unit. */
+            unit: string | null;
+            /** @description True when the portion is borrowed from a similar USDA food, not measured on this one. */
+            estimated: boolean;
         };
         IngredientAlias: {
             /** @description Alias id (ali_...). */
@@ -8227,19 +8243,23 @@ export interface components {
             /** @description ISO timestamp. */
             createdAt: string;
         };
-        UnitConversion: {
-            /** @description Conversion id (uc_...). */
-            id: string;
-            /** @description Owning ingredient; null = household-global conversion. */
-            ingredientId: string | null;
-            /** @description Normalized source unit. */
-            fromUnit: string;
-            /** @description Normalized target unit. */
-            toUnit: string;
-            /** @description 1 fromUnit = factor toUnit. */
-            factor: number;
+        Measure: {
+            /** @description Normalized unit, e.g. "cup", "clove", "can", "handful". */
+            unit: string;
+            /** @description Weight of ONE unit in grams. */
+            grams: number;
+            /**
+             * @description usda = a portion of the linked USDA food; usda_estimated = a portion borrowed from a similar USDA food; user = your own measure (it overrides the USDA one for the same unit).
+             * @enum {string}
+             */
+            source: "usda" | "usda_estimated" | "user";
+            /** @description True when the weight is borrowed from a similar food (source usda_estimated). */
+            estimated: boolean;
+            /** @description The USDA portion label ("cup, chopped"); null for your own measures. */
+            label: string | null;
             note: string | null;
-            createdAt: string;
+            /** @description On a user measure that overrides a USDA one: the USDA weight, so a client can offer a reset. */
+            usdaGrams: number | null;
         };
         IngredientStock: {
             /** @description Pantry item id (pi_...). */
@@ -8269,15 +8289,14 @@ export interface components {
              * @enum {string}
              */
             category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
-            /** @description Unit used for stock and shopping by default. */
-            defaultUnit: string | null;
+            /** @description The one unit this ingredient is stocked in. Pantry amounts, par and shopping quantities are stored in it. Null until the first pantry write sets it. */
+            stockUnit: string | null;
             /** @description Bundled ingredient icon name (e.g. "garlic", see list_icons) or http(s) image URL; null = automatic icon. */
             imageUrl: string | null;
             /** @description Typical shelf life after purchase. */
             shelfLifeDays: number | null;
-            /** @description Desired minimum stock. */
+            /** @description Desired minimum stock, in the stock unit. */
             parQty: number | null;
-            parUnit: string | null;
             notes: string | null;
             /** @description Portion of the linked USDA food that a plain count means, e.g. "large" for eggs ("2" eggs = 2 large). Null for custom ingredients. */
             defaultPortion: string | null;
@@ -8305,14 +8324,14 @@ export interface components {
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             /** @description Alternate names ("onion", "yellow onions"); stored lowercase. */
             aliases?: string[];
-            /** @description Unit used for stock and shopping, e.g. "g" or "can". */
-            defaultUnit?: string | null;
+            /** @description The one unit the ingredient is stocked in, e.g. "g" or "can". It must be a built-in unit or one the ingredient has a measure for. Unset: the first pantry write sets it. */
+            stockUnit?: string | null;
             /** @description Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL. */
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
-            /** @description Desired minimum stock. */
+            /** @description Desired minimum stock, in the stock unit. */
             parQty?: number | null;
-            /** @description Unit of parQty. */
+            /** @description Optional unit `parQty` is written in; it is converted into the stock unit. */
             parUnit?: string | null;
             notes?: string | null;
         };
@@ -8326,7 +8345,7 @@ export interface components {
                  * @enum {string}
                  */
                 category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
-                defaultUnit: string | null;
+                stockUnit: string | null;
                 defaultPortion: string | null;
                 aliases: string[];
                 /** @description Linked to a USDA food (false = custom). */
@@ -8350,12 +8369,14 @@ export interface components {
         };
         IngredientReviewItem: {
             ingredient: components["schemas"]["IngredientView"];
-            reasons: ("unlinked" | "lint" | "custom_unreviewed")[];
+            reasons: ("unlinked" | "lint" | "custom_unreviewed" | "unit")[];
             /** @description Present when `reasons` has lint. */
             lint?: {
                 reason: string;
                 hint: string;
             };
+            /** @description Present when `reasons` has unit: the units that do not convert. */
+            units?: string[];
             /** @description Ways to fix it: existing ingredients and USDA foods. */
             suggestions: components["schemas"]["IngredientSuggestion"][];
         };
@@ -8395,11 +8416,13 @@ export interface components {
             usage: components["schemas"]["IngredientUsage"];
             /** @description Why the ingredient needs attention; null when it does not. */
             review: {
-                reasons: ("unlinked" | "lint" | "custom_unreviewed")[];
+                reasons: ("unlinked" | "lint" | "custom_unreviewed" | "unit")[];
                 lint?: {
                     reason: string;
                     hint: string;
                 };
+                /** @description Present when `reasons` has unit: the units that do not convert. */
+                units?: string[];
                 suggestions: components["schemas"]["IngredientSuggestion"][];
             } | null;
         };
@@ -8465,11 +8488,14 @@ export interface components {
              * @enum {string}
              */
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
-            defaultUnit?: string | null;
+            /** @description Changes the stock unit and converts the pantry amount and par into it; 422 when they do not convert. null clears it. */
+            stockUnit?: string | null;
             /** @description Icon: null/empty = automatic, a bundled icon name (e.g. "garlic", see list_icons), or an http(s) image URL. */
             imageUrl?: string | null;
             shelfLifeDays?: number | null;
+            /** @description Desired minimum stock, in the stock unit. */
             parQty?: number | null;
+            /** @description Optional unit `parQty` is written in; it is converted into the stock unit. */
             parUnit?: string | null;
             notes?: string | null;
             /** @description Portion label of the linked food that a plain count means; null clears it. */
@@ -8489,7 +8515,7 @@ export interface components {
                 pantryItems: number;
                 shoppingItems: number;
                 rules: number;
-                conversions: number;
+                measures: number;
                 aliases: number;
             };
         };
@@ -8531,18 +8557,12 @@ export interface components {
              */
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
         };
-        UnitConversionList: {
-            items: components["schemas"]["UnitConversion"][];
+        MeasureList: {
+            items: components["schemas"]["Measure"][];
         };
-        CreateUnitConversion: {
-            /** @description Owning ingredient; omit or null for a household-global conversion. */
-            ingredientId?: string | null;
-            /** @description Source unit, e.g. "can". */
-            fromUnit: string;
-            /** @description Target unit, e.g. "oz". */
-            toUnit: string;
-            /** @description 1 fromUnit = factor toUnit. */
-            factor: number;
+        SetMeasure: {
+            /** @description Weight of ONE unit in grams. */
+            grams: number;
             note?: string | null;
         };
         ConvertUnitResult: {
@@ -8562,7 +8582,7 @@ export interface components {
             from: string;
             /** @description Target unit, e.g. "ml". */
             to: string;
-            /** @description Use this ingredient's custom conversions (e.g. can → oz). */
+            /** @description Use this ingredient's measures (USDA portions and your own) to cross families, e.g. cup → g or can → oz. */
             ingredientId?: string;
         };
         PantryItemList: {
@@ -8586,9 +8606,9 @@ export interface components {
                 /** @description Typical shelf life after purchase. */
                 shelfLifeDays: number | null;
             };
-            /** @description Cached quantity; null = present but unknown. */
+            /** @description Cached quantity, in the ingredient's stock unit; null = present but unknown. */
             qty: number | null;
-            /** @description Normalized unit. */
+            /** @description The ingredient's stock unit. */
             unit: string | null;
             qtyApprox: boolean;
             /**
@@ -8620,8 +8640,6 @@ export interface components {
         MovementResult: {
             item: components["schemas"]["PantryItem"];
             movement: components["schemas"]["StockMovement"];
-            /** @description e.g. "units not comparable". */
-            warning?: string;
         };
         SetStock: {
             /** @description Existing ingredient id. */
@@ -8639,7 +8657,7 @@ export interface components {
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             /** @description Absolute quantity; null = present but unknown. */
             qty: number | null;
-            /** @description Unit, e.g. "lb", "g", "can". */
+            /** @description Unit of `qty`, e.g. "lb", "g", "can". Converted into the ingredient's stock unit (the first write sets it). 422 when the unit is unknown for the ingredient or does not convert. */
             unit?: string | null;
             /**
              * @description Overrides the computed status for this set.
@@ -8684,7 +8702,7 @@ export interface components {
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
             /** @description Relative change (negative consumes). */
             delta: number;
-            /** @description Unit of the delta; defaults to the item unit. */
+            /** @description Unit of the delta; defaults to the stock unit. Converted into the stock unit; 422 when unknown or not convertible. */
             unit?: string | null;
             note?: string | null;
             /**
@@ -8997,7 +9015,7 @@ export interface components {
             qty?: number | null;
             /** @description Upper bound of a range ("1-2 heads" => qty 1, qtyMax 2). */
             qtyMax?: number | null;
-            /** @description Unit as written ("Tbsp", "pounds", "large"); normalized to a canonical unit. Sizes (small, medium, large, extra-large, jumbo) are count units: "2 large eggs" is qty 2, unit "large". */
+            /** @description Unit as written ("Tbsp", "pounds", "large", "cloves"); normalized to a canonical unit. It must be a built-in mass, volume or count unit, a size (small, medium, large, extra-large, jumbo) or a unit the ingredient has a measure for (see GET /ingredients/{id}/measures); anything else is a 422 with suggestions. Sizes are count units: "2 large eggs" is qty 2, unit "large". */
             unit?: string | null;
             /** @description Preparation note, e.g. "diced". */
             prepNote?: string | null;
@@ -9219,6 +9237,8 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "optional" | "no_match" | "no_quantity" | "no_conversion";
+            /** @description Present on no_conversion: what to add so the line counts, e.g. "Add a measure: 1 cup = ? g". */
+            hint?: string;
         };
         DietaryRuleList: {
             items: components["schemas"]["DietaryRule"][];

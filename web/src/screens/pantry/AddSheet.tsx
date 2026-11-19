@@ -1,36 +1,15 @@
 import { useId, useState, type FormEvent } from "react";
-import { Label, Select } from "radix-ui";
-import { Button, Icon, Sheet, cx } from "@/ui";
+import { Label } from "radix-ui";
+import { Button, Sheet } from "@/ui";
 import { IngredientPicker } from "../ingredients/IngredientPicker";
 import { ingredientErrorMessage, type IngredientPick } from "../ingredients/refs";
+import { UnitPicker } from "../ingredients/UnitPicker";
+import { UnitProblems } from "../ingredients/UnitProblems";
+import { unitProblems } from "../ingredients/units";
 import { parseQty } from "../shop/format";
 import styles from "./Pantry.module.css";
 import { useAddStock } from "./queries";
 import { type PantryItem } from "./stock";
-
-/** Radix Select reserves the empty string for "no value", so the unit-less choice gets a sentinel. */
-const NO_UNIT = "__none";
-
-const UNITS: ReadonlyArray<readonly [string, string]> = [
-  ["", "No unit"],
-  ["lb", "lb"],
-  ["oz", "oz"],
-  ["g", "g"],
-  ["kg", "kg"],
-  ["cup", "cups"],
-  ["tbsp", "tbsp"],
-  ["tsp", "tsp"],
-  ["ml", "ml"],
-  ["l", "liters"],
-  ["can", "cans"],
-  ["jar", "jars"],
-  ["bag", "bags"],
-  ["bottle", "bottles"],
-  ["box", "boxes"],
-  ["package", "packages"],
-  ["bunch", "bunches"],
-  ["head", "heads"],
-];
 
 export interface AddSheetProps {
   open: boolean;
@@ -50,6 +29,7 @@ function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
   const [qtyText, setQtyText] = useState("");
   const [unit, setUnit] = useState("");
   const add = useAddStock();
+  const unitIssues = add.isError ? unitProblems(add.error) : [];
   const qtyId = useId();
   const unitId = useId();
 
@@ -62,7 +42,7 @@ function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
     e.preventDefault();
     if (!canAdd || pick === null) return;
     add.mutate(
-      { ingredientId: pick.id, qty: qtyText.trim() === "" ? null : qty, unit: unit === "" ? null : unit },
+      { ingredientId: pick.id, qty: qtyText.trim() === "" ? null : qty, unit: unit.trim() === "" ? null : unit.trim() },
       { onSuccess: onClose },
     );
   }
@@ -85,7 +65,10 @@ function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
         <IngredientPicker
           label="What is it?"
           value={pick}
-          onChange={setPick}
+          onChange={(next) => {
+            setPick(next);
+            setUnit("");
+          }}
           initialQuery={initialName}
           placeholder="Rice, eggs, olive oil"
           autoFocus
@@ -106,44 +89,38 @@ function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
               aria-invalid={qtyBad || undefined}
             />
           </div>
-          <div className={styles.field}>
-            <Label.Root className={styles.fieldLabel} htmlFor={unitId}>
-              Unit
-            </Label.Root>
-            <Select.Root
-              value={unit === "" ? NO_UNIT : unit}
-              onValueChange={(next) => setUnit(next === NO_UNIT ? "" : next)}
-            >
-              <Select.Trigger id={unitId} className={cx(styles.input, styles.selectTrigger)}>
-                <Select.Value />
-              </Select.Trigger>
-              <Select.Portal>
-                <Select.Content className={styles.selectContent} position="popper" sideOffset={8} collisionPadding={12}>
-                  <Select.Viewport className={styles.selectViewport}>
-                    {UNITS.map(([value, label]) => (
-                      <Select.Item
-                        key={value === "" ? NO_UNIT : value}
-                        value={value === "" ? NO_UNIT : value}
-                        className={styles.selectItem}
-                      >
-                        <Select.ItemText>{label}</Select.ItemText>
-                        <Select.ItemIndicator className={styles.selectIndicator}>
-                          <Icon name="check" />
-                        </Select.ItemIndicator>
-                      </Select.Item>
-                    ))}
-                  </Select.Viewport>
-                </Select.Content>
-              </Select.Portal>
-            </Select.Root>
-          </div>
+          {pick === null ? (
+            <div className={styles.field}>
+              <Label.Root className={styles.fieldLabel} htmlFor={unitId}>
+                Unit
+              </Label.Root>
+              <input id={unitId} className={styles.input} disabled readOnly placeholder="Pick a food first" />
+            </div>
+          ) : (
+            <UnitPicker
+              key={pick.id}
+              label="Unit"
+              ingredientId={pick.id}
+              value={unit}
+              onChange={setUnit}
+              invalid={unitIssues.length > 0}
+            />
+          )}
         </div>
         {duplicate && <p className={styles.hint}>That's already in the pantry. Use the + and - on its row, or give an amount to add more.</p>}
-        {add.isError && (
+        {add.isError && unitIssues.length === 0 && (
           <p className={styles.hint} role="alert">
             {ingredientErrorMessage(add.error, "Could not add it. Try again.")}
           </p>
         )}
+        <UnitProblems
+          problems={unitIssues}
+          onUseUnit={(next) => {
+            setUnit(next);
+            add.reset();
+          }}
+          onMeasureAdded={() => add.reset()}
+        />
       </form>
     </Sheet>
   );

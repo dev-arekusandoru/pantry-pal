@@ -12,7 +12,7 @@ from a list, or you add one on purpose. This keeps names clean, so "Milk or
 water" and "2 eggs, beaten" do not become ingredients.
 
 Each ingredient has one page. It shows everything about the ingredient in one
-place: its name, icon, aisle, USDA food, other names, and where it is used.
+place: its name, icon, aisle, stock unit, USDA food, measures, other names, and where it is used.
 All ingredients are in the [ingredient list](#the-ingredient-list).
 
 ## The ingredient list
@@ -51,14 +51,15 @@ or create one, its page opens.
 
 ## The ingredient page
 
-![Ingredient page with the details form, USDA food, other names, and where it is used](../images/ingredient-page.png)
+![Ingredient page with the details form, USDA food, measures, other names, and where it is used](../images/ingredient-page.png)
 
 Every change on the page goes through the same API calls as the rest of the app.
 
 | Section | What you can do |
 | --- | --- |
-| **Details** | Change the **Icon** (**Change icon** opens the icon sheet; see [Ingredient icons](icons.md)), **Name**, **Aisle**, **Keep at least** and **Unit** (the pantry minimum), **Shelf life in days**, and **Notes**. Tap **Save changes**. |
+| **Details** | Change the **Icon** (**Change icon** opens the icon sheet; see [Ingredient icons](icons.md)), **Name**, **Aisle**, **Stock unit**, **Keep at least** (the pantry minimum, in the stock unit), **Shelf life in days**, and **Notes**. Tap **Save changes**. See [Units and measures](units.md#the-stock-unit). |
 | **USDA food** | See the linked food. **Change food** or **Link to a food** searches the USDA foods. For a food with portions, **A plain count means** sets the portion that an amount without a unit uses. |
+| **Measures** | See the weight of one unit in grams, with a **USDA**, **Estimated**, or **Yours** badge. Add, change, and delete your own measures. **Reset to USDA** restores a USDA weight. See [The Measures section](units.md#the-measures-section). |
 | **Other names** | Add or remove names that point to this ingredient, such as "scallion". Tap `×` on a name to remove it. |
 | **Used in** | Recipes (with the number of lines, and **Main** or **Alternative**), the pantry amount, items on shopping lists that are not done, and dietary rules. Recipes, the pantry, and shopping lists are links. |
 | **Merge or archive** | **Merge into…** moves everything to another ingredient. **Archive** hides the ingredient from the list. |
@@ -193,7 +194,7 @@ deduction, and [dietary rules](dietary-rules.md) use only the main ingredient.
 
 The sizes `small`, `medium`, `large`, `extra-large`, and `jumbo` work as units.
 For "2 large eggs", enter **Qty** `2` and **Unit** `large`. The recipe page shows
-"2 large". The unit field suggests these sizes. "extra large" and "xl" become
+"2 large". The **Unit** list offers these sizes. "extra large" and "xl" become
 `extra-large`.
 
 A size counts as a plain count for the pantry and shopping. For nutrition,
@@ -223,6 +224,7 @@ An ingredient needs attention when it has one of these:
 | **No USDA food** | It is not linked to a food. This includes every ingredient made before this feature. |
 | **Name needs a fix** | Its name breaks the [naming rules](#naming-rules). The page shows the reason. |
 | **Custom, not reviewed** | It is custom and nobody has accepted it yet. |
+| **Unit has no weight** | A recipe line or a pantry row uses a unit that does not convert to grams or to the stock unit. The card lists the units. |
 
 Find these ingredients in any of three places:
 
@@ -244,6 +246,7 @@ The buttons on the card:
 | **Split** | Replace a combined name such as "Milk or water". See below. |
 | **Merge into…** | Move the ingredient into one you already have. Recipes, pantry stock, and shopping items move. The old name becomes an alias, and the old ingredient is removed. The page of the target opens. |
 | **Keep as custom** | Accept a custom ingredient as it is. Shown for an ingredient that is not yet accepted. |
+| **Add measure** | Shown next to each unit under **Units with no weight**. It opens a form for the weight of one unit in grams. When you save it, the unit leaves the list. See [Units and measures](units.md#add-a-measure-for-a-new-unit). |
 
 To fix a name, change **Name** under **Details**. To remove an ingredient you do
 not need, use **Archive** at the bottom of the page.

@@ -8,7 +8,12 @@ import {
   type SeedShoppingList,
 } from "../schemas/seed.js";
 import { createMember, listMembers, updateHousehold } from "../services/households.js";
-import { createIngredient, listIngredients, normalizeName } from "../services/ingredients.js";
+import {
+  createIngredient,
+  listIngredients,
+  normalizeName,
+  updateIngredient,
+} from "../services/ingredients.js";
 import { applyMovement, updatePantryItem } from "../services/pantry.js";
 import { createPlan } from "../services/plans.js";
 import { createRecipe, searchRecipes } from "../services/recipes.js";
@@ -20,7 +25,7 @@ import {
   createShoppingList,
   updateShoppingList,
 } from "../services/shopping.js";
-import { createConversion } from "../services/units.js";
+import { setMeasure } from "../services/units.js";
 
 /** Note written to the status event recorded while seeding a recipe. */
 const SEED_NOTE = "Seeded from example.json";
@@ -90,19 +95,17 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
     }
     summary.householdMembers = seed.household.members.length;
 
-    // 2. Ingredients + aliases (aliases are inserted by the service).
+    // 2. Ingredients + aliases (aliases are inserted by the service). Stock units and par come
+    // after the measures, because a unit like "can" is only valid once the ingredient has one.
     let aliasCount = 0;
     for (const input of seed.ingredients) {
       const created = createIngredient(t, {
         name: input.name,
         category: input.category,
-        defaultUnit: input.defaultUnit,
         aliases: input.aliases,
         ...(input.description === undefined ? {} : { description: input.description }),
         ...(input.imageUrl === undefined ? {} : { imageUrl: input.imageUrl }),
         ...(input.shelfLifeDays === undefined ? {} : { shelfLifeDays: input.shelfLifeDays }),
-        ...(input.parQty === undefined ? {} : { parQty: input.parQty }),
-        ...(input.parUnit === undefined ? {} : { parUnit: input.parUnit }),
         ...(input.fdcId === undefined ? { custom: true } : { fdcId: input.fdcId }),
         ...(input.defaultPortion === undefined ? {} : { defaultPortion: input.defaultPortion }),
         needsReview: false,
@@ -114,17 +117,24 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
     summary.ingredients = seed.ingredients.length;
     summary.ingredientAliases = aliasCount;
 
-    // 3. Unit conversions.
-    for (const input of seed.unitConversions) {
-      createConversion(t, {
-        ingredientId: input.ingredient == null ? null : ingredientIdOf(input.ingredient),
-        fromUnit: input.fromUnit,
-        toUnit: input.toUnit,
-        factor: input.factor,
+    // 3. Measures.
+    for (const input of seed.measures) {
+      setMeasure(t, ingredientIdOf(input.ingredient), input.unit, {
+        grams: input.grams,
         ...(input.note === undefined ? {} : { note: input.note }),
       });
     }
-    summary.unitConversions = seed.unitConversions.length;
+    summary.measures = seed.measures.length;
+
+    // 3b. Stock units and par levels.
+    for (const input of seed.ingredients) {
+      if (input.stockUnit === null && input.parQty === undefined) continue;
+      updateIngredient(t, ingredientIdOf(input.name), {
+        stockUnit: input.stockUnit,
+        ...(input.parQty === undefined ? {} : { parQty: input.parQty }),
+        ...(input.parUnit === undefined ? {} : { parUnit: input.parUnit }),
+      });
+    }
 
     // 4. Pantry snapshot: one `set`/`import` movement per row, no purchases.
     for (const row of seed.pantry) {
@@ -301,7 +311,7 @@ function assertReferencesResolve(seed: SeedData): void {
     if (key !== undefined && !declaredRecipes.has(key)) unknownRecipes.add(key);
   };
 
-  for (const row of seed.unitConversions) checkIngredient(row.ingredient ?? undefined);
+  for (const row of seed.measures) checkIngredient(row.ingredient);
   for (const row of seed.pantry) checkIngredient(row.ingredient);
   for (const rule of seed.rules) {
     checkIngredient(rule.ingredient);

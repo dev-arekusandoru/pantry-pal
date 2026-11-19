@@ -20,14 +20,14 @@ vi.mock("../src/services/foods.js", async (importOriginal) => {
       description: "Wheat flour, white",
       dataType: "sr_legacy",
       per100g: { ...n(364, 10, 76, 1), fiber: 2.7 },
-      portions: [{ label: "cup", grams: 125 }],
+      portions: [{ label: "cup", grams: 125, unit: "cup", estimated: false }],
     },
     {
       fdcId: 3,
       description: "Onions, raw",
       dataType: "sr_legacy",
       per100g: n(40, 1, 9, 0),
-      portions: [{ label: "medium", grams: 110 }],
+      portions: [{ label: "medium", grams: 110, unit: "medium", estimated: false }],
     },
     { fdcId: 4, description: "Tomatoes, canned", dataType: "sr_legacy", per100g: n(20, 1, 4, 0), portions: [] },
     { fdcId: 5, description: "Beans, black", dataType: "sr_legacy", per100g: n(340, 21, 62, 1), portions: [] },
@@ -60,7 +60,7 @@ const { createIngredient, getIngredient, mergeIngredients, updateIngredient } = 
   "../src/services/ingredients.js"
 );
 const { createRecipe } = await import("../src/services/recipes.js");
-const { createConversion } = await import("../src/services/units.js");
+const { setMeasure } = await import("../src/services/units.js");
 const { ingredients } = await import("../src/db/schema.js");
 const { addIngredient, makeTestApp, makeTestCtx } = await import("./helpers.js");
 
@@ -71,7 +71,7 @@ describe("recipe nutrition", () => {
     createIngredient(ctx, { fdcId: 2, name: "Flour" });
     createIngredient(ctx, { fdcId: 3, name: "Onion" });
     const tomatoes = createIngredient(ctx, { fdcId: 4, name: "Canned tomatoes" });
-    createConversion(ctx, { ingredientId: tomatoes.id, fromUnit: "can", toUnit: "g", factor: 400 });
+    setMeasure(ctx, tomatoes.id, "can", { grams: 400 });
 
     const recipe = createRecipe(ctx, {
       title: "Everything",
@@ -115,7 +115,7 @@ describe("recipe nutrition", () => {
         { ingredient: "Rice", qty: 100, unit: "g" },
         { ingredient: "Milk", alternatives: [{ ingredient: "Water" }], qty: 1, unit: "cup" },
         { ingredient: "Flour", qty: null },
-        { ingredient: "Onion", qty: 1, unit: "bunch" },
+        { ingredient: "Onion", qty: 1, unit: "cup" },
         { ingredient: "Rice", qty: 500, unit: "g", optional: true },
       ],
     });

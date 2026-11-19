@@ -41,6 +41,14 @@ Input schemas come from these files:
   `suggestions` and sometimes a `hint`. Shopping item names may instead become
   free text. Do not invent an ID.
 - A null quantity is unknown, not zero. Read the stock status as well.
+- A unit that the ingredient does not accept, on a recipe line, a pantry write, a
+  shopping item, or a stock unit, fails with `unprocessable`. `details.unresolvedUnits`
+  lists each unit with `suggestions` and a `hint`. Call `ingredient_measures` with
+  `set`, or use a suggested unit, then send the request again. Nothing is written
+  by the failed request.
+- Every ingredient has one stock unit. Pantry amounts, par levels, and shopping
+  amounts are stored in it, and a write in another unit is converted. See
+  [Units and measures](../use/units.md).
 - The server does unit conversion, recipe scaling, demand, and shopping
   arithmetic. Send source amounts and choices.
 - Tools with an `action` field require it. The action values are listed below.
@@ -58,13 +66,13 @@ Input schemas come from these files:
 
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
-| `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, and conversions. With `ingredientId` or `ingredient`, returns one ingredient with `usage`: recipes, the pantry row, items on open shopping lists, and dietary rules, plus `review`. | `query`, `category`, `includeArchived`; `ingredientId` or `ingredient` for one ingredient. |
+| `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, the stock unit, and measures. With `ingredientId` or `ingredient`, returns one ingredient with `usage`: recipes, the pantry row, items on open shopping lists, and dietary rules, plus `review`. | `query`, `category`, `includeArchived`; `ingredientId` or `ingredient` for one ingredient. |
 | `find_ingredient` | Search household ingredients and USDA foods together. Read-only. Start here. | `query`; `limit`. Returns `ingredients[]` (with `linked`, `fdcId`, `needsReview`, `score`) and `foods[]` (`fdcId`, `description`, `suggestedName`, `ingredientId` or `null`). |
-| `create_custom_ingredient` | Create an ingredient with no USDA food. Last resort: use it only when `find_ingredient` and `search_foods` find nothing. It always sets `needsReview`. | `name`, `category`, `aliases`, `defaultUnit`. |
+| `create_custom_ingredient` | Create an ingredient with no USDA food. Last resort: use it only when `find_ingredient` and `search_foods` find nothing. It always sets `needsReview`. | `name`, `category`, `aliases`, `stockUnit`, `parQty`, `parUnit`. |
 | `review_ingredients` | List ingredients that need review, accept one, or split one. | `action` `list`, `accept`, or `split`; `ingredientId` or `ingredient`; `main` and `alternatives` (references) for split. |
-| `ingredient_upsert` | Create, update, alias, or merge an ingredient. A create needs `fdcId`; use `create_custom_ingredient` for a custom one. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; `fdcId` for create; `defaultPortion`; category and default unit; `aliases`; `removeAliases`; `imageUrl` (icon name, `http(s)` link, or `null`; see [Ingredient icons](../use/icons.md)); `intoId` for merge. |
+| `ingredient_upsert` | Create, update, alias, or merge an ingredient. A create needs `fdcId`; use `create_custom_ingredient` for a custom one. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; `fdcId` for create; `defaultPortion`; `category`; `stockUnit`; `parQty` (in the stock unit); `parUnit` (optional unit of `parQty`); `aliases`; `removeAliases`; `imageUrl` (icon name, `http(s)` link, or `null`; see [Ingredient icons](../use/icons.md)); `intoId` for merge. |
 | `list_icons` | List the bundled ingredient icon names that `imageUrl` accepts. Read-only. | `query` (substring filter), `limit` (default 100). |
-| `unit_conversions` | List, create, or delete custom unit conversions such as `1 can = 15 oz`, per ingredient or household-global. | `action` `list`, `create`, or `delete`; `ingredientId`; `includeGlobal`; `conversionId`; `fromUnit`, `toUnit`, `factor`; `note`. |
+| `ingredient_measures` | List, set, or delete the weight of one unit of an ingredient, in grams. `list` returns the effective measures: the USDA portions (`source` `usda`, or `usda_estimated` when borrowed from a similar food) replaced by your own (`user`). `set` makes your measure; a new unit such as `handful` is valid for the ingredient from then on. `delete` removes your measure. Mass units (`g`, `kg`, `oz`, `lb`) are fixed. | `action` `list`, `set`, or `delete`; `ingredientId` or `ingredient`; `unit`; `grams` for set; `note`. |
 
 ## Pantry and availability
 
@@ -119,7 +127,8 @@ A violation with a `conditionNote` is a judgement call for the agent.
 | `set_ingredient_nutrition` | Choose the USDA food that an ingredient uses. Returns the ingredient with its `nutrition`. | `ingredientId` or `ingredient`; `mode` `auto` or `manual`; `fdcId` for `manual` (a number from `search_foods`, or `null` to clear the match for good). |
 
 Optional lines are not counted. A line with no quantity, no food, or no gram
-conversion stays blank. Check `missingLines` and each line `status` before you
+conversion stays blank. A blank `no_conversion` line has a `hint`; add a measure
+with `ingredient_measures` to count it. Check `missingLines` and each line `status` before you
 quote a total. The match applies to the ingredient in every recipe. See
 [Nutrition](../use/nutrition.md) and the
 [REST API](rest-api.md#recipe-nutrition).

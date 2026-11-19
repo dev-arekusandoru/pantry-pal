@@ -35,11 +35,7 @@ import {
   listPantry,
   verifyItem,
 } from "../../services/pantry.js";
-import {
-  createConversion,
-  deleteConversion,
-  listConversions,
-} from "../../services/units.js";
+import { deleteMeasure, listMeasures, setMeasure } from "../../services/units.js";
 import { requireArg, requireIngredientId, tool } from "./util.js";
 
 // ---------------------------------------------------------------------------
@@ -93,7 +89,7 @@ const customIngredientInput = z.object({
   description: createFields.description,
   category: createFields.category,
   aliases: createFields.aliases,
-  defaultUnit: createFields.defaultUnit,
+  stockUnit: createFields.stockUnit,
   imageUrl: createFields.imageUrl,
   shelfLifeDays: createFields.shelfLifeDays,
   parQty: createFields.parQty,
@@ -148,24 +144,22 @@ const ingredientUpsertInput = z
       .describe("Target ingredient id that survives the merge (action=merge)."),
   })
   .describe(
-    'Create a linked ingredient (`fdcId` from find_ingredient or search_foods; no custom ingredients here, see create_custom_ingredient) or update one: category, icon (`imageUrl`: a bundled icon name from list_icons, an http(s) URL, or null for automatic), default unit, aliases, shelf life, par level and notes; merge folds a duplicate into another.',
+    'Create a linked ingredient (`fdcId` from find_ingredient or search_foods; no custom ingredients here, see create_custom_ingredient) or update one: category, icon (`imageUrl`: a bundled icon name from list_icons, an http(s) URL, or null for automatic), stock unit (the one unit pantry amounts, par and shopping quantities are stored in; changing it converts them), aliases, shelf life, par level and notes; merge folds a duplicate into another.',
   );
 
-const unitConversionsInput = z.object({
-  action: z.enum(["list", "create", "delete"]).describe("Manage custom unit conversions."),
-  ingredientId: z
+const ingredientMeasuresInput = z.object({
+  action: z
+    .enum(["list", "set", "delete"])
+    .describe("list = the ingredient's measures; set = create or change your measure for a unit; delete = remove your measure."),
+  ingredientId: z.string().optional().describe("Ingredient id."),
+  ingredient: z.string().optional().describe("Ingredient name (alternative to `ingredientId`)."),
+  unit: z
     .string()
+    .min(1)
     .optional()
-    .describe("Owning ingredient; omit for household-global conversions (list/create)."),
-  includeGlobal: z
-    .boolean()
-    .optional()
-    .describe("With ingredientId, also list household-global rows."),
-  conversionId: z.string().optional().describe("Conversion id (uc_…) for delete."),
-  fromUnit: z.string().min(1).optional().describe('Source unit, e.g. "can".'),
-  toUnit: z.string().min(1).optional().describe('Target unit, e.g. "oz".'),
-  factor: z.number().positive().optional().describe("1 fromUnit = factor toUnit."),
-  note: z.string().nullish(),
+    .describe('Unit for set/delete, e.g. "cup", "clove", "can" or a new one like "handful".'),
+  grams: z.number().positive().optional().describe("set: weight of ONE unit in grams."),
+  note: z.string().nullish().describe("set: optional note."),
 });
 
 // ---------------------------------------------------------------------------
@@ -211,7 +205,7 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Search ingredients",
       description:
-        "List ingredients by name/alias/category with ids, default units, aliases, custom conversions and current stock. Pass ingredientId (or ingredient) for one ingredient's detail with its usage (recipes, pantry, open shopping list items, dietary rules). To pick the ingredient for a recipe line, pantry line or rule, use find_ingredient first.",
+        "List ingredients by name/alias/category with ids, stock units, aliases, measures and current stock. Pass ingredientId (or ingredient) for one ingredient's detail with its usage (recipes, pantry, open shopping list items, dietary rules). To pick the ingredient for a recipe line, pantry line or rule, use find_ingredient first.",
       inputSchema: ingredientSearchInput,
       annotations: { readOnlyHint: true },
     },
@@ -344,37 +338,30 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
   );
 
   server.registerTool(
-    "unit_conversions",
+    "ingredient_measures",
     {
-      title: "Custom unit conversions",
+      title: "Ingredient measures",
       description:
-        "List, create or delete custom conversions (e.g. 1 can = 15 oz) used when comparing recipe lines to pantry stock. Built-in mass/volume tables need no rows.",
-      inputSchema: unitConversionsInput,
+        "What one unit of an ingredient weighs, in grams. `list` returns the effective measures: the linked USDA food's portions (source usda, or usda_estimated when borrowed from a similar food) overridden by yours (source user). `set` creates or changes your measure for a unit (1 cup = 30 g also gives the density, so every volume unit converts; 1 handful = 25 g makes \"handful\" a valid unit for this ingredient); mass units (g, kg, oz, lb) are fixed. `delete` removes your measure; the USDA one shows again. A recipe, pantry or shopping write with a unit the ingredient does not accept is a 422 with suggestions; add the measure, then retry. Every ingredient has ONE stock unit: pantry amounts, par and shopping quantities are converted into it.",
+      inputSchema: ingredientMeasuresInput,
       annotations: { destructiveHint: true },
     },
-    tool((args: z.infer<typeof unitConversionsInput>) => {
+    tool((args: z.infer<typeof ingredientMeasuresInput>) => {
+      const id = requireIngredientId(ctx, args);
       switch (args.action) {
         case "list":
+          return { items: listMeasures(ctx, id) };
+        case "set":
           return {
-            items: listConversions(ctx, {
-              ...(args.ingredientId === undefined ? {} : { ingredientId: args.ingredientId }),
-              ...(args.includeGlobal === undefined ? {} : { includeGlobal: args.includeGlobal }),
+            measure: setMeasure(ctx, id, requireArg(args.unit, "unit"), {
+              grams: requireArg(args.grams, "grams"),
+              ...(args.note === undefined ? {} : { note: args.note }),
             }),
           };
-        case "create": {
-          const conversion = createConversion(ctx, {
-            ...(args.ingredientId === undefined ? {} : { ingredientId: args.ingredientId }),
-            fromUnit: requireArg(args.fromUnit, "fromUnit"),
-            toUnit: requireArg(args.toUnit, "toUnit"),
-            factor: requireArg(args.factor, "factor"),
-            ...(args.note === undefined ? {} : { note: args.note }),
-          });
-          return { conversion };
-        }
         case "delete": {
-          const id = requireArg(args.conversionId, "conversionId");
-          deleteConversion(ctx, id);
-          return { deleted: true, id };
+          const unit = requireArg(args.unit, "unit");
+          deleteMeasure(ctx, id, unit);
+          return { deleted: true, ingredientId: id, unit };
         }
       }
     }),

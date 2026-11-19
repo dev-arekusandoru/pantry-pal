@@ -2,7 +2,7 @@
 
 The repository includes `seed/example.json`, a synthetic household snapshot. Use it to try the web app, API, or MCP tools before you enter your own food.
 
-The file contains a household, ingredients, unit conversions, pantry stock, dietary rules, recipes, one meal plan, and one completed shopping list. The plan uses the week of 2026-02-02, so it is a sample, not the current week. Each ingredient links to a USDA food (`fdcId`) or is marked `custom`. See [Data import format](../reference/import-format.md) for every field. This is a one-time import, not a backup or sync format.
+The file contains a household, ingredients, measures, pantry stock, dietary rules, recipes, one meal plan, and one completed shopping list. The plan uses the week of 2026-02-02, so it is a sample, not the current week. Each ingredient links to a USDA food (`fdcId`) or is marked `custom`. See [Data import format](../reference/import-format.md) for every field. This is a one-time import, not a backup or sync format.
 
 The Compose commands below use the default stack. If you run the base file only, add `-f docker-compose.yml` to each Compose command. If you run the Cloudflare Tunnel stack, prefix each Compose command with `-f docker-compose.tunnel.yml` instead. Do not combine the tunnel file with the default stack or its override.
 
