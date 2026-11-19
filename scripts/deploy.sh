@@ -139,8 +139,13 @@ else
     dc start "$SERVICE" || true
     die "tar failed. If it is a permission error, run the script with sudo or fix the owner of data/."
   fi
-  # A backup you cannot read back is not a backup.
-  tar -tzf "$ARCHIVE" | grep -q '^data/pantrypal\.db$' || {
+  # A backup you cannot read back is not a backup. List into a variable first:
+  # `tar | grep -q` makes tar die of SIGPIPE, and pipefail then reports failure.
+  listing="$(tar -tzf "$ARCHIVE")" || {
+    dc start "$SERVICE" || true
+    die "Cannot read the archive: $ARCHIVE"
+  }
+  grep -qx 'data/pantrypal\.db' <<<"$listing" || {
     dc start "$SERVICE" || true
     die "The archive has no data/pantrypal.db: $ARCHIVE"
   }
