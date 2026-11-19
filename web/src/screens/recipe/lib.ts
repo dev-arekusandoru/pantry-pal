@@ -57,10 +57,11 @@ export function formatNumber(n: number): string {
   return String(Number(n.toFixed(n < 10 ? 2 : 1)));
 }
 
-/** Units that read the same in singular and plural ("2 tbsp", "3 oz"). */
+/** Units that read the same in singular and plural ("2 tbsp", "3 oz", "2 large" eggs). */
 const INVARIANT_UNITS: Record<string, true> = {
   tbsp: true, tsp: true, oz: true, lb: true, lbs: true, g: true, kg: true, mg: true,
   ml: true, l: true, "fl oz": true, pt: true, qt: true, gal: true, pinch: true,
+  small: true, medium: true, large: true, "extra-large": true, jumbo: true,
 };
 /** Units that carry no information in front of an ingredient name ("2 yellow onion"). */
 const SILENT_UNITS: Record<string, true> = { count: true, each: true, whole: true, piece: true, pieces: true };

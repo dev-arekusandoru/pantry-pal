@@ -9,25 +9,37 @@ import {
   convertUnitSchema,
   createConversionSchema,
   createIngredientSchema,
+  findIngredientsQuerySchema,
+  findIngredientsResultSchema,
   ingredientAliasSchema,
+  ingredientDetailSchema,
   ingredientListSchema,
   ingredientParamsSchema,
   ingredientViewSchema,
+  ingredientUsageCountsSchema,
   listConversionsQuerySchema,
   listIngredientsQuerySchema,
   mergeIngredientSchema,
   mergeResultSchema,
+  reviewListSchema,
+  splitIngredientSchema,
+  splitResultSchema,
   unitConversionSchema,
   updateIngredientSchema,
 } from "../../schemas/ingredients.js";
 import {
+  acceptIngredient,
   addAlias,
   archiveIngredient,
   createIngredient,
-  getIngredient,
+  findIngredientCandidates,
+  getIngredientDetail,
   listIngredients,
+  listIngredientUsageCounts,
+  listIngredientsForReview,
   mergeIngredients,
   removeAlias,
+  splitIngredient,
   updateIngredient,
 } from "../../services/ingredients.js";
 import {
@@ -76,7 +88,12 @@ const createIngredientRoute = createRoute({
   path: "/ingredients",
   tags: ["ingredients"],
   summary: "Create an ingredient",
-  description: "Creates the ingredient and its aliases. Duplicate names or aliases return 409.",
+  description:
+    "Creates a linked ingredient (`fdcId`: a USDA food; name derived when omitted; 409 if the household already links that food) " +
+    "or, as a last resort, a custom one (`custom: true`; look at GET /ingredients/find first). " +
+    "Without `fdcId` or `custom: true` the request is 422 with suggestions. " +
+    "Names cannot hold quantities, sizes, preparation or \"x or y\" (422 with a hint). " +
+    "Duplicate names or aliases return 409. Customs created with an API token are flagged for review (GET /ingredients/review); customs from the web app are not.",
   request: {
     body: {
       content: { "application/json": { schema: createIngredientSchema } },
@@ -92,24 +109,140 @@ const createIngredientRoute = createRoute({
 });
 
 const createIngredientHandler: RouteHandler<typeof createIngredientRoute, AppEnv> = (c) =>
-  c.json(createIngredient(c.var.ctx, c.req.valid("json")), 201);
+  c.json(
+    createIngredient(c.var.ctx, {
+      ...c.req.valid("json"),
+      needsReview: c.var.authKind !== "session",
+    }),
+    201,
+  );
+
+const findIngredientsRoute = createRoute({
+  method: "get",
+  path: "/ingredients/find",
+  tags: ["ingredients"],
+  summary: "Find an ingredient or a USDA food",
+  description:
+    "Existing household ingredients that match a query, then bundled USDA foods with a suggested ingredient name. " +
+    "Pick an existing ingredient (ingredientId), or a food (fdcId + suggestedName as name) to create a linked one.",
+  request: { query: findIngredientsQuerySchema },
+  responses: {
+    200: {
+      description: "Matching ingredients and foods",
+      content: { "application/json": { schema: findIngredientsResultSchema } },
+    },
+  },
+});
+
+const findIngredientsHandler: RouteHandler<typeof findIngredientsRoute, AppEnv> = (c) => {
+  const { query, limit } = c.req.valid("query");
+  return c.json(findIngredientCandidates(c.var.ctx, query, limit), 200);
+};
+
+const reviewIngredientsRoute = createRoute({
+  method: "get",
+  path: "/ingredients/review",
+  tags: ["ingredients"],
+  summary: "Ingredients to review",
+  description:
+    "Ingredients flagged for review (customs created over the API, unlinked legacy ingredients) and ingredients whose name breaks the naming rules, " +
+    "with the reasons and suggestions (existing ingredients, USDA foods). Fix one by linking a food (PUT /ingredients/{id}/nutrition), renaming, " +
+    "merging, splitting or accepting it.",
+  responses: {
+    200: {
+      description: "Ingredients to review",
+      content: { "application/json": { schema: reviewListSchema } },
+    },
+  },
+});
+
+const reviewIngredientsHandler: RouteHandler<typeof reviewIngredientsRoute, AppEnv> = (c) =>
+  c.json({ items: listIngredientsForReview(c.var.ctx) }, 200);
+
+const acceptIngredientRoute = createRoute({
+  method: "post",
+  path: "/ingredients/{id}/review",
+  tags: ["ingredients"],
+  summary: "Accept a custom ingredient",
+  description:
+    "Clears the review flag: the custom ingredient is accepted as it is. A name that breaks the naming rules stays listed until it is renamed.",
+  request: { params: ingredientParamsSchema },
+  responses: {
+    200: {
+      description: "The ingredient",
+      content: { "application/json": { schema: ingredientViewSchema } },
+    },
+  },
+});
+
+const acceptIngredientHandler: RouteHandler<typeof acceptIngredientRoute, AppEnv> = (c) =>
+  c.json(acceptIngredient(c.var.ctx, c.req.valid("param").id), 200);
+
+const splitIngredientRoute = createRoute({
+  method: "post",
+  path: "/ingredients/{id}/split",
+  tags: ["ingredients"],
+  summary: "Split an ingredient that names several",
+  description:
+    'For ingredients such as "Milk or water": every recipe line that used it gets `main` as its ingredient and `alternatives` as alternatives; ' +
+    "lines that listed it as an alternative get all of them as alternatives. Pantry stock and shopping items move to `main`. " +
+    "The split ingredient is archived. Unknown names are 422 with suggestions; use `fdcId` to create linked ingredients.",
+  request: {
+    params: ingredientParamsSchema,
+    body: {
+      content: { "application/json": { schema: splitIngredientSchema } },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: "The archived source, the main ingredient, the alternatives and moved-row counts",
+      content: { "application/json": { schema: splitResultSchema } },
+    },
+  },
+});
+
+const splitIngredientHandler: RouteHandler<typeof splitIngredientRoute, AppEnv> = (c) =>
+  c.json(splitIngredient(c.var.ctx, c.req.valid("param").id, c.req.valid("json")), 200);
+
+const ingredientUsageRoute = createRoute({
+  method: "get",
+  path: "/ingredients/usage",
+  tags: ["ingredients"],
+  summary: "Ingredient use counts",
+  description:
+    "How often each ingredient is used: recipes, pantry rows, items on open shopping lists and dietary rules. " +
+    "Ingredients that do not appear are unused.",
+  responses: {
+    200: {
+      description: "Use counts",
+      content: { "application/json": { schema: ingredientUsageCountsSchema } },
+    },
+  },
+});
+
+const ingredientUsageHandler: RouteHandler<typeof ingredientUsageRoute, AppEnv> = (c) =>
+  c.json({ items: listIngredientUsageCounts(c.var.ctx) }, 200);
 
 const getIngredientRoute = createRoute({
   method: "get",
   path: "/ingredients/{id}",
   tags: ["ingredients"],
   summary: "Get an ingredient",
+  description:
+    "The ingredient with aliases, conversions and pantry stock, plus where it is used (recipes, pantry, " +
+    "items on open shopping lists, dietary rules) and why it needs attention, if it does.",
   request: { params: ingredientParamsSchema },
   responses: {
     200: {
-      description: "Ingredient with aliases, conversions and pantry stock",
-      content: { "application/json": { schema: ingredientViewSchema } },
+      description: "Ingredient with usage",
+      content: { "application/json": { schema: ingredientDetailSchema } },
     },
   },
 });
 
 const getIngredientHandler: RouteHandler<typeof getIngredientRoute, AppEnv> = (c) =>
-  c.json(getIngredient(c.var.ctx, c.req.valid("param").id), 200);
+  c.json(getIngredientDetail(c.var.ctx, c.req.valid("param").id), 200);
 
 const updateIngredientRoute = createRoute({
   method: "patch",
@@ -325,12 +458,18 @@ const convertUnitHandler: RouteHandler<typeof convertUnitRoute, AppEnv> = (c) =>
 export function registerIngredientRoutes(app: OpenAPIHono<AppEnv>): void {
   app.openapi(listIngredientsRoute, listIngredientsHandler);
   app.openapi(createIngredientRoute, createIngredientHandler);
+  // Fixed paths before `/ingredients/{id}`.
+  app.openapi(findIngredientsRoute, findIngredientsHandler);
+  app.openapi(reviewIngredientsRoute, reviewIngredientsHandler);
+  app.openapi(ingredientUsageRoute, ingredientUsageHandler);
   app.openapi(getIngredientRoute, getIngredientHandler);
   app.openapi(updateIngredientRoute, updateIngredientHandler);
   app.openapi(archiveIngredientRoute, archiveIngredientHandler);
   app.openapi(addAliasRoute, addAliasHandler);
   app.openapi(removeAliasRoute, removeAliasHandler);
   app.openapi(mergeIngredientsRoute, mergeIngredientsHandler);
+  app.openapi(acceptIngredientRoute, acceptIngredientHandler);
+  app.openapi(splitIngredientRoute, splitIngredientHandler);
   app.openapi(listConversionsRoute, listConversionsHandler);
   app.openapi(createConversionRoute, createConversionHandler);
   app.openapi(deleteConversionRoute, deleteConversionHandler);

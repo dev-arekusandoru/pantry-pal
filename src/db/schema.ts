@@ -236,6 +236,10 @@ export const ingredients = sqliteTable(
     nutritionFdcId: integer("nutrition_fdc_id"),
     /** null = never matched (backfill target), "auto" = auto-matched, "manual" = user choice. */
     nutritionSource: text("nutrition_source").$type<"auto" | "manual">(),
+    /** Label of one portion of the linked food (e.g. "large") that a plain count ("2 eggs") means; null for customs. */
+    defaultPortion: text("default_portion"),
+    /** Set for customs created over the API/MCP (and unlinked legacy rows) until a person accepts or fixes them. */
+    needsReview: bool("needs_review").notNull().default(false),
     archivedAt: text("archived_at"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -413,6 +417,29 @@ export const recipeIngredients = sqliteTable(
   (t) => [
     index("recipe_ingredient_recipe_idx").on(t.recipeId, t.position),
     index("recipe_ingredient_ingredient_idx").on(t.ingredientId),
+  ],
+);
+
+/**
+ * "x or y" on one recipe line: other ingredients that can stand in for the line's main
+ * ingredient. Only the main ingredient drives nutrition, stock, shopping and dietary checks.
+ */
+export const recipeIngredientAlternatives = sqliteTable(
+  "recipe_ingredient_alternative",
+  {
+    id: id(),
+    householdId: householdId(),
+    recipeIngredientId: text("recipe_ingredient_id")
+      .notNull()
+      .references(() => recipeIngredients.id, { onDelete: "cascade" }),
+    ingredientId: text("ingredient_id")
+      .notNull()
+      .references(() => ingredients.id, { onDelete: "restrict" }),
+    position: integer("position").notNull(),
+  },
+  (t) => [
+    uniqueIndex("recipe_ingredient_alternative_uq").on(t.recipeIngredientId, t.ingredientId),
+    index("recipe_ingredient_alternative_ingredient_idx").on(t.ingredientId),
   ],
 );
 

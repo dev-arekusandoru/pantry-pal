@@ -1,6 +1,6 @@
 # MCP tool reference
 
-PantryPal registers 31 MCP tools. The `tools/list` request returns each tool's
+PantryPal registers 36 MCP tools. The `tools/list` request returns each tool's
 full JSON Schema, generated from the Zod schemas in the source. Use this page to
 choose a tool and see its main inputs. Use `tools/list` or the linked source
 files for every field, default, and enum.
@@ -30,12 +30,16 @@ Input schemas come from these files:
 
 - IDs are prefixed strings such as `ing_`, `rcp_`, `plan_`, `ce_`, and `sl_`.
   They are stable. Pass them between calls.
-- Ingredient inputs accept `ingredientId` or an ingredient name in `ingredient`.
-  Names resolve through canonical names, aliases, and simple plurals. Prefer an
-  ID when you have one.
-- An unknown `ingredient` reference fails with `unprocessable` unless that tool
-  is defined to create it. Shopping item names may instead become free text. Do
-  not invent an ID.
+- An ingredient reference has exactly one of `ingredientId`, `ingredient` (an
+  existing name or alias), or `fdcId` with optional `name` and `category`. Names
+  resolve through canonical names, aliases, and simple plurals. Prefer an ID when
+  you have one. `fdcId` uses the household ingredient that already links to that
+  USDA food, or creates a linked one. See
+  [Ingredient references](rest-api.md#ingredient-references).
+- An unknown `ingredient` name never creates an ingredient. It fails with
+  `unprocessable`. `details.unresolved` lists each name with up to 5
+  `suggestions` and sometimes a `hint`. Shopping item names may instead become
+  free text. Do not invent an ID.
 - A null quantity is unknown, not zero. Read the stock status as well.
 - The server does unit conversion, recipe scaling, demand, and shopping
   arithmetic. Send source amounts and choices.
@@ -54,8 +58,11 @@ Input schemas come from these files:
 
 | Tool | Purpose | Key inputs |
 | --- | --- | --- |
-| `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, and conversions. | `query`, `category`, `includeArchived`. |
-| `ingredient_upsert` | Create, update, alias, or merge an ingredient. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; category and default unit; `aliases`; `removeAliases`; `imageUrl` (icon name, `http(s)` link, or `null`; see [Ingredient icons](../use/icons.md)); `intoId` for merge. |
+| `ingredient_search` | Find ingredients by name, alias, or category. Returns IDs, stock, aliases, and conversions. With `ingredientId` or `ingredient`, returns one ingredient with `usage`: recipes, the pantry row, items on open shopping lists, and dietary rules, plus `review`. | `query`, `category`, `includeArchived`; `ingredientId` or `ingredient` for one ingredient. |
+| `find_ingredient` | Search household ingredients and USDA foods together. Read-only. Start here. | `query`; `limit`. Returns `ingredients[]` (with `linked`, `fdcId`, `needsReview`, `score`) and `foods[]` (`fdcId`, `description`, `suggestedName`, `ingredientId` or `null`). |
+| `create_custom_ingredient` | Create an ingredient with no USDA food. Last resort: use it only when `find_ingredient` and `search_foods` find nothing. It always sets `needsReview`. | `name`, `category`, `aliases`, `defaultUnit`. |
+| `review_ingredients` | List ingredients that need review, accept one, or split one. | `action` `list`, `accept`, or `split`; `ingredientId` or `ingredient`; `main` and `alternatives` (references) for split. |
+| `ingredient_upsert` | Create, update, alias, or merge an ingredient. A create needs `fdcId`; use `create_custom_ingredient` for a custom one. | `action` `create`, `update`, `alias`, or `merge`; `ingredientId` or `ingredient`; `name`; `fdcId` for create; `defaultPortion`; category and default unit; `aliases`; `removeAliases`; `imageUrl` (icon name, `http(s)` link, or `null`; see [Ingredient icons](../use/icons.md)); `intoId` for merge. |
 | `list_icons` | List the bundled ingredient icon names that `imageUrl` accepts. Read-only. | `query` (substring filter), `limit` (default 100). |
 | `unit_conversions` | List, create, or delete custom unit conversions such as `1 can = 15 oz`, per ingredient or household-global. | `action` `list`, `create`, or `delete`; `ingredientId`; `includeGlobal`; `conversionId`; `fromUnit`, `toUnit`, `factor`; `note`. |
 
@@ -69,8 +76,9 @@ Input schemas come from these files:
 | `availability` | Compare stock on hand with demand from planned cooks. Read-only. | `mealPlanId`, `from`, `to`, `includeOptional`. |
 
 `pantry_update` with `action: "bulk"` applies every line atomically. If one line
-fails, no line changes. A manual `set` or `adjust` with a positive amount can
-create an unknown ingredient; the other pantry tools do not create ingredients.
+fails, no line changes. Each line takes an ingredient
+reference. No pantry tool creates an ingredient from a name; use `fdcId` in the
+line to create a linked one.
 
 ## Recipes and rules
 
@@ -78,11 +86,11 @@ create an unknown ingredient; the other pantry tools do not create ingredients.
 | --- | --- | --- |
 | `recipe_search` | Search recipes without loading their steps. | `query`, `status`, `tags[]`, `mealType`, `ingredientId`, `maxTotalMinutes`, `limit`, `offset`. |
 | `recipe_get` | Read one recipe by ID or slug, including ingredients, steps with their ingredient links, times, nutrition, notes, cook stats, and cook-event count. | `idOrSlug`; optional `servings` to add a scaled ingredient list. |
-| `recipe_save` | Create a recipe or patch an existing one. | `id` to update or omit to create; `title`; `servings`; `ingredients[]`; `steps[]` with optional `links[]` (`ingredientIndex`, `qty`); optional recipe fields such as times, meal types, tags, equipment, nutrition, and notes; `statusNote`. |
+| `recipe_save` | Create a recipe or patch an existing one. | `id` to update or omit to create; `title`; `servings`; `ingredients[]` (each with a reference, optional `alternatives[]`, `qty`, `qtyMax`, `unit`, `prepNote`); `steps[]` with optional `links[]` (`ingredientIndex`, `qty`); optional recipe fields such as times, meal types, tags, equipment, nutrition, and notes; `statusNote`. |
 | `recipe_set_status` | Move a recipe through its status values and write a history event. | `recipeId` (ID or slug); `status` `want_to_try`, `rotation`, `never`, or `archived`; `rating`; `note`. |
 | `recipe_check` | Check a stored recipe or loose ingredient names against dietary rules. | `recipeId` (ID or slug) or `ingredients[]`. |
 | `rules_list` | List dietary rules. | `scope`, `severity`, `memberId`. |
-| `rules_manage` | Create, update, or delete a dietary rule. | `action` `create`, `update`, or `delete`; `ruleId`; `scope`; `severity`; `ingredientId` or `ingredient`, `recipeId`, or `targetText`; `conditionNote`, `reason`, `memberId`. |
+| `rules_manage` | Create, update, or delete a dietary rule. | `action` `create`, `update`, or `delete`; `ruleId`; `scope`; `severity`; `ingredientId`, `ingredient`, or `fdcId` with `name`; `recipeId`; or `targetText`; `conditionNote`, `reason`, `memberId`. |
 
 `recipe_save` treats `ingredients` and `steps` as the full list when present.
 A step `links` entry uses `ingredientIndex` in the submitted `ingredients` array
@@ -90,6 +98,17 @@ A step `links` entry uses `ingredientIndex` in the submitted `ingredients` array
 line's unit; `null` means the whole line.
 `recipe_check` returns `ok: false` only for an unconditional forbidden match.
 A violation with a `conditionNote` is a judgement call for the agent.
+
+## Recommended agent flow
+
+1. Call `find_ingredient` for each name.
+2. If an ingredient matches, use its `ingredientId`.
+3. If only a food matches, send its `fdcId` in the recipe or pantry line.
+4. Put extra choices in `alternatives`, cooking notes in `prepNote`, and a size
+   in `unit` (for example `large`).
+5. Call `create_custom_ingredient` last, and only when no USDA food fits.
+6. Call `review_ingredients` with `action: "list"` to find work that needs a
+   person's decision.
 
 ## Nutrition
 

@@ -13,6 +13,7 @@ import {
   type Food,
   type Nutrients,
 } from "./foods.js";
+import { suggestedNameForFood } from "./ingredientNames.js";
 import { getIngredient, requireIngredient, type IngredientView } from "./ingredients.js";
 import { resolveRecipeId } from "./recipes.js";
 import { convert } from "./units.js";
@@ -31,11 +32,17 @@ function emptyNutrients(): Nutrients {
 
 export interface FoodSearchResult extends Food {
   score: number;
+  /** Friendly ingredient name for this food ("Onions, raw" → "Onion"). */
+  suggestedName: string;
 }
 
 /** Search the bundled USDA foods, best match first. */
 export function searchFoodList(query: string, limit = 10): FoodSearchResult[] {
-  return searchFoods(query, limit).map((match) => ({ ...match.food, score: match.score }));
+  return searchFoods(query, limit).map((match) => ({
+    ...match.food,
+    score: match.score,
+    suggestedName: suggestedNameForFood(match.food.description),
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -49,6 +56,8 @@ export type SetIngredientNutritionInput =
 /**
  * Re-run the automatic name match (`auto`) or pin a USDA food (`manual`; a null
  * `fdcId` clears the match and stops future auto-matching for this ingredient).
+ * Linking a food clears the ingredient's review flag; a default portion the new food
+ * does not have is dropped.
  */
 export function setIngredientNutrition(
   ctx: Ctx,
@@ -65,9 +74,20 @@ export function setIngredientNutrition(
       throw new AppError("not_found", `Unknown USDA food: ${fdcId}`, { fdcId });
     }
   }
+  const portion = row.defaultPortion?.toLowerCase();
+  const keepsPortion =
+    portion !== undefined &&
+    fdcId !== null &&
+    getFood(fdcId)?.portions.some((item) => item.label.toLowerCase() === portion) === true;
   ctx.db
     .update(ingredients)
-    .set({ nutritionFdcId: fdcId, nutritionSource: input.mode === "auto" ? "auto" : "manual", updatedAt: nowIso(ctx) })
+    .set({
+      nutritionFdcId: fdcId,
+      nutritionSource: input.mode === "auto" ? "auto" : "manual",
+      ...(fdcId === null ? {} : { needsReview: false }),
+      ...(keepsPortion ? {} : { defaultPortion: null }),
+      updatedAt: nowIso(ctx),
+    })
     .where(and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.id, row.id)))
     .run();
   return getIngredient(ctx, row.id);
@@ -86,8 +106,9 @@ export function backfillNutritionMatches(db: Db): number {
   if (rows.length === 0) return 0;
   db.transaction((tx) => {
     for (const row of rows) {
+      const fdcId = autoMatchFood(row.name)?.fdcId ?? null;
       tx.update(ingredients)
-        .set({ nutritionFdcId: autoMatchFood(row.name)?.fdcId ?? null, nutritionSource: "auto" })
+        .set({ nutritionFdcId: fdcId, nutritionSource: "auto", ...(fdcId === null ? {} : { needsReview: false }) })
         .where(eq(ingredients.id, row.id))
         .run();
     }
@@ -138,6 +159,7 @@ export function getRecipeNutrition(ctx: Ctx, idOrSlug: string): RecipeNutrition 
       line: recipeIngredients,
       name: ingredients.name,
       fdcId: ingredients.nutritionFdcId,
+      defaultPortion: ingredients.defaultPortion,
     })
     .from(recipeIngredients)
     .innerJoin(ingredients, eq(ingredients.id, recipeIngredients.ingredientId))
@@ -151,7 +173,7 @@ export function getRecipeNutrition(ctx: Ctx, idOrSlug: string): RecipeNutrition 
   let counted = 0;
   let missing = 0;
 
-  const lines = rows.map(({ line, name, fdcId }): RecipeNutritionLine => {
+  const lines = rows.map(({ line, name, fdcId, defaultPortion }): RecipeNutritionLine => {
     const food = fdcId === null ? null : getFood(fdcId);
     const base = {
       recipeIngredientId: line.id,
@@ -175,7 +197,7 @@ export function getRecipeNutrition(ctx: Ctx, idOrSlug: string): RecipeNutrition 
 
     const qty = line.qtyMax === null ? line.qty : (line.qty + line.qtyMax) / 2;
     const grams =
-      convert(ctx, qty, line.unit, "g", line.ingredientId) ?? gramsFor(food, qty, line.unit);
+      convert(ctx, qty, line.unit, "g", line.ingredientId) ?? gramsFor(food, qty, line.unit, defaultPortion);
     if (grams === null) return done("no_conversion");
 
     const nutrients = emptyNutrients();

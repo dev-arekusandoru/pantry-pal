@@ -16,7 +16,8 @@ import {
   listIngredients,
   mergeIngredients,
   removeAlias,
-  resolveIngredient,
+  resolveIngredientRef,
+  resolveIngredientRefs,
   updateIngredient,
 } from "../src/services/ingredients.js";
 import { listMovements, listPantry, setStock } from "../src/services/pantry.js";
@@ -38,6 +39,7 @@ describe("createIngredient", () => {
   it("stores names, aliases and defaults", () => {
     const { ctx } = makeTestCtx();
     const created = createIngredient(ctx, {
+      custom: true,
       name: "  Yellow   onion ",
       category: "produce",
       aliases: ["Onion", "yellow onions"],
@@ -46,7 +48,7 @@ describe("createIngredient", () => {
       parUnit: "lb",
     });
 
-    expect(created.name).toBe("Yellow onion");
+    expect(created.name).toBe("Yellow Onion");
     expect(created.normalizedName).toBe("yellow onion");
     expect(created.category).toBe("produce");
     expect(created.defaultUnit).toBe("lb");
@@ -57,16 +59,16 @@ describe("createIngredient", () => {
 
   it("rejects duplicate names case-insensitively", () => {
     const { ctx } = makeTestCtx();
-    createIngredient(ctx, { name: "Tomato" });
-    expectAppError(() => createIngredient(ctx, { name: "tomato" }), "conflict");
-    expectAppError(() => createIngredient(ctx, { name: "   " }), "validation");
+    createIngredient(ctx, { custom: true, name: "Tomato" });
+    expectAppError(() => createIngredient(ctx, { custom: true, name: "tomato" }), "conflict");
+    expectAppError(() => createIngredient(ctx, { custom: true, name: "   " }), "validation");
   });
 
   it("rejects an alias that another alias already uses and rolls back", () => {
     const { ctx } = makeTestCtx();
-    createIngredient(ctx, { name: "Scallion", aliases: ["green onion"] });
+    createIngredient(ctx, { custom: true, name: "Scallion", aliases: ["green onion"] });
     expectAppError(
-      () => createIngredient(ctx, { name: "Spring onion", aliases: ["Green Onion"] }),
+      () => createIngredient(ctx, { custom: true, name: "Spring onion", aliases: ["Green Onion"] }),
       "conflict",
     );
     expect(listIngredients(ctx).map((row) => row.name)).toEqual(["Scallion"]);
@@ -74,19 +76,19 @@ describe("createIngredient", () => {
 
   it("rejects unknown units", () => {
     const { ctx } = makeTestCtx();
-    expectAppError(() => createIngredient(ctx, { name: "Mystery", defaultUnit: "smidgen" }), "validation");
+    expectAppError(() => createIngredient(ctx, { custom: true, name: "Mystery", defaultUnit: "smidgen" }), "validation");
   });
 
   it("validates and clears the ingredient icon", () => {
     const { ctx } = makeTestCtx();
-    const icon = createIngredient(ctx, { name: "Garlic", imageUrl: "garlic" });
+    const icon = createIngredient(ctx, { custom: true, name: "Garlic", imageUrl: "garlic" });
     expect(icon.imageUrl).toBe("garlic");
     expect(
-      createIngredient(ctx, { name: "Chili", imageUrl: "https://example.com/chili.webp" }).imageUrl,
+      createIngredient(ctx, { custom: true, name: "Chili", imageUrl: "https://example.com/chili.webp" }).imageUrl,
     ).toBe("https://example.com/chili.webp");
 
     expectAppError(
-      () => createIngredient(ctx, { name: "Mystery", imageUrl: "not-an-icon" }),
+      () => createIngredient(ctx, { custom: true, name: "Mystery", imageUrl: "not-an-icon" }),
       "validation",
     );
     expect(listIngredients(ctx).map((row) => row.name)).toEqual(["Chili", "Garlic"]);
@@ -99,13 +101,13 @@ describe("createIngredient", () => {
 describe("listIngredients / getIngredient", () => {
   it("filters by query (name or alias) and category", () => {
     const { ctx } = makeTestCtx();
-    createIngredient(ctx, { name: "Scallion", category: "produce", aliases: ["green onion"] });
-    createIngredient(ctx, { name: "Chicken thigh", category: "protein" });
+    createIngredient(ctx, { custom: true, name: "Scallion", category: "produce", aliases: ["green onion"] });
+    createIngredient(ctx, { custom: true, name: "Chicken thigh", category: "protein" });
 
     expect(listIngredients(ctx)).toHaveLength(2);
     expect(listIngredients(ctx, { query: "GREEN" }).map((row) => row.name)).toEqual(["Scallion"]);
     expect(listIngredients(ctx, { query: "chick" }).map((row) => row.name)).toEqual([
-      "Chicken thigh",
+      "Chicken Thigh",
     ]);
     expect(listIngredients(ctx, { category: "produce" }).map((row) => row.name)).toEqual([
       "Scallion",
@@ -115,7 +117,7 @@ describe("listIngredients / getIngredient", () => {
 
   it("returns aliases, conversions and pantry stock", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Coconut milk", aliases: ["coco milk"] });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Coconut milk", aliases: ["coco milk"] });
     setStock(ctx, { ingredientId: ingredient.id, qty: 2, unit: "can" });
     createConversion(ctx, {
       ingredientId: ingredient.id,
@@ -135,10 +137,11 @@ describe("listIngredients / getIngredient", () => {
   });
 });
 
-describe("resolveIngredient names", () => {
+describe("ingredient name resolution", () => {
   it("resolves canonical names, plurals and aliases", () => {
     const { ctx } = makeTestCtx();
     const onion = createIngredient(ctx, {
+      custom: true,
       name: "Yellow onion",
       aliases: ["onion", "sweet onion"],
     });
@@ -147,14 +150,14 @@ describe("resolveIngredient names", () => {
     expect(findIngredientByName(ctx, "yellow onions")?.id).toBe(onion.id);
     expect(findIngredientByName(ctx, "sweet onions")?.id).toBe(onion.id);
     expect(findIngredientByName(ctx, "garlic")).toBeNull();
-    expect(resolveIngredient(ctx, "YELLOW ONION").id).toBe(onion.id);
+    expect(resolveIngredientRef(ctx, { ingredient: "YELLOW ONION" }).id).toBe(onion.id);
   });
 });
 
 describe("updateIngredient", () => {
   it("renames and keeps normalizedName in sync", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Eggplant" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Eggplant" });
     const renamed = updateIngredient(ctx, ingredient.id, { name: "Aubergine", notes: "purple" });
 
     expect(renamed.name).toBe("Aubergine");
@@ -166,14 +169,14 @@ describe("updateIngredient", () => {
 
   it("rejects renaming onto another ingredient", () => {
     const { ctx } = makeTestCtx();
-    createIngredient(ctx, { name: "Courgette" });
-    const other = createIngredient(ctx, { name: "Zucchini" });
+    createIngredient(ctx, { custom: true, name: "Courgette" });
+    const other = createIngredient(ctx, { custom: true, name: "Zucchini" });
     expectAppError(() => updateIngredient(ctx, other.id, { name: "courgette" }), "conflict");
   });
 
   it("updates nullable metadata and par values", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Olive oil", parQty: 1, parUnit: "l" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Olive oil", parQty: 1, parUnit: "l" });
     const updated = updateIngredient(ctx, ingredient.id, {
       parQty: 2,
       parUnit: "liters",
@@ -191,7 +194,7 @@ describe("updateIngredient", () => {
 describe("aliases", () => {
   it("adds and removes aliases that resolve", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Cilantro" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Cilantro" });
     const alias = addAlias(ctx, ingredient.id, "Coriander");
 
     expect(alias.alias).toBe("coriander");
@@ -204,8 +207,8 @@ describe("aliases", () => {
 
   it("rejects aliases that duplicate the name or another alias", () => {
     const { ctx } = makeTestCtx();
-    const first = createIngredient(ctx, { name: "Chickpea", aliases: ["garbanzo"] });
-    const second = createIngredient(ctx, { name: "Fava bean" });
+    const first = createIngredient(ctx, { custom: true, name: "Chickpea", aliases: ["garbanzo"] });
+    const second = createIngredient(ctx, { custom: true, name: "Fava bean" });
 
     expectAppError(() => addAlias(ctx, first.id, "Chickpea"), "conflict");
     expectAppError(() => addAlias(ctx, second.id, "GARBANZO"), "conflict");
@@ -216,7 +219,7 @@ describe("aliases", () => {
 describe("archiveIngredient", () => {
   it("hides archived ingredients from the default list but keeps them resolvable", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Radish" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Radish" });
 
     const archived = archiveIngredient(ctx, ingredient.id);
     expect(archived.archivedAt).not.toBeNull();
@@ -231,11 +234,12 @@ describe("mergeIngredients", () => {
   function seed() {
     const { ctx } = makeTestCtx();
     const source = createIngredient(ctx, {
+      custom: true,
       name: "Canned tomato",
       category: "canned",
       aliases: ["tinned tomato"],
     });
-    const target = createIngredient(ctx, { name: "Tomato", category: "produce" });
+    const target = createIngredient(ctx, { custom: true, name: "Tomato", category: "produce" });
 
     const targetPantry = setStock(ctx, {
       ingredientId: target.id,
@@ -366,8 +370,8 @@ describe("mergeIngredients", () => {
 
   it("converts stock with the source ingredient's own conversions", () => {
     const { ctx } = makeTestCtx();
-    const source = createIngredient(ctx, { name: "Canned tomato", category: "canned" });
-    const target = createIngredient(ctx, { name: "Tomato", category: "produce" });
+    const source = createIngredient(ctx, { custom: true, name: "Canned tomato", category: "canned" });
+    const target = createIngredient(ctx, { custom: true, name: "Tomato", category: "produce" });
     setStock(ctx, { ingredientId: target.id, qty: 14.5, unit: "oz" });
     setStock(ctx, { ingredientId: source.id, qty: 2, unit: "can" });
     // Only the source knows cans: 1 can = 400 g, which chains into oz via the built-in table.
@@ -390,8 +394,8 @@ describe("mergeIngredients", () => {
 
   it("refuses to discard stock it cannot convert and rolls back", () => {
     const { ctx } = makeTestCtx();
-    const source = createIngredient(ctx, { name: "Olive oil", category: "condiment" });
-    const target = createIngredient(ctx, { name: "Oil", category: "condiment" });
+    const source = createIngredient(ctx, { custom: true, name: "Olive oil", category: "condiment" });
+    const target = createIngredient(ctx, { custom: true, name: "Oil", category: "condiment" });
     const targetPantry = setStock(ctx, {
       ingredientId: target.id,
       qty: 1,

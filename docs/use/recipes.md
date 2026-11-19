@@ -45,6 +45,14 @@ Each ingredient shows a pantry mark:
 - **+** means not in the pantry.
 - No mark means the pantry amount is unknown.
 
+A line can list stand-ins for the main ingredient, such as **Milk (or Water)**.
+Tap an ingredient name to open its
+[ingredient page](ingredients.md#the-ingredient-page).
+The pantry mark, **What am I missing?**, and the shopping list use the main
+ingredient only. A size shows as the unit: "2 large" Egg. See
+[Alternatives](ingredients.md#alternatives) and
+[Sizes and default portion](ingredients.md#sizes-and-default-portion).
+
 **What am I missing?** lists **Need to buy** and **Running short** ingredients.
 Optional ingredients are not counted. Unknown amounts are not treated as zero;
 check those in the [pantry](pantry.md).
@@ -87,7 +95,8 @@ keyboard, use the arrow keys.
 
 ![Cook mode showing one large step at a time](../images/cook.png)
 
-The list button opens the full ingredient list for the chosen servings. A step
+The list button opens the full ingredient list for the chosen servings. A line
+with stand-ins reads like **Milk (or Water)**. A step
 with a duration has a timer button: **Start 10 min timer**, then **Cancel** when
 needed. Timers beep and vibrate where the browser allows.
 

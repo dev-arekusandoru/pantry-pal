@@ -1,0 +1,207 @@
+.root {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-family: var(--font-note);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: var(--field-ring);
+  border-radius: var(--r-field);
+  background: var(--field-bg);
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-md);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* "Create custom…" stays in view at the bottom of a long list. */
+.create {
+  position: sticky;
+  bottom: -6px;
+  margin-inline: -6px;
+  margin-bottom: -6px;
+  padding: 6px;
+  background: var(--card) var(--grain);
+}
+
+.input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.input::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.input[aria-invalid="true"] {
+  border-style: dashed;
+  border-color: var(--danger-text);
+}
+
+.select {
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a7b6a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 18px;
+}
+
+/* The chosen ingredient: reads as a filled-in field with a way back. */
+.selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 4px 6px 4px 12px;
+  border-radius: var(--r-field);
+  background: var(--bg);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.selectedName {
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--fw-bold);
+  overflow-wrap: anywhere;
+}
+
+.change {
+  min-height: 34px;
+}
+
+.cancel {
+  justify-self: start;
+}
+
+/* Results sit in the page flow, so they never clip inside a sheet. */
+.list {
+  display: grid;
+  gap: 2px;
+  max-height: min(340px, 50dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--card) var(--grain);
+  box-shadow: var(--shadow), 0 0 0 2px var(--line);
+}
+
+.group {
+  display: grid;
+  gap: 2px;
+}
+
+.group + .group {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1.5px dashed var(--line);
+}
+
+.groupTitle {
+  padding: 4px 10px 2px;
+  font-family: var(--font-note);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.option {
+  display: grid;
+  gap: 1px;
+  min-height: 44px;
+  align-content: center;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.active {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.optionName {
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.optionMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+}
+
+.empty {
+  padding: 10px;
+  color: var(--muted);
+  font-weight: var(--fw-semibold);
+}
+
+.problem {
+  color: var(--danger-text);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+
+/* The small form for a new ingredient. */
+.draft {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--bg);
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+
+.draftTitle {
+  padding: 0;
+  font-weight: var(--fw-heavy);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.note {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.note b {
+  color: var(--ink);
+}
+
+.draftActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}

@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { VisuallyHidden } from "radix-ui";
 import { useId, useState } from "react";
 import { Button, Icon, SegmentedControl, Skeleton, cx, type SegmentOption } from "@/ui";
@@ -145,7 +146,11 @@ export function NutritionPanel({ slug }: { slug: string }) {
           <ul className={styles.lines}>
             {data.lines.map((line) => (
               <li key={line.recipeIngredientId} className={styles.line} data-status={line.status}>
-                <span className={styles.lineName}>{line.name}</span>
+                <span className={styles.lineName}>
+                  <Link to="/ingredients/$id" params={{ id: line.ingredientId }} className={styles.lineLink}>
+                    {line.name}
+                  </Link>
+                </span>
                 <span className={styles.lineKcal}>
                   <Value value={line.nutrients?.calories ?? null} nutrient="calories" />
                 </span>

@@ -112,7 +112,7 @@ const rulesManageInput = z
     ...ruleTargetFields,
   })
   .describe(
-    "Targets depend on scope: ingredient (id or name, created when unknown), recipe (recipeId), category/tag/keyword (targetText). Condition notes are judgement calls for the agent.",
+    "Targets depend on scope: ingredient (`ingredientId`, an existing `ingredient` name, or `fdcId` to link a USDA food; unknown names are 422 with suggestions), recipe (recipeId), category/tag/keyword (targetText). Condition notes are judgement calls for the agent.",
   );
 
 export function registerRecipeTools(server: McpServer, ctx: Ctx): void {
@@ -149,7 +149,7 @@ export function registerRecipeTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Create or update recipe",
       description:
-        "Create a recipe (no `id`; `title` required) or patch one (`id`). Ingredient names resolve through names/aliases/plurals and are created when unknown. A step `links` entry points to a line by `ingredientIndex` in the same payload (or the stored line order when only `steps` are patched); `qty` is in the line's unit, null means the whole line.",
+        "Create a recipe (no `id`; `title` required) or patch one (`id`). Call find_ingredient first. Each ingredient line names an existing ingredient (`ingredientId`, or `ingredient`: exact name/alias/plural) or a USDA food (`fdcId` with `name`, which reuses or creates a linked ingredient). Unknown names create nothing: the call is 422 listing every unknown name with suggestions. Put \"x or y\" in `alternatives`, sizes in `unit` (large), preparation in `prepNote`. A step `links` entry points to a line by `ingredientIndex` in the same payload (or the stored line order when only `steps` are patched); `qty` is in the line's unit, null means the whole line.",
       inputSchema: recipeSaveInput,
     },
     tool((args: z.infer<typeof recipeSaveInput>) => {

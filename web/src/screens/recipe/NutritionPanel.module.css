@@ -209,3 +209,20 @@
     transition: none;
   }
 }
+
+.lineLink {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.lineLink:hover {
+  text-decoration-style: solid;
+}
+
+.lineLink:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

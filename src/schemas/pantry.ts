@@ -4,7 +4,11 @@ import {
   MOVEMENT_REASONS,
   MOVEMENT_REF_TYPES,
 } from "../db/schema.js";
-import { ingredientCategorySchema, pantryStatusSchema } from "./ingredients.js";
+import {
+  ingredientCategorySchema,
+  ingredientRefFields,
+  pantryStatusSchema,
+} from "./ingredients.js";
 
 export const movementKindSchema = z
   .enum(MOVEMENT_KINDS)
@@ -95,23 +99,11 @@ export const bulkResultSchema = z
 // Input
 // ---------------------------------------------------------------------------
 
-const ingredientRefFields = {
-  ingredientId: z
-    .string()
-    .optional()
-    .describe("Existing ingredient id; wins over `ingredient`."),
-  ingredient: z
-    .string()
-    .optional()
-    .describe("Ingredient name; resolved through names, aliases and plurals."),
-  category: ingredientCategorySchema
-    .optional()
-    .describe("Category used when the ingredient has to be created."),
-} as const;
+const stockRefFields = ingredientRefFields;
 
 export const setStockSchema = z
   .object({
-    ...ingredientRefFields,
+    ...stockRefFields,
     qty: z.number().nullable().describe("Absolute quantity; null = present but unknown."),
     unit: z.string().nullish().describe('Unit, e.g. "lb", "g", "can".'),
     status: pantryStatusSchema
@@ -131,7 +123,7 @@ export const setStockSchema = z
 
 export const adjustStockSchema = z
   .object({
-    ...ingredientRefFields,
+    ...stockRefFields,
     delta: z.number().describe("Relative change (negative consumes)."),
     unit: z.string().nullish().describe("Unit of the delta; defaults to the item unit."),
     note: z.string().nullish(),

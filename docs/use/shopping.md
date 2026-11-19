@@ -50,6 +50,9 @@ used in, for example the planned recipe and its amount, with warnings such as
 "check the pantry" as tags. A big icon shows at the top; tap it to change the icon. An item added by hand
 says **Added by hand**. In the sheet you can:
 
+- Tap **Ingredient page** to open the
+  [ingredient page](ingredients.md#the-ingredient-page). Free-text items do not
+  have one.
 - Change **Quantity to buy** and tap **Save**.
 - Tap **I have it**. Confirm **How much goes into the
   pantry?** (it starts at the list amount; clear it to mark the item on hand),

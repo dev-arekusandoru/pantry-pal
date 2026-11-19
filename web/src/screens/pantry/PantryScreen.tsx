@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { errorMessage } from "@/api";
 import { Button, Card, EmptyState, ErrorState, Icon, IconPicker, PageHeader, SearchInput, SegmentedControl, Skeleton, buttonClass, cx, toast } from "@/ui";
+import { AttentionLink } from "../ingredients/AttentionLink";
 import { AddSheet } from "./AddSheet";
 import styles from "./Pantry.module.css";
 import { useAddToList, useAdjustItem, usePantry, useRemoveItem, useRestoreItem, useSetExpiry, useSetQty, useSetCategory, useSetShelfLife, useSetStatus } from "./queries";
@@ -87,6 +88,10 @@ export function PantryScreen() {
           aside={
             <div className={styles.actions}>
               {stickerBook}
+              <Link to="/ingredients" className={buttonClass({ variant: "ghost" })}>
+                Ingredients
+              </Link>
+              <AttentionLink />
               {items.length > 0 && (
                 <>
                   <Button icon={<Icon name="check" />} onClick={() => setSweeping(true)}>

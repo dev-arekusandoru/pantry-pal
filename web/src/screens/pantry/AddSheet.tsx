@@ -1,13 +1,12 @@
 import { useId, useState, type FormEvent } from "react";
 import { Label, Select } from "radix-ui";
 import { Button, Icon, Sheet, cx } from "@/ui";
-import { CATEGORY_ORDER, aisleLabel } from "../aisles";
+import { IngredientPicker } from "../ingredients/IngredientPicker";
+import { ingredientErrorMessage, type IngredientPick } from "../ingredients/refs";
 import { parseQty } from "../shop/format";
 import styles from "./Pantry.module.css";
 import { useAddStock } from "./queries";
 import { type PantryItem } from "./stock";
-
-type Category = PantryItem["ingredient"]["category"];
 
 /** Radix Select reserves the empty string for "no value", so the unit-less choice gets a sentinel. */
 const NO_UNIT = "__none";
@@ -47,29 +46,23 @@ export function AddSheet(props: AddSheetProps) {
 }
 
 function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
-  const [name, setName] = useState(initialName);
+  const [pick, setPick] = useState<IngredientPick | null>(null);
   const [qtyText, setQtyText] = useState("");
   const [unit, setUnit] = useState("");
-  const [category, setCategory] = useState<Category>("other");
   const add = useAddStock();
-  const nameId = useId();
   const qtyId = useId();
   const unitId = useId();
-  const categoryId = useId();
 
   const qty = parseQty(qtyText);
   const qtyBad = qtyText.trim() !== "" && (qty === null || qty <= 0);
-  const trimmed = name.trim();
-  const duplicate =
-    qtyText.trim() === "" &&
-    existing.some((i) => i.ingredient.name.toLowerCase() === trimmed.toLowerCase());
-  const canAdd = trimmed !== "" && !qtyBad && !duplicate;
+  const duplicate = pick !== null && qtyText.trim() === "" && existing.some((i) => i.ingredient.id === pick.id);
+  const canAdd = pick !== null && !qtyBad && !duplicate;
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (!canAdd) return;
+    if (!canAdd || pick === null) return;
     add.mutate(
-      { name: trimmed, category, qty: qtyText.trim() === "" ? null : qty, unit: unit === "" ? null : unit },
+      { ingredientId: pick.id, qty: qtyText.trim() === "" ? null : qty, unit: unit === "" ? null : unit },
       { onSuccess: onClose },
     );
   }
@@ -89,20 +82,14 @@ function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
       }
     >
       <form id="pantry-add" className={styles.addForm} onSubmit={submit}>
-        <div className={styles.field}>
-          <Label.Root className={styles.fieldLabel} htmlFor={nameId}>
-            What is it?
-          </Label.Root>
-          <input
-            id={nameId}
-            className={styles.input}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Rice, eggs, olive oil"
-            autoComplete="off"
-            autoFocus
-          />
-        </div>
+        <IngredientPicker
+          label="What is it?"
+          value={pick}
+          onChange={setPick}
+          initialQuery={initialName}
+          placeholder="Rice, eggs, olive oil"
+          autoFocus
+        />
         <div className={styles.fieldRow}>
           <div className={styles.field}>
             <Label.Root className={styles.fieldLabel} htmlFor={qtyId}>
@@ -151,31 +138,12 @@ function AddForm({ onClose, existing, initialName = "" }: AddSheetProps) {
             </Select.Root>
           </div>
         </div>
-        <div className={styles.field}>
-          <Label.Root className={styles.fieldLabel} htmlFor={categoryId}>
-            Shopping aisle
-          </Label.Root>
-          <Select.Root value={category} onValueChange={(next) => setCategory(next as Category)}>
-            <Select.Trigger id={categoryId} className={cx(styles.input, styles.selectTrigger)}>
-              <Select.Value />
-            </Select.Trigger>
-            <Select.Portal>
-              <Select.Content className={styles.selectContent} position="popper" sideOffset={8} collisionPadding={12}>
-                <Select.Viewport className={styles.selectViewport}>
-                  {CATEGORY_ORDER.map((c) => (
-                    <Select.Item key={c} value={c} className={styles.selectItem}>
-                      <Select.ItemText>{aisleLabel(c)}</Select.ItemText>
-                      <Select.ItemIndicator className={styles.selectIndicator}>
-                        <Icon name="check" />
-                      </Select.ItemIndicator>
-                    </Select.Item>
-                  ))}
-                </Select.Viewport>
-              </Select.Content>
-            </Select.Portal>
-          </Select.Root>
-        </div>
         {duplicate && <p className={styles.hint}>That's already in the pantry. Use the + and - on its row, or give an amount to add more.</p>}
+        {add.isError && (
+          <p className={styles.hint} role="alert">
+            {ingredientErrorMessage(add.error, "Could not add it. Try again.")}
+          </p>
+        )}
       </form>
     </Sheet>
   );

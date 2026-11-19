@@ -7,6 +7,11 @@ const MIGRATION = readFileSync(
   "utf8",
 );
 
+const CONTROLLED = readFileSync(
+  new URL("../drizzle/0007_controlled_ingredients.sql", import.meta.url),
+  "utf8",
+);
+
 /** A pre-0004 database with the location columns still in place. */
 function legacyDb(): Database.Database {
   const db = new Database(":memory:");
@@ -94,6 +99,47 @@ describe("pantry location removal migration", () => {
       expect(
         db.prepare("SELECT pantry_item_id FROM stock_movement WHERE id = 'mv_a1'").get(),
       ).toEqual({ pantry_item_id: "pi_a2" });
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("controlled ingredients migration", () => {
+  it("adds the review and portion columns and flags unlinked ingredients for review", () => {
+    const db = new Database(":memory:");
+    try {
+      db.exec(`
+        CREATE TABLE household (id text PRIMARY KEY NOT NULL);
+        CREATE TABLE ingredient (
+          id text PRIMARY KEY NOT NULL,
+          nutrition_fdc_id integer,
+          nutrition_source text
+        );
+        CREATE TABLE recipe_ingredient (id text PRIMARY KEY NOT NULL);
+        INSERT INTO ingredient (id, nutrition_fdc_id, nutrition_source) VALUES
+          ('ing_linked', 170000, 'auto'),
+          ('ing_cleared', NULL, 'manual'),
+          ('ing_unmatched', NULL, 'auto'),
+          ('ing_never', NULL, NULL);
+      `);
+      for (const statement of CONTROLLED.split("--> statement-breakpoint")) {
+        if (statement.trim() !== "") db.exec(statement);
+      }
+      const rows = db
+        .prepare<[], { id: string; needs_review: number; default_portion: string | null }>(
+          "SELECT id, needs_review, default_portion FROM ingredient ORDER BY id",
+        )
+        .all();
+      expect(rows).toEqual([
+        { id: "ing_cleared", needs_review: 1, default_portion: null },
+        { id: "ing_linked", needs_review: 0, default_portion: null },
+        { id: "ing_never", needs_review: 1, default_portion: null },
+        { id: "ing_unmatched", needs_review: 1, default_portion: null },
+      ]);
+      expect(
+        db.prepare("SELECT count(*) AS n FROM recipe_ingredient_alternative").get(),
+      ).toEqual({ n: 0 });
     } finally {
       db.close();
     }

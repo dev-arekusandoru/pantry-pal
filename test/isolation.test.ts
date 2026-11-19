@@ -66,7 +66,8 @@ async function fixture(): Promise<Fixture> {
   const recipe = await as(app, a.cookie, "POST", "/api/v1/recipes", {
     title: "A secret chili",
     servings: 2,
-    ingredients: [{ ingredient: "chicken breast", qty: 1, unit: "lb" }],
+    // Onions, raw: recipes link USDA foods instead of creating ingredients from free text.
+    ingredients: [{ fdcId: 170000, name: "Onion", qty: 1, unit: "lb" }],
   });
   expect(recipe.status).toBe(201);
   const recipeBody = recipe.body as RecipeBody;

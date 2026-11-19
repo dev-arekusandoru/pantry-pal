@@ -65,7 +65,7 @@ Paths below are relative to `/api/v1`.
 | --- | --- |
 | `/household`, `/household/members` | Read and update settings and members |
 | `/tokens` | List, create, and revoke API tokens. Needs a browser session; a bearer token gets `403`. The secret is only in the create response |
-| `/ingredients` | Find, create, update, archive, alias, and merge ingredients; set an ingredient's USDA food |
+| `/ingredients` | Find, create, update, archive, alias, merge, review, and split ingredients; set an ingredient's USDA food |
 | `/unit-conversions`, `/units/convert` | Manage conversions and convert amounts |
 | `/pantry` | Read stock, set amounts, record changes, and check availability |
 | `/recipes` | Manage recipes and step ingredient links, scale servings, read nutrition, check rules, and set status |
@@ -88,6 +88,104 @@ Paths below are relative to `/api/v1`.
 Most lists return `{"items": [...]}`. Recipes also return `total`, `limit`, and
 `offset`. Pantry movements use `limit` and `before` for older entries. Shopping
 list detail returns `list`, `items`, `groups`, `counts`, and `runningLow`.
+
+### Ingredient references
+
+Recipe lines, `alternatives[]`, pantry lines, and rule targets name an
+ingredient with exactly one of these forms:
+
+| Form | Meaning |
+| --- | --- |
+| `{"ingredientId": "ing_..."}` | An existing ingredient. |
+| `{"ingredient": "Onion"}` | An existing ingredient name or alias. It never creates an ingredient. |
+| `{"fdcId": 170000, "name": "Onion", "category": "produce"}` | A USDA food. PantryPal reuses the household ingredient that links to this food, or creates a linked one. `name` and `category` are optional. Without `name`, the name comes from the USDA description. The default category is `other`. |
+
+Zero or several forms in one reference returns `validation` (400). Rule targets
+accept `ingredientId`, `ingredient`, or `fdcId` with `name`; if more than one is
+present, `ingredientId` wins, then the name, then `fdcId`.
+
+A recipe line has `qty`, `qtyMax`, `unit`, `prepNote`, and `alternatives[]`, a
+list of references. Recipe reads return `alternatives: [{ingredientId, name}]`.
+Alternatives are for display. Nutrition, stock, shopping, and dietary checks use
+only the main ingredient.
+
+### Unknown ingredient names
+
+A name that matches no ingredient returns `unprocessable` (422). Nothing is
+written; a request runs in one transaction.
+
+```json
+{"error":{"code":"unprocessable","message":"...","details":{"unresolved":[
+  {"name":"milk or water","hint":"contains \"or\". Use the main ingredient and add the others as alternatives.","suggestions":[
+    {"kind":"ingredient","ingredientId":"ing_...","name":"Milk","score":0.95},
+    {"kind":"food","fdcId":171265,"description":"Milk, whole, 3.25% milkfat","suggestedName":"Milk","score":0.9}]}]}}}
+```
+
+`unresolved` lists every unknown name in the request, including names in
+`alternatives[]` and in all lines of a bulk request. Each entry has up to 5
+`suggestions`: existing ingredients first, then USDA foods. A food that the
+household already links comes back as an ingredient. `hint` appears when the name
+fails the name rules. To retry, send the suggested `ingredientId`, or send the
+`fdcId`.
+
+### Ingredient names
+
+A create or rename must pass these checks. An unchanged name is not checked
+again; a change of letter case only is not a new name. Aliases are not checked.
+A failure returns `unprocessable` with `details: {name, reason, hint}`. A saved
+name is in Title Case (see below).
+
+A name fails when it has any of these:
+
+- A list of choices: `or`, `and/or`, `/`, `&`, or `+`. Use the main ingredient
+  and add the others as `alternatives`.
+- A comma, a semicolon, or brackets. Put preparation in `prepNote`.
+- A quantity: a leading number, or a number with a unit such as "2 cups".
+  Put the amount in `qty` and `unit`.
+- A size word: `small`, `medium`, `large`, `jumbo`, or `extra large`. Use a size
+  unit instead.
+- Preparation text such as "chopped", "minced", "to taste", "room temperature",
+  or "for garnish". Put it in `prepNote`.
+
+### Create, custom, and review
+
+`POST /ingredients` takes `name`, `category`, `aliases`, `defaultUnit`, and
+`defaultPortion`, plus one of:
+
+| Field | Result |
+| --- | --- |
+| `fdcId` | Creates an ingredient linked to that USDA food. `name` is optional. If a non-archived ingredient already links that food, the response is `conflict` (409) with `details.ingredientId`. |
+| `custom: true` | Creates a custom ingredient with no USDA food. Use it as a last resort. |
+
+With neither, the response is `unprocessable` with suggestions. With both, it is
+`validation`. A custom ingredient has `needsReview: true`, unless the request
+came from a browser session. A request with a bearer token, or a network-trust
+request with no `Authorization` header, counts as an API request. Linking a food
+clears `needsReview`.
+
+`PATCH /ingredients/{id}` also takes `defaultPortion`, which must exist on the
+linked food.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /ingredients/find?query=&limit=` | Search ingredients and USDA foods together. Returns `{ingredients: [{id, name, category, defaultUnit, defaultPortion, aliases, linked, fdcId, needsReview, score}], foods: [{fdcId, description, suggestedName, score, ingredientId}]}`. `ingredientId` is `null` when no ingredient links the food. |
+| `GET /ingredients/{id}` | The ingredient view plus `usage` and `review`. `usage` has `recipes` (`id`, `slug`, `title`, `lines`, `asMain`, `asAlternative`), `pantryItem` (`id`, `qty`, `unit`, `qtyApprox`, `status`, or `null`), `shoppingItems` (`itemId`, `listId`, `listTitle`, `listStatus`, `name`, `qty`, `unit`, `checked`; only lists that are not done), and `rules` (ingredient-scoped dietary rules). `review` is `{reasons, lint?, suggestions}`, or `null` when nothing needs attention. |
+| `GET /ingredients/usage` | List `{items: [{ingredientId, recipes, pantry, shopping, rules}]}` with counts for every ingredient that is used. An ingredient that is not listed is unused. |
+| `GET /ingredients/review` | List `{items: [{ingredient, reasons, lint?, suggestions}]}`. `reasons` has `unlinked`, `lint`, or `custom_unreviewed`. A lint problem stays listed until the name is fixed. |
+| `POST /ingredients/{id}/review` | Clear `needsReview`. |
+| `POST /ingredients/{id}/split` | Body `{main, alternatives?}` with references. Moves recipe lines, alternative lines, pantry items, and shopping items to `main` and the alternatives, then archives the source. Returns `{source, main, alternatives, moved}`. |
+
+Every create and rename saves the name in Title Case: `birria paste` becomes
+`Birria Paste`. `normalizedName` stays lower case. See
+[Naming rules](../use/ingredients.md#naming-rules).
+
+### Sizes and default portion
+
+`small`, `medium`, `large`, `extra-large`, and `jumbo` are count units. A recipe
+line of "2 large" Egg has `qty: 2` and `unit: "large"`. "extra large" and "xl"
+normalize to `extra-large`. An ingredient with `defaultPortion: "large"` reads a
+bare count as that size. `GET /nutrition/foods` items have `suggestedName`, and
+an ingredient's `nutrition` has `portions`.
 
 ### Recipe step links
 

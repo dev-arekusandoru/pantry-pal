@@ -16,13 +16,14 @@ recipe. It does not guess: a line it cannot calculate stays blank.
   The totals cover only the counted lines, so the true values are higher.
   Optional ingredients are never counted and are not part of this number.
 - **Show ingredient breakdown** opens one row for each ingredient. A row shows
-  the grams used, the calories, and the matched USDA food.
+  the grams used, the calories, and the matched USDA food. Tap the ingredient
+  name to open its [ingredient page](ingredients.md#the-ingredient-page).
 
 ## Why a line is blank
 
 | Row text | Meaning | What to do |
 | --- | --- | --- |
-| **No matching food** | The ingredient has no USDA food. | Choose a food. See [Change a food match](#change-a-food-match). |
+| **No matching food** | The ingredient has no USDA food. | Choose a food. See [Change a food match](#change-a-food-match). A custom ingredient has no food by design. |
 | **No amount, not counted** | The recipe line has no quantity, such as "salt, to taste". | Nothing. PantryPal does not guess an amount. |
 | **Can't convert cup to grams** | The unit has no known gram weight for this ingredient. | Choose a food that has a portion for the unit. Or add a custom unit conversion through the API or MCP. |
 | **Optional, not counted** | The line is marked optional. | Nothing. |
@@ -31,8 +32,10 @@ A quantity range, such as 1–2 cloves, uses the middle of the range.
 
 ## Change a food match
 
-PantryPal matches each ingredient to a USDA food by name when you add it or
-rename it. The match is automatic and can be wrong.
+An ingredient made from a USDA food uses that food. See
+[Ingredients](ingredients.md#add-a-usda-food-as-an-ingredient). An older
+ingredient can still carry an automatic match by name, and that match can be
+wrong. A custom ingredient has no food.
 
 1. Open the recipe and tap **Show ingredient breakdown**.
 2. Tap **Change match** on the ingredient. The button reads **Find match** when
@@ -46,8 +49,19 @@ The same sheet has two more choices:
 - **Auto match** runs the name match again and replaces your choice.
 
 The match belongs to the ingredient, not the recipe. A change applies to every
-recipe that uses the ingredient. Renaming an ingredient runs the automatic
-match again, unless you chose the food yourself.
+recipe that uses the ingredient. Renaming an ingredient runs the automatic match
+again only when its match is automatic. An ingredient made from a USDA food, a
+custom ingredient, and an ingredient whose food you chose keep their setting. A
+new name must follow the [naming rules](ingredients.md#naming-rules).
+
+### Say what a plain count means
+
+When the ingredient has a food with portions, the same sheet shows **A plain
+count means**. It says which portion one count stands for. For "2" eggs, choose
+`large` and each egg weighs the large portion. **Automatic** leaves the choice
+to PantryPal. A size unit on the recipe line, such as `large`, uses the portion
+of that size. See
+[Sizes and default portion](ingredients.md#sizes-and-default-portion).
 
 ## Data source
 

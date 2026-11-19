@@ -5,6 +5,7 @@ import {
   cookEvents,
   households,
   ingredients,
+  recipeIngredientAlternatives,
   recipeIngredients,
   recipeStatusEvents,
   recipeStepIngredients,
@@ -19,7 +20,7 @@ import {
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
-import { resolveIngredient, type Ingredient } from "./ingredients.js";
+import { resolveIngredientRefs, type IngredientRefInput } from "./ingredients.js";
 import { normalizeUnit } from "./units.js";
 
 export type Recipe = typeof recipes.$inferSelect;
@@ -32,13 +33,16 @@ export type RecipeStatusEvent = typeof recipeStatusEvents.$inferSelect;
 // Inputs / outputs
 // ---------------------------------------------------------------------------
 
-export interface RecipeIngredientInput {
-  /** Existing ingredient id; alternative to `ingredient`. */
-  ingredientId?: string;
-  /** Ingredient name; resolved (created when unknown). */
-  ingredient?: string;
-  /** Category used when the named ingredient has to be created. */
-  category?: IngredientCategory;
+/**
+ * A recipe line's ingredient: exactly one of `ingredientId`, `ingredient` (an existing name or
+ * alias; never creates) or `fdcId` (a USDA food: reuses the linked household ingredient, else
+ * creates one named `name`). Unknown names are collected and reported together (422).
+ */
+export type RecipeIngredientRef = IngredientRefInput;
+
+export interface RecipeIngredientInput extends RecipeIngredientRef {
+  /** Other ingredients that can stand in for the main one ("milk or water"). Informational only. */
+  alternatives?: RecipeIngredientRef[];
   qty?: number | null;
   qtyMax?: number | null;
   /** Unit as written; normalized to a canonical unit. */
@@ -123,6 +127,8 @@ export interface RecipeStats {
 
 export interface RecipeIngredientView extends RecipeIngredient {
   ingredient: { id: string; name: string; category: IngredientCategory; imageUrl: string | null };
+  /** Stand-ins for the main ingredient, in order. Nutrition, stock, shopping and rules use the main one only. */
+  alternatives: Array<{ ingredientId: string; name: string }>;
 }
 
 /** Step link with the linked line's name, unit and prep note resolved. */
@@ -173,6 +179,7 @@ export interface ScaledIngredient {
   optional: boolean;
   scalingExempt: boolean;
   prepNote: string | null;
+  alternatives: Array<{ ingredientId: string; name: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,33 +254,6 @@ function findRecipe(ctx: Ctx, idOrSlug: string): Recipe {
   throw new AppError("not_found", `Recipe not found: ${idOrSlug}`, { idOrSlug });
 }
 
-function resolveIngredientRef(ctx: Ctx, input: RecipeIngredientInput): Ingredient {
-  if (input.ingredientId !== undefined && input.ingredientId !== "") {
-    const row = ctx.db
-      .select()
-      .from(ingredients)
-      .where(
-        and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.id, input.ingredientId)),
-      )
-      .get();
-    if (!row) {
-      throw new AppError("not_found", `Ingredient not found: ${input.ingredientId}`, {
-        ingredientId: input.ingredientId,
-      });
-    }
-    return row;
-  }
-  if (input.ingredient !== undefined && input.ingredient.trim() !== "") {
-    return resolveIngredient(ctx, input.ingredient, {
-      create: true,
-      ...(input.category === undefined ? {} : { category: input.category }),
-    });
-  }
-  throw new AppError("validation", "Each recipe ingredient needs `ingredientId` or `ingredient`", {
-    ingredient: input,
-  });
-}
-
 function assertQtyRange(qty: number | null, qtyMax: number | null, index: number): void {
   if (qty !== null && qty < 0) {
     throw new AppError("validation", "Ingredient qty cannot be negative", { index, qty });
@@ -297,8 +277,23 @@ function insertIngredientRows(
 ): string[] {
   if (inputs.length === 0) return [];
 
+  // Resolve every main ingredient and alternative of the payload at once, so one 422 lists all unknown names.
+  const refs: IngredientRefInput[] = inputs.flatMap((input) => [input, ...(input.alternatives ?? [])]);
+  const resolved = resolveIngredientRefs(
+    ctx,
+    refs.map(({ ingredientId, ingredient, fdcId, name, category }) => ({
+      ingredientId,
+      ingredient,
+      fdcId,
+      name,
+      category,
+    })),
+  );
+  let cursor = 0;
+
   const rows = inputs.map((input, index) => {
-    const ingredient = resolveIngredientRef(ctx, input);
+    const ingredient = resolved[cursor++]!;
+    const alternatives = (input.alternatives ?? []).map(() => resolved[cursor++]!);
     const qty = input.qty ?? null;
     const qtyMax = input.qtyMax ?? null;
     assertQtyRange(qty, qtyMax, index);
@@ -316,10 +311,27 @@ function insertIngredientRows(
       scalingExempt: input.scalingExempt ?? false,
       groupLabel: input.groupLabel ?? null,
       position: index,
+      alternativeIds: [...new Set(alternatives.map((row) => row.id))].filter(
+        (id) => id !== ingredient.id,
+      ),
     };
   });
 
-  ctx.db.insert(recipeIngredients).values(rows).run();
+  ctx.db
+    .insert(recipeIngredients)
+    .values(rows.map(({ alternativeIds: _alternativeIds, ...row }) => row))
+    .run();
+
+  const alternativeRows = rows.flatMap((row) =>
+    row.alternativeIds.map((ingredientId, position) => ({
+      id: newId("ria"),
+      householdId: ctx.householdId,
+      recipeIngredientId: row.id,
+      ingredientId,
+      position,
+    })),
+  );
+  if (alternativeRows.length > 0) ctx.db.insert(recipeIngredientAlternatives).values(alternativeRows).run();
   return rows.map((row) => row.id);
 }
 
@@ -450,7 +462,43 @@ function ingredientCountsForMany(ctx: Ctx, recipeIds: string[]): Map<string, num
   return counts;
 }
 
+/** Alternatives of the lines of one recipe, keyed by recipe ingredient id, in order. */
+function getAlternatives(
+  ctx: Ctx,
+  recipeId: string,
+): Map<string, Array<{ ingredientId: string; name: string }>> {
+  const rows = ctx.db
+    .select({
+      lineId: recipeIngredientAlternatives.recipeIngredientId,
+      ingredientId: recipeIngredientAlternatives.ingredientId,
+      name: ingredients.name,
+    })
+    .from(recipeIngredientAlternatives)
+    .innerJoin(
+      recipeIngredients,
+      eq(recipeIngredients.id, recipeIngredientAlternatives.recipeIngredientId),
+    )
+    .innerJoin(ingredients, eq(ingredients.id, recipeIngredientAlternatives.ingredientId))
+    .where(
+      and(
+        eq(recipeIngredients.householdId, ctx.householdId),
+        eq(recipeIngredients.recipeId, recipeId),
+      ),
+    )
+    .orderBy(asc(recipeIngredientAlternatives.position), asc(recipeIngredientAlternatives.id))
+    .all();
+  const byLine = new Map<string, Array<{ ingredientId: string; name: string }>>();
+  for (const row of rows) {
+    const entry = { ingredientId: row.ingredientId, name: row.name };
+    const list = byLine.get(row.lineId);
+    if (list) list.push(entry);
+    else byLine.set(row.lineId, [entry]);
+  }
+  return byLine;
+}
+
 function getIngredientRows(ctx: Ctx, recipeId: string): RecipeIngredientView[] {
+  const alternatives = getAlternatives(ctx, recipeId);
   return ctx.db
     .select({
       ri: {
@@ -490,6 +538,7 @@ function getIngredientRows(ctx: Ctx, recipeId: string): RecipeIngredientView[] {
         category: ingredientCategory,
         imageUrl: ingredientImageUrl,
       },
+      alternatives: alternatives.get(ri.id) ?? [],
     }));
 }
 
@@ -993,6 +1042,7 @@ export function scaleRecipeIngredients(
       optional: row.optional,
       scalingExempt: row.scalingExempt,
       prepNote: row.prepNote,
+      alternatives: row.alternatives,
     };
   });
 }

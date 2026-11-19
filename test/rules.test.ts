@@ -9,7 +9,8 @@ import {
   updateHousehold,
   updateMember,
 } from "../src/services/households.js";
-import { findIngredientByName, resolveIngredient } from "../src/services/ingredients.js";
+import { autoMatchFood } from "../src/services/foods.js";
+import { findIngredientByName } from "../src/services/ingredients.js";
 import { createRecipe } from "../src/services/recipes.js";
 import {
   checkIngredients,
@@ -19,7 +20,7 @@ import {
   listRules,
   updateRule,
 } from "../src/services/rules.js";
-import { makeTestCtx } from "./helpers.js";
+import { addIngredient, ensureIngredient, makeTestCtx } from "./helpers.js";
 
 function expectAppError(fn: () => unknown, code: AppError["code"]): AppError {
   try {
@@ -34,20 +35,45 @@ function expectAppError(fn: () => unknown, code: AppError["code"]): AppError {
 }
 
 describe("rule targets", () => {
-  it("resolves an ingredient name and creates it when unknown", () => {
+  it("resolves an existing ingredient name and never creates one", () => {
     const { ctx } = makeTestCtx();
+    const eggplant = addIngredient(ctx, "Eggplant");
 
     const rule = createRule(ctx, {
       scope: "ingredient",
-      ingredient: "Eggplant",
+      ingredient: "eggplant",
       severity: "forbidden",
       reason: "dislike",
     });
 
-    expect(rule.ingredientId).not.toBeNull();
+    expect(rule.ingredientId).toBe(eggplant.id);
     expect(rule.recipeId).toBeNull();
     expect(rule.targetText).toBeNull();
-    expect(findIngredientByName(ctx, "eggplant")?.id).toBe(rule.ingredientId);
+
+    const error = expectAppError(
+      () => createRule(ctx, { scope: "ingredient", ingredient: "Okra", severity: "avoid" }),
+      "unprocessable",
+    );
+    expect(error.details).toMatchObject({ unresolved: [{ name: "Okra" }] });
+    expect(findIngredientByName(ctx, "okra")).toBeNull();
+    expect(listRules(ctx).items).toHaveLength(1);
+  });
+
+  it("creates a linked ingredient for a USDA food and reuses it", () => {
+    const { ctx } = makeTestCtx();
+    const food = autoMatchFood("eggplant");
+    expect(food).not.toBeNull();
+
+    const first = createRule(ctx, {
+      scope: "ingredient",
+      fdcId: food!.fdcId,
+      name: "Eggplant",
+      severity: "forbidden",
+    });
+    const second = createRule(ctx, { scope: "ingredient", fdcId: food!.fdcId, severity: "avoid" });
+
+    expect(second.ingredientId).toBe(first.ingredientId);
+    expect(findIngredientByName(ctx, "eggplant")?.nutritionFdcId).toBe(food!.fdcId);
   });
 
   it("validates scope against target", () => {
@@ -117,10 +143,21 @@ describe("rule CRUD", () => {
   });
 });
 
+/** Ingredients the recipes below use by name; recipes never create ingredients. */
+function kitchen(ctx: Parameters<typeof addIngredient>[0]): void {
+  addIngredient(ctx, "Arborio rice");
+  addIngredient(ctx, "Pork belly", { category: "protein" });
+  addIngredient(ctx, "Rice noodles");
+  addIngredient(ctx, "Soy sauce");
+  addIngredient(ctx, "Fish sauce");
+  addIngredient(ctx, "Chicken breast", { category: "protein" });
+}
+
 describe("checkRecipe", () => {
   it("matches ingredient rules by ingredient id", () => {
     const { ctx } = makeTestCtx();
-    const mushroom = resolveIngredient(ctx, "Mushrooms", { create: true });
+    kitchen(ctx);
+    const mushroom = ensureIngredient(ctx, "Mushrooms");
 
     const recipe = createRecipe(ctx, {
       title: "Risotto",
@@ -153,6 +190,7 @@ describe("checkRecipe", () => {
 
   it("matches category rules case-insensitively", () => {
     const { ctx } = makeTestCtx();
+    kitchen(ctx);
 
     const recipe = createRecipe(ctx, {
       title: "Pork Belly Buns",
@@ -162,12 +200,12 @@ describe("checkRecipe", () => {
 
     const check = checkRecipe(ctx, recipe.id);
     expect(check.ok).toBe(false);
-    expect(check.violations[0]).toMatchObject({ scope: "category", matched: "Pork belly" });
+    expect(check.violations[0]).toMatchObject({ scope: "category", matched: "Pork Belly" });
   });
 
   it("matches keyword rules through ingredient aliases", () => {
     const { ctx } = makeTestCtx();
-    const cremini = resolveIngredient(ctx, "Cremini caps", { create: true });
+    const cremini = ensureIngredient(ctx, "Cremini caps");
     ctx.db
       .insert(ingredientAliases)
       .values({
@@ -191,6 +229,7 @@ describe("checkRecipe", () => {
 
   it("matches keyword rules against the original recipe line", () => {
     const { ctx } = makeTestCtx();
+    kitchen(ctx);
 
     const recipe = createRecipe(ctx, {
       title: "Stir Fry",
@@ -220,7 +259,7 @@ describe("checkRecipe", () => {
 
   it("does not flag chili made with a hamburger meat alias as pork", () => {
     const { ctx } = makeTestCtx();
-    const beef = resolveIngredient(ctx, "Ground beef", { create: true });
+    const beef = ensureIngredient(ctx, "Ground beef");
     ctx.db
       .insert(ingredientAliases)
       .values({
@@ -317,6 +356,7 @@ describe("checkRecipe", () => {
 
   it("matches tag and recipe rules", () => {
     const { ctx } = makeTestCtx();
+    kitchen(ctx);
 
     const recipe = createRecipe(ctx, {
       title: "Kung Pao Chicken",
@@ -359,6 +399,7 @@ describe("checkRecipe", () => {
 
   it("reports conditional forbidden matches without flipping ok", () => {
     const { ctx } = makeTestCtx();
+    kitchen(ctx);
 
     const recipe = createRecipe(ctx, {
       title: "Pad Thai",
@@ -380,7 +421,7 @@ describe("checkRecipe", () => {
     expect(check.violations[0]).toMatchObject({
       ruleId: rule.id,
       severity: "forbidden",
-      matched: "Fish sauce",
+      matched: "Fish Sauce",
       conditionNote: "ok as a minor ingredient",
     });
   });
@@ -410,7 +451,7 @@ describe("checkRecipe", () => {
 describe("checkIngredients", () => {
   it("checks known ingredients and proposed names before creation", () => {
     const { ctx } = makeTestCtx();
-    const mushroom = resolveIngredient(ctx, "Mushrooms", { create: true });
+    const mushroom = ensureIngredient(ctx, "Mushrooms");
 
     createRule(ctx, {
       scope: "ingredient",

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Link } from "@tanstack/react-router";
 import { Label, Separator } from "radix-ui";
 import { errorMessage } from "@/api";
 import { useTheme, type ThemePreference } from "@/app/theme";
@@ -16,12 +17,14 @@ import {
   Sheet,
   Skeleton,
   Stepper,
+  buttonClass,
   cx,
   hasIcon,
   ingredientEmoji,
   toast,
   type SegmentOption,
 } from "@/ui";
+import { AttentionLink } from "../ingredients/AttentionLink";
 import styles from "./Settings.module.css";
 import {
   useCreateMember,
@@ -161,6 +164,21 @@ export function SettingsScreen() {
             API tokens
           </h2>
           <TokensSection />
+        </Card>
+
+        <Card as="section" aria-labelledby="settings-ingredients" className={styles.section}>
+          <h2 id="settings-ingredients" className={styles.heading}>
+            Ingredients
+          </h2>
+          <p className={styles.hint}>
+            Browse every ingredient, link foods, fix odd names and check custom entries.
+          </p>
+          <div className={styles.ingredientLinks}>
+            <Link to="/ingredients" className={buttonClass({ variant: "secondary" })}>
+              Open ingredients
+            </Link>
+            <AttentionLink variant="secondary" />
+          </div>
         </Card>
 
         <MissingIcons

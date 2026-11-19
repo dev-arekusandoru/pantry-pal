@@ -34,6 +34,9 @@ interface Row {
   id: string;
   group: string | null;
   name: string;
+  ingredientId: string;
+  /** Stand-ins for the main ingredient ("Milk (or Water)"). */
+  alternatives: Array<{ ingredientId: string; name: string }>;
   imageUrl: string | null;
   prepNote: string | null;
   optional: boolean;
@@ -107,6 +110,8 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
         id: ri.id,
         group: ri.groupLabel,
         name: ri.ingredient.name,
+        ingredientId: ri.ingredientId,
+        alternatives: ri.alternatives,
         imageUrl: ri.ingredient.imageUrl,
         prepNote: ri.prepNote,
         optional: ri.optional,
@@ -286,7 +291,23 @@ export function RecipeScreen({ slug, cookEvent, servings: servingsParam }: Recip
                   </span>
                   <span className={styles.ingAmount}>{row.amount}</span>
                   <span className={styles.ingName}>
-                    {row.name}
+                    <Link to="/ingredients/$id" params={{ id: row.ingredientId }} className={styles.ingLink}>
+                      {row.name}
+                    </Link>
+                    {row.alternatives.length > 0 && (
+                      <>
+                        {" (or "}
+                        {row.alternatives.map((alternative, index) => (
+                          <span key={alternative.ingredientId}>
+                            {index > 0 && " or "}
+                            <Link to="/ingredients/$id" params={{ id: alternative.ingredientId }} className={styles.ingLink}>
+                              {alternative.name}
+                            </Link>
+                          </span>
+                        ))}
+                        {")"}
+                      </>
+                    )}
                     {row.prepNote && <small>, {row.prepNote}</small>}
                     {row.optional && <small> (optional)</small>}
                   </span>

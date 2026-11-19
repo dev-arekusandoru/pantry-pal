@@ -17,17 +17,23 @@ only when that category has stock.
 Tap **Add** in the header. If the pantry is empty, tap **Add** in the middle of
 the screen. Then fill in:
 
-- **What is it?**
+- **What is it?**: a search box. Choose an ingredient from the list. See
+  [Ingredients](ingredients.md#choose-an-ingredient). If you typed in **Search
+  the pantry** first, the box starts with that text.
 - **How much? (optional)**
 - **Unit**
-- **Shopping aisle**
 
+The sheet does not make an ingredient from a typed name. To add food that is
+not in your ingredients, choose a USDA food under **USDA foods**, or choose
+**Create custom…**. You pick the shopping aisle for the new ingredient there.
 The aisle is the ingredient category. It groups pantry rows and shopping items.
-It is used when the app creates an ingredient.
+To change the aisle of an ingredient you already have, use **Category** in the
+row's amount sheet, or **Aisle** on the [ingredient page](ingredients.md#the-ingredient-page).
 
-With an amount, the app adds to the stock already recorded for that ingredient. A
-new name creates a new ingredient. Without an amount, the app records the item as
-**On hand** and leaves the quantity unknown.
+With an amount, the app adds to the stock already recorded for that ingredient.
+Without an amount, the app records the item as **On hand** and leaves the
+quantity unknown. If the ingredient is already in the pantry and you give no
+amount, the sheet says so and does not add a second row.
 
 ## Change an amount
 
@@ -46,6 +52,10 @@ The same sheet shows **Category**, **Best before**, and **Shelf life in days**.
 Change any value, then tap **Save**. Change **Category** to move the ingredient to
 another group. Clear **Best before** to remove the date. Clear **Shelf life in
 days** to stop dating future purchases of this ingredient.
+
+The sheet also has **Change icon** and **Ingredient page**. **Ingredient page**
+opens the [ingredient page](ingredients.md#the-ingredient-page), where you can
+change the name, the USDA food, and more.
 
 A row with an expiry date shows **Best before**. An item that expires in three
 days or less gets an **Expiring soon** badge. An item past its date gets an
@@ -150,6 +160,14 @@ pantry** mission on the week screen. This also applies when you end the sweep
 with **Finish**. The app stores that count in this browser's local storage. See
 [Weekly missions](meal-plans.md#weekly-missions-and-the-treat-stamp).
 
+## Ingredients and Needs attention
+
+Tap **Ingredients** in the header to open the
+[ingredient list](ingredients.md#the-ingredient-list). When some ingredients have
+no USDA food, an odd name, or an unchecked custom entry, the header also shows
+**Needs attention** with a count. Tap it to see them. See
+[Needs attention](ingredients.md#needs-attention).
+
 ## Open the sticker book
 
 Tap **Sticker book** in the header to open the
@@ -172,6 +190,9 @@ These tasks have no web screen:
 - Set ingredient aliases, par levels, default units, or categories
   (`ingredient_upsert` with `action: "update"`). The web item sheet changes the
   category for you.
+- Create an ingredient from a USDA food with `fdcId`, or a custom one with
+  `create_custom_ingredient`. The pantry tools do not create ingredients from a
+  name. See [Ingredients](ingredients.md#through-the-api-or-mcp).
 
 See [Common MCP tasks](../connect/tasks.md) and the
 [MCP tool reference](../reference/mcp-tools.md). The REST endpoints are in the

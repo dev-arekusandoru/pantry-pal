@@ -30,10 +30,19 @@ The recipe page shows tags but does not change them.
 
 Use **Add line** to add a line. Each line has:
 
-- **Ingredient**: the name. The server uses an existing ingredient when the
-  name matches, or creates one.
+- **Ingredient**: a search box. Choose an ingredient from **Your ingredients**
+  or **USDA foods**, or add one with **Create custom…**. The editor does not
+  make an ingredient from a typed name. See
+  [Ingredients](ingredients.md#choose-an-ingredient). A line with no ingredient
+  cannot save: the editor says **Pick an ingredient for line N.**
+- **Add alternative**: after you choose an ingredient, add stand-ins with the
+  same search box. The recipe page shows them as **Milk (or Water)**. Tap `×` to
+  remove one. See [Alternatives](ingredients.md#alternatives).
 - **Qty** and **Max qty**: a range uses both, for example 1 to 2 heads.
-- **Unit**: for example `cup`, `tbsp`, `g`. The server normalizes the unit.
+- **Unit**: for example `cup`, `tbsp`, `g`. The server normalizes the unit. The
+  field suggests the sizes `small`, `medium`, `large`, `extra-large`, and
+  `jumbo`. For "2 large eggs", enter Qty `2` and Unit `large`. See
+  [Sizes and default portion](ingredients.md#sizes-and-default-portion).
 - **Prep note**: for example `diced`.
 - **Group**: a section header such as `Sauce`.
 - **Optional**: the pantry check and the cook deduction ignore the line.
@@ -93,8 +102,11 @@ The API and MCP accept the same shape:
 ```jsonc
 {
   "ingredients": [
-    { "ingredient": "Carrot", "qty": 4, "unit": "each" },
-    { "ingredient": "Salt", "qty": 1, "unit": "tsp", "scalingExempt": true }
+    { "ingredientId": "ing_carrot", "qty": 4, "unit": "each" },
+    { "ingredient": "Salt", "qty": 1, "unit": "tsp", "scalingExempt": true },
+    { "fdcId": 171265, "name": "Milk", "qty": 1, "unit": "cup",
+      "alternatives": [{ "ingredient": "Water" }] },
+    { "ingredient": "Egg", "qty": 2, "unit": "large" }
   ],
   "steps": [
     { "text": "Cook the carrots.", "links": [{ "ingredientIndex": 0, "qty": 3 }] },
@@ -109,8 +121,13 @@ The API and MCP accept the same shape:
 - The server rejects a link that does not point to a line of the same recipe.
 - Replacing `ingredients` without `steps` removes the step links.
 
-Read a recipe with `GET /recipes/{idOrSlug}` or `recipe_get`. Each step returns
-`links` with `ingredientName`, `qty`, `unit`, and `prepNote`.
+Read a recipe with `GET /recipes/{idOrSlug}` or `recipe_get`. Each line returns
+`alternatives` with `ingredientId` and `name`. Each step returns `links` with
+`ingredientName`, `qty`, `unit`, and `prepNote`.
+
+A line must name an ingredient that exists, or a USDA food. A bare unknown name
+returns `unprocessable` (422) with suggestions, and the recipe is not saved. See
+[Ingredients](ingredients.md#through-the-api-or-mcp).
 
 See the [REST API](../reference/rest-api.md), the
 [MCP tool reference](../reference/mcp-tools.md), and

@@ -21,10 +21,20 @@ const ruleFields = {
   ingredientId: z
     .string()
     .nullable()
-    .describe("scope=ingredient: existing ingredient id (alternative to `ingredient`)."),
+    .describe("scope=ingredient: existing ingredient id (alternative to `ingredient` and `fdcId`)."),
   ingredient: z
     .string()
-    .describe("scope=ingredient: ingredient name; resolved and created when unknown."),
+    .describe(
+      "scope=ingredient: an existing ingredient name or alias. Never creates: an unknown name is a 422 with suggestions.",
+    ),
+  fdcId: z
+    .number()
+    .int()
+    .positive()
+    .describe(
+      "scope=ingredient: a USDA food id. Uses the household ingredient linked to it, or creates one (named `name`).",
+    ),
+  name: z.string().min(1).describe("With `fdcId` when it creates an ingredient: its name."),
   recipeId: z.string().nullable().describe("scope=recipe: the recipe id to exclude."),
   targetText: z
     .string()

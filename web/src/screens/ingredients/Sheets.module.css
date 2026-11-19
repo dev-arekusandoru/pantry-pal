@@ -1,0 +1,34 @@
+.sheetText {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1.45;
+  max-width: 56ch;
+}
+
+.sheetForm {
+  display: grid;
+  gap: 12px;
+}
+
+.sheetForm .sheetText {
+  margin-bottom: 0;
+}
+
+.problem {
+  color: var(--danger-text);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+
+.alternative {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.alternative > :first-child {
+  justify-self: stretch;
+}

@@ -62,12 +62,15 @@ const { createIngredient, getIngredient, mergeIngredients, updateIngredient } = 
 const { createRecipe } = await import("../src/services/recipes.js");
 const { createConversion } = await import("../src/services/units.js");
 const { ingredients } = await import("../src/db/schema.js");
-const { makeTestApp, makeTestCtx } = await import("./helpers.js");
+const { addIngredient, makeTestApp, makeTestCtx } = await import("./helpers.js");
 
 describe("recipe nutrition", () => {
   it("computes mass, volume, count and household-converted lines", () => {
     const { ctx } = makeTestCtx();
-    const tomatoes = createIngredient(ctx, { name: "Canned tomatoes" });
+    createIngredient(ctx, { fdcId: 1, name: "Rice" });
+    createIngredient(ctx, { fdcId: 2, name: "Flour" });
+    createIngredient(ctx, { fdcId: 3, name: "Onion" });
+    const tomatoes = createIngredient(ctx, { fdcId: 4, name: "Canned tomatoes" });
     createConversion(ctx, { ingredientId: tomatoes.id, fromUnit: "can", toUnit: "g", factor: 400 });
 
     const recipe = createRecipe(ctx, {
@@ -100,12 +103,17 @@ describe("recipe nutrition", () => {
 
   it("leaves unmatched, quantity-less and unconvertible lines blank and skips optional lines", () => {
     const { ctx } = makeTestCtx();
+    createIngredient(ctx, { fdcId: 1, name: "Rice" });
+    createIngredient(ctx, { fdcId: 2, name: "Flour" });
+    createIngredient(ctx, { fdcId: 3, name: "Onion" });
+    addIngredient(ctx, "Milk");
+    addIngredient(ctx, "Water");
     const recipe = createRecipe(ctx, {
       title: "Gaps",
       servings: 2,
       ingredients: [
         { ingredient: "Rice", qty: 100, unit: "g" },
-        { ingredient: "Milk or water", qty: 1, unit: "cup" },
+        { ingredient: "Milk", alternatives: [{ ingredient: "Water" }], qty: 1, unit: "cup" },
         { ingredient: "Flour", qty: null },
         { ingredient: "Onion", qty: 1, unit: "bunch" },
         { ingredient: "Rice", qty: 500, unit: "g", optional: true },
@@ -130,6 +138,7 @@ describe("recipe nutrition", () => {
 
   it("uses the midpoint of a quantity range", () => {
     const { ctx } = makeTestCtx();
+    createIngredient(ctx, { fdcId: 1, name: "Rice" });
     const recipe = createRecipe(ctx, {
       title: "Range",
       servings: 1,
@@ -141,7 +150,7 @@ describe("recipe nutrition", () => {
   });
 
   it("gives null totals when nothing is countable", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: ["Mystery"] });
     const recipe = createRecipe(ctx, {
       title: "Nothing",
       servings: 2,
@@ -156,22 +165,31 @@ describe("recipe nutrition", () => {
 });
 
 describe("ingredient nutrition matching", () => {
-  it("auto-matches on create and rename, and exposes it in the view", () => {
+  it("links a food on create, never auto-matches a custom, and re-matches auto rows on rename", () => {
     const { ctx } = makeTestCtx();
-    const rice = createIngredient(ctx, { name: "Rice" });
-    expect(rice.nutrition).toMatchObject({ source: "auto", fdcId: 1, description: "Rice, white, raw" });
+    const rice = createIngredient(ctx, { fdcId: 1, name: "Rice" });
+    expect(rice.nutrition).toMatchObject({ source: "manual", fdcId: 1, description: "Rice, white, raw" });
     expect(rice.nutrition!.per100g!.calories).toBe(360);
+    expect(rice.needsReview).toBe(false);
 
-    const unknown = createIngredient(ctx, { name: "Diced tomatoes with green chilies" });
-    expect(unknown.nutrition).toBeNull();
+    const custom = createIngredient(ctx, { custom: true, name: "Diced tomatoes with green chilies" });
+    expect(custom.nutrition).toMatchObject({ source: "manual", fdcId: null, per100g: null });
+    expect(custom.needsReview).toBe(true);
+    expect(updateIngredient(ctx, custom.id, { name: "Flour" }).nutrition?.fdcId).toBeNull();
 
-    const renamed = updateIngredient(ctx, unknown.id, { name: "Flour" });
-    expect(renamed.nutrition).toMatchObject({ source: "auto", fdcId: 2 });
+    // Linking clears the review flag; "auto" rows follow their name on rename.
+    const auto = setIngredientNutrition(ctx, custom.id, { mode: "auto" });
+    expect(auto.nutrition).toMatchObject({ source: "auto", fdcId: 2 });
+    expect(auto.needsReview).toBe(false);
+    expect(updateIngredient(ctx, custom.id, { name: "Onion" }).nutrition).toMatchObject({
+      source: "auto",
+      fdcId: 3,
+    });
   });
 
   it("manual override and clear stick across rename", () => {
     const { ctx } = makeTestCtx();
-    const rice = createIngredient(ctx, { name: "Rice" });
+    const rice = createIngredient(ctx, { custom: true, name: "Rice" });
 
     const pinned = setIngredientNutrition(ctx, rice.id, { mode: "manual", fdcId: 5 });
     expect(pinned.nutrition).toMatchObject({ source: "manual", fdcId: 5 });
@@ -181,7 +199,13 @@ describe("ingredient nutrition matching", () => {
     });
 
     const cleared = setIngredientNutrition(ctx, rice.id, { mode: "manual", fdcId: null });
-    expect(cleared.nutrition).toEqual({ source: "manual", fdcId: null, description: null, per100g: null });
+    expect(cleared.nutrition).toEqual({
+      source: "manual",
+      fdcId: null,
+      description: null,
+      per100g: null,
+      portions: [],
+    });
     expect(updateIngredient(ctx, rice.id, { name: "Flour" }).nutrition?.fdcId).toBeNull();
 
     const auto = setIngredientNutrition(ctx, rice.id, { mode: "auto" });
@@ -194,27 +218,30 @@ describe("ingredient nutrition matching", () => {
 
   it("backfills only never-matched rows", () => {
     const { ctx, db } = makeTestCtx();
-    const rice = createIngredient(ctx, { name: "Rice" });
-    const manual = createIngredient(ctx, { name: "Onion" });
+    const rice = createIngredient(ctx, { custom: true, name: "Rice" });
+    const manual = createIngredient(ctx, { custom: true, name: "Onion" });
     setIngredientNutrition(ctx, manual.id, { mode: "manual", fdcId: null });
     db.update(ingredients).set({ nutritionFdcId: null, nutritionSource: null }).run();
     setIngredientNutrition(ctx, manual.id, { mode: "manual", fdcId: null });
 
     expect(backfillNutritionMatches(db)).toBe(1);
     expect(getIngredient(ctx, rice.id).nutrition).toMatchObject({ source: "auto", fdcId: 1 });
+    expect(getIngredient(ctx, rice.id).needsReview).toBe(false);
     expect(getIngredient(ctx, manual.id).nutrition).toMatchObject({ source: "manual", fdcId: null });
     expect(backfillNutritionMatches(db)).toBe(0);
   });
 
   it("merge keeps the target match and carries over the source's when the target has none", () => {
     const { ctx } = makeTestCtx();
-    const target = createIngredient(ctx, { name: "Spring rice" });
-    const source = createIngredient(ctx, { name: "Rice" });
-    expect(target.nutrition).toBeNull();
-    expect(mergeIngredients(ctx, source.id, target.id).ingredient.nutrition).toMatchObject({ fdcId: 1 });
+    const target = createIngredient(ctx, { custom: true, name: "Spring rice" });
+    const source = createIngredient(ctx, { fdcId: 1, name: "Rice" });
+    expect(target.nutrition?.fdcId).toBeNull();
+    const merged = mergeIngredients(ctx, source.id, target.id).ingredient;
+    expect(merged.nutrition).toMatchObject({ fdcId: 1 });
+    expect(merged.needsReview).toBe(false);
 
-    const keep = createIngredient(ctx, { name: "Flour" });
-    const other = createIngredient(ctx, { name: "Onion" });
+    const keep = createIngredient(ctx, { fdcId: 2, name: "Flour" });
+    const other = createIngredient(ctx, { fdcId: 3, name: "Onion" });
     expect(mergeIngredients(ctx, other.id, keep.id).ingredient.nutrition).toMatchObject({ fdcId: 2 });
   });
 });
@@ -222,7 +249,7 @@ describe("ingredient nutrition matching", () => {
 describe("nutrition API", () => {
   it("serves foods, ingredient matching and recipe nutrition", async () => {
     const t = makeTestApp();
-    const ing = createIngredient(t.ctx, { name: "Rice" });
+    const ing = createIngredient(t.ctx, { custom: true, name: "Rice" });
     const recipe = createRecipe(t.ctx, {
       title: "Rice bowl",
       servings: 2,

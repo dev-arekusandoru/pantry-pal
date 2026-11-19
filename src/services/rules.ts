@@ -16,7 +16,7 @@ import {
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
-import { findIngredientByName, resolveIngredient } from "./ingredients.js";
+import { findIngredientByName, resolveIngredientRef } from "./ingredients.js";
 
 export type DietaryRule = typeof dietaryRules.$inferSelect;
 
@@ -24,8 +24,12 @@ export interface RuleInput {
   scope: RuleScope;
   /** scope=ingredient: existing ingredient id (alternative to `ingredient`). */
   ingredientId?: string | null;
-  /** scope=ingredient: ingredient name, resolved (created when unknown). */
+  /** scope=ingredient: an existing ingredient name or alias; unknown names are `unprocessable`. */
   ingredient?: string;
+  /** scope=ingredient: a USDA food; reuses the household ingredient linked to it, else creates one named `name`. */
+  fdcId?: number;
+  /** Name of the ingredient created from `fdcId`. */
+  name?: string;
   /** scope=recipe: recipe id. */
   recipeId?: string | null;
   /** scope=category/tag/keyword. */
@@ -139,6 +143,8 @@ function normalizeTarget(
   fields: {
     ingredientId?: string | null;
     ingredient?: string;
+    fdcId?: number;
+    name?: string;
     recipeId?: string | null;
     targetText?: string | null;
   },
@@ -150,15 +156,20 @@ function normalizeTarget(
         return { ingredientId: requireIngredient(ctx, id), recipeId: null, targetText: null };
       }
       const name = fields.ingredient?.trim() ?? "";
-      if (name === "") {
+      if (name === "" && fields.fdcId === undefined) {
         throw new AppError(
           "validation",
-          "Ingredient rules need `ingredientId` or `ingredient` (name)",
+          "Ingredient rules need `ingredientId`, `ingredient` (an existing name) or `fdcId`",
           { scope },
         );
       }
-      // create: true so a ban can be recorded before the ingredient is ever used.
-      const ingredient = resolveIngredient(ctx, name, { create: true });
+      // A ban can name a food before any recipe uses it: `fdcId` creates a linked ingredient.
+      const ingredient = resolveIngredientRef(
+        ctx,
+        name !== ""
+          ? { ingredient: name }
+          : { fdcId: fields.fdcId as number, ...(fields.name === undefined ? {} : { name: fields.name }) },
+      );
       return { ingredientId: ingredient.id, recipeId: null, targetText: null };
     }
     case "recipe": {
@@ -210,6 +221,10 @@ export function getRule(ctx: Ctx, id: string): DietaryRule {
 }
 
 export function createRule(ctx: Ctx, input: RuleInput): DietaryRule {
+  return ctx.db.transaction((tx) => createRuleIn({ ...ctx, db: tx as unknown as Ctx["db"] }, input));
+}
+
+function createRuleIn(ctx: Ctx, input: RuleInput): DietaryRule {
   const target = normalizeTarget(ctx, input.scope, input);
   const memberId = input.memberId ?? null;
   if (memberId !== null) requireMember(ctx, memberId);
@@ -236,6 +251,12 @@ export function createRule(ctx: Ctx, input: RuleInput): DietaryRule {
 }
 
 export function updateRule(ctx: Ctx, id: string, patch: UpdateRuleInput): DietaryRule {
+  return ctx.db.transaction((tx) =>
+    updateRuleIn({ ...ctx, db: tx as unknown as Ctx["db"] }, id, patch),
+  );
+}
+
+function updateRuleIn(ctx: Ctx, id: string, patch: UpdateRuleInput): DietaryRule {
   const existing = getRule(ctx, id);
   const scope = patch.scope ?? existing.scope;
 
@@ -244,10 +265,12 @@ export function updateRule(ctx: Ctx, id: string, patch: UpdateRuleInput): Dietar
     ingredientId:
       patch.ingredientId !== undefined
         ? patch.ingredientId
-        : patch.ingredient !== undefined
+        : patch.ingredient !== undefined || patch.fdcId !== undefined
           ? null
           : existing.ingredientId,
     ...(patch.ingredient === undefined ? {} : { ingredient: patch.ingredient }),
+    ...(patch.fdcId === undefined ? {} : { fdcId: patch.fdcId }),
+    ...(patch.name === undefined ? {} : { name: patch.name }),
     recipeId: patch.recipeId !== undefined ? patch.recipeId : existing.recipeId,
     targetText: patch.targetText !== undefined ? patch.targetText : existing.targetText,
   });

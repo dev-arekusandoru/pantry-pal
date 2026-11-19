@@ -14,14 +14,24 @@ Rules are guidance, not an allergy guarantee. See [Limits](#limits).
 | Field | Meaning |
 | --- | --- |
 | `scope` | What the rule targets: `ingredient`, `category`, `recipe`, `tag`, or `keyword`. |
-| Target | `ingredient` or `ingredientId` for an ingredient, `recipeId` for a recipe, or `targetText` for a category, tag, or keyword. |
+| Target | `ingredientId`, `ingredient`, or `fdcId` with `name` for an ingredient; `recipeId` for a recipe; or `targetText` for a category, tag, or keyword. |
 | `severity` | `forbidden`, `avoid`, or `limit`. |
 | `conditionNote` | An exception the assistant must judge, such as "ok if a minor ingredient". |
 | `reason` | Why the rule exists, such as "allergy" or "dislike". |
 | `memberId` | The household member it applies to. Null means the whole household. Add, rename, or remove members in **Settings** > **People**. Removing a member also deletes their rules. |
 
-An ingredient rule can name an ingredient that does not exist yet. The server
-creates the ingredient, so a ban can be recorded before the food is used.
+An ingredient rule must name an ingredient that PantryPal can find. Send one of:
+
+- `ingredientId` for an ingredient you have.
+- `ingredient` with the exact name or an alias of an ingredient you have.
+- `fdcId` with `name` for a USDA food you do not have yet. PantryPal creates a
+  linked ingredient, so a ban can be recorded before the food is used. If one
+  ingredient already links that food, the rule uses it.
+
+A bare name that matches nothing returns `unprocessable` (422) with
+suggestions, and nothing is saved. If you send more than one form, `ingredientId`
+wins, then `ingredient`, then `fdcId`. See
+[Ingredients](ingredients.md#through-the-api-or-mcp).
 
 ## How matching works
 
@@ -38,13 +48,14 @@ A keyword does not match inside a longer word. For example, `ham` does not match
 
 ## Add rules
 
-Ask the assistant, or call `rules_manage` directly. Create one ingredient ban:
+Ask the assistant, or call `rules_manage` directly. Find the ingredient first
+with `find_ingredient`. Create one ingredient ban:
 
 ```json
 {
   "action": "create",
   "scope": "ingredient",
-  "ingredient": "peanut",
+  "ingredientId": "ing_...",
   "severity": "forbidden",
   "reason": "allergy"
 }
@@ -64,8 +75,9 @@ Create a keyword rule with an exception:
 ```
 
 Use `rules_list` to read the rules. Use `rules_manage` with `action: "update"` or
-`action: "delete"` to change them. An update that passes `ingredient` moves an
-ingredient rule to that name.
+`action: "delete"` to change them. An update that passes `ingredientId`,
+`ingredient`, or `fdcId` with `name` moves an ingredient rule to that
+ingredient.
 
 The REST endpoints are `GET /rules`, `POST /rules`, `PATCH /rules/{id}`, and
 `DELETE /rules/{id}`. See the [REST API reference](../reference/rest-api.md).

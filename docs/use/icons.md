@@ -17,7 +17,10 @@ shopping list, the bowl looks dimmed with a dashed ring.
 
 ## Choose an icon
 
-1. Open the icon sheet. You can do this three ways:
+1. Open the icon sheet. You can do this four ways:
+   - On the [ingredient page](ingredients.md#the-ingredient-page), tap **Change
+     icon** under **Details**. This is the one place for all ingredient
+     settings.
    - In the Pantry, tap an ingredient, then tap **Change icon**.
    - On the shopping list, tap the icon in a row.
    - Tap a dimmed bowl.

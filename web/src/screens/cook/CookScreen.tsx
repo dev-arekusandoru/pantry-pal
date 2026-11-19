@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { errorMessage } from "@/api";
 import { Button, EmptyState, ErrorState, Icon, IconButton, Sheet, Skeleton, Sticker, buttonClass, ingredientEmoji, cx, toast } from "@/ui";
 import { formatClock, stepSeconds } from "../recipe/duration";
+import { withAlternatives } from "../ingredients/refs";
 import { formatAmount, formatNumber, localDate, type RecipeStepLink } from "../recipe/lib";
 import { isNotFound, usePlannedCooks, useRecipe, useScaledIngredients, useSetRecipeStatus } from "../recipe/queries";
 import type { EditableStatus } from "../recipe/status";
@@ -866,7 +867,7 @@ export function CookScreen({ slug, cookEvent, servings: servingsParam, resume = 
                 <Sticker emoji={ingredientEmoji(ri.ingredient.name, ri.ingredient.imageUrl)} fallback={ingredientEmoji(ri.ingredient.name)} tone="butter" size={32} />
                 <span>
                   {amount && <b>{amount} </b>}
-                  {ri.ingredient.name}
+                  {withAlternatives(ri.ingredient.name, ri.alternatives)}
                   {ri.prepNote && <small>, {ri.prepNote}</small>}
                   {ri.optional && <small> (optional)</small>}
                 </span>

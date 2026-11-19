@@ -24,7 +24,7 @@
   },
   "ingredients": [
     {
-      "name": "Olive oil",
+      "name": "Olive Oil",
       "category": "pantry",
       "defaultUnit": "tbsp",
       "aliases": [
@@ -32,7 +32,8 @@
         "evoo"
       ],
       "description": "Everyday cooking oil; also used for roasting and sauteing.",
-      "shelfLifeDays": 365
+      "shelfLifeDays": 365,
+      "fdcId": 171413
     },
     {
       "name": "Rice",
@@ -43,26 +44,29 @@
         "long grain rice",
         "jasmine rice"
       ],
-      "description": "Dry rice; about 1 cup dry yields 3 cups cooked."
+      "description": "Dry rice; about 1 cup dry yields 3 cups cooked.",
+      "fdcId": 168877
     },
     {
-      "name": "Chicken stock",
+      "name": "Chicken Stock",
       "category": "pantry",
       "defaultUnit": "cup",
       "aliases": [
         "chicken broth",
         "chicken soup base"
       ],
-      "description": "Stock or broth used for soup and sauces."
+      "description": "Stock or broth used for soup and sauces.",
+      "fdcId": 172884
     },
     {
-      "name": "Soy sauce",
+      "name": "Soy Sauce",
       "category": "condiment",
       "defaultUnit": "tbsp",
       "aliases": [
         "soy"
       ],
-      "description": "Low-sodium preferred for stir-fry."
+      "description": "Low-sodium preferred for stir-fry.",
+      "fdcId": 174277
     },
     {
       "name": "Cornstarch",
@@ -71,7 +75,8 @@
       "aliases": [
         "corn starch"
       ],
-      "description": "Thickener for stir-fry sauce."
+      "description": "Thickener for stir-fry sauce.",
+      "fdcId": 169698
     },
     {
       "name": "Butter",
@@ -81,97 +86,108 @@
         "unsalted butter",
         "salted butter"
       ],
-      "shelfLifeDays": 30
+      "shelfLifeDays": 30,
+      "fdcId": 173410
     },
     {
-      "name": "All-purpose flour",
+      "name": "All-Purpose Flour",
       "category": "baking",
       "defaultUnit": "cup",
       "aliases": [
         "flour",
         "ap flour"
       ],
-      "description": "Roux thickener and pancake base."
+      "description": "Roux thickener and pancake base.",
+      "fdcId": 168894
     },
     {
       "name": "Honey",
       "category": "pantry",
       "defaultUnit": "tbsp",
-      "aliases": []
+      "aliases": [],
+      "fdcId": 169640
     },
     {
-      "name": "Unsweetened cocoa powder",
+      "name": "Unsweetened Cocoa Powder",
       "category": "baking",
       "defaultUnit": "tbsp",
       "aliases": [
         "cocoa powder",
         "cocoa"
       ],
-      "description": "Secret chili ingredient; adds depth without chocolate flavor."
+      "description": "Secret chili ingredient; adds depth without chocolate flavor.",
+      "fdcId": 169593
     },
     {
-      "name": "Granulated sugar",
+      "name": "Granulated Sugar",
       "category": "baking",
       "defaultUnit": "cup",
       "aliases": [
         "sugar",
         "white sugar"
       ],
-      "description": "Also used as a 1 tsp measure in chili."
+      "description": "Also used as a 1 tsp measure in chili.",
+      "fdcId": 169655
     },
     {
-      "name": "Red pepper flakes",
+      "name": "Red Pepper Flakes",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "crushed red pepper"
       ],
-      "description": "Served on the side so the household can add heat after cooking."
+      "description": "Served on the side so the household can add heat after cooking.",
+      "fdcId": 170932
     },
     {
-      "name": "Toasted sesame oil",
+      "name": "Toasted Sesame Oil",
       "category": "pantry",
       "defaultUnit": "tsp",
       "aliases": [
         "sesame oil"
       ],
-      "description": "Finishing oil for stir-fry; small bottle."
+      "description": "Finishing oil for stir-fry; small bottle.",
+      "fdcId": 171016
     },
     {
-      "name": "Brown sugar",
+      "name": "Brown Sugar",
       "category": "baking",
       "defaultUnit": "tbsp",
       "aliases": [
         "light brown sugar",
         "dark brown sugar"
-      ]
+      ],
+      "fdcId": 168833
     },
     {
-      "name": "Penne pasta",
+      "name": "Penne Pasta",
       "category": "pantry",
       "defaultUnit": "oz",
       "aliases": [
         "pasta",
         "penne"
       ],
-      "description": "Pantry holds 10 oz penne plus other pasta shapes."
+      "description": "Pantry holds 10 oz penne plus other pasta shapes.",
+      "fdcId": 169736
     },
     {
-      "name": "Dried oregano",
+      "name": "Dried Oregano",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "oregano"
-      ]
+      ],
+      "fdcId": 171328
     },
     {
-      "name": "Ground ginger",
+      "name": "Ground Ginger",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "ginger powder",
         "ginger"
-      ]
+      ],
+      "fdcId": 170926
     },
     {
       "name": "Salt",
@@ -181,20 +197,22 @@
         "kosher salt",
         "table salt",
         "sea salt"
-      ]
+      ],
+      "fdcId": 173468
     },
     {
-      "name": "Black pepper",
+      "name": "Black Pepper",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "pepper",
         "ground black pepper",
         "freshly ground black pepper"
-      ]
+      ],
+      "fdcId": 170931
     },
     {
-      "name": "Ground beef",
+      "name": "Ground Beef",
       "category": "protein",
       "defaultUnit": "lb",
       "aliases": [
@@ -204,10 +222,11 @@
         "hamburger meat"
       ],
       "description": "85% lean. The only beef cut the household uses.",
-      "shelfLifeDays": 2
+      "shelfLifeDays": 2,
+      "fdcId": 171796
     },
     {
-      "name": "Chicken breast",
+      "name": "Chicken Breast",
       "category": "protein",
       "defaultUnit": "lb",
       "aliases": [
@@ -216,10 +235,11 @@
         "chicken breast pieces"
       ],
       "description": "Boneless, skinless. About 8 oz per breast.",
-      "shelfLifeDays": 2
+      "shelfLifeDays": 2,
+      "fdcId": 171077
     },
     {
-      "name": "Salmon fillets",
+      "name": "Salmon Fillets",
       "category": "protein",
       "defaultUnit": "count",
       "aliases": [
@@ -229,19 +249,21 @@
         "salmon filets"
       ],
       "description": "Skinless fillets, about 6 oz each.",
-      "shelfLifeDays": 2
+      "shelfLifeDays": 2,
+      "fdcId": 175167
     },
     {
-      "name": "Red onion",
+      "name": "Red Onion",
       "category": "produce",
       "defaultUnit": "count",
       "aliases": [
         "red onions"
       ],
-      "shelfLifeDays": 30
+      "shelfLifeDays": 30,
+      "fdcId": 790577
     },
     {
-      "name": "Yellow onion",
+      "name": "Yellow Onion",
       "category": "produce",
       "defaultUnit": "count",
       "aliases": [
@@ -251,7 +273,8 @@
         "large yellow onion",
         "small onion"
       ],
-      "shelfLifeDays": 30
+      "shelfLifeDays": 30,
+      "fdcId": 170000
     },
     {
       "name": "Garlic",
@@ -264,7 +287,8 @@
         "roasted garlic cloves"
       ],
       "description": "About 10 cloves per head.",
-      "shelfLifeDays": 60
+      "shelfLifeDays": 60,
+      "fdcId": 169230
     },
     {
       "name": "Carrots",
@@ -273,7 +297,8 @@
       "aliases": [
         "carrot"
       ],
-      "shelfLifeDays": 14
+      "shelfLifeDays": 14,
+      "fdcId": 170393
     },
     {
       "name": "Celery",
@@ -283,7 +308,8 @@
         "celery stalks",
         "celery stalk"
       ],
-      "shelfLifeDays": 14
+      "shelfLifeDays": 14,
+      "fdcId": 169988
     },
     {
       "name": "Turnips",
@@ -292,7 +318,8 @@
       "aliases": [
         "turnip"
       ],
-      "shelfLifeDays": 14
+      "shelfLifeDays": 14,
+      "fdcId": 170465
     },
     {
       "name": "Parsnips",
@@ -301,10 +328,11 @@
       "aliases": [
         "parsnip"
       ],
-      "shelfLifeDays": 14
+      "shelfLifeDays": 14,
+      "fdcId": 170417
     },
     {
-      "name": "Red bell pepper",
+      "name": "Red Bell Pepper",
       "category": "produce",
       "defaultUnit": "count",
       "aliases": [
@@ -313,10 +341,11 @@
         "bell pepper",
         "bell peppers"
       ],
-      "shelfLifeDays": 7
+      "shelfLifeDays": 7,
+      "fdcId": 170108
     },
     {
-      "name": "Broccoli florets",
+      "name": "Broccoli Florets",
       "category": "produce",
       "defaultUnit": "head",
       "aliases": [
@@ -324,7 +353,8 @@
         "broccoli floret"
       ],
       "description": "One large head yields about 3 cups of florets.",
-      "shelfLifeDays": 7
+      "shelfLifeDays": 7,
+      "fdcId": 170379
     },
     {
       "name": "Zucchini",
@@ -334,10 +364,11 @@
         "zucchinis",
         "medium zucchini"
       ],
-      "shelfLifeDays": 7
+      "shelfLifeDays": 7,
+      "fdcId": 169291
     },
     {
-      "name": "White potato",
+      "name": "White Potato",
       "category": "produce",
       "defaultUnit": "count",
       "aliases": [
@@ -347,7 +378,8 @@
         "large white potato"
       ],
       "description": "One large potato is about 8 oz.",
-      "shelfLifeDays": 30
+      "shelfLifeDays": 30,
+      "fdcId": 170028
     },
     {
       "name": "Lemon",
@@ -357,10 +389,11 @@
         "lemons",
         "lemon wedges"
       ],
-      "shelfLifeDays": 14
+      "shelfLifeDays": 14,
+      "fdcId": 167746
     },
     {
-      "name": "Fresh basil",
+      "name": "Fresh Basil",
       "category": "produce",
       "defaultUnit": "bunch",
       "aliases": [
@@ -368,10 +401,11 @@
         "basil leaves",
         "fresh basil leaves"
       ],
-      "shelfLifeDays": 5
+      "shelfLifeDays": 5,
+      "fdcId": 172232
     },
     {
-      "name": "Fresh dill",
+      "name": "Fresh Dill",
       "category": "produce",
       "defaultUnit": "bunch",
       "aliases": [
@@ -379,30 +413,33 @@
         "dill sprig",
         "fresh dill sprig"
       ],
-      "shelfLifeDays": 5
+      "shelfLifeDays": 5,
+      "fdcId": 172233
     },
     {
-      "name": "Fresh rosemary",
+      "name": "Fresh Rosemary",
       "category": "produce",
       "defaultUnit": "sprig",
       "aliases": [
         "rosemary",
         "fresh rosemary sprig"
       ],
-      "shelfLifeDays": 10
+      "shelfLifeDays": 10,
+      "fdcId": 173473
     },
     {
-      "name": "Heavy cream",
+      "name": "Heavy Cream",
       "category": "dairy",
       "defaultUnit": "cup",
       "aliases": [
         "heavy whipping cream",
         "cream"
       ],
-      "shelfLifeDays": 10
+      "shelfLifeDays": 10,
+      "fdcId": 170859
     },
     {
-      "name": "Parmesan cheese",
+      "name": "Parmesan Cheese",
       "category": "dairy",
       "defaultUnit": "cup",
       "aliases": [
@@ -412,10 +449,11 @@
         "grated parmesan cheese"
       ],
       "description": "Grated; freshly grated melts best.",
-      "shelfLifeDays": 30
+      "shelfLifeDays": 30,
+      "fdcId": 171247
     },
     {
-      "name": "Shredded cheddar",
+      "name": "Shredded Cheddar",
       "category": "dairy",
       "defaultUnit": "bag",
       "aliases": [
@@ -425,7 +463,8 @@
         "mild cheddar"
       ],
       "description": "Mild cheddar for chili topping.",
-      "shelfLifeDays": 14
+      "shelfLifeDays": 14,
+      "fdcId": 173414
     },
     {
       "name": "Milk",
@@ -435,7 +474,8 @@
         "whole milk",
         "2% milk"
       ],
-      "shelfLifeDays": 7
+      "shelfLifeDays": 7,
+      "fdcId": 171265
     },
     {
       "name": "Bread",
@@ -446,50 +486,57 @@
         "sandwich bread",
         "white bread"
       ],
-      "shelfLifeDays": 5
+      "shelfLifeDays": 5,
+      "fdcId": 325871
     },
     {
-      "name": "Eggs",
+      "name": "Egg",
       "category": "protein",
       "defaultUnit": "count",
       "aliases": [
-        "egg",
+        "eggs",
         "large eggs",
         "large egg"
       ],
-      "shelfLifeDays": 21
+      "shelfLifeDays": 21,
+      "fdcId": 171287,
+      "defaultPortion": "large"
     },
     {
-      "name": "Rolled oats",
+      "name": "Rolled Oats",
       "category": "pantry",
       "defaultUnit": "cup",
       "aliases": [
         "oats",
         "old-fashioned oats",
         "oatmeal"
-      ]
+      ],
+      "fdcId": 173904
     },
     {
-      "name": "Chia seeds",
+      "name": "Chia Seeds",
       "category": "pantry",
       "defaultUnit": "tbsp",
       "aliases": [
         "chia"
-      ]
+      ],
+      "fdcId": 170554
     },
     {
-      "name": "Vanilla extract",
+      "name": "Vanilla Extract",
       "category": "baking",
       "defaultUnit": "tsp",
       "aliases": [
         "vanilla"
-      ]
+      ],
+      "fdcId": 173471
     },
     {
-      "name": "Baking powder",
+      "name": "Baking Powder",
       "category": "baking",
       "defaultUnit": "tsp",
-      "aliases": []
+      "aliases": [],
+      "fdcId": 172803
     },
     {
       "name": "Water",
@@ -498,14 +545,16 @@
       "aliases": [
         "cold water"
       ],
-      "description": "Used for cornstarch slurry and rice."
+      "description": "Used for cornstarch slurry and rice.",
+      "fdcId": 174158
     },
     {
-      "name": "Peanut oil",
+      "name": "Peanut Oil",
       "category": "pantry",
       "defaultUnit": "tbsp",
       "aliases": [],
-      "description": "High-heat stir-fry oil; vegetable or olive oil can substitute."
+      "description": "High-heat stir-fry oil; vegetable or olive oil can substitute.",
+      "fdcId": 171410
     },
     {
       "name": "Mayonnaise",
@@ -514,10 +563,11 @@
       "aliases": [
         "mayo"
       ],
-      "description": "Declared only so the avoid rule can reference it; not currently stocked."
+      "description": "Declared only so the avoid rule can reference it; not currently stocked.",
+      "fdcId": 171009
     },
     {
-      "name": "Diced tomatoes with green chilies",
+      "name": "Diced Tomatoes with Green Chilies",
       "category": "canned",
       "defaultUnit": "can",
       "aliases": [
@@ -526,48 +576,53 @@
         "diced tomatoes w/ green chilies",
         "rotel"
       ],
-      "description": "Mild; 14.5 oz cans."
+      "description": "Mild; 14.5 oz cans.",
+      "fdcId": 333281
     },
     {
-      "name": "Tomato sauce",
+      "name": "Tomato Sauce",
       "category": "canned",
       "defaultUnit": "can",
       "aliases": [
         "canned tomato sauce"
       ],
-      "description": "8 oz cans; 3 cans equal about 24 oz."
+      "description": "8 oz cans; 3 cans equal about 24 oz.",
+      "fdcId": 170054
     },
     {
-      "name": "Dark red kidney beans",
+      "name": "Dark Red Kidney Beans",
       "category": "canned",
       "defaultUnit": "can",
       "aliases": [
         "dark kidney beans"
       ],
-      "description": "15 oz can."
+      "description": "15 oz can.",
+      "fdcId": 175195
     },
     {
-      "name": "Light red kidney beans",
+      "name": "Light Red Kidney Beans",
       "category": "canned",
       "defaultUnit": "can",
       "aliases": [
         "light kidney beans"
       ],
-      "description": "15 oz can."
+      "description": "15 oz can.",
+      "fdcId": 175195
     },
     {
-      "name": "Sun-dried tomatoes (in oil)",
+      "name": "Sun-Dried Tomatoes",
       "category": "canned",
       "defaultUnit": "jar",
       "aliases": [
-        "sun-dried tomatoes",
+        "sun-dried tomatoes in oil",
         "sundried tomatoes",
         "sun dried tomatoes"
       ],
-      "description": "Oil-packed; a small jar drains to about 1 cup."
+      "description": "Oil-packed; a small jar drains to about 1 cup.",
+      "fdcId": 169384
     },
     {
-      "name": "Mixed pitted olives",
+      "name": "Mixed Pitted Olives",
       "category": "canned",
       "defaultUnit": "jar",
       "aliases": [
@@ -575,32 +630,36 @@
         "pitted olives",
         "olives"
       ],
-      "description": "Kalamata/Castelvetrano mix; small jar holds about 1/2 cup drained."
+      "description": "Kalamata/Castelvetrano mix; small jar holds about 1/2 cup drained.",
+      "fdcId": 169094
     },
     {
-      "name": "Beef broth",
+      "name": "Beef Broth",
       "category": "canned",
       "defaultUnit": "cup",
       "aliases": [
         "beef stock"
       ],
-      "description": "Carton or can; used in chili and pasta sauce."
+      "description": "Carton or can; used in chili and pasta sauce.",
+      "fdcId": 171538
     },
     {
-      "name": "Chili powder",
+      "name": "Chili Powder",
       "category": "spice",
       "defaultUnit": "tbsp",
       "aliases": [
         "ground chili powder"
-      ]
+      ],
+      "fdcId": 171319
     },
     {
-      "name": "Ground cumin",
+      "name": "Ground Cumin",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "cumin"
-      ]
+      ],
+      "fdcId": 170923
     },
     {
       "name": "Paprika",
@@ -608,93 +667,100 @@
       "defaultUnit": "tsp",
       "aliases": [
         "ground paprika"
-      ]
+      ],
+      "fdcId": 171329
     },
     {
-      "name": "Sweet paprika",
+      "name": "Sweet Paprika",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [],
-      "description": "Sweet (not smoked) paprika for the salmon."
+      "description": "Sweet (not smoked) paprika for the salmon.",
+      "fdcId": 171329
     },
     {
-      "name": "Ground coriander",
+      "name": "Ground Coriander",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "coriander"
-      ]
+      ],
+      "fdcId": 170922
     },
     {
-      "name": "Garlic powder",
+      "name": "Garlic Powder",
       "category": "spice",
       "defaultUnit": "tsp",
-      "aliases": []
+      "aliases": [],
+      "fdcId": 171325
     },
     {
-      "name": "Dried parsley",
+      "name": "Dried Parsley",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "parsley flakes"
-      ]
+      ],
+      "fdcId": 170930
     },
     {
-      "name": "Italian seasoning",
+      "name": "Italian Seasoning",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "dried italian seasoning",
         "italian herb seasoning"
-      ]
+      ],
+      "custom": true
     },
     {
-      "name": "White pepper",
+      "name": "White Pepper",
       "category": "spice",
       "defaultUnit": "tsp",
       "aliases": [
         "ground white pepper"
-      ]
+      ],
+      "fdcId": 170933
     }
   ],
   "unitConversions": [
     {
-      "ingredient": "Diced tomatoes with green chilies",
+      "ingredient": "Diced Tomatoes with Green Chilies",
       "fromUnit": "can",
       "toUnit": "oz",
       "factor": 14.5,
       "note": "One 14.5 oz can."
     },
     {
-      "ingredient": "Tomato sauce",
+      "ingredient": "Tomato Sauce",
       "fromUnit": "can",
       "toUnit": "oz",
       "factor": 8,
       "note": "One 8 oz can; 3 cans approximately equal one 24 oz can."
     },
     {
-      "ingredient": "Dark red kidney beans",
+      "ingredient": "Dark Red Kidney Beans",
       "fromUnit": "can",
       "toUnit": "oz",
       "factor": 15,
       "note": "One 15 oz can."
     },
     {
-      "ingredient": "Light red kidney beans",
+      "ingredient": "Light Red Kidney Beans",
       "fromUnit": "can",
       "toUnit": "oz",
       "factor": 15,
       "note": "One 15 oz can."
     },
     {
-      "ingredient": "Chicken breast",
+      "ingredient": "Chicken Breast",
       "fromUnit": "count",
       "toUnit": "lb",
       "factor": 0.5,
       "note": "One boneless skinless breast is about 8 oz."
     },
     {
-      "ingredient": "Chicken breast",
+      "ingredient": "Chicken Breast",
       "fromUnit": "count",
       "toUnit": "oz",
       "factor": 8,
@@ -715,56 +781,56 @@
       "note": "One minced clove is about 1/2 tsp."
     },
     {
-      "ingredient": "Broccoli florets",
+      "ingredient": "Broccoli Florets",
       "fromUnit": "head",
       "toUnit": "cup",
       "factor": 3,
       "note": "One large head yields about 3 cups of florets."
     },
     {
-      "ingredient": "Salmon fillets",
+      "ingredient": "Salmon Fillets",
       "fromUnit": "count",
       "toUnit": "oz",
       "factor": 6,
       "note": "One fillet is about 6 oz."
     },
     {
-      "ingredient": "Salmon fillets",
+      "ingredient": "Salmon Fillets",
       "fromUnit": "count",
       "toUnit": "lb",
       "factor": 0.375,
       "note": "One 6 oz fillet is 0.375 lb; 4 fillets equal 1.5 lb."
     },
     {
-      "ingredient": "White potato",
+      "ingredient": "White Potato",
       "fromUnit": "count",
       "toUnit": "oz",
       "factor": 8,
       "note": "One large potato is about 8 oz."
     },
     {
-      "ingredient": "Fresh dill",
+      "ingredient": "Fresh Dill",
       "fromUnit": "bunch",
       "toUnit": "sprig",
       "factor": 8,
       "note": "One small bunch yields about 8 sprigs."
     },
     {
-      "ingredient": "Sun-dried tomatoes (in oil)",
+      "ingredient": "Sun-Dried Tomatoes",
       "fromUnit": "jar",
       "toUnit": "cup",
       "factor": 1,
       "note": "One small jar drains to about 1 cup."
     },
     {
-      "ingredient": "Mixed pitted olives",
+      "ingredient": "Mixed Pitted Olives",
       "fromUnit": "jar",
       "toUnit": "cup",
       "factor": 0.5,
       "note": "One small jar drains to about 1/2 cup."
     },
     {
-      "ingredient": "Shredded cheddar",
+      "ingredient": "Shredded Cheddar",
       "fromUnit": "bag",
       "toUnit": "cup",
       "factor": 2,
@@ -773,7 +839,7 @@
   ],
   "pantry": [
     {
-      "ingredient": "Olive oil",
+      "ingredient": "Olive Oil",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -791,7 +857,7 @@
       "note": "Amount not tracked."
     },
     {
-      "ingredient": "Chicken stock",
+      "ingredient": "Chicken Stock",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -800,7 +866,7 @@
       "note": "Amount not tracked."
     },
     {
-      "ingredient": "Soy sauce",
+      "ingredient": "Soy Sauce",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -827,7 +893,7 @@
       "note": null
     },
     {
-      "ingredient": "All-purpose flour",
+      "ingredient": "All-Purpose Flour",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -845,7 +911,7 @@
       "note": null
     },
     {
-      "ingredient": "Unsweetened cocoa powder",
+      "ingredient": "Unsweetened Cocoa Powder",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -854,7 +920,7 @@
       "note": null
     },
     {
-      "ingredient": "Granulated sugar",
+      "ingredient": "Granulated Sugar",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -863,7 +929,7 @@
       "note": null
     },
     {
-      "ingredient": "Red pepper flakes",
+      "ingredient": "Red Pepper Flakes",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -872,7 +938,7 @@
       "note": null
     },
     {
-      "ingredient": "Toasted sesame oil",
+      "ingredient": "Toasted Sesame Oil",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -881,7 +947,7 @@
       "note": null
     },
     {
-      "ingredient": "Brown sugar",
+      "ingredient": "Brown Sugar",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -890,7 +956,7 @@
       "note": null
     },
     {
-      "ingredient": "Penne pasta",
+      "ingredient": "Penne Pasta",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -899,7 +965,7 @@
       "note": "Amount not tracked."
     },
     {
-      "ingredient": "Dried oregano",
+      "ingredient": "Dried Oregano",
       "qty": 0.5,
       "unit": "tsp",
       "qtyApprox": false,
@@ -908,7 +974,7 @@
       "note": null
     },
     {
-      "ingredient": "Ground ginger",
+      "ingredient": "Ground Ginger",
       "qty": 0.5,
       "unit": "tsp",
       "qtyApprox": false,
@@ -926,7 +992,7 @@
       "note": null
     },
     {
-      "ingredient": "Black pepper",
+      "ingredient": "Black Pepper",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
@@ -935,7 +1001,7 @@
       "note": null
     },
     {
-      "ingredient": "Ground beef",
+      "ingredient": "Ground Beef",
       "qty": 3,
       "unit": "lb",
       "qtyApprox": false,
@@ -944,7 +1010,7 @@
       "note": null
     },
     {
-      "ingredient": "Chicken breast",
+      "ingredient": "Chicken Breast",
       "qty": 1.5,
       "unit": "lb",
       "qtyApprox": false,
@@ -953,7 +1019,7 @@
       "note": null
     },
     {
-      "ingredient": "Salmon fillets",
+      "ingredient": "Salmon Fillets",
       "qty": 2,
       "unit": "count",
       "qtyApprox": false,
@@ -962,7 +1028,7 @@
       "note": null
     },
     {
-      "ingredient": "Red onion",
+      "ingredient": "Red Onion",
       "qty": 2,
       "unit": "count",
       "qtyApprox": false,
@@ -971,7 +1037,7 @@
       "note": null
     },
     {
-      "ingredient": "Yellow onion",
+      "ingredient": "Yellow Onion",
       "qty": 2,
       "unit": "count",
       "qtyApprox": false,
@@ -1025,7 +1091,7 @@
       "note": null
     },
     {
-      "ingredient": "Red bell pepper",
+      "ingredient": "Red Bell Pepper",
       "qty": 1,
       "unit": "count",
       "qtyApprox": false,
@@ -1034,7 +1100,7 @@
       "note": null
     },
     {
-      "ingredient": "Broccoli florets",
+      "ingredient": "Broccoli Florets",
       "qty": 1,
       "unit": "head",
       "qtyApprox": false,
@@ -1052,7 +1118,7 @@
       "note": null
     },
     {
-      "ingredient": "White potato",
+      "ingredient": "White Potato",
       "qty": 2,
       "unit": "count",
       "qtyApprox": false,
@@ -1070,7 +1136,7 @@
       "note": null
     },
     {
-      "ingredient": "Fresh basil",
+      "ingredient": "Fresh Basil",
       "qty": 1,
       "unit": "bunch",
       "qtyApprox": false,
@@ -1079,7 +1145,7 @@
       "note": null
     },
     {
-      "ingredient": "Fresh dill",
+      "ingredient": "Fresh Dill",
       "qty": 2,
       "unit": "bunch",
       "qtyApprox": false,
@@ -1088,7 +1154,7 @@
       "note": null
     },
     {
-      "ingredient": "Fresh rosemary",
+      "ingredient": "Fresh Rosemary",
       "qty": 1,
       "unit": "sprig",
       "qtyApprox": false,
@@ -1097,7 +1163,7 @@
       "note": null
     },
     {
-      "ingredient": "Heavy cream",
+      "ingredient": "Heavy Cream",
       "qty": 2,
       "unit": "cup",
       "qtyApprox": false,
@@ -1106,7 +1172,7 @@
       "note": null
     },
     {
-      "ingredient": "Parmesan cheese",
+      "ingredient": "Parmesan Cheese",
       "qty": 1.5,
       "unit": "cup",
       "qtyApprox": false,
@@ -1115,7 +1181,7 @@
       "note": null
     },
     {
-      "ingredient": "Shredded cheddar",
+      "ingredient": "Shredded Cheddar",
       "qty": 1,
       "unit": "bag",
       "qtyApprox": false,
@@ -1124,7 +1190,7 @@
       "note": null
     },
     {
-      "ingredient": "Diced tomatoes with green chilies",
+      "ingredient": "Diced Tomatoes with Green Chilies",
       "qty": 1,
       "unit": "can",
       "qtyApprox": false,
@@ -1133,7 +1199,7 @@
       "note": null
     },
     {
-      "ingredient": "Tomato sauce",
+      "ingredient": "Tomato Sauce",
       "qty": 3,
       "unit": "can",
       "qtyApprox": false,
@@ -1142,16 +1208,16 @@
       "note": null
     },
     {
-      "ingredient": "Sun-dried tomatoes (in oil)",
+      "ingredient": "Sun-Dried Tomatoes",
       "qty": 2,
       "unit": "jar",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Sun-dried tomatoes (in oil) | 2 jar | canned | 2026-02-01",
+      "rawText": "Sun-dried tomatoes | 2 jar | canned | 2026-02-01",
       "note": null
     },
     {
-      "ingredient": "Dark red kidney beans",
+      "ingredient": "Dark Red Kidney Beans",
       "qty": 2,
       "unit": "can",
       "qtyApprox": false,
@@ -1160,7 +1226,7 @@
       "note": null
     },
     {
-      "ingredient": "Light red kidney beans",
+      "ingredient": "Light Red Kidney Beans",
       "qty": 2,
       "unit": "can",
       "qtyApprox": false,
@@ -1169,7 +1235,7 @@
       "note": null
     },
     {
-      "ingredient": "Mixed pitted olives",
+      "ingredient": "Mixed Pitted Olives",
       "qty": 1,
       "unit": "jar",
       "qtyApprox": false,
@@ -1178,7 +1244,7 @@
       "note": null
     },
     {
-      "ingredient": "Beef broth",
+      "ingredient": "Beef Broth",
       "qty": 1,
       "unit": "cup",
       "qtyApprox": false,
@@ -1306,7 +1372,7 @@
       "notes": "Household makes this mild: use diced tomatoes with MILD green chilies and pass red pepper flakes on the side. Ingredient quantities are for 8 servings; the lunch batch is scaled to 6.",
       "ingredients": [
         {
-          "ingredient": "Olive oil",
+          "ingredient": "Olive Oil",
           "qty": 1,
           "unit": "tbsp",
           "prepNote": null,
@@ -1315,7 +1381,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Ground beef",
+          "ingredient": "Ground Beef",
           "qty": 2,
           "unit": "lb",
           "prepNote": "85% lean",
@@ -1324,7 +1390,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Yellow onion",
+          "ingredient": "Yellow Onion",
           "qty": 1,
           "unit": "count",
           "prepNote": "large, finely chopped",
@@ -1342,7 +1408,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Diced tomatoes with green chilies",
+          "ingredient": "Diced Tomatoes with Green Chilies",
           "qty": 2,
           "unit": "can",
           "prepNote": "mild",
@@ -1351,7 +1417,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Tomato sauce",
+          "ingredient": "Tomato Sauce",
           "qty": 3,
           "unit": "can",
           "prepNote": "8 oz cans",
@@ -1360,7 +1426,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Beef broth",
+          "ingredient": "Beef Broth",
           "qty": 0.5,
           "unit": "cup",
           "prepNote": null,
@@ -1369,7 +1435,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Chili powder",
+          "ingredient": "Chili Powder",
           "qty": 2,
           "unit": "tbsp",
           "prepNote": null,
@@ -1378,7 +1444,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Ground cumin",
+          "ingredient": "Ground Cumin",
           "qty": 2.5,
           "unit": "tsp",
           "prepNote": null,
@@ -1396,7 +1462,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Unsweetened cocoa powder",
+          "ingredient": "Unsweetened Cocoa Powder",
           "qty": 2,
           "unit": "tsp",
           "prepNote": null,
@@ -1405,7 +1471,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Granulated sugar",
+          "ingredient": "Granulated Sugar",
           "qty": 1,
           "unit": "tsp",
           "prepNote": null,
@@ -1414,7 +1480,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Ground coriander",
+          "ingredient": "Ground Coriander",
           "qty": 0.5,
           "unit": "tsp",
           "prepNote": null,
@@ -1432,7 +1498,7 @@
           "scalingExempt": true
         },
         {
-          "ingredient": "Black pepper",
+          "ingredient": "Black Pepper",
           "qty": null,
           "unit": null,
           "prepNote": "to taste",
@@ -1441,7 +1507,7 @@
           "scalingExempt": true
         },
         {
-          "ingredient": "Dark red kidney beans",
+          "ingredient": "Dark Red Kidney Beans",
           "qty": 1,
           "unit": "can",
           "prepNote": "drained and rinsed",
@@ -1450,7 +1516,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Light red kidney beans",
+          "ingredient": "Light Red Kidney Beans",
           "qty": 1,
           "unit": "can",
           "prepNote": "drained and rinsed",
@@ -1459,7 +1525,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Shredded cheddar",
+          "ingredient": "Shredded Cheddar",
           "qty": null,
           "unit": null,
           "prepNote": "for serving",
@@ -1542,7 +1608,7 @@
       "notes": "Source recipe is 10 servings; the plan scales the lunch batch to 6. Roasted garlic gives a mellow flavor, but regular garlic cloves can be substituted. Bone-in chicken pieces add flavor; add noodles or rice to make it heartier.",
       "ingredients": [
         {
-          "ingredient": "Chicken breast",
+          "ingredient": "Chicken Breast",
           "qty": 2,
           "unit": "count",
           "prepNote": "boneless skinless; bone-in pieces add flavor",
@@ -1597,7 +1663,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Yellow onion",
+          "ingredient": "Yellow Onion",
           "qty": 1,
           "unit": "count",
           "prepNote": "small, chopped",
@@ -1606,7 +1672,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Fresh dill",
+          "ingredient": "Fresh Dill",
           "qty": 1,
           "unit": "sprig",
           "prepNote": null,
@@ -1615,7 +1681,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Fresh rosemary",
+          "ingredient": "Fresh Rosemary",
           "qty": 1,
           "unit": "sprig",
           "prepNote": null,
@@ -1624,7 +1690,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Chicken stock",
+          "ingredient": "Chicken Stock",
           "qty": 10,
           "unit": "cup",
           "prepNote": null,
@@ -1642,7 +1708,7 @@
           "scalingExempt": true
         },
         {
-          "ingredient": "Black pepper",
+          "ingredient": "Black Pepper",
           "qty": null,
           "unit": null,
           "prepNote": "to taste",
@@ -1715,7 +1781,7 @@
       "notes": "Household keeps this mild: skip added heat in the sauce and pass red pepper flakes at the table if desired. Uses sun-dried tomatoes, not canned tomatoes. Use freshly grated parmesan for the best melt.",
       "ingredients": [
         {
-          "ingredient": "Chicken breast",
+          "ingredient": "Chicken Breast",
           "qty": 1.5,
           "unit": "lb",
           "prepNote": "boneless skinless, cut into 1-inch pieces",
@@ -1725,7 +1791,7 @@
           "groupLabel": "Chicken Pasta"
         },
         {
-          "ingredient": "Penne pasta",
+          "ingredient": "Penne Pasta",
           "qty": 10,
           "unit": "oz",
           "prepNote": null,
@@ -1745,7 +1811,7 @@
           "groupLabel": "Chicken Pasta"
         },
         {
-          "ingredient": "Black pepper",
+          "ingredient": "Black Pepper",
           "qty": 0.25,
           "unit": "tsp",
           "prepNote": null,
@@ -1755,7 +1821,7 @@
           "groupLabel": "Chicken Pasta"
         },
         {
-          "ingredient": "Olive oil",
+          "ingredient": "Olive Oil",
           "qty": 1,
           "unit": "tbsp",
           "prepNote": null,
@@ -1785,7 +1851,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "All-purpose flour",
+          "ingredient": "All-Purpose Flour",
           "qty": 3,
           "unit": "tbsp",
           "prepNote": null,
@@ -1795,7 +1861,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Chicken stock",
+          "ingredient": "Chicken Stock",
           "qty": 2,
           "unit": "cup",
           "prepNote": null,
@@ -1805,7 +1871,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Heavy cream",
+          "ingredient": "Heavy Cream",
           "qty": 1,
           "unit": "cup",
           "prepNote": null,
@@ -1815,7 +1881,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Parmesan cheese",
+          "ingredient": "Parmesan Cheese",
           "qty": 1,
           "unit": "cup",
           "prepNote": "grated",
@@ -1825,7 +1891,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Sun-dried tomatoes (in oil)",
+          "ingredient": "Sun-Dried Tomatoes",
           "qty": 1,
           "unit": "cup",
           "prepNote": "drained",
@@ -1845,7 +1911,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Italian seasoning",
+          "ingredient": "Italian Seasoning",
           "qty": 2,
           "unit": "tsp",
           "prepNote": "dried",
@@ -1855,7 +1921,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Fresh basil",
+          "ingredient": "Fresh Basil",
           "qty": null,
           "unit": null,
           "prepNote": "chopped, for garnish",
@@ -1968,7 +2034,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Red bell pepper",
+          "ingredient": "Red Bell Pepper",
           "qty": 1,
           "unit": "count",
           "prepNote": "stem and seeds removed, sliced",
@@ -1978,7 +2044,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Red onion",
+          "ingredient": "Red Onion",
           "qty": 1,
           "unit": "count",
           "prepNote": "small, cut into chunks",
@@ -1988,7 +2054,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "White potato",
+          "ingredient": "White Potato",
           "qty": 8,
           "unit": "oz",
           "prepNote": "from 1 large potato, 1/2-inch rounds, halved",
@@ -1998,7 +2064,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Olive oil",
+          "ingredient": "Olive Oil",
           "qty": 2,
           "unit": "tsp",
           "prepNote": "extra virgin",
@@ -2018,7 +2084,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Black pepper",
+          "ingredient": "Black Pepper",
           "qty": 0.25,
           "unit": "tsp",
           "prepNote": null,
@@ -2028,7 +2094,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Garlic powder",
+          "ingredient": "Garlic Powder",
           "qty": 0.5,
           "unit": "tsp",
           "prepNote": null,
@@ -2038,7 +2104,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Dried parsley",
+          "ingredient": "Dried Parsley",
           "qty": 1,
           "unit": "tsp",
           "prepNote": null,
@@ -2048,7 +2114,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Dried oregano",
+          "ingredient": "Dried Oregano",
           "qty": 1,
           "unit": "tsp",
           "prepNote": null,
@@ -2058,7 +2124,7 @@
           "groupLabel": "For the Vegetables"
         },
         {
-          "ingredient": "Salmon fillets",
+          "ingredient": "Salmon Fillets",
           "qty": 4,
           "unit": "count",
           "prepNote": "6 oz each, skinless",
@@ -2068,7 +2134,7 @@
           "groupLabel": "For the Salmon"
         },
         {
-          "ingredient": "Olive oil",
+          "ingredient": "Olive Oil",
           "qty": 1,
           "unit": "tsp",
           "prepNote": "extra virgin",
@@ -2078,7 +2144,7 @@
           "groupLabel": "For the Salmon"
         },
         {
-          "ingredient": "Sweet paprika",
+          "ingredient": "Sweet Paprika",
           "qty": 0.25,
           "unit": "tsp",
           "prepNote": null,
@@ -2088,7 +2154,7 @@
           "groupLabel": "For the Salmon"
         },
         {
-          "ingredient": "Garlic powder",
+          "ingredient": "Garlic Powder",
           "qty": 0.5,
           "unit": "tsp",
           "prepNote": null,
@@ -2108,7 +2174,7 @@
           "groupLabel": "For the Salmon"
         },
         {
-          "ingredient": "Black pepper",
+          "ingredient": "Black Pepper",
           "qty": 0.25,
           "unit": "tsp",
           "prepNote": null,
@@ -2118,7 +2184,7 @@
           "groupLabel": "For the Salmon"
         },
         {
-          "ingredient": "Mixed pitted olives",
+          "ingredient": "Mixed Pitted Olives",
           "qty": 0.5,
           "unit": "cup",
           "prepNote": null,
@@ -2207,7 +2273,7 @@
       "notes": "Household keeps this mild; use low-sodium soy sauce if sodium is a concern and pass red pepper flakes on the side. Peanut oil can be replaced with vegetable or olive oil. Ground beef is the only beef cut used.",
       "ingredients": [
         {
-          "ingredient": "Peanut oil",
+          "ingredient": "Peanut Oil",
           "qty": 1,
           "unit": "tbsp",
           "prepNote": "can sub vegetable or olive oil",
@@ -2217,7 +2283,7 @@
           "groupLabel": "Stir-fry"
         },
         {
-          "ingredient": "Broccoli florets",
+          "ingredient": "Broccoli Florets",
           "qty": 3,
           "unit": "cup",
           "prepNote": "washed and patted dry",
@@ -2227,7 +2293,7 @@
           "groupLabel": "Stir-fry"
         },
         {
-          "ingredient": "Ground beef",
+          "ingredient": "Ground Beef",
           "qty": 1,
           "unit": "lb",
           "prepNote": null,
@@ -2237,7 +2303,7 @@
           "groupLabel": "Stir-fry"
         },
         {
-          "ingredient": "Yellow onion",
+          "ingredient": "Yellow Onion",
           "qty": 1,
           "unit": "count",
           "prepNote": "diced",
@@ -2247,7 +2313,7 @@
           "groupLabel": "Stir-fry"
         },
         {
-          "ingredient": "Red bell pepper",
+          "ingredient": "Red Bell Pepper",
           "qty": 1,
           "unit": "count",
           "prepNote": "sliced",
@@ -2267,7 +2333,7 @@
           "groupLabel": "Stir-fry"
         },
         {
-          "ingredient": "White pepper",
+          "ingredient": "White Pepper",
           "qty": null,
           "unit": null,
           "prepNote": "to taste",
@@ -2297,7 +2363,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Beef broth",
+          "ingredient": "Beef Broth",
           "qty": 1,
           "unit": "cup",
           "prepNote": null,
@@ -2307,7 +2373,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Soy sauce",
+          "ingredient": "Soy Sauce",
           "qty": 0.25,
           "unit": "cup",
           "prepNote": null,
@@ -2317,7 +2383,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Brown sugar",
+          "ingredient": "Brown Sugar",
           "qty": 3,
           "unit": "tbsp",
           "prepNote": "packed",
@@ -2348,7 +2414,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Ground ginger",
+          "ingredient": "Ground Ginger",
           "qty": 0.5,
           "unit": "tsp",
           "prepNote": null,
@@ -2358,7 +2424,7 @@
           "groupLabel": "Sauce"
         },
         {
-          "ingredient": "Toasted sesame oil",
+          "ingredient": "Toasted Sesame Oil",
           "qty": 1,
           "unit": "tsp",
           "prepNote": null,
@@ -2440,7 +2506,7 @@
       "notes": "Household breakfast for Mon/Wed/Fri; the cook event is dated the evening before. Top with fruit, nuts, or a spoonful of yogurt if available.",
       "ingredients": [
         {
-          "ingredient": "Rolled oats",
+          "ingredient": "Rolled Oats",
           "qty": 1,
           "unit": "cup",
           "prepNote": null,
@@ -2458,7 +2524,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Chia seeds",
+          "ingredient": "Chia Seeds",
           "qty": 1,
           "unit": "tbsp",
           "prepNote": null,
@@ -2476,7 +2542,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Vanilla extract",
+          "ingredient": "Vanilla Extract",
           "qty": 0.5,
           "unit": "tsp",
           "prepNote": null,
@@ -2542,9 +2608,9 @@
       "notes": "Saturday variation: pancakes optional instead of (or alongside) eggs & toast. Sunday breakfast may be eggs & toast or oats.",
       "ingredients": [
         {
-          "ingredient": "Eggs",
+          "ingredient": "Egg",
           "qty": 4,
-          "unit": "count",
+          "unit": "large",
           "prepNote": "beaten",
           "originalText": "4 large eggs, beaten",
           "optional": false,
@@ -2578,7 +2644,7 @@
           "scalingExempt": true
         },
         {
-          "ingredient": "Black pepper",
+          "ingredient": "Black Pepper",
           "qty": null,
           "unit": null,
           "prepNote": "to taste",
@@ -2639,7 +2705,7 @@
       "notes": "Optional Saturday breakfast; the plan keeps eggs & toast as the default. Serve with butter and syrup or honey.",
       "ingredients": [
         {
-          "ingredient": "All-purpose flour",
+          "ingredient": "All-Purpose Flour",
           "qty": 1,
           "unit": "cup",
           "prepNote": null,
@@ -2648,7 +2714,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Baking powder",
+          "ingredient": "Baking Powder",
           "qty": 1,
           "unit": "tsp",
           "prepNote": null,
@@ -2657,7 +2723,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Granulated sugar",
+          "ingredient": "Granulated Sugar",
           "qty": 1,
           "unit": "tbsp",
           "prepNote": null,
@@ -2684,9 +2750,9 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Eggs",
+          "ingredient": "Egg",
           "qty": 1,
-          "unit": "count",
+          "unit": "large",
           "prepNote": null,
           "originalText": "1 large egg",
           "optional": false,
@@ -2702,7 +2768,7 @@
           "scalingExempt": false
         },
         {
-          "ingredient": "Vanilla extract",
+          "ingredient": "Vanilla Extract",
           "qty": 0.5,
           "unit": "tsp",
           "prepNote": null,
@@ -3035,7 +3101,7 @@
       "notes": "Purchased 2026-02-01; pantry updated and all items are on hand. The pantry snapshot in this file already includes these purchases, so the loader must not create purchase movements. The 'Already on hand' section and the 'Salt, black pepper - on hand' line were skipped.",
       "items": [
         {
-          "ingredient": "Ground beef",
+          "ingredient": "Ground Beef",
           "category": "protein",
           "qty": 3,
           "unit": "lb",
@@ -3043,7 +3109,7 @@
           "checked": true
         },
         {
-          "ingredient": "Chicken breast",
+          "ingredient": "Chicken Breast",
           "category": "protein",
           "qty": 2.5,
           "unit": "lb",
@@ -3052,7 +3118,7 @@
           "note": "Approximate weight."
         },
         {
-          "ingredient": "Salmon fillets",
+          "ingredient": "Salmon Fillets",
           "category": "protein",
           "qty": 4,
           "unit": "count",
@@ -3060,7 +3126,7 @@
           "checked": true
         },
         {
-          "ingredient": "Yellow onion",
+          "ingredient": "Yellow Onion",
           "category": "produce",
           "qty": 3,
           "unit": "count",
@@ -3109,7 +3175,7 @@
           "checked": true
         },
         {
-          "ingredient": "Red bell pepper",
+          "ingredient": "Red Bell Pepper",
           "category": "produce",
           "qty": 2,
           "unit": "count",
@@ -3117,7 +3183,7 @@
           "checked": true
         },
         {
-          "ingredient": "Broccoli florets",
+          "ingredient": "Broccoli Florets",
           "category": "produce",
           "qty": 1,
           "unit": "head",
@@ -3134,7 +3200,7 @@
           "checked": true
         },
         {
-          "ingredient": "White potato",
+          "ingredient": "White Potato",
           "category": "produce",
           "qty": 1,
           "unit": "count",
@@ -3151,7 +3217,7 @@
           "checked": true
         },
         {
-          "ingredient": "Fresh basil",
+          "ingredient": "Fresh Basil",
           "category": "produce",
           "qty": 1,
           "unit": "bunch",
@@ -3160,7 +3226,7 @@
           "note": "Small bunch."
         },
         {
-          "ingredient": "Fresh dill",
+          "ingredient": "Fresh Dill",
           "category": "produce",
           "qty": 1,
           "unit": "bunch",
@@ -3169,7 +3235,7 @@
           "note": "1 sprig/bunch."
         },
         {
-          "ingredient": "Fresh rosemary",
+          "ingredient": "Fresh Rosemary",
           "category": "produce",
           "qty": 1,
           "unit": "sprig",
@@ -3177,7 +3243,7 @@
           "checked": true
         },
         {
-          "ingredient": "Heavy cream",
+          "ingredient": "Heavy Cream",
           "category": "dairy",
           "qty": 1,
           "unit": "cup",
@@ -3186,7 +3252,7 @@
           "note": "Half pint."
         },
         {
-          "ingredient": "Parmesan cheese",
+          "ingredient": "Parmesan Cheese",
           "category": "dairy",
           "qty": 1,
           "unit": "cup",
@@ -3194,7 +3260,7 @@
           "checked": true
         },
         {
-          "ingredient": "Shredded cheddar",
+          "ingredient": "Shredded Cheddar",
           "category": "dairy",
           "qty": 1,
           "unit": "bag",
@@ -3202,7 +3268,7 @@
           "checked": true
         },
         {
-          "ingredient": "Diced tomatoes with green chilies",
+          "ingredient": "Diced Tomatoes with Green Chilies",
           "category": "canned",
           "qty": 2,
           "unit": "can",
@@ -3211,7 +3277,7 @@
           "note": "Buy MILD green chilies."
         },
         {
-          "ingredient": "Tomato sauce",
+          "ingredient": "Tomato Sauce",
           "category": "canned",
           "qty": 3,
           "unit": "can",
@@ -3219,7 +3285,7 @@
           "checked": true
         },
         {
-          "ingredient": "Sun-dried tomatoes (in oil)",
+          "ingredient": "Sun-Dried Tomatoes",
           "category": "canned",
           "qty": 1,
           "unit": "jar",
@@ -3227,7 +3293,7 @@
           "checked": true
         },
         {
-          "ingredient": "Dark red kidney beans",
+          "ingredient": "Dark Red Kidney Beans",
           "category": "canned",
           "qty": 1,
           "unit": "can",
@@ -3235,7 +3301,7 @@
           "checked": true
         },
         {
-          "ingredient": "Light red kidney beans",
+          "ingredient": "Light Red Kidney Beans",
           "category": "canned",
           "qty": 1,
           "unit": "can",
@@ -3243,7 +3309,7 @@
           "checked": true
         },
         {
-          "ingredient": "Mixed pitted olives",
+          "ingredient": "Mixed Pitted Olives",
           "category": "canned",
           "qty": 1,
           "unit": "jar",
@@ -3252,7 +3318,7 @@
           "note": "Small jar."
         },
         {
-          "ingredient": "Beef broth",
+          "ingredient": "Beef Broth",
           "category": "canned",
           "qty": 2.5,
           "unit": "cup",
@@ -3260,7 +3326,7 @@
           "checked": true
         },
         {
-          "ingredient": "Chicken stock",
+          "ingredient": "Chicken Stock",
           "category": "pantry",
           "qty": 12,
           "unit": "cup",
@@ -3269,7 +3335,7 @@
           "note": "Topped up to ~12 cups total."
         },
         {
-          "ingredient": "Penne pasta",
+          "ingredient": "Penne Pasta",
           "category": "pantry",
           "qty": 10,
           "unit": "oz",
@@ -3277,7 +3343,7 @@
           "checked": true
         },
         {
-          "ingredient": "Toasted sesame oil",
+          "ingredient": "Toasted Sesame Oil",
           "category": "pantry",
           "qty": 1,
           "unit": "tsp",
@@ -3285,7 +3351,7 @@
           "checked": true
         },
         {
-          "ingredient": "Brown sugar",
+          "ingredient": "Brown Sugar",
           "category": "baking",
           "qty": 3,
           "unit": "tbsp",
@@ -3293,7 +3359,7 @@
           "checked": true
         },
         {
-          "ingredient": "Dried oregano",
+          "ingredient": "Dried Oregano",
           "category": "spice",
           "qty": 1,
           "unit": "tsp",
@@ -3301,7 +3367,7 @@
           "checked": true
         },
         {
-          "ingredient": "Ground ginger",
+          "ingredient": "Ground Ginger",
           "category": "spice",
           "qty": 0.5,
           "unit": "tsp",

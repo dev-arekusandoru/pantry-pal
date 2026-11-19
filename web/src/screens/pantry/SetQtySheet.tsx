@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { Label, Select } from "radix-ui";
-import { Button, Icon, Sheet, Sticker, hasIcon, ingredientEmoji } from "@/ui";
+import { Link } from "@tanstack/react-router";
+import { Button, Icon, Sheet, Sticker, buttonClass, hasIcon, ingredientEmoji } from "@/ui";
 import { ConfirmDialog } from "@/ui/ConfirmDialog";
 import { CATEGORY_ORDER, aisleLabel } from "../aisles";
 import { parseQty, qtyToInput, unitLabel } from "../shop/format";
@@ -159,6 +160,9 @@ function Form({ item, onClose, onSave, onRemove, onEditIcon }: FormProps) {
             className={hasIcon(name, item.ingredient.imageUrl) ? undefined : styles.noIcon}
           />
           <Button onClick={() => onEditIcon(item)}>Change icon</Button>
+          <Link to="/ingredients/$id" params={{ id: item.ingredient.id }} className={buttonClass({ variant: "ghost" })}>
+            Ingredient page
+          </Link>
         </div>
       </div>
       <div className={styles.removeRow}>

@@ -77,6 +77,28 @@ describe("loadSeed(seed/example.json)", () => {
     expect(listIngredients(test.ctx)).toHaveLength(65);
   });
 
+  it("links every seeded ingredient to a USDA food or declares it custom, with no review flags", () => {
+    const seed = parseSeed(SEED_JSON);
+    const declared = new Map(seed.ingredients.map((item) => [item.name, item]));
+    const rows = listIngredients(test.ctx);
+    expect(rows).toHaveLength(seed.ingredients.length);
+    for (const row of rows) {
+      const input = declared.get(row.name);
+      expect(input, row.name).toBeDefined();
+      expect(row.needsReview, row.name).toBe(false);
+      expect(row.nutrition?.fdcId ?? null, row.name).toBe(input!.fdcId ?? null);
+      expect(input!.fdcId !== undefined || input!.custom === true, row.name).toBe(true);
+    }
+
+    const egg = rows.find((row) => row.name === "Egg");
+    expect(egg).toMatchObject({ defaultPortion: "large", nutrition: { fdcId: 171287 } });
+    expect(rows.some((row) => row.name === "Sun-Dried Tomatoes")).toBe(true);
+    const eggLines = getRecipe(test.ctx, "eggs-and-toast").ingredients.filter(
+      (line) => line.ingredient.name === "Egg",
+    );
+    expect(eggLines.map((line) => line.unit)).toEqual(["large"]);
+  });
+
   it("loads through the service layer without warnings", () => {
     expect(result.warnings).toEqual([]);
   });

@@ -183,31 +183,33 @@ export function useSetStatus() {
 }
 
 export interface NewStock {
-  name: string;
-  category: PantryCategory;
+  ingredientId: string;
   /** Amount to add; null = just note that we have it. */
   qty: number | null;
   unit: string | null;
 }
 
 /**
- * Quick add. With an amount it adds to whatever is already there (and creates the ingredient if it is new);
- * without one it records "on hand" for an unmeasured item.
+ * Quick add. With an amount it adds to whatever is already there;
+ * without one it records "on hand" for an unmeasured item. The ingredient already exists:
+ * the add sheet creates new ones before it gets here.
  */
 export function useAddStock() {
   const qc = useQueryClient();
   return useMutation({
+    // The add sheet shows the error next to the field.
+    meta: { silent: true },
     mutationFn: async (n: NewStock) => {
       const result =
         n.qty !== null
           ? await unwrap(
               client.POST("/pantry/adjust", {
-                body: { ingredient: n.name, category: n.category, delta: n.qty, unit: n.unit },
+                body: { ingredientId: n.ingredientId, delta: n.qty, unit: n.unit },
               }),
             )
           : await unwrap(
               client.POST("/pantry/set", {
-                body: { ingredient: n.name, category: n.category, qty: null, status: "on_hand" },
+                body: { ingredientId: n.ingredientId, qty: null, status: "on_hand" },
               }),
             );
       if (result.warning) toast.show({ message: `Added, but ${result.warning}` });

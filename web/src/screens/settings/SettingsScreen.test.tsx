@@ -2,8 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { RouterProvider, createMemoryHistory } from "@tanstack/react-router";
 import { setTheme } from "@/app/theme";
-import { SettingsScreen } from "./SettingsScreen";
+import { createAppRouter } from "@/app/router";
 import type { HouseholdMember } from "./queries";
 
 afterEach(() => {
@@ -49,6 +50,7 @@ function stubSettingsApi() {
     vi.fn(async (req: Request) => {
       const path = new URL(req.url, "http://localhost").pathname;
       if (path.endsWith("/household")) return Response.json(HOUSEHOLD);
+      if (path.endsWith("/ingredients/review")) return Response.json({ items: [] });
 
       if (path.endsWith("/tokens")) {
         if (req.method === "GET") return Response.json({ items: tokens });
@@ -101,9 +103,10 @@ function stubSettingsApi() {
 async function renderSettings() {
   const members = stubSettingsApi();
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const router = createAppRouter({ history: createMemoryHistory({ initialEntries: ["/settings"] }) });
   const view = render(
     <QueryClientProvider client={client}>
-      <SettingsScreen />
+      <RouterProvider router={router} />
     </QueryClientProvider>,
   );
   await screen.findByRole("radiogroup", { name: "Theme" });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "../src/lib/errors.js";
 import { availabilityFor } from "../src/services/demand.js";
+import { autoMatchFood } from "../src/services/foods.js";
 import {
   addAlias,
   createIngredient,
@@ -19,7 +20,7 @@ import {
   updatePantryItem,
   verifyItem,
 } from "../src/services/pantry.js";
-import { makeTestApp, makeTestCtx } from "./helpers.js";
+import { addIngredient, makeTestApp, makeTestCtx } from "./helpers.js";
 
 function makeClock(start = "2026-11-01T12:00:00.000Z") {
   let current = new Date(start);
@@ -49,6 +50,7 @@ function expectAppError(fn: () => unknown, code: string): void {
 describe("applyMovement ledger", () => {
   it("sets stock, then applies deltas with movement snapshots", () => {
     const { ctx, advance } = makeClock();
+    addIngredient(ctx, "Flour");
     const set = setStock(ctx, { ingredient: "Flour", qty: 5, unit: "cup" });
 
     expect(set.item.qty).toBe(5);
@@ -73,6 +75,7 @@ describe("applyMovement ledger", () => {
 
   it("converts a delta into the item unit", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Rice");
     const set = setStock(ctx, { ingredient: "Rice", qty: 1000, unit: "g" });
     const delta = adjustStock(ctx, { ingredientId: set.item.ingredientId, delta: 1, unit: "kg" });
 
@@ -85,6 +88,7 @@ describe("applyMovement ledger", () => {
 
   it("clamps at zero and marks the item out", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Eggs");
     const set = setStock(ctx, { ingredient: "Eggs", qty: 1, unit: "count" });
     const delta = adjustStock(ctx, { ingredientId: set.item.ingredientId, delta: -5, unit: "count" });
 
@@ -96,6 +100,7 @@ describe("applyMovement ledger", () => {
 
   it("keeps an unknown quantity unknown on a delta", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Tomato paste");
     const set = setStock(ctx, { ingredient: "Tomato paste", qty: null, unit: "can" });
     expect(set.item.qty).toBeNull();
     expect(set.item.status).toBe("unknown");
@@ -110,6 +115,7 @@ describe("applyMovement ledger", () => {
 
   it("records an incomparable delta with a warning and leaves the quantity alone", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Milk");
     const set = setStock(ctx, { ingredient: "Milk", qty: 5, unit: "cup" });
     const delta = adjustStock(ctx, { ingredientId: set.item.ingredientId, delta: 1, unit: "lb" });
 
@@ -123,7 +129,7 @@ describe("applyMovement ledger", () => {
 
   it("uses par (converted) to decide low vs on_hand", () => {
     const { ctx } = makeClock();
-    const rice = createIngredient(ctx, { name: "Basmati rice", parQty: 2, parUnit: "kg" });
+    const rice = createIngredient(ctx, { custom: true, name: "Basmati rice", parQty: 2, parUnit: "kg" });
 
     const low = setStock(ctx, { ingredientId: rice.id, qty: 1500, unit: "g" });
     expect(low.item.status).toBe("low");
@@ -137,6 +143,7 @@ describe("applyMovement ledger", () => {
 
   it("honours an explicit status for set movements", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Mystery jar");
     const result = setStock(ctx, {
       ingredient: "Mystery jar",
       qty: 5,
@@ -149,7 +156,7 @@ describe("applyMovement ledger", () => {
 
   it("works inside a caller's transaction", () => {
     const { ctx } = makeClock();
-    const ingredient = createIngredient(ctx, { name: "Butter" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Butter" });
 
     ctx.db.transaction((tx) => {
       applyMovement(
@@ -165,6 +172,7 @@ describe("applyMovement ledger", () => {
 
   it("rejects unknown units, negative sets and deltas on unknown ingredients", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Salt");
     expectAppError(
       () => setStock(ctx, { ingredient: "Salt", qty: 1, unit: "blorp" }),
       "validation",
@@ -177,24 +185,57 @@ describe("applyMovement ledger", () => {
       () => adjustStock(ctx, { ingredient: "Ghost pepper", delta: -1, unit: "count" }),
       "unprocessable",
     );
-    expect(listIngredients(ctx)).toHaveLength(0);
+    expect(listIngredients(ctx).map((row) => row.name)).toEqual(["Salt"]);
   });
 
-  it("creates the ingredient for a positive delta on an unknown name", () => {
+  it("never creates an ingredient for an unknown name and lists every unknown name", () => {
     const { ctx } = makeClock();
-    const result = adjustStock(ctx, { ingredient: "Bananas", delta: 6, unit: "count" });
+    addIngredient(ctx, "Flour");
 
-    expect(result.item.ingredient.name).toBe("Bananas");
-    expect(result.item.qty).toBe(6);
-    expect(result.item.unit).toBe("count");
-    expect(result.item.status).toBe("on_hand");
-    expect(result.movement.qtyAfter).toBe(6);
+    try {
+      bulkUpdate(ctx, [
+        { op: "set", ingredient: "Flour", qty: 1, unit: "cup" },
+        { op: "adjust", ingredient: "Bananas", delta: 6, unit: "count" },
+        { op: "set", ingredient: "Kumquats", qty: 2, unit: "count" },
+      ]);
+      throw new Error("expected a 422");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AppError);
+      const appError = error as AppError;
+      expect(appError.code).toBe("unprocessable");
+      expect(
+        (appError.details as { unresolved: Array<{ name: string }> }).unresolved.map((u) => u.name),
+      ).toEqual(["Bananas", "Kumquats"]);
+    }
+    expect(listIngredients(ctx).map((row) => row.name)).toEqual(["Flour"]);
+    expect(listPantry(ctx)).toEqual([]);
+  });
+
+  it("creates a linked ingredient from a USDA food and reuses it", () => {
+    const { ctx } = makeClock();
+    const food = autoMatchFood("banana");
+    expect(food).not.toBeNull();
+
+    const first = adjustStock(ctx, {
+      fdcId: food!.fdcId,
+      name: "Banana",
+      category: "produce",
+      delta: 6,
+      unit: "count",
+    });
+    expect(first.item.ingredient).toMatchObject({ name: "Banana", category: "produce" });
+    expect(first.item.qty).toBe(6);
+
+    const second = adjustStock(ctx, { fdcId: food!.fdcId, delta: 2, unit: "count" });
+    expect(second.item.ingredientId).toBe(first.item.ingredientId);
+    expect(second.item.qty).toBe(8);
     expect(listIngredients(ctx)).toHaveLength(1);
+    expect(listIngredients(ctx)[0]!.nutrition?.fdcId).toBe(food!.fdcId);
   });
 
   it("starts a missing row at zero so a purchase delta becomes the quantity", () => {
     const { ctx } = makeClock();
-    const eggs = createIngredient(ctx, { name: "Eggs", defaultUnit: "count" }).id;
+    const eggs = createIngredient(ctx, { custom: true, name: "Eggs", defaultUnit: "count" }).id;
 
     const purchase = applyMovement(ctx, {
       ingredientId: eggs,
@@ -213,7 +254,7 @@ describe("applyMovement ledger", () => {
 
     // A negative delta on a row that never existed clamps at 0 and reads as out.
     const removed = applyMovement(ctx, {
-      ingredientId: createIngredient(ctx, { name: "Saffron", defaultUnit: "g" }).id,
+      ingredientId: createIngredient(ctx, { custom: true, name: "Saffron", defaultUnit: "g" }).id,
       kind: "delta",
       qty: -3,
       unit: "g",
@@ -228,6 +269,7 @@ describe("applyMovement ledger", () => {
 describe("bulkUpdate", () => {
   it("applies every line and returns per-line results", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Oats");
     const results = bulkUpdate(ctx, [
       { op: "set", ingredient: "Oats", qty: 2, unit: "cup" },
       { op: "adjust", ingredient: "Oats", delta: 1, unit: "cup" },
@@ -241,6 +283,7 @@ describe("bulkUpdate", () => {
 
   it("rolls every line back when one line is invalid", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Milk");
     expectAppError(
       () =>
         bulkUpdate(ctx, [
@@ -250,7 +293,7 @@ describe("bulkUpdate", () => {
       "unprocessable",
     );
 
-    expect(listIngredients(ctx)).toHaveLength(0);
+    expect(listIngredients(ctx).map((row) => row.name)).toEqual(["Milk"]);
     expect(listPantry(ctx)).toHaveLength(0);
     expect(listMovements(ctx)).toHaveLength(0);
   });
@@ -259,15 +302,16 @@ describe("bulkUpdate", () => {
 describe("listPantry", () => {
   it("filters by category, status, query, alias and staleness", () => {
     const { ctx, advance } = makeClock();
+    addIngredient(ctx, "Carrots", { category: "produce" });
+    addIngredient(ctx, "Chicken thighs", { category: "protein" });
+    addIngredient(ctx, "Paprika", { category: "spice" });
     const carrots = setStock(ctx, {
       ingredient: "Carrots",
-      category: "produce",
       qty: 2,
       unit: "lb",
     });
     const chicken = setStock(ctx, {
       ingredient: "Chicken thighs",
-      category: "protein",
       qty: 1,
       unit: "kg",
     });
@@ -297,7 +341,6 @@ describe("listPantry", () => {
     // A delta-only row is never a direct observation, so it counts as stale too.
     const paprika = adjustStock(ctx, {
       ingredient: "Paprika",
-      category: "spice",
       delta: 2,
       unit: "tbsp",
       reason: "adjust",
@@ -311,6 +354,7 @@ describe("listPantry", () => {
 
   it("keeps one row per ingredient and deletes it", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Yogurt");
     const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g" });
     setStock(ctx, { ingredientId: set.item.ingredientId, qty: 250, unit: "g" });
 
@@ -328,6 +372,7 @@ describe("listPantry", () => {
 
   it("makes a removed row vanish from the list and availability with no movements left behind", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Yogurt");
     const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g" });
     const ingredientId = set.item.ingredientId;
 
@@ -346,6 +391,7 @@ describe("listPantry", () => {
 describe("verifyItem", () => {
   it("sets lastVerifiedAt and records a verify movement without changing stock", () => {
     const { ctx, advance, nowIso } = makeClock();
+    addIngredient(ctx, "Parmesan");
     const set = setStock(ctx, { ingredient: "Parmesan", qty: 100, unit: "g" });
 
     advance(90_000);
@@ -362,6 +408,7 @@ describe("verifyItem", () => {
 describe("lastVerifiedAt", () => {
   it("stamps direct observations (set, purchase, verify) but not cook or waste deltas", () => {
     const { ctx, advance, nowIso } = makeClock();
+    addIngredient(ctx, "Parmesan");
     const set = setStock(ctx, { ingredient: "Parmesan", qty: 100, unit: "g" });
     expect(set.item.lastVerifiedAt).toBe(nowIso());
 
@@ -414,6 +461,7 @@ describe("lastVerifiedAt", () => {
 describe("updatePantryItem", () => {
   it("edits notes, dates and status without touching the quantity", () => {
     const { ctx } = makeClock();
+    addIngredient(ctx, "Mozzarella");
     const row = setStock(ctx, { ingredient: "Mozzarella", qty: 200, unit: "g" });
 
     const updated = updatePantryItem(ctx, row.item.id, {
@@ -431,6 +479,7 @@ describe("updatePantryItem", () => {
 describe("listMovements", () => {
   it("returns newest first with limit and before cursor", () => {
     const { ctx, advance } = makeClock();
+    addIngredient(ctx, "Apples");
     const set = setStock(ctx, { ingredient: "Apples", qty: 10, unit: "count" });
     advance();
     adjustStock(ctx, { ingredientId: set.item.ingredientId, delta: -3, unit: "count" });
@@ -454,6 +503,7 @@ describe("listMovements", () => {
 describe("DELETE /pantry/{id}", () => {
   it("removes the row from GET /pantry and answers 404 for an unknown id", async () => {
     const { ctx, request } = makeTestApp();
+    addIngredient(ctx, "Yogurt");
     const set = setStock(ctx, { ingredient: "Yogurt", qty: 500, unit: "g" });
 
     const before = await request<{ items: { id: string }[] }>("GET", "/api/v1/pantry");

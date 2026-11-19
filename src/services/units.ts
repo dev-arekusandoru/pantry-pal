@@ -22,8 +22,12 @@ const BUILTIN: Record<UnitFamily, Record<string, number>> = {
     quart: 946.352946,
     gallon: 3785.411784,
   },
-  count: { count: 1, dozen: 12 },
+  // Size words are counts: "2 large eggs" is 2 count. The stored unit keeps the size.
+  count: { count: 1, dozen: 12, small: 1, medium: 1, large: 1, "extra-large": 1, jumbo: 1 },
 };
+
+/** The size words, in ascending order. They are valid units in the count family. */
+export const SIZE_UNITS = ["small", "medium", "large", "extra-large", "jumbo"] as const;
 
 const ALIASES: Record<string, string> = {
   // mass
@@ -86,6 +90,13 @@ const ALIASES: Record<string, string> = {
   x: "count",
   dozen: "dozen",
   dozens: "dozen",
+  small: "small",
+  medium: "medium",
+  large: "large",
+  "extra-large": "extra-large",
+  "extra large": "extra-large",
+  xl: "extra-large",
+  jumbo: "jumbo",
   // packaging units (kept as-is, singular)
   can: "can",
   cans: "can",

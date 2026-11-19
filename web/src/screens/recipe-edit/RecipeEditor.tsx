@@ -2,6 +2,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, type FormEvent } from "react";
 import { errorMessage } from "@/api";
 import { Button, ErrorState, Icon, PageHeader, Skeleton, buttonClass, toast } from "@/ui";
+import { IngredientPicker } from "../ingredients/IngredientPicker";
+import { ingredientErrorMessage, UNIT_SUGGESTIONS, type IngredientPick } from "../ingredients/refs";
 import type { RecipeDetail } from "../recipe/lib";
 import { useRecipe } from "../recipe/queries";
 import { useCreateRecipe, useTagSuggestions, useUpdateRecipe, type RecipeSaveInput } from "./queries";
@@ -12,7 +14,10 @@ type MealType = (typeof MEAL_TYPES)[number];
 
 interface LineDraft {
   key: string;
-  name: string;
+  /** The chosen ingredient; null until one is picked. */
+  ingredient: IngredientPick | null;
+  /** Stand-ins for the main ingredient ("Milk (or water)"). */
+  alternatives: IngredientPick[];
   qty: string;
   qtyMax: string;
   unit: string;
@@ -54,7 +59,8 @@ const whole = (value: string): number | null => {
 function emptyLine(): LineDraft {
   return {
     key: newKey(),
-    name: "",
+    ingredient: null,
+    alternatives: [],
     qty: "",
     qtyMax: "",
     unit: "",
@@ -118,7 +124,8 @@ function initialState(recipe: RecipeDetail | undefined): DraftState {
     lineKeyById.set(ri.id, key);
     return {
       key,
-      name: ri.ingredient.name,
+      ingredient: { id: ri.ingredient.id, name: ri.ingredient.name },
+      alternatives: ri.alternatives.map((alternative) => ({ id: alternative.ingredientId, name: alternative.name })),
       qty: text(ri.qty),
       qtyMax: text(ri.qtyMax),
       unit: ri.unit ?? "",
@@ -182,8 +189,9 @@ function reconciliationWarnings(lines: LineDraft[], steps: StepDraft[]): string[
     }
     if (links === 0) continue;
     if (Math.abs(sum - total) > 1e-6) {
+      const name = line.ingredient?.name ?? "One ingredient line";
       warnings.push(
-        `${line.name.trim() === "" ? "One ingredient line" : line.name.trim()}: step amounts add up to ${round(sum)}${line.unit === "" ? "" : ` ${line.unit}`}, but the line is ${round(total)}${line.unit === "" ? "" : ` ${line.unit}`}.`,
+        `${name}: step amounts add up to ${round(sum)}${line.unit === "" ? "" : ` ${line.unit}`}, but the line is ${round(total)}${line.unit === "" ? "" : ` ${line.unit}`}.`,
       );
     }
   }
@@ -223,6 +231,8 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
   const [draft, setDraft] = useState<DraftState>(() => initialState(recipe));
   const [tagText, setTagText] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  /** Line whose "add an alternative" picker is open. */
+  const [addingAlternative, setAddingAlternative] = useState<string | null>(null);
 
   const patch = (values: Partial<DraftState>) => setDraft((current) => ({ ...current, ...values }));
   const patchLine = (key: string, values: Partial<LineDraft>) =>
@@ -237,7 +247,7 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
     }));
 
   const warnings = useMemo(() => reconciliationWarnings(draft.lines, draft.steps), [draft.lines, draft.steps]);
-  const lineName = (key: string) => draft.lines.find((line) => line.key === key)?.name.trim() ?? "";
+  const lineName = (key: string) => draft.lines.find((line) => line.key === key)?.ingredient?.name ?? "";
 
   function addTag() {
     const value = tagText.trim();
@@ -262,9 +272,17 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
       setFormError("Add a title.");
       return;
     }
-    const keptLines = draft.lines.filter((line) => line.name.trim() !== "");
+    const touched = (line: LineDraft) =>
+      line.ingredient !== null ||
+      [line.qty, line.qtyMax, line.unit, line.prepNote, line.groupLabel].some((value) => value.trim() !== "");
+    const unpicked = draft.lines.findIndex((line) => line.ingredient === null && touched(line));
+    if (unpicked !== -1) {
+      setFormError(`Pick an ingredient for line ${unpicked + 1}.`);
+      return;
+    }
+    const keptLines = draft.lines.flatMap((line) => (line.ingredient === null ? [] : [{ line, ingredient: line.ingredient }]));
     const lineIndex = new Map<string, number>();
-    keptLines.forEach((line, index) => lineIndex.set(line.key, index));
+    keptLines.forEach(({ line }, index) => lineIndex.set(line.key, index));
     if (keptLines.length === 0) {
       setFormError("Add at least one ingredient line.");
       return;
@@ -291,8 +309,9 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
       notes: draft.notes.trim() === "" ? null : draft.notes.trim(),
       sourceName: draft.sourceName.trim() === "" ? null : draft.sourceName.trim(),
       sourceUrl: draft.sourceUrl.trim() === "" ? null : draft.sourceUrl.trim(),
-      ingredients: keptLines.map((line) => ({
-        ingredient: line.name.trim(),
+      ingredients: keptLines.map(({ line, ingredient }) => ({
+        ingredientId: ingredient.id,
+        alternatives: line.alternatives.map((alternative) => ({ ingredientId: alternative.id })),
         qty: num(line.qty),
         qtyMax: num(line.qtyMax),
         unit: line.unit.trim() === "" ? null : line.unit.trim(),
@@ -321,7 +340,7 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
         toast.show({ message: recipe === undefined ? "Recipe created" : "Recipe saved" });
         void navigate({ to: "/recipes/$slug", params: { slug: saved.slug }, replace: recipe !== undefined });
       },
-      onError: (error) => setFormError(errorMessage(error)),
+      onError: (error) => setFormError(ingredientErrorMessage(error, errorMessage(error))),
     });
   }
 
@@ -492,6 +511,15 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
             Add line
           </Button>
         </div>
+        <p className={styles.hint}>
+          Pick each ingredient from the list. Sizes (small, medium, large, extra-large, jumbo) work as units: 2 large
+          eggs is Qty 2, Unit large.
+        </p>
+        <datalist id="recipe-unit-suggestions">
+          {UNIT_SUGGESTIONS.map((unit) => (
+            <option key={unit} value={unit} />
+          ))}
+        </datalist>
         <ol className={styles.rows}>
           {draft.lines.map((line, index) => (
             <li key={line.key} className={styles.row}>
@@ -509,11 +537,61 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
                   </button>
                 </span>
               </div>
+              <IngredientPicker
+                label="Ingredient"
+                value={line.ingredient}
+                onChange={(pick) => patchLine(line.key, { ingredient: pick })}
+              />
+              {line.ingredient !== null && (
+                <div className={styles.alternatives}>
+                  {line.alternatives.length > 0 && (
+                    <ul className={styles.chips} aria-label={`Alternatives to ${line.ingredient.name}`}>
+                      {line.alternatives.map((alternative) => (
+                        <li key={alternative.id} className={styles.chip}>
+                          or {alternative.name}
+                          <button
+                            type="button"
+                            aria-label={`Remove alternative ${alternative.name}`}
+                            onClick={() =>
+                              patchLine(line.key, {
+                                alternatives: line.alternatives.filter((item) => item.id !== alternative.id),
+                              })
+                            }
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {addingAlternative === line.key ? (
+                    <div className={styles.alternativePicker}>
+                      <IngredientPicker
+                        label="Alternative ingredient"
+                        value={null}
+                        autoFocus
+                        exclude={new Set([line.ingredient.id, ...line.alternatives.map((item) => item.id)])}
+                        onChange={(pick) => {
+                          patchLine(line.key, { alternatives: [...line.alternatives, pick] });
+                          setAddingAlternative(null);
+                        }}
+                      />
+                      <Button variant="ghost" onClick={() => setAddingAlternative(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      icon={<Icon name="plus" />}
+                      aria-label={`Add alternative to ${line.ingredient.name}`}
+                      onClick={() => setAddingAlternative(line.key)}
+                    >
+                      Add alternative
+                    </Button>
+                  )}
+                </div>
+              )}
               <div className={styles.lineGrid}>
-                <label className={styles.field}>
-                  <span className={styles.label}>Ingredient</span>
-                  <input className={styles.input} value={line.name} onChange={(e) => patchLine(line.key, { name: e.target.value })} />
-                </label>
                 <label className={styles.field}>
                   <span className={styles.label}>Qty</span>
                   <input className={styles.input} inputMode="decimal" value={line.qty} onChange={(e) => patchLine(line.key, { qty: e.target.value })} />
@@ -524,7 +602,7 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
                 </label>
                 <label className={styles.field}>
                   <span className={styles.label}>Unit</span>
-                  <input className={styles.input} value={line.unit} onChange={(e) => patchLine(line.key, { unit: e.target.value })} />
+                  <input className={styles.input} list="recipe-unit-suggestions" value={line.unit} onChange={(e) => patchLine(line.key, { unit: e.target.value })} />
                 </label>
                 <label className={styles.field}>
                   <span className={styles.label}>Prep note</span>
@@ -560,7 +638,7 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
         <ol className={styles.rows}>
           {draft.steps.map((step, index) => {
             const available = draft.lines.filter(
-              (line) => line.name.trim() !== "" && !step.links.some((link) => link.lineKey === line.key),
+              (line) => line.ingredient !== null && !step.links.some((link) => link.lineKey === line.key),
             );
             return (
               <li key={step.key} className={styles.row}>
@@ -665,7 +743,7 @@ function EditorForm({ recipe }: { recipe?: RecipeDetail }) {
                     <option value="">Add ingredient to step…</option>
                     {available.map((line) => (
                       <option key={line.key} value={line.key}>
-                        {line.name}
+                        {line.ingredient?.name}
                       </option>
                     ))}
                   </select>

@@ -1406,7 +1406,7 @@ export interface paths {
         put?: never;
         /**
          * Create an ingredient
-         * @description Creates the ingredient and its aliases. Duplicate names or aliases return 409.
+         * @description Creates a linked ingredient (`fdcId`: a USDA food; name derived when omitted; 409 if the household already links that food) or, as a last resort, a custom one (`custom: true`; look at GET /ingredients/find first). Without `fdcId` or `custom: true` the request is 422 with suggestions. Names cannot hold quantities, sizes, preparation or "x or y" (422 with a hint). Duplicate names or aliases return 409. Customs created with an API token are flagged for review (GET /ingredients/review); customs from the web app are not.
          */
         post: {
             parameters: {
@@ -1438,6 +1438,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ingredients/find": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find an ingredient or a USDA food
+         * @description Existing household ingredients that match a query, then bundled USDA foods with a suggested ingredient name. Pick an existing ingredient (ingredientId), or a food (fdcId + suggestedName as name) to create a linked one.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description What you are looking for, e.g. "yellow onion". */
+                    query: string;
+                    /** @description Maximum per list (default 10). */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Matching ingredients and foods */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FindIngredientsResult"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingredients/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ingredients to review
+         * @description Ingredients flagged for review (customs created over the API, unlinked legacy ingredients) and ingredients whose name breaks the naming rules, with the reasons and suggestions (existing ingredients, USDA foods). Fix one by linking a food (PUT /ingredients/{id}/nutrition), renaming, merging, splitting or accepting it.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Ingredients to review */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IngredientReviewList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingredients/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ingredient use counts
+         * @description How often each ingredient is used: recipes, pantry rows, items on open shopping lists and dietary rules. Ingredients that do not appear are unused.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Use counts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IngredientUsageCounts"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ingredients/{id}": {
         parameters: {
             query?: never;
@@ -1445,7 +1567,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get an ingredient */
+        /**
+         * Get an ingredient
+         * @description The ingredient with aliases, conversions and pantry stock, plus where it is used (recipes, pantry, items on open shopping lists, dietary rules) and why it needs attention, if it does.
+         */
         get: {
             parameters: {
                 query?: never;
@@ -1457,13 +1582,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Ingredient with aliases, conversions and pantry stock */
+                /** @description Ingredient with usage */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["IngredientView"];
+                        "application/json": components["schemas"]["IngredientDetail"];
                     };
                 };
             };
@@ -1641,6 +1766,92 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["MergeIngredientsResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingredients/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a custom ingredient
+         * @description Clears the review flag: the custom ingredient is accepted as it is. A name that breaks the naming rules stays listed until it is renamed.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The ingredient */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IngredientView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingredients/{id}/split": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Split an ingredient that names several
+         * @description For ingredients such as "Milk or water": every recipe line that used it gets `main` as its ingredient and `alternatives` as alternatives; lines that listed it as an alternative get all of them as alternatives. Pantry stock and shopping items move to `main`. The split ingredient is archived. Unknown names are 422 with suggestions; use `fdcId` to create linked ingredients.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SplitIngredient"];
+                };
+            };
+            responses: {
+                /** @description The archived source, the main ingredient, the alternatives and moved-row counts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SplitIngredientResult"];
                     };
                 };
             };
@@ -1903,7 +2114,7 @@ export interface paths {
         put?: never;
         /**
          * Set stock for an ingredient
-         * @description Absolute quantity. Unknown ingredient names are created; the ledger records a `set` movement.
+         * @description Absolute quantity. Ingredients are named by `ingredientId`, an existing `ingredient` name, or `fdcId` (a USDA food; creates a linked ingredient when the household has none); unknown names are 422 with suggestions. The ledger records a `set` movement.
          */
         post: {
             parameters: {
@@ -6771,7 +6982,7 @@ export interface paths {
         put?: never;
         /**
          * Create a recipe
-         * @description Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.
+         * @description Creates the recipe with ordered ingredients and steps. Each ingredient line names an existing ingredient (`ingredientId`, or `ingredient` by name or alias) or a USDA food (`fdcId`, which reuses or creates a linked ingredient; send `name`). Unknown names create nothing: the request is 422 listing every unknown name with suggestions. `alternatives` lists stand-ins ("milk or water"). Units are normalized; sizes (large...) are count units. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.
          */
         post: {
             parameters: {
@@ -7245,7 +7456,7 @@ export interface paths {
         put?: never;
         /**
          * Create a dietary rule
-         * @description Targets depend on scope: ingredient (id or name, created when unknown), recipe (recipeId), category/tag/keyword (targetText).
+         * @description Targets depend on scope: ingredient (`ingredientId`, an existing `ingredient` name, or `fdcId` to link a USDA food; unknown names are 422 with suggestions), recipe (recipeId), category/tag/keyword (targetText).
          */
         post: {
             parameters: {
@@ -7983,6 +8194,8 @@ export interface components {
             fdcId: number | null;
             description: string | null;
             per100g: components["schemas"]["Nutrients"];
+            /** @description Portions of the linked food. `defaultPortion` is one of these labels. */
+            portions: components["schemas"]["FoodPortion"][];
         } | null;
         Nutrients: {
             /** @description kcal. */
@@ -8000,6 +8213,12 @@ export interface components {
             /** @description Milligrams. */
             sodium: number | null;
         } | null;
+        FoodPortion: {
+            /** @description Portion label, e.g. "cup" or "medium". */
+            label: string;
+            /** @description Grams in one such portion. */
+            grams: number;
+        };
         IngredientAlias: {
             /** @description Alias id (ali_...). */
             id: string;
@@ -8060,14 +8279,24 @@ export interface components {
             parQty: number | null;
             parUnit: string | null;
             notes: string | null;
+            /** @description Portion of the linked USDA food that a plain count means, e.g. "large" for eggs ("2" eggs = 2 large). Null for custom ingredients. */
+            defaultPortion: string | null;
+            /** @description True for custom ingredients nobody has accepted yet, and unlinked legacy ingredients. */
+            needsReview: boolean;
             /** @description Set when the ingredient was archived. */
             archivedAt: string | null;
             createdAt: string;
             updatedAt: string;
         };
         CreateIngredient: {
-            /** @description Canonical name, e.g. "Yellow onion". */
-            name: string;
+            /** @description Canonical name, e.g. "Yellow onion". Required for a custom ingredient; with `fdcId` it defaults to a name derived from the USDA description. Names cannot hold quantities, sizes, preparation or "x or y". */
+            name?: string;
+            /** @description Create a linked ingredient for this USDA food (see GET /nutrition/foods). 409 when the household already has an ingredient linked to it. */
+            fdcId?: number;
+            /** @description true = create an ingredient with no USDA food. Last resort: look for a match first (GET /ingredients/find). Without `fdcId` or `custom: true` the request is 422 with suggestions. Customs created with an API token or over MCP are flagged for review. */
+            custom?: boolean;
+            /** @description Portion label of the linked food that a plain count means, e.g. "large". Needs `fdcId`. */
+            defaultPortion?: string | null;
             description?: string | null;
             /**
              * @description Ingredient category used for grouping and shopping aisles.
@@ -8087,6 +8316,146 @@ export interface components {
             parUnit?: string | null;
             notes?: string | null;
         };
+        FindIngredientsResult: {
+            /** @description Existing household ingredients that match, best first. Prefer these. */
+            ingredients: {
+                id: string;
+                name: string;
+                /**
+                 * @description Ingredient category used for grouping and shopping aisles.
+                 * @enum {string}
+                 */
+                category: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
+                defaultUnit: string | null;
+                defaultPortion: string | null;
+                aliases: string[];
+                /** @description Linked to a USDA food (false = custom). */
+                linked: boolean;
+                fdcId: number | null;
+                needsReview: boolean;
+                score: number;
+            }[];
+            /** @description USDA foods that match. Send `fdcId` (and `suggestedName` as `name`) to create a linked ingredient. */
+            foods: {
+                fdcId: number;
+                description: string;
+                suggestedName: string;
+                score: number;
+                /** @description The household ingredient already linked to this food, if any. */
+                ingredientId: string | null;
+            }[];
+        };
+        IngredientReviewList: {
+            items: components["schemas"]["IngredientReviewItem"][];
+        };
+        IngredientReviewItem: {
+            ingredient: components["schemas"]["IngredientView"];
+            reasons: ("unlinked" | "lint" | "custom_unreviewed")[];
+            /** @description Present when `reasons` has lint. */
+            lint?: {
+                reason: string;
+                hint: string;
+            };
+            /** @description Ways to fix it: existing ingredients and USDA foods. */
+            suggestions: components["schemas"]["IngredientSuggestion"][];
+        };
+        IngredientSuggestion: {
+            /** @enum {string} */
+            kind: "ingredient";
+            /** @description Existing household ingredient. */
+            ingredientId: string;
+            name: string;
+            /** @description Match score 0..1. */
+            score: number;
+        } | {
+            /** @enum {string} */
+            kind: "food";
+            /** @description USDA food: send it as `fdcId` to create a linked ingredient. */
+            fdcId: number;
+            /** @description USDA description. */
+            description: string;
+            /** @description Friendly name to send as `name`. */
+            suggestedName: string;
+            /** @description Match score 0..1. */
+            score: number;
+        };
+        /** @description Only ingredients that are used somewhere are listed; all others are unused. */
+        IngredientUsageCounts: {
+            items: {
+                ingredientId: string;
+                /** @description Recipes with a line or alternative for the ingredient. */
+                recipes: number;
+                pantry: number;
+                /** @description Items on lists that are not done. */
+                shopping: number;
+                rules: number;
+            }[];
+        };
+        IngredientDetail: components["schemas"]["IngredientView"] & {
+            usage: components["schemas"]["IngredientUsage"];
+            /** @description Why the ingredient needs attention; null when it does not. */
+            review: {
+                reasons: ("unlinked" | "lint" | "custom_unreviewed")[];
+                lint?: {
+                    reason: string;
+                    hint: string;
+                };
+                suggestions: components["schemas"]["IngredientSuggestion"][];
+            } | null;
+        };
+        IngredientUsage: {
+            /** @description Recipes that use the ingredient, by title. */
+            recipes: {
+                /** @description Recipe id (rec_...). */
+                id: string;
+                slug: string;
+                title: string;
+                /** @description Recipe lines that use the ingredient. */
+                lines: number;
+                /** @description Lines where it is the main ingredient. */
+                asMain: number;
+                /** @description Lines where it is an alternative. */
+                asAlternative: number;
+            }[];
+            /** @description The pantry row, or null when it is not stocked. */
+            pantryItem: {
+                /** @description Pantry item id (pi_...). */
+                id: string;
+                /** @description Known quantity; null = present but unknown. */
+                qty: number | null;
+                /** @description Normalized unit. */
+                unit: string | null;
+                /** @description True when the quantity is an estimate. */
+                qtyApprox: boolean;
+                /**
+                 * @description on_hand = stocked, low = at/below par, out = none left, unknown = present but unmeasured.
+                 * @enum {string}
+                 */
+                status: "on_hand" | "low" | "out" | "unknown";
+            } | null;
+            /** @description Items on shopping lists that are not done. */
+            shoppingItems: {
+                itemId: string;
+                listId: string;
+                listTitle: string;
+                /** @enum {string} */
+                listStatus: "draft" | "shopping" | "done";
+                name: string;
+                qty: number | null;
+                unit: string | null;
+                checked: boolean;
+            }[];
+            /** @description Dietary rules for this ingredient. */
+            rules: {
+                id: string;
+                /** @enum {string} */
+                severity: "forbidden" | "avoid" | "limit";
+                reason: string | null;
+                conditionNote: string | null;
+                /** @description null = the whole household. */
+                memberId: string | null;
+            }[];
+        };
         UpdateIngredient: {
             /** @description Renaming updates what aliases resolve to. */
             name?: string;
@@ -8103,6 +8472,8 @@ export interface components {
             parQty?: number | null;
             parUnit?: string | null;
             notes?: string | null;
+            /** @description Portion label of the linked food that a plain count means; null clears it. */
+            defaultPortion?: string | null;
         };
         IngredientAliasResult: {
             alias: components["schemas"]["IngredientAlias"];
@@ -8125,6 +8496,40 @@ export interface components {
         MergeIngredient: {
             /** @description Target ingredient id that survives the merge. */
             intoId: string;
+        };
+        SplitIngredientResult: {
+            source: components["schemas"]["IngredientView"] & unknown;
+            main: components["schemas"]["IngredientView"];
+            alternatives: components["schemas"]["IngredientView"][];
+            moved: {
+                /** @description Recipe lines that used the split ingredient as the main one. */
+                recipeLines: number;
+                /** @description Recipe lines that listed it as an alternative. */
+                alternativeLines: number;
+                pantryItems: number;
+                shoppingItems: number;
+            };
+        };
+        SplitIngredient: {
+            main: components["schemas"]["IngredientRef"];
+            /** @description Become alternatives of those lines. */
+            alternatives?: (components["schemas"]["IngredientRef"] & unknown)[];
+        };
+        /** @description Becomes the ingredient of every recipe line that used this one. */
+        IngredientRef: {
+            /** @description Existing ingredient id. */
+            ingredientId?: string;
+            /** @description Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions. */
+            ingredient?: string;
+            /** @description USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one. */
+            fdcId?: number;
+            /** @description With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused. */
+            name?: string;
+            /**
+             * @description With `fdcId` when it creates an ingredient: its category (default other).
+             * @enum {string}
+             */
+            category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
         };
         UnitConversionList: {
             items: components["schemas"]["UnitConversion"][];
@@ -8219,12 +8624,16 @@ export interface components {
             warning?: string;
         };
         SetStock: {
-            /** @description Existing ingredient id; wins over `ingredient`. */
+            /** @description Existing ingredient id. */
             ingredientId?: string;
-            /** @description Ingredient name; resolved through names, aliases and plurals. */
+            /** @description Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions. */
             ingredient?: string;
+            /** @description USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one. */
+            fdcId?: number;
+            /** @description With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused. */
+            name?: string;
             /**
-             * @description Category used when the ingredient has to be created.
+             * @description With `fdcId` when it creates an ingredient: its category (default other).
              * @enum {string}
              */
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
@@ -8260,12 +8669,16 @@ export interface components {
             refId?: string;
         };
         AdjustStock: {
-            /** @description Existing ingredient id; wins over `ingredient`. */
+            /** @description Existing ingredient id. */
             ingredientId?: string;
-            /** @description Ingredient name; resolved through names, aliases and plurals. */
+            /** @description Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions. */
             ingredient?: string;
+            /** @description USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one. */
+            fdcId?: number;
+            /** @description With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused. */
+            name?: string;
             /**
-             * @description Category used when the ingredient has to be created.
+             * @description With `fdcId` when it creates an ingredient: its category (default other).
              * @enum {string}
              */
             category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
@@ -8462,6 +8875,11 @@ export interface components {
                 /** @description Bundled icon name or http(s) URL; null = automatic icon. */
                 imageUrl: string | null;
             };
+            /** @description Stand-ins for the main ingredient, in order, e.g. [{"name":"Water"}] for "Milk (or water)". */
+            alternatives: {
+                ingredientId: string;
+                name: string;
+            }[];
             qty: number | null;
             qtyMax: number | null;
             unit: string | null;
@@ -8560,16 +8978,26 @@ export interface components {
             steps?: components["schemas"]["RecipeStepInput"][];
         };
         RecipeIngredientInput: {
-            /** @description Existing ingredient id. Provide this or `ingredient` (name). */
+            /** @description Existing ingredient id. */
             ingredientId?: string;
-            /** @description Ingredient name. Resolved against existing ingredients, aliases and simple plural variants; created when unknown. */
+            /** @description Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions. */
             ingredient?: string;
-            category?: components["schemas"]["IngredientCategory"] & unknown;
+            /** @description USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one. */
+            fdcId?: number;
+            /** @description With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused. */
+            name?: string;
+            /**
+             * @description With `fdcId` when it creates an ingredient: its category (default other).
+             * @enum {string}
+             */
+            category?: "produce" | "protein" | "dairy" | "bakery" | "pantry" | "baking" | "spice" | "canned" | "condiment" | "frozen" | "beverage" | "other";
+            /** @description Ingredients that can stand in for the main one ("milk or water" => ingredient milk, alternatives [water]). Same references and 422 rules as the main ingredient. Nutrition, stock, shopping and dietary rules use the main ingredient only. */
+            alternatives?: (components["schemas"]["IngredientRef"] & unknown)[];
             /** @description Quantity written for the recipe servings. Null/omitted = unmeasured (to taste). */
             qty?: number | null;
             /** @description Upper bound of a range ("1-2 heads" => qty 1, qtyMax 2). */
             qtyMax?: number | null;
-            /** @description Unit as written ("Tbsp", "pounds"); normalized to a canonical unit. */
+            /** @description Unit as written ("Tbsp", "pounds", "large"); normalized to a canonical unit. Sizes (small, medium, large, extra-large, jumbo) are count units: "2 large eggs" is qty 2, unit "large". */
             unit?: string | null;
             /** @description Preparation note, e.g. "diced". */
             prepNote?: string | null;
@@ -8724,6 +9152,10 @@ export interface components {
             optional: boolean;
             scalingExempt: boolean;
             prepNote: string | null;
+            alternatives: {
+                ingredientId: string;
+                name: string;
+            }[];
         };
         FoodList: {
             items: components["schemas"]["Food"][];
@@ -8739,12 +9171,8 @@ export interface components {
             portions: components["schemas"]["FoodPortion"][];
             /** @description Match score 0..1; higher is better. */
             score: number;
-        };
-        FoodPortion: {
-            /** @description Portion label, e.g. "cup" or "medium". */
-            label: string;
-            /** @description Grams in one such portion. */
-            grams: number;
+            /** @description Friendly ingredient name for this food, e.g. "Onion" for "Onions, raw". Pass it as `name` with `fdcId`. */
+            suggestedName: string;
         };
         SetIngredientNutrition: {
             /**
@@ -8811,10 +9239,14 @@ export interface components {
         };
         CreateDietaryRuleInput: {
             scope: components["schemas"]["RuleScope"];
-            /** @description scope=ingredient: existing ingredient id (alternative to `ingredient`). */
+            /** @description scope=ingredient: existing ingredient id (alternative to `ingredient` and `fdcId`). */
             ingredientId?: string | null;
-            /** @description scope=ingredient: ingredient name; resolved and created when unknown. */
+            /** @description scope=ingredient: an existing ingredient name or alias. Never creates: an unknown name is a 422 with suggestions. */
             ingredient?: string;
+            /** @description scope=ingredient: a USDA food id. Uses the household ingredient linked to it, or creates one (named `name`). */
+            fdcId?: number;
+            /** @description With `fdcId` when it creates an ingredient: its name. */
+            name?: string;
             /** @description scope=recipe: the recipe id to exclude. */
             recipeId?: string | null;
             /** @description scope=category: category name; scope=tag: tag; scope=keyword: substring. */
@@ -8829,10 +9261,14 @@ export interface components {
         };
         UpdateDietaryRuleInput: {
             scope?: components["schemas"]["RuleScope"];
-            /** @description scope=ingredient: existing ingredient id (alternative to `ingredient`). */
+            /** @description scope=ingredient: existing ingredient id (alternative to `ingredient` and `fdcId`). */
             ingredientId?: string | null;
-            /** @description scope=ingredient: ingredient name; resolved and created when unknown. */
+            /** @description scope=ingredient: an existing ingredient name or alias. Never creates: an unknown name is a 422 with suggestions. */
             ingredient?: string;
+            /** @description scope=ingredient: a USDA food id. Uses the household ingredient linked to it, or creates one (named `name`). */
+            fdcId?: number;
+            /** @description With `fdcId` when it creates an ingredient: its name. */
+            name?: string;
             /** @description scope=recipe: the recipe id to exclude. */
             recipeId?: string | null;
             /** @description scope=category: category name; scope=tag: tag; scope=keyword: substring. */

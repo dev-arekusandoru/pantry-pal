@@ -48,6 +48,7 @@ const recipe = {
       recipeId: "rec_skillet",
       ingredientId: "ing_chicken",
       ingredient: { id: "ing_chicken", name: "chicken breast", category: "meat" },
+      alternatives: [],
       qty: 1,
       qtyMax: null,
       unit: "lb",

@@ -256,3 +256,9 @@
   display: flex;
   gap: 8px;
 }
+
+.ingredientLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

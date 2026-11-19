@@ -442,3 +442,21 @@
   gap: 8px;
   margin-top: 10px;
 }
+
+/* The ingredient name opens its ingredient page; quiet until hovered or focused. */
+.ingLink {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.ingLink:hover {
+  text-decoration-style: solid;
+}
+
+.ingLink:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

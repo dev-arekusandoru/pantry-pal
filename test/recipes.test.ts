@@ -13,7 +13,24 @@ import {
   setRecipeStatus,
   updateRecipe,
 } from "../src/services/recipes.js";
-import { FIXED_NOW, makeTestApp, makeTestCtx } from "./helpers.js";
+import { FIXED_NOW, addIngredient, makeTestApp, makeTestCtx } from "./helpers.js";
+
+/** Ingredients the tests below use by name; recipes never create ingredients. */
+const NAMES = [
+  "Ground beef",
+  "Yellow onion",
+  "Kosher salt",
+  "Rice",
+  "Carrot",
+  "Celery",
+  "Onion",
+  "Chicken thighs",
+  "Salt",
+  "Black pepper",
+  "Jasmine rice",
+  "Water",
+  "Rolled oats",
+];
 
 function expectAppError(fn: () => unknown, code: AppError["code"]): AppError {
   try {
@@ -37,8 +54,9 @@ function tickingClock(start: Date = FIXED_NOW): () => Date {
 }
 
 describe("createRecipe", () => {
-  it("auto-creates ingredients, normalizes units and keeps array order", () => {
-    const { ctx } = makeTestCtx();
+  it("resolves ingredients by name, normalizes units and keeps array order", () => {
+    const { ctx } = makeTestCtx({ ingredients: NAMES.filter((name) => name !== "Ground beef") });
+    addIngredient(ctx, "Ground beef", { category: "protein" });
 
     const recipe = createRecipe(ctx, {
       title: "Weeknight Chili",
@@ -65,7 +83,7 @@ describe("createRecipe", () => {
     expect(recipe.ingredients.map((item) => item.position)).toEqual([0, 1, 2]);
     expect(recipe.ingredients.map((item) => item.unit)).toEqual(["lb", "count", "tbsp"]);
     expect(recipe.ingredients[0]!.ingredient).toMatchObject({
-      name: "Ground beef",
+      name: "Ground Beef",
       category: "protein",
     });
     expect(recipe.ingredients[2]).toMatchObject({
@@ -78,19 +96,19 @@ describe("createRecipe", () => {
     expect(recipe.steps[1]!.durationMinutes).toBe(30);
     expect(recipe.stats).toEqual({ timesCooked: 0, lastCookedAt: null });
 
-    // The ingredient exists in the catalog and the recipe points at it.
+    // The recipe points at the existing catalog ingredient.
     const beef = findIngredientByName(ctx, "ground beef");
     expect(beef?.id).toBe(recipe.ingredients[0]!.ingredientId);
   });
 
   it("derives totalMinutes from prep + cook when omitted", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const recipe = createRecipe(ctx, { title: "Quick Pasta", prepMinutes: 10, cookMinutes: 15 });
     expect(recipe.totalMinutes).toBe(25);
   });
 
   it("writes the initial status event", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const recipe = createRecipe(ctx, { title: "Fresh Recipe" });
     const history = listStatusHistory(ctx, recipe.id);
     expect(history.items).toHaveLength(1);
@@ -103,7 +121,7 @@ describe("createRecipe", () => {
   });
 
   it("records the optional statusNote on the initial status event", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const recipe = createRecipe(ctx, {
       title: "Import Pending",
       status: "rotation",
@@ -119,7 +137,7 @@ describe("createRecipe", () => {
   });
 
   it("rejects an unknown explicit ingredient id", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     expectAppError(
       () =>
         createRecipe(ctx, {
@@ -131,7 +149,7 @@ describe("createRecipe", () => {
   });
 
   it("rejects an inverted quantity range", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     expectAppError(
       () =>
         createRecipe(ctx, {
@@ -145,7 +163,7 @@ describe("createRecipe", () => {
 
 describe("recipe slugs", () => {
   it("suffixes collisions per household", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
 
     const first = createRecipe(ctx, { title: "Grandma's Chili!" });
     const second = createRecipe(ctx, { title: "Grandma's Chili!" });
@@ -157,7 +175,7 @@ describe("recipe slugs", () => {
   });
 
   it("resolves recipes by slug and by id", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const created = createRecipe(ctx, { title: "Find Me", servings: 3 });
 
     expect(getRecipe(ctx, created.slug).id).toBe(created.id);
@@ -168,7 +186,7 @@ describe("recipe slugs", () => {
 
 describe("updateRecipe", () => {
   it("replaces ingredient and step lists in full", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const created = createRecipe(ctx, {
       title: "Soup",
       ingredients: [
@@ -202,7 +220,7 @@ describe("updateRecipe", () => {
   });
 
   it("lets nullable fields be cleared explicitly", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const created = createRecipe(ctx, {
       title: "Notes Recipe",
       notes: "Use the big pot",
@@ -215,7 +233,7 @@ describe("updateRecipe", () => {
   });
 
   it("records a status event when the status changes through a patch", () => {
-    const { ctx } = makeTestCtx({ now: tickingClock() });
+    const { ctx } = makeTestCtx({ now: tickingClock(), ingredients: NAMES });
     const created = createRecipe(ctx, { title: "Patch Status" });
 
     updateRecipe(ctx, created.id, { status: "rotation" });
@@ -226,7 +244,7 @@ describe("updateRecipe", () => {
   });
 
   it("stores statusNote as the note of the status event written by the patch", () => {
-    const { ctx } = makeTestCtx({ now: tickingClock() });
+    const { ctx } = makeTestCtx({ now: tickingClock(), ingredients: NAMES });
     const created = createRecipe(ctx, { title: "Patch Note" });
 
     updateRecipe(ctx, created.id, {
@@ -243,7 +261,7 @@ describe("updateRecipe", () => {
   });
 
   it("records a status event with the note when only the rating changes", () => {
-    const { ctx } = makeTestCtx({ now: tickingClock() });
+    const { ctx } = makeTestCtx({ now: tickingClock(), ingredients: NAMES });
     const created = createRecipe(ctx, { title: "Rated Patch" });
 
     updateRecipe(ctx, created.id, { rating: 4, statusNote: "family liked it" });
@@ -260,7 +278,7 @@ describe("updateRecipe", () => {
 
 describe("scaleRecipeIngredients", () => {
   it("scales quantities, qtyMax and leaves exempt or unmeasured lines untouched", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const recipe = createRecipe(ctx, {
       title: "Scale Me",
       servings: 4,
@@ -279,7 +297,7 @@ describe("scaleRecipeIngredients", () => {
     ]);
     expect(doubled[1]!.scalingExempt).toBe(true);
     expect(doubled[0]).toMatchObject({
-      ingredientName: "Chicken thighs",
+      ingredientName: "Chicken Thighs",
       category: "other",
       unit: "lb",
       optional: false,
@@ -294,7 +312,7 @@ describe("scaleRecipeIngredients", () => {
 
 describe("setRecipeStatus", () => {
   it("updates the recipe and appends history, newest first", () => {
-    const { ctx } = makeTestCtx({ now: tickingClock() });
+    const { ctx } = makeTestCtx({ now: tickingClock(), ingredients: NAMES });
     const created = createRecipe(ctx, { title: "Status Recipe" });
 
     const first = setRecipeStatus(ctx, created.id, {
@@ -320,7 +338,7 @@ describe("setRecipeStatus", () => {
 
   it("orders events written in the same millisecond by insertion order", () => {
     // Fixed clock: the initial event and both updates share one `createdAt`.
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const created = createRecipe(ctx, { title: "Tied Timestamps" });
     setRecipeStatus(ctx, created.id, { status: "rotation", note: "first change" });
     setRecipeStatus(ctx, created.id, { status: "archived", note: "second change" });
@@ -340,7 +358,7 @@ describe("setRecipeStatus", () => {
   });
 
   it("rejects an out-of-range rating", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const created = createRecipe(ctx, { title: "Rated" });
     expectAppError(() => setRecipeStatus(ctx, created.id, { status: "rotation", rating: 9 }), "validation");
   });
@@ -348,7 +366,7 @@ describe("setRecipeStatus", () => {
 
 describe("recipe REST sub-routes", () => {
   it("accepts a slug for check, status, status-history and scaled", async () => {
-    const { ctx, request } = makeTestApp();
+    const { ctx, request } = makeTestApp({ ingredients: NAMES });
     const recipe = createRecipe(ctx, {
       title: "Slug Sub-Routes",
       servings: 2,
@@ -388,7 +406,7 @@ describe("recipe REST sub-routes", () => {
 
 describe("recipe step links", () => {
   it("stores links by ingredient index and resolves the line name, unit and prep note", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const recipe = createRecipe(ctx, {
       title: "Linked Soup",
       ingredients: [
@@ -427,7 +445,7 @@ describe("recipe step links", () => {
   });
 
   it("rejects a link that points outside the ingredient list", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     expectAppError(
       () =>
         createRecipe(ctx, {
@@ -440,7 +458,7 @@ describe("recipe step links", () => {
   });
 
   it("rejects a negative link quantity", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     expectAppError(
       () =>
         createRecipe(ctx, {
@@ -453,7 +471,7 @@ describe("recipe step links", () => {
   });
 
   it("patches steps against the stored line order when ingredients are not replaced", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const created = createRecipe(ctx, {
       title: "Patch Links",
       ingredients: [
@@ -477,7 +495,7 @@ describe("recipe step links", () => {
   });
 
   it("drops links when the ingredient list is replaced without new steps", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const created = createRecipe(ctx, {
       title: "Drop Links",
       ingredients: [{ ingredient: "Rice", qty: 1, unit: "cup" }],
@@ -495,7 +513,7 @@ describe("recipe step links", () => {
 
 describe("recipe stats", () => {
   it("counts done cook events and reports the latest cook", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const recipe = createRecipe(ctx, { title: "Cooked Twice" });
 
     ctx.db
@@ -542,7 +560,7 @@ describe("recipe stats", () => {
 
 describe("searchRecipes", () => {
   function seed() {
-    const test = makeTestCtx();
+    const test = makeTestCtx({ ingredients: NAMES });
     const chili = createRecipe(test.ctx, {
       title: "Weeknight Chili",
       description: "Fast dinner",
@@ -612,7 +630,7 @@ describe("searchRecipes", () => {
 
 describe("deleteRecipe", () => {
   it("refuses when cook events reference the recipe, then deletes once free", () => {
-    const { ctx } = makeTestCtx();
+    const { ctx } = makeTestCtx({ ingredients: NAMES });
     const recipe = createRecipe(ctx, { title: "Referenced" });
 
     ctx.db

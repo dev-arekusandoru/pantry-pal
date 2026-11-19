@@ -55,6 +55,8 @@ describe("formatNumber / formatAmount", () => {
     expect(formatAmount(1.5, null, "clove")).toBe("1½ cloves");
     expect(formatAmount(1, null, "cup")).toBe("1 cup");
     expect(formatAmount(2, null, "tbsp")).toBe("2 tbsp");
+    expect(formatAmount(2, null, "large")).toBe("2 large");
+    expect(formatAmount(3, null, "extra-large")).toBe("3 extra-large");
     expect(formatAmount(2, null, "count")).toBe("2");
     expect(formatAmount(1, 2, "head")).toBe("1–2 heads");
     expect(formatAmount(null, null, null)).toBe("");

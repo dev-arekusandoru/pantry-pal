@@ -21,7 +21,10 @@ export function DexScreen() {
       const expanded = open === item.id;
       return <article key={item.id} className={`${styles.tile} ${!entry ? styles.uncollected : ""}`}>
         {entry ? <button aria-expanded={expanded} aria-label={`${item.name}, first cooked ${entry.firstCooked}, ${entry.times} cooks`} onClick={() => setOpen(expanded ? null : item.id)}><Emoji code={ingredientEmoji(item.name, item.imageUrl)} size={42} /><span className={styles.name}>{item.name}</span><span className={styles.meta}>First cooked {new Date(`${entry.firstCooked}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · ×{entry.times}</span></button> : <div className={styles.silhouette} role="img" aria-label={`Not cooked yet: ${item.name}`}><Emoji code={ingredientEmoji(item.name, item.imageUrl)} size={42} /><span className={styles.name} aria-hidden="true">{item.name}</span></div>}
-        {entry && expanded && <p className={styles.recipes}>Used in: {entry.recipes.join(", ")}</p>}
+        {entry && expanded && <>
+          <p className={styles.recipes}>Used in: {entry.recipes.join(", ")}</p>
+          <Link className={styles.open} to="/ingredients/$id" params={{ id: item.id }}>Open {item.name}</Link>
+        </>}
       </article>;
     })}</div></section>)}
   </>;

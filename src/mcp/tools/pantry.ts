@@ -3,19 +3,28 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Ctx } from "../../context.js";
 import { AppError } from "../../lib/errors.js";
 import { ICON_NAMES } from "../../lib/icons.js";
-import { createIngredientSchema, ingredientCategorySchema } from "../../schemas/ingredients.js";
+import {
+  createIngredientSchema,
+  ingredientCategorySchema,
+  ingredientRefSchema,
+} from "../../schemas/ingredients.js";
 import {
   bulkStockSchema,
   listPantryQuerySchema,
   movementRefTypeSchema,
 } from "../../schemas/pantry.js";
 import {
+  acceptIngredient,
   addAlias,
   createIngredient,
+  findIngredientCandidates,
   getIngredient,
+  getIngredientDetail,
   listIngredients,
+  listIngredientsForReview,
   mergeIngredients,
   removeAlias,
+  splitIngredient,
   updateIngredient,
 } from "../../services/ingredients.js";
 import {
@@ -38,6 +47,13 @@ import { requireArg, requireIngredientId, tool } from "./util.js";
 // ---------------------------------------------------------------------------
 
 const ingredientSearchInput = z.object({
+  ingredientId: z
+    .string()
+    .optional()
+    .describe(
+      "Return one ingredient's detail instead of a list: the ingredient plus where it is used (recipes, pantry, open shopping list items, dietary rules) and why it needs review.",
+    ),
+  ingredient: z.string().optional().describe("Ingredient name or alias (alternative to `ingredientId`) for the detail."),
   query: z
     .string()
     .optional()
@@ -60,18 +76,68 @@ const iconListInput = z.object({
     .describe("Maximum icon names to return (default 100)."),
 });
 
+const findIngredientInput = z.object({
+  query: z.string().min(1).describe('What you need, e.g. "yellow onion" or "olive oil".'),
+  limit: z.number().int().min(1).max(25).optional().describe("Maximum per list (default 10)."),
+});
+
+const { custom: _customFlag, name: _createName, ...createFields } = createIngredientSchema.shape;
+
+const customIngredientInput = z.object({
+  name: z
+    .string()
+    .min(1)
+    .describe(
+      "Name of ONE ingredient. No quantities, sizes (large), preparation (chopped), commas or \"x or y\"; those belong on the recipe line.",
+    ),
+  description: createFields.description,
+  category: createFields.category,
+  aliases: createFields.aliases,
+  defaultUnit: createFields.defaultUnit,
+  imageUrl: createFields.imageUrl,
+  shelfLifeDays: createFields.shelfLifeDays,
+  parQty: createFields.parQty,
+  parUnit: createFields.parUnit,
+  notes: createFields.notes,
+});
+
+const reviewInput = z.object({
+  action: z
+    .enum(["list", "accept", "split"])
+    .describe(
+      "list = ingredients to review with reasons and suggestions; accept = keep a custom ingredient as it is; split = turn an ingredient that names several into real ones.",
+    ),
+  ingredientId: z.string().optional().describe("Ingredient id for accept/split."),
+  ingredient: z.string().optional().describe("Ingredient name (alternative to `ingredientId`)."),
+  main: ingredientRefSchema
+    .optional()
+    .describe("split: becomes the ingredient of every recipe line that used this one."),
+  alternatives: z
+    .array(ingredientRefSchema)
+    .optional()
+    .describe("split: become alternatives of those lines."),
+});
+
 const ingredientUpsertInput = z
   .object({
     action: z
       .enum(["create", "update", "alias", "merge"])
-      .describe("create a new ingredient, update one, manage its aliases, or merge two into one."),
+      .describe(
+        "create a LINKED ingredient (needs `fdcId`), update one, manage its aliases, or merge two into one.",
+      ),
     ingredientId: z.string().optional().describe("Existing ingredient id for update/alias/merge."),
     ingredient: z
       .string()
       .optional()
       .describe("Ingredient name (alternative to `ingredientId`) for update/alias/merge."),
-    ...createIngredientSchema.shape,
-    name: z.string().min(1).optional().describe("Canonical name (required when creating)."),
+    ...createFields,
+    name: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        "Canonical name; with `fdcId` it defaults to a name derived from the USDA description. Renames must pass the naming rules.",
+      ),
     removeAliases: z
       .array(z.string().min(1))
       .optional()
@@ -82,7 +148,7 @@ const ingredientUpsertInput = z
       .describe("Target ingredient id that survives the merge (action=merge)."),
   })
   .describe(
-    'Create or update an ingredient with its category, icon (`imageUrl`: a bundled icon name from list_icons, an http(s) URL, or null for automatic), default unit, aliases, shelf life, par level and notes; merge folds a duplicate into another.',
+    'Create a linked ingredient (`fdcId` from find_ingredient or search_foods; no custom ingredients here, see create_custom_ingredient) or update one: category, icon (`imageUrl`: a bundled icon name from list_icons, an http(s) URL, or null for automatic), default unit, aliases, shelf life, par level and notes; merge folds a duplicate into another.',
   );
 
 const unitConversionsInput = z.object({
@@ -145,19 +211,73 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Search ingredients",
       description:
-        "Find ingredients by name/alias/category. Returns ids, default units, aliases, custom conversions and current stock.",
+        "List ingredients by name/alias/category with ids, default units, aliases, custom conversions and current stock. Pass ingredientId (or ingredient) for one ingredient's detail with its usage (recipes, pantry, open shopping list items, dietary rules). To pick the ingredient for a recipe line, pantry line or rule, use find_ingredient first.",
       inputSchema: ingredientSearchInput,
       annotations: { readOnlyHint: true },
     },
-    tool((args: z.infer<typeof ingredientSearchInput>) =>
-      ({
+    tool((args: z.infer<typeof ingredientSearchInput>) => {
+      if (args.ingredientId !== undefined || args.ingredient !== undefined) {
+        return { ingredient: getIngredientDetail(ctx, requireIngredientId(ctx, args)) };
+      }
+      return {
         items: listIngredients(ctx, {
           ...(args.query === undefined ? {} : { query: args.query }),
           ...(args.category === undefined ? {} : { category: args.category }),
           includeArchived: args.includeArchived === true,
         }),
-      }),
+      };
+    }),
+  );
+
+  server.registerTool(
+    "find_ingredient",
+    {
+      title: "Find an ingredient",
+      description:
+        "ALWAYS call this before using an ingredient name you are not sure exists. Returns existing household `ingredients` that match (use their `id` as `ingredientId`, or their exact name) and USDA `foods` (use `fdcId` and `suggestedName` as `name` to create a linked ingredient in the same recipe/pantry/rule call). Put \"x or y\" in `alternatives`, sizes in the line `unit` (large), preparation in `prepNote`: never in the name.",
+      inputSchema: findIngredientInput,
+      annotations: { readOnlyHint: true },
+    },
+    tool((args: z.infer<typeof findIngredientInput>) =>
+      findIngredientCandidates(ctx, args.query, args.limit),
     ),
+  );
+
+  server.registerTool(
+    "create_custom_ingredient",
+    {
+      title: "Create a custom ingredient (last resort)",
+      description:
+        "Creates an ingredient with NO USDA food (no nutrition). LAST RESORT: only after find_ingredient and search_foods returned nothing usable. Never for combinations or alternatives (\"milk or water\": use recipe `alternatives`), sizes (\"large egg\": use the unit), or preparation (\"chopped onion\": use prepNote). The ingredient is flagged for review by a person.",
+      inputSchema: customIngredientInput,
+    },
+    tool((args: z.infer<typeof customIngredientInput>) => ({
+      ingredient: createIngredient(ctx, { ...args, custom: true, needsReview: true }),
+    })),
+  );
+
+  server.registerTool(
+    "review_ingredients",
+    {
+      title: "Review ingredients",
+      description:
+        "action=list: ingredients that need attention (unlinked, custom and not yet accepted, or with a name that breaks the naming rules) with reasons and suggestions. action=accept: keep a custom ingredient as it is. action=split: an ingredient that names several (\"Milk or water\") becomes `main` plus `alternatives` on every recipe line that used it, and is archived. To link a food use set_ingredient_nutrition; to rename use ingredient_upsert; to fold a duplicate use ingredient_upsert merge.",
+      inputSchema: reviewInput,
+      annotations: { destructiveHint: true },
+    },
+    tool((args: z.infer<typeof reviewInput>) => {
+      switch (args.action) {
+        case "list":
+          return { items: listIngredientsForReview(ctx) };
+        case "accept":
+          return { ingredient: acceptIngredient(ctx, requireIngredientId(ctx, args)) };
+        case "split":
+          return splitIngredient(ctx, requireIngredientId(ctx, args), {
+            main: requireArg(args.main, "main"),
+            ...(args.alternatives === undefined ? {} : { alternatives: args.alternatives }),
+          });
+      }
+    }),
   );
 
   server.registerTool(
@@ -181,15 +301,14 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Create, update or merge ingredient",
       description:
-        "action=create (name required), update (by ingredientId/ingredient), alias (add `aliases`, remove `removeAliases`) or merge (source → `intoId`). Duplicate names are a conflict.",
+        "action=create (a linked ingredient: `fdcId` required, `name` optional; without it the call is 422 with suggestions), update (by ingredientId/ingredient; includes `defaultPortion`, the food portion a plain count means), alias (add `aliases`, remove `removeAliases`) or merge (source → `intoId`). Names hold one ingredient only: no quantities, sizes, preparation or \"x or y\". Duplicate names are a conflict.",
       inputSchema: ingredientUpsertInput,
       annotations: { destructiveHint: true },
     },
     tool((args: z.infer<typeof ingredientUpsertInput>) => {
       switch (args.action) {
         case "create": {
-          const name = requireArg(args.name, "name");
-          return { ingredient: createIngredient(ctx, { ...args, name }) };
+          return { ingredient: createIngredient(ctx, args) };
         }
         case "update": {
           const id = requireIngredientId(ctx, args);
@@ -294,7 +413,7 @@ export function registerPantryTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Update pantry stock",
       description:
-        'action=bulk applies `set`/`adjust` lines atomically (ingredient refs accept names; unknown names on positive set/adjust are created), action=verify stamps lastVerifiedAt, action=delete removes the row and its movements.',
+        'action=bulk applies `set`/`adjust` lines atomically (each line names an ingredient by `ingredientId`, an existing `ingredient` name, or `fdcId` (+ `name`) for a new linked one; unknown names create nothing: 422 listing all of them with suggestions. Call find_ingredient first), action=verify stamps lastVerifiedAt, action=delete removes the row and its movements.',
       inputSchema: pantryUpdateInput,
       annotations: { destructiveHint: true },
     },

@@ -46,7 +46,7 @@ export function registerNutritionTools(server: McpServer, ctx: Ctx): void {
     {
       title: "Search USDA foods",
       description:
-        "Search the bundled USDA foods by name, best match first, with nutrients per 100 g, portions and a match score. Use the fdcId with set_ingredient_nutrition.",
+        "Search the bundled USDA foods by name, best match first, with nutrients per 100 g, portions and a match score. Each food has a `suggestedName`. Use the fdcId with set_ingredient_nutrition, or as `fdcId` (+ `name`) on a recipe line, pantry line or rule to create a linked ingredient. Prefer find_ingredient, which also lists existing ingredients.",
       inputSchema: searchFoodsInput,
       annotations: { readOnlyHint: true },
     },

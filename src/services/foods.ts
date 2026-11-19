@@ -584,14 +584,41 @@ function countGrams(portions: ParsedLabel[], qty: number): number | null {
   return piece ? qty * piece.portion.grams : null;
 }
 
+/** Portion label of each size unit (USDA writes "extra large", the stored unit is "extra-large"). */
+const SIZE_PORTION_LABELS: Record<string, string> = {
+  small: "small",
+  medium: "medium",
+  large: "large",
+  "extra-large": "extra large",
+  jumbo: "jumbo",
+};
+
+/** A portion by label: the exact label first ("large"), then a label that starts with it ("large whole"). */
+function labelledPortion(food: Food, label: string): FoodPortion | null {
+  const wanted = label.toLowerCase().trim();
+  const labels = food.portions.map((portion) => ({ portion, text: portion.label.toLowerCase().trim() }));
+  return (
+    labels.find((entry) => entry.text === wanted)?.portion ??
+    labels.find((entry) => entry.text.startsWith(`${wanted} `) || entry.text.startsWith(`${wanted},`))?.portion ??
+    null
+  );
+}
+
 /**
  * Grams in `qty` of `unit` for this food, using the food's own portions:
  * mass units directly; volume units through the density of its volume portions;
- * count-ish units (none, "each", "whole", "piece") through its "medium" or first piece-like
- * portion; any other unit (clove, slice, can, stick, large...) through a portion of that name.
+ * size units (small ... jumbo) through the portion with that label, else the
+ * count fallback; a plain count (none, "each", "whole", "dozen") through
+ * `defaultPortion` when the ingredient sets one, else the "medium" or first
+ * piece-like portion; any other unit (clove, slice, can, stick...) through a portion of that name.
  * `null` when the food has no basis for the conversion.
  */
-export function gramsFor(food: Food, qty: number, unit: string | null | undefined): number | null {
+export function gramsFor(
+  food: Food,
+  qty: number,
+  unit: string | null | undefined,
+  defaultPortion?: string | null,
+): number | null {
   if (!Number.isFinite(qty)) return null;
   const normalized = normalizeUnit(unit);
 
@@ -604,15 +631,25 @@ export function gramsFor(food: Food, qty: number, unit: string | null | undefine
     return volumeGrams(portions, qty, normalized);
   }
 
-  // `normalizeUnit` maps null/undefined to null and ""/"each"/"whole" to "count".
-  if (unit === null || unit === undefined) return countGrams(portions, qty);
-  const perCount = normalized === null ? null : builtinFactor(normalized, "count");
-  if (perCount !== null) {
-    const grams = countGrams(portions, qty);
-    return grams === null ? null : grams * perCount;
+  if (normalized !== null && Object.hasOwn(SIZE_PORTION_LABELS, normalized)) {
+    const sized = labelledPortion(food, SIZE_PORTION_LABELS[normalized] as string);
+    if (sized) return qty * sized.grams;
+    return countGrams(portions, qty);
   }
 
-  // Named portion: "clove", "slice", "can", "large", "stick"...
+  // `normalizeUnit` maps null/undefined to null and ""/"each"/"whole" to "count".
+  const perCount = normalized === null ? null : builtinFactor(normalized, "count");
+  if (unit === null || unit === undefined || perCount !== null) {
+    const preferred =
+      defaultPortion === null || defaultPortion === undefined
+        ? null
+        : labelledPortion(food, defaultPortion);
+    if (preferred) return qty * (perCount ?? 1) * preferred.grams;
+    const grams = countGrams(portions, qty);
+    return grams === null ? null : grams * (perCount ?? 1);
+  }
+
+  // Named portion: "clove", "slice", "can", "stick"...
   const key = stem((normalized ?? unit).toLowerCase().trim());
   if (key === "") return null;
   const named = pickPortion(portions.filter((p) => p.volume === null && p.head === key));

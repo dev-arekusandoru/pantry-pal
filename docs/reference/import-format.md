@@ -18,7 +18,8 @@ See [Data import](import.md) for commands and safety checks.
   `null` (unknown amount, e.g. "to taste" / "on hand").
 - **Units are already normalized** to the names accepted by `normalizeUnit()`:
   `lb, oz, g, kg, ml, l, cup, tbsp, tsp, fl_oz, pint, quart, gallon, count` and the package/count
-  units `can, jar, bag, bunch, head, clove, sprig, stalk, package, bottle, box, slice, piece`.
+  units `can, jar, bag, bunch, head, clove, sprig, stalk, package, bottle, box, slice, piece`, and the sizes
+  `small, medium, large, extra-large, jumbo`.
   The loader still runs `normalizeUnit()` on every unit and aborts on an unknown one.
 - **Enums match `schema.ts` exactly**; see [Enumerations](#enumerations). The loader validates every
   enum value and aborts with `AppError("validation", …)` before writing anything.
@@ -26,6 +27,9 @@ See [Data import](import.md) for commands and safety checks.
   pantry rows, shopping items, unit conversions, and ingredient-scoped rules. Unresolved names are a
   hard error (`{ unresolved: [names] }`), because the seed must not silently create shadow
   ingredients.
+- **Every ingredient declares its food.** Set `fdcId` (a USDA food from `search_foods`) or
+  `custom: true` for a food with no USDA match. Exactly one is required. The loader sets
+  `needsReview` to false for both.
 
 ## Shape
 
@@ -66,8 +70,11 @@ All eight top-level keys are required; the arrays may be empty but are not omitt
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `name` | string | yes | Canonical display name; must be unique (case-insensitive). Referenced everywhere else by this string. |
+| `name` | string | yes | Canonical display name; must be unique (case-insensitive). Stored in Title Case (`olive oil` becomes `Olive Oil`; see [Naming rules](../use/ingredients.md#naming-rules)). Referenced everywhere else by this string, in any letter case. |
 | `category` | enum `ingredientCategory` | yes | |
+| `fdcId` | integer | one of `fdcId`, `custom` | USDA FoodData Central ID of the linked food. Two ingredients may share one food in a seed (for example Red onion and Yellow onion). |
+| `custom` | `true` | one of `fdcId`, `custom` | An ingredient with no USDA food. Use it as a last resort. |
+| `defaultPortion` | size \| null | no | Size that a bare count means, for example `large` for Egg. The linked food must have that portion. |
 | `defaultUnit` | unit \| null | yes | Used for stock/shopping when nothing else is specified. |
 | `aliases` | string[] | yes | May be `[]`. Lowercased by the loader; must not collide with any alias or ingredient name. Each becomes an `ingredient_alias` row. |
 | `description` | string | no | Optional prose description. |
@@ -301,6 +308,7 @@ not encode timestamps for individual rows.
   `<ingredient> | on hand | …` for unknown amounts. It is provenance text, not parsed by the loader.
 - `on hand` → `qty: null, unit: null, status: "on_hand"`; every pantry row is `on_hand` because no
   row sets `parQty`.
+- Ingredient names follow the [name rules](rest-api.md#ingredient-names). `Italian seasoning` is `custom`. Egg uses `defaultPortion: "large"`, and its recipe lines use unit `large`.
 - Recipes: the lunch/dinner recipes are public blog recipes transcribed with their ingredients,
   steps, times, servings, image and nutrition. Breakfasts are authored (no source URL). Plan-level
   adaptations live in each recipe's `notes`, not in the ingredient quantities.

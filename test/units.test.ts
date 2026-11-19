@@ -129,7 +129,7 @@ describe("convert", () => {
 
   it("chains a per-ingredient packaging conversion through a built-in family", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Canned tomatoes" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Canned tomatoes" });
     createConversion(ctx, {
       ingredientId: ingredient.id,
       fromUnit: "can",
@@ -141,7 +141,7 @@ describe("convert", () => {
     expect(lb).toBeCloseTo((14.5 * OZ_IN_G) / LB_IN_G, 9);
     expect(convert(ctx, 1, "oz", "can", ingredient.id)).toBeCloseTo(1 / 14.5, 12);
     // Not comparable for an ingredient without its own conversion.
-    const other = createIngredient(ctx, { name: "Canned beans" });
+    const other = createIngredient(ctx, { custom: true, name: "Canned beans" });
     expect(convert(ctx, 1, "can", "lb", other.id)).toBeNull();
   });
 
@@ -155,7 +155,7 @@ describe("convert", () => {
 
   it("prefers the per-ingredient conversion over the global one", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Tomato paste" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Tomato paste" });
     createConversion(ctx, { fromUnit: "can", toUnit: "oz", factor: 12 });
     createConversion(ctx, {
       ingredientId: ingredient.id,
@@ -177,7 +177,7 @@ describe("convert", () => {
 describe("conversion rows", () => {
   it("normalizes units, lists and deletes rows", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Coconut milk" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Coconut milk" });
     const created = createConversion(ctx, {
       ingredientId: ingredient.id,
       fromUnit: "Cans",
@@ -235,7 +235,7 @@ describe("conversion rows", () => {
 
   it("rejects a conversion whose reverse pair already exists in the same scope", () => {
     const { ctx } = makeTestCtx();
-    const ingredient = createIngredient(ctx, { name: "Canned tomato" });
+    const ingredient = createIngredient(ctx, { custom: true, name: "Canned tomato" });
     createConversion(ctx, {
       ingredientId: ingredient.id,
       fromUnit: "can",
@@ -277,7 +277,7 @@ describe("conversion rows", () => {
   it("walks multi-path conversions deterministically regardless of insertion order", () => {
     function graph(rows: Array<[string, string, number]>) {
       const { ctx } = makeTestCtx();
-      const ingredient = createIngredient(ctx, { name: "Flour bag" });
+      const ingredient = createIngredient(ctx, { custom: true, name: "Flour bag" });
       for (const [fromUnit, toUnit, factor] of rows) {
         createConversion(ctx, { ingredientId: ingredient.id, fromUnit, toUnit, factor });
       }

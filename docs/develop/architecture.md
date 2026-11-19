@@ -24,7 +24,7 @@ flowchart LR
 | `src/db/schema.ts` | Database tables |
 | `drizzle/` | Database migrations |
 | `nutrition/` | Bundled USDA food data, built by `pnpm nutrition:data` |
-| `src/seed/` | JSON import loader |
+| `src/seed/` | JSON import loader; every seed ingredient declares `fdcId` or `custom` |
 | `src/cli.ts` | Household, token, migration, and import commands |
 
 Keep food calculations in services. REST routes and MCP tools call the same
@@ -69,8 +69,17 @@ confirmation. `Button` has these variants:
 - Stock movements record changes. Pantry rows hold the current stock.
 - Planned cooks determine stock commitments. There is no separate reservation table.
 - One cook can feed several meal slots. Later slots represent leftovers.
-- A recipe keeps separate ingredient and step records.
+- A recipe keeps separate ingredient and step records. A line can list
+  alternative ingredients. Nutrition, stock, shopping, and dietary checks use
+  only the main ingredient.
+- Services never create an ingredient from a free-text name. A write that names
+  an unknown ingredient fails with `unprocessable` and suggestions. An
+  ingredient is created only through a USDA food (`fdcId`) or as a custom
+  ingredient. Name lint runs on every create and rename.
+- A custom ingredient has no USDA food and can carry `needsReview`. Only a
+  browser session counts as a web request; every other request counts as API.
 - Quantities can be unknown. Do not treat an unknown amount as zero.
+- Size units (`small`, `medium`, `large`, `extra-large`, `jumbo`) are count units. An ingredient can set `defaultPortion` to a size that a bare count means.
 - Use defined unit conversions. Do not guess a weight from a volume.
 
 ## Schema changes

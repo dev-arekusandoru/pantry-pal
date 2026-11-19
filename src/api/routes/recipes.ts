@@ -66,7 +66,7 @@ const createRecipeRoute = createRoute({
   tags: ["recipes"],
   summary: "Create a recipe",
   description:
-    "Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.",
+    "Creates the recipe with ordered ingredients and steps. Each ingredient line names an existing ingredient (`ingredientId`, or `ingredient` by name or alias) or a USDA food (`fdcId`, which reuses or creates a linked ingredient; send `name`). Unknown names create nothing: the request is 422 listing every unknown name with suggestions. `alternatives` lists stand-ins (\"milk or water\"). Units are normalized; sizes (large...) are count units. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.",
   request: {
     body: { content: json(createRecipeSchema), required: true },
   },

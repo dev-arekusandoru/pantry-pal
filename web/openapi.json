@@ -1121,13 +1121,21 @@
           },
           "per100g": {
             "$ref": "#/components/schemas/Nutrients"
+          },
+          "portions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodPortion"
+            },
+            "description": "Portions of the linked food. `defaultPortion` is one of these labels."
           }
         },
         "required": [
           "source",
           "fdcId",
           "description",
-          "per100g"
+          "per100g",
+          "portions"
         ],
         "description": "USDA food matched to this ingredient; null = no match."
       },
@@ -1195,6 +1203,23 @@
           "fiber",
           "sugar",
           "sodium"
+        ]
+      },
+      "FoodPortion": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Portion label, e.g. \"cup\" or \"medium\"."
+          },
+          "grams": {
+            "type": "number",
+            "description": "Grams in one such portion."
+          }
+        },
+        "required": [
+          "label",
+          "grams"
         ]
       },
       "IngredientAlias": {
@@ -1388,6 +1413,17 @@
               "null"
             ]
           },
+          "defaultPortion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Portion of the linked USDA food that a plain count means, e.g. \"large\" for eggs (\"2\" eggs = 2 large). Null for custom ingredients."
+          },
+          "needsReview": {
+            "type": "boolean",
+            "description": "True for custom ingredients nobody has accepted yet, and unlinked legacy ingredients."
+          },
           "archivedAt": {
             "type": [
               "string",
@@ -1414,6 +1450,8 @@
           "parQty",
           "parUnit",
           "notes",
+          "defaultPortion",
+          "needsReview",
           "archivedAt",
           "createdAt",
           "updatedAt"
@@ -1425,7 +1463,23 @@
           "name": {
             "type": "string",
             "minLength": 1,
-            "description": "Canonical name, e.g. \"Yellow onion\"."
+            "description": "Canonical name, e.g. \"Yellow onion\". Required for a custom ingredient; with `fdcId` it defaults to a name derived from the USDA description. Names cannot hold quantities, sizes, preparation or \"x or y\"."
+          },
+          "fdcId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Create a linked ingredient for this USDA food (see GET /nutrition/foods). 409 when the household already has an ingredient linked to it."
+          },
+          "custom": {
+            "type": "boolean",
+            "description": "true = create an ingredient with no USDA food. Last resort: look for a match first (GET /ingredients/find). Without `fdcId` or `custom: true` the request is 422 with suggestions. Customs created with an API token or over MCP are flagged for review."
+          },
+          "defaultPortion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Portion label of the linked food that a plain count means, e.g. \"large\". Needs `fdcId`."
           },
           "description": {
             "type": [
@@ -1501,9 +1555,561 @@
               "null"
             ]
           }
+        }
+      },
+      "FindIngredientsResult": {
+        "type": "object",
+        "properties": {
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "produce",
+                    "protein",
+                    "dairy",
+                    "bakery",
+                    "pantry",
+                    "baking",
+                    "spice",
+                    "canned",
+                    "condiment",
+                    "frozen",
+                    "beverage",
+                    "other"
+                  ],
+                  "description": "Ingredient category used for grouping and shopping aisles."
+                },
+                "defaultUnit": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "defaultPortion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "aliases": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "linked": {
+                  "type": "boolean",
+                  "description": "Linked to a USDA food (false = custom)."
+                },
+                "fdcId": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "needsReview": {
+                  "type": "boolean"
+                },
+                "score": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "category",
+                "defaultUnit",
+                "defaultPortion",
+                "aliases",
+                "linked",
+                "fdcId",
+                "needsReview",
+                "score"
+              ]
+            },
+            "description": "Existing household ingredients that match, best first. Prefer these."
+          },
+          "foods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fdcId": {
+                  "type": "integer"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "suggestedName": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                },
+                "ingredientId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The household ingredient already linked to this food, if any."
+                }
+              },
+              "required": [
+                "fdcId",
+                "description",
+                "suggestedName",
+                "score",
+                "ingredientId"
+              ]
+            },
+            "description": "USDA foods that match. Send `fdcId` (and `suggestedName` as `name`) to create a linked ingredient."
+          }
         },
         "required": [
-          "name"
+          "ingredients",
+          "foods"
+        ]
+      },
+      "IngredientReviewList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngredientReviewItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "IngredientReviewItem": {
+        "type": "object",
+        "properties": {
+          "ingredient": {
+            "$ref": "#/components/schemas/IngredientView"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "unlinked",
+                "lint",
+                "custom_unreviewed"
+              ],
+              "description": "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet."
+            }
+          },
+          "lint": {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string"
+              },
+              "hint": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "reason",
+              "hint"
+            ],
+            "description": "Present when `reasons` has lint."
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngredientSuggestion"
+            },
+            "description": "Ways to fix it: existing ingredients and USDA foods."
+          }
+        },
+        "required": [
+          "ingredient",
+          "reasons",
+          "suggestions"
+        ]
+      },
+      "IngredientSuggestion": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "ingredient"
+                ]
+              },
+              "ingredientId": {
+                "type": "string",
+                "description": "Existing household ingredient."
+              },
+              "name": {
+                "type": "string"
+              },
+              "score": {
+                "type": "number",
+                "description": "Match score 0..1."
+              }
+            },
+            "required": [
+              "kind",
+              "ingredientId",
+              "name",
+              "score"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "food"
+                ]
+              },
+              "fdcId": {
+                "type": "integer",
+                "description": "USDA food: send it as `fdcId` to create a linked ingredient."
+              },
+              "description": {
+                "type": "string",
+                "description": "USDA description."
+              },
+              "suggestedName": {
+                "type": "string",
+                "description": "Friendly name to send as `name`."
+              },
+              "score": {
+                "type": "number",
+                "description": "Match score 0..1."
+              }
+            },
+            "required": [
+              "kind",
+              "fdcId",
+              "description",
+              "suggestedName",
+              "score"
+            ]
+          }
+        ]
+      },
+      "IngredientUsageCounts": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ingredientId": {
+                  "type": "string"
+                },
+                "recipes": {
+                  "type": "integer",
+                  "description": "Recipes with a line or alternative for the ingredient."
+                },
+                "pantry": {
+                  "type": "integer"
+                },
+                "shopping": {
+                  "type": "integer",
+                  "description": "Items on lists that are not done."
+                },
+                "rules": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "ingredientId",
+                "recipes",
+                "pantry",
+                "shopping",
+                "rules"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "description": "Only ingredients that are used somewhere are listed; all others are unused."
+      },
+      "IngredientDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/IngredientView"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "usage": {
+                "$ref": "#/components/schemas/IngredientUsage"
+              },
+              "review": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "reasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "unlinked",
+                        "lint",
+                        "custom_unreviewed"
+                      ],
+                      "description": "unlinked = no USDA food; lint = the name breaks the naming rules; custom_unreviewed = nobody accepted this custom ingredient yet."
+                    }
+                  },
+                  "lint": {
+                    "type": "object",
+                    "properties": {
+                      "reason": {
+                        "type": "string"
+                      },
+                      "hint": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "reason",
+                      "hint"
+                    ]
+                  },
+                  "suggestions": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/IngredientSuggestion"
+                    }
+                  }
+                },
+                "required": [
+                  "reasons",
+                  "suggestions"
+                ],
+                "description": "Why the ingredient needs attention; null when it does not."
+              }
+            },
+            "required": [
+              "usage",
+              "review"
+            ]
+          }
+        ]
+      },
+      "IngredientUsage": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Recipe id (rec_...)."
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "lines": {
+                  "type": "integer",
+                  "description": "Recipe lines that use the ingredient."
+                },
+                "asMain": {
+                  "type": "integer",
+                  "description": "Lines where it is the main ingredient."
+                },
+                "asAlternative": {
+                  "type": "integer",
+                  "description": "Lines where it is an alternative."
+                }
+              },
+              "required": [
+                "id",
+                "slug",
+                "title",
+                "lines",
+                "asMain",
+                "asAlternative"
+              ]
+            },
+            "description": "Recipes that use the ingredient, by title."
+          },
+          "pantryItem": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Pantry item id (pi_...)."
+              },
+              "qty": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Known quantity; null = present but unknown."
+              },
+              "unit": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Normalized unit."
+              },
+              "qtyApprox": {
+                "type": "boolean",
+                "description": "True when the quantity is an estimate."
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "on_hand",
+                  "low",
+                  "out",
+                  "unknown"
+                ],
+                "description": "on_hand = stocked, low = at/below par, out = none left, unknown = present but unmeasured."
+              }
+            },
+            "required": [
+              "id",
+              "qty",
+              "unit",
+              "qtyApprox",
+              "status"
+            ],
+            "description": "The pantry row, or null when it is not stocked."
+          },
+          "shoppingItems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string"
+                },
+                "listId": {
+                  "type": "string"
+                },
+                "listTitle": {
+                  "type": "string"
+                },
+                "listStatus": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "shopping",
+                    "done"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "qty": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "checked": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "itemId",
+                "listId",
+                "listTitle",
+                "listStatus",
+                "name",
+                "qty",
+                "unit",
+                "checked"
+              ]
+            },
+            "description": "Items on shopping lists that are not done."
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": [
+                    "forbidden",
+                    "avoid",
+                    "limit"
+                  ]
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "conditionNote": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "memberId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "null = the whole household."
+                }
+              },
+              "required": [
+                "id",
+                "severity",
+                "reason",
+                "conditionNote",
+                "memberId"
+              ]
+            },
+            "description": "Dietary rules for this ingredient."
+          }
+        },
+        "required": [
+          "recipes",
+          "pantryItem",
+          "shoppingItems",
+          "rules"
         ]
       },
       "UpdateIngredient": {
@@ -1576,6 +2182,13 @@
               "string",
               "null"
             ]
+          },
+          "defaultPortion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Portion label of the linked food that a plain count means; null clears it."
           }
         }
       },
@@ -1665,6 +2278,130 @@
         "required": [
           "intoId"
         ]
+      },
+      "SplitIngredientResult": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IngredientView"
+              },
+              {
+                "description": "The split ingredient, now archived."
+              }
+            ]
+          },
+          "main": {
+            "$ref": "#/components/schemas/IngredientView"
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngredientView"
+            }
+          },
+          "moved": {
+            "type": "object",
+            "properties": {
+              "recipeLines": {
+                "type": "integer",
+                "description": "Recipe lines that used the split ingredient as the main one."
+              },
+              "alternativeLines": {
+                "type": "integer",
+                "description": "Recipe lines that listed it as an alternative."
+              },
+              "pantryItems": {
+                "type": "integer"
+              },
+              "shoppingItems": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "recipeLines",
+              "alternativeLines",
+              "pantryItems",
+              "shoppingItems"
+            ]
+          }
+        },
+        "required": [
+          "source",
+          "main",
+          "alternatives",
+          "moved"
+        ]
+      },
+      "SplitIngredient": {
+        "type": "object",
+        "properties": {
+          "main": {
+            "$ref": "#/components/schemas/IngredientRef"
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/IngredientRef"
+                },
+                {
+                  "description": "Exactly one of `ingredientId`, `ingredient` or `fdcId` names the ingredient."
+                }
+              ]
+            },
+            "description": "Become alternatives of those lines."
+          }
+        },
+        "required": [
+          "main"
+        ]
+      },
+      "IngredientRef": {
+        "type": "object",
+        "properties": {
+          "ingredientId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Existing ingredient id."
+          },
+          "ingredient": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions."
+          },
+          "fdcId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused."
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "produce",
+              "protein",
+              "dairy",
+              "bakery",
+              "pantry",
+              "baking",
+              "spice",
+              "canned",
+              "condiment",
+              "frozen",
+              "beverage",
+              "other"
+            ],
+            "description": "With `fdcId` when it creates an ingredient: its category (default other)."
+          }
+        },
+        "description": "Becomes the ingredient of every recipe line that used this one."
       },
       "UnitConversionList": {
         "type": "object",
@@ -2010,11 +2747,23 @@
         "properties": {
           "ingredientId": {
             "type": "string",
-            "description": "Existing ingredient id; wins over `ingredient`."
+            "minLength": 1,
+            "description": "Existing ingredient id."
           },
           "ingredient": {
             "type": "string",
-            "description": "Ingredient name; resolved through names, aliases and plurals."
+            "minLength": 1,
+            "description": "Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions."
+          },
+          "fdcId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused."
           },
           "category": {
             "type": "string",
@@ -2032,7 +2781,7 @@
               "beverage",
               "other"
             ],
-            "description": "Category used when the ingredient has to be created."
+            "description": "With `fdcId` when it creates an ingredient: its category (default other)."
           },
           "qty": {
             "type": [
@@ -2130,11 +2879,23 @@
         "properties": {
           "ingredientId": {
             "type": "string",
-            "description": "Existing ingredient id; wins over `ingredient`."
+            "minLength": 1,
+            "description": "Existing ingredient id."
           },
           "ingredient": {
             "type": "string",
-            "description": "Ingredient name; resolved through names, aliases and plurals."
+            "minLength": 1,
+            "description": "Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions."
+          },
+          "fdcId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused."
           },
           "category": {
             "type": "string",
@@ -2152,7 +2913,7 @@
               "beverage",
               "other"
             ],
-            "description": "Category used when the ingredient has to be created."
+            "description": "With `fdcId` when it creates an ingredient: its category (default other)."
           },
           "delta": {
             "type": "number",
@@ -2931,6 +3692,25 @@
             ],
             "description": "Referenced ingredient."
           },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ingredientId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "ingredientId",
+                "name"
+              ]
+            },
+            "description": "Stand-ins for the main ingredient, in order, e.g. [{\"name\":\"Water\"}] for \"Milk (or water)\"."
+          },
           "qty": {
             "type": [
               "number",
@@ -2983,6 +3763,7 @@
           "recipeId",
           "ingredientId",
           "ingredient",
+          "alternatives",
           "qty",
           "qtyMax",
           "unit",
@@ -3343,22 +4124,54 @@
           "ingredientId": {
             "type": "string",
             "minLength": 1,
-            "description": "Existing ingredient id. Provide this or `ingredient` (name)."
+            "description": "Existing ingredient id."
           },
           "ingredient": {
             "type": "string",
             "minLength": 1,
-            "description": "Ingredient name. Resolved against existing ingredients, aliases and simple plural variants; created when unknown."
+            "description": "Existing ingredient name or alias (plural variants match). Never creates: an unknown name is a 422 with suggestions."
+          },
+          "fdcId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "USDA food id (from GET /nutrition/foods or /ingredients/find). Uses the household ingredient already linked to this food, or creates one."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "With `fdcId` when it creates an ingredient: its name (default: derived from the USDA description). Ignored when one is reused."
           },
           "category": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/IngredientCategory"
-              },
-              {
-                "description": "Category used when the named ingredient has to be created (defaults to other)."
-              }
-            ]
+            "type": "string",
+            "enum": [
+              "produce",
+              "protein",
+              "dairy",
+              "bakery",
+              "pantry",
+              "baking",
+              "spice",
+              "canned",
+              "condiment",
+              "frozen",
+              "beverage",
+              "other"
+            ],
+            "description": "With `fdcId` when it creates an ingredient: its category (default other)."
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/IngredientRef"
+                },
+                {
+                  "description": "Exactly one of `ingredientId`, `ingredient` or `fdcId` names the ingredient."
+                }
+              ]
+            },
+            "description": "Ingredients that can stand in for the main one (\"milk or water\" => ingredient milk, alternatives [water]). Same references and 422 rules as the main ingredient. Nutrition, stock, shopping and dietary rules use the main ingredient only."
           },
           "qty": {
             "type": [
@@ -3381,7 +4194,7 @@
               "string",
               "null"
             ],
-            "description": "Unit as written (\"Tbsp\", \"pounds\"); normalized to a canonical unit."
+            "description": "Unit as written (\"Tbsp\", \"pounds\", \"large\"); normalized to a canonical unit. Sizes (small, medium, large, extra-large, jumbo) are count units: \"2 large eggs\" is qty 2, unit \"large\"."
           },
           "prepNote": {
             "type": [
@@ -3937,6 +4750,24 @@
               "string",
               "null"
             ]
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ingredientId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "ingredientId",
+                "name"
+              ]
+            }
           }
         },
         "required": [
@@ -3949,7 +4780,8 @@
           "unit",
           "optional",
           "scalingExempt",
-          "prepNote"
+          "prepNote",
+          "alternatives"
         ]
       },
       "FoodList": {
@@ -4003,6 +4835,10 @@
           "score": {
             "type": "number",
             "description": "Match score 0..1; higher is better."
+          },
+          "suggestedName": {
+            "type": "string",
+            "description": "Friendly ingredient name for this food, e.g. \"Onion\" for \"Onions, raw\". Pass it as `name` with `fdcId`."
           }
         },
         "required": [
@@ -4011,24 +4847,8 @@
           "dataType",
           "per100g",
           "portions",
-          "score"
-        ]
-      },
-      "FoodPortion": {
-        "type": "object",
-        "properties": {
-          "label": {
-            "type": "string",
-            "description": "Portion label, e.g. \"cup\" or \"medium\"."
-          },
-          "grams": {
-            "type": "number",
-            "description": "Grams in one such portion."
-          }
-        },
-        "required": [
-          "label",
-          "grams"
+          "score",
+          "suggestedName"
         ]
       },
       "SetIngredientNutrition": {
@@ -4323,11 +5143,21 @@
               "string",
               "null"
             ],
-            "description": "scope=ingredient: existing ingredient id (alternative to `ingredient`)."
+            "description": "scope=ingredient: existing ingredient id (alternative to `ingredient` and `fdcId`)."
           },
           "ingredient": {
             "type": "string",
-            "description": "scope=ingredient: ingredient name; resolved and created when unknown."
+            "description": "scope=ingredient: an existing ingredient name or alias. Never creates: an unknown name is a 422 with suggestions."
+          },
+          "fdcId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "scope=ingredient: a USDA food id. Uses the household ingredient linked to it, or creates one (named `name`)."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "With `fdcId` when it creates an ingredient: its name."
           },
           "recipeId": {
             "type": [
@@ -4384,11 +5214,21 @@
               "string",
               "null"
             ],
-            "description": "scope=ingredient: existing ingredient id (alternative to `ingredient`)."
+            "description": "scope=ingredient: existing ingredient id (alternative to `ingredient` and `fdcId`)."
           },
           "ingredient": {
             "type": "string",
-            "description": "scope=ingredient: ingredient name; resolved and created when unknown."
+            "description": "scope=ingredient: an existing ingredient name or alias. Never creates: an unknown name is a 422 with suggestions."
+          },
+          "fdcId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "scope=ingredient: a USDA food id. Uses the household ingredient linked to it, or creates one (named `name`)."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "With `fdcId` when it creates an ingredient: its name."
           },
           "recipeId": {
             "type": [
@@ -7695,7 +8535,7 @@
           "ingredients"
         ],
         "summary": "Create an ingredient",
-        "description": "Creates the ingredient and its aliases. Duplicate names or aliases return 409.",
+        "description": "Creates a linked ingredient (`fdcId`: a USDA food; name derived when omitted; 409 if the household already links that food) or, as a last resort, a custom one (`custom: true`; look at GET /ingredients/find first). Without `fdcId` or `custom: true` the request is 422 with suggestions. Names cannot hold quantities, sizes, preparation or \"x or y\" (422 with a hint). Duplicate names or aliases return 409. Customs created with an API token are flagged for review (GET /ingredients/review); customs from the web app are not.",
         "requestBody": {
           "required": true,
           "content": {
@@ -7720,12 +8560,101 @@
         }
       }
     },
+    "/api/v1/ingredients/find": {
+      "get": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Find an ingredient or a USDA food",
+        "description": "Existing household ingredients that match a query, then bundled USDA foods with a suggested ingredient name. Pick an existing ingredient (ingredientId), or a food (fdcId + suggestedName as name) to create a linked one.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "What you are looking for, e.g. \"yellow onion\"."
+            },
+            "required": true,
+            "description": "What you are looking for, e.g. \"yellow onion\".",
+            "name": "query",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 25,
+              "description": "Maximum per list (default 10)."
+            },
+            "required": false,
+            "description": "Maximum per list (default 10).",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching ingredients and foods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindIngredientsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingredients/review": {
+      "get": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Ingredients to review",
+        "description": "Ingredients flagged for review (customs created over the API, unlinked legacy ingredients) and ingredients whose name breaks the naming rules, with the reasons and suggestions (existing ingredients, USDA foods). Fix one by linking a food (PUT /ingredients/{id}/nutrition), renaming, merging, splitting or accepting it.",
+        "responses": {
+          "200": {
+            "description": "Ingredients to review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientReviewList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingredients/usage": {
+      "get": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Ingredient use counts",
+        "description": "How often each ingredient is used: recipes, pantry rows, items on open shopping lists and dietary rules. Ingredients that do not appear are unused.",
+        "responses": {
+          "200": {
+            "description": "Use counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientUsageCounts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ingredients/{id}": {
       "get": {
         "tags": [
           "ingredients"
         ],
         "summary": "Get an ingredient",
+        "description": "The ingredient with aliases, conversions and pantry stock, plus where it is used (recipes, pantry, items on open shopping lists, dietary rules) and why it needs attention, if it does.",
         "parameters": [
           {
             "schema": {
@@ -7739,11 +8668,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Ingredient with aliases, conversions and pantry stock",
+            "description": "Ingredient with usage",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IngredientView"
+                  "$ref": "#/components/schemas/IngredientDetail"
                 }
               }
             }
@@ -7929,6 +8858,80 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MergeIngredientsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingredients/{id}/review": {
+      "post": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Accept a custom ingredient",
+        "description": "Clears the review flag: the custom ingredient is accepted as it is. A name that breaks the naming rules stays listed until it is renamed.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "ing_2f7k9m"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The ingredient",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ingredients/{id}/split": {
+      "post": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Split an ingredient that names several",
+        "description": "For ingredients such as \"Milk or water\": every recipe line that used it gets `main` as its ingredient and `alternatives` as alternatives; lines that listed it as an alternative get all of them as alternatives. Pantry stock and shopping items move to `main`. The split ingredient is archived. Unknown names are 422 with suggestions; use `fdcId` to create linked ingredients.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "ing_2f7k9m"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitIngredient"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The archived source, the main ingredient, the alternatives and moved-row counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitIngredientResult"
                 }
               }
             }
@@ -8243,7 +9246,7 @@
           "pantry"
         ],
         "summary": "Set stock for an ingredient",
-        "description": "Absolute quantity. Unknown ingredient names are created; the ledger records a `set` movement.",
+        "description": "Absolute quantity. Ingredients are named by `ingredientId`, an existing `ingredient` name, or `fdcId` (a USDA food; creates a linked ingredient when the household has none); unknown names are 422 with suggestions. The ledger records a `set` movement.",
         "requestBody": {
           "required": true,
           "content": {
@@ -20019,7 +21022,7 @@
           "recipes"
         ],
         "summary": "Create a recipe",
-        "description": "Creates the recipe with ordered ingredients and steps. Ingredient names are resolved and created when unknown; units are normalized. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.",
+        "description": "Creates the recipe with ordered ingredients and steps. Each ingredient line names an existing ingredient (`ingredientId`, or `ingredient` by name or alias) or a USDA food (`fdcId`, which reuses or creates a linked ingredient; send `name`). Unknown names create nothing: the request is 422 listing every unknown name with suggestions. `alternatives` lists stand-ins (\"milk or water\"). Units are normalized; sizes (large...) are count units. A step `links` entry references its ingredient by `ingredientIndex` in this payload; `qty` is in that line's unit and null means the whole line.",
         "requestBody": {
           "required": true,
           "content": {
@@ -20485,7 +21488,7 @@
           "rules"
         ],
         "summary": "Create a dietary rule",
-        "description": "Targets depend on scope: ingredient (id or name, created when unknown), recipe (recipeId), category/tag/keyword (targetText).",
+        "description": "Targets depend on scope: ingredient (`ingredientId`, an existing `ingredient` name, or `fdcId` to link a USDA food; unknown names are 422 with suggestions), recipe (recipeId), category/tag/keyword (targetText).",
         "requestBody": {
           "required": true,
           "content": {

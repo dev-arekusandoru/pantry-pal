@@ -15,7 +15,8 @@ export interface RecipeSaveInput {
   sourceName: string | null;
   sourceUrl: string | null;
   ingredients: Array<{
-    ingredient: string;
+    ingredientId: string;
+    alternatives: Array<{ ingredientId: string }>;
     qty: number | null;
     qtyMax: number | null;
     unit: string | null;

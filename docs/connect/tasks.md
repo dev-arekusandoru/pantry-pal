@@ -113,18 +113,25 @@ again. `delete_item` removes one item; it does not change the pantry.
 
 ## Add a recipe
 
-1. Call `ingredient_search` for each ingredient. Reuse existing ingredients.
-2. Call `ingredient_upsert` with `action: "create"` for a genuinely new
-   ingredient.
-3. Call `recipe_save` with `title`, `servings`, the ingredient lines, and the
+1. Call `find_ingredient` for each ingredient. It returns household ingredients
+   and USDA foods. Reuse an existing ingredient when one fits.
+2. If only a USDA food fits, pass its `fdcId` in the recipe line. PantryPal
+   creates the linked ingredient. Do not put "or" lists in a name. Use the main
+   ingredient, and add the others in `alternatives`.
+3. Put a size, such as `large`, in `unit`, and put cooking notes in `prepNote`.
+4. Call `create_custom_ingredient` only when no USDA food fits. It is flagged
+   for review.
+5. Call `recipe_save` with `title`, `servings`, the ingredient lines, and the
    ordered steps.
-4. Call `unit_conversions` with `action: "create"` when a package unit such as
+6. Call `unit_conversions` with `action: "create"` when a package unit such as
    `can` must compare to a pantry unit.
-5. Call `recipe_check`, then `recipe_set_status` with `want_to_try` or
+7. Call `recipe_check`, then `recipe_set_status` with `want_to_try` or
    `rotation`.
 
-`recipe_save` creates unknown ingredient names. Search first to avoid near
-duplicates. Pass `statusNote` to record why a status or rating changed.
+`recipe_save` never creates an ingredient from a name. An unknown name fails
+with `unprocessable`, a list of `unresolved` names, and suggestions. Pick a
+suggestion and send the request again. Use `review_ingredients` to list, accept,
+or split ingredients that need review. Pass `statusNote` to record why a status or rating changed.
 
 ## Safety on writes
 
@@ -140,8 +147,8 @@ Read tools have a read-only annotation. Check annotations with `tools/list`.
   `shopping_complete`; those tools already write the movements.
 - Do not edit stock to hide a wrong cook or shopping record. Use `reopen`,
   `undo`, or a correcting movement with a clear `reason`.
-- Unknown ingredient names fail with `unprocessable` unless the action creates
-  ingredients. Use `ingredient_search` first.
+- Unknown ingredient names fail with `unprocessable` and suggestions. No tool
+  creates an ingredient from a name. Use `find_ingredient` first.
 - `qty: null` means an unknown amount, not zero. Read the stock status as well.
 - Keep movement `reason` values accurate: `purchase`, `cook`, `waste`, `adjust`,
   `verify`, or `import`.

@@ -38,7 +38,8 @@ export interface LoadSeedOptions {
 /**
  * Apply a seed file (see `docs/reference/import-format.md`) through the service layer in one
  * transaction. Ingredients resolve by declared name, recipes by seed `key`,
- * cook events by their per-plan `key`; nothing is created implicitly.
+ * cook events by their per-plan `key`; nothing is created implicitly. Every seed ingredient
+ * declares a USDA `fdcId` or `custom: true`.
  */
 export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {}): SeedResult {
   const seed = parseSeed(data);
@@ -102,6 +103,10 @@ export function loadSeed(ctx: Ctx, data: unknown, options: LoadSeedOptions = {})
         ...(input.shelfLifeDays === undefined ? {} : { shelfLifeDays: input.shelfLifeDays }),
         ...(input.parQty === undefined ? {} : { parQty: input.parQty }),
         ...(input.parUnit === undefined ? {} : { parUnit: input.parUnit }),
+        ...(input.fdcId === undefined ? { custom: true } : { fdcId: input.fdcId }),
+        ...(input.defaultPortion === undefined ? {} : { defaultPortion: input.defaultPortion }),
+        needsReview: false,
+        allowSharedFood: true,
       });
       ingredientIds.set(normalizeName(input.name), created.id);
       aliasCount += input.aliases.length;

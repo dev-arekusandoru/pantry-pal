@@ -6,6 +6,13 @@ import { makeCtx, type Ctx } from "../src/context.js";
 import { openDb, runMigrations, type Db } from "../src/db/client.js";
 import type { HouseholdSettings } from "../src/db/schema.js";
 import { createHousehold, type Household } from "../src/services/households.js";
+import {
+  createIngredient,
+  findIngredientByName,
+  ingredientView,
+  type CreateIngredientInput,
+  type IngredientView,
+} from "../src/services/ingredients.js";
 
 /** Deterministic default clock for tests: 2026-11-01T12:00:00.000Z. */
 export const FIXED_NOW = new Date("2026-11-01T12:00:00.000Z");
@@ -15,6 +22,8 @@ export interface TestCtxOptions {
   now?: Date | (() => Date);
   settings?: Partial<HouseholdSettings>;
   householdName?: string;
+  /** Plain custom ingredients to create up front (recipes and stock lines no longer create them). */
+  ingredients?: string[];
 }
 
 export interface TestContext {
@@ -57,6 +66,7 @@ export function makeTestCtx(options: TestCtxOptions = {}): TestContext {
   });
   const ctx = makeCtx(db, household.id, clockFrom(options.now));
   const { token } = createToken(db, household.id, "test");
+  ensureIngredients(ctx, ...(options.ingredients ?? []));
 
   return { db, ctx, household, token };
 }
@@ -169,4 +179,28 @@ export function sessionCookie(response: { headers: Headers }): string {
   const pair = response.headers.get("set-cookie")?.split(";")[0]?.trim();
   if (pair === undefined || pair === "") throw new Error("expected a Set-Cookie header");
   return pair;
+}
+
+/** A custom ingredient with no review flag: the plain ingredient most tests need. */
+export function addIngredient(
+  ctx: Ctx,
+  name: string,
+  extra: Omit<CreateIngredientInput, "name" | "custom" | "fdcId"> = {},
+): IngredientView {
+  return createIngredient(ctx, { ...extra, name, custom: true, needsReview: false });
+}
+
+/** The ingredient with this name or alias, created as a plain custom one when missing. */
+export function ensureIngredient(
+  ctx: Ctx,
+  name: string,
+  extra: Omit<CreateIngredientInput, "name" | "custom" | "fdcId"> = {},
+): IngredientView {
+  const found = findIngredientByName(ctx, name);
+  return found === null ? addIngredient(ctx, name, extra) : ingredientView(ctx, found);
+}
+
+/** Create plain custom ingredients for names a test uses by name (recipes no longer create them). */
+export function ensureIngredients(ctx: Ctx, ...names: string[]): void {
+  for (const name of names) ensureIngredient(ctx, name);
 }

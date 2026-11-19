@@ -10,11 +10,10 @@ import {
   skipCookEvent,
   undoCookEvent,
 } from "../src/services/cooking.js";
-import { resolveIngredient } from "../src/services/ingredients.js";
 import { applyMovement, getStockForIngredient } from "../src/services/pantry.js";
 import { addCookEvent, createPlan, listPlans } from "../src/services/plans.js";
 import { createRecipe } from "../src/services/recipes.js";
-import { makeTestCtx } from "./helpers.js";
+import { ensureIngredient, makeTestCtx } from "./helpers.js";
 
 function expectAppError(fn: () => unknown, code: ErrorCode): AppError {
   try {
@@ -43,10 +42,10 @@ function addCook(ctx: Ctx, recipeId: string, plannedServings = 2) {
 
 function kitchen() {
   const { ctx } = makeTestCtx();
-  const chicken = resolveIngredient(ctx, "chicken breast", { create: true });
-  const oil = resolveIngredient(ctx, "olive oil", { create: true });
-  const salt = resolveIngredient(ctx, "salt", { create: true });
-  const sesame = resolveIngredient(ctx, "sesame seeds", { create: true });
+  const chicken = ensureIngredient(ctx, "chicken breast");
+  const oil = ensureIngredient(ctx, "olive oil");
+  const salt = ensureIngredient(ctx, "salt");
+  const sesame = ensureIngredient(ctx, "sesame seeds");
 
   const recipe = createRecipe(ctx, {
     title: "Chicken skillet",
@@ -102,12 +101,12 @@ describe("completeCookEvent", () => {
     const warnings = result.warnings.join("\n");
     expect(warnings).toContain("not tracked in pantry");
     expect(warnings).toContain("without a quantity");
-    expect(warnings).toContain("salt");
+    expect(warnings).toContain("Salt");
   });
 
   it("decrements the single pantry row for the ingredient", () => {
     const { ctx } = makeTestCtx();
-    const oil = resolveIngredient(ctx, "olive oil", { create: true });
+    const oil = ensureIngredient(ctx, "olive oil");
     const recipe = createRecipe(ctx, {
       title: "Garlic oil",
       servings: 2,
@@ -177,7 +176,7 @@ describe("completeCookEvent", () => {
 
   it("records only the stock that was actually removed when the pantry runs short", () => {
     const { ctx } = makeTestCtx();
-    const chicken = resolveIngredient(ctx, "chicken breast", { create: true });
+    const chicken = ensureIngredient(ctx, "chicken breast");
     const recipe = createRecipe(ctx, {
       title: "Roast chicken",
       servings: 2,
@@ -202,7 +201,7 @@ describe("completeCookEvent", () => {
 
   it("clamps the requested amount in the ingredient unit when the pantry row uses another unit", () => {
     const { ctx } = makeTestCtx();
-    const oil = resolveIngredient(ctx, "olive oil", { create: true });
+    const oil = ensureIngredient(ctx, "olive oil");
     const recipe = createRecipe(ctx, {
       title: "Dressing",
       servings: 2,
@@ -228,7 +227,7 @@ describe("completeCookEvent", () => {
 
   it("writes no movement when the chosen pantry row is already out", () => {
     const { ctx } = makeTestCtx();
-    const chicken = resolveIngredient(ctx, "chicken breast", { create: true });
+    const chicken = ensureIngredient(ctx, "chicken breast");
     const recipe = createRecipe(ctx, {
       title: "Chicken soup",
       servings: 2,
@@ -290,7 +289,7 @@ describe("reopenCookEvent", () => {
 
   it("restores exactly the clamped amount, never inventing stock", () => {
     const { ctx } = makeTestCtx();
-    const chicken = resolveIngredient(ctx, "chicken breast", { create: true });
+    const chicken = ensureIngredient(ctx, "chicken breast");
     const recipe = createRecipe(ctx, {
       title: "Roast chicken",
       servings: 2,

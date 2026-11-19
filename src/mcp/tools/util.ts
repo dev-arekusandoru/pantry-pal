@@ -1,7 +1,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { Ctx } from "../../context.js";
 import { AppError, isAppError } from "../../lib/errors.js";
-import { findIngredientByName, getIngredient } from "../../services/ingredients.js";
+import { findIngredientByName, getIngredient, resolveIngredientRef } from "../../services/ingredients.js";
 
 /** What every PantryPal tool returns: compact JSON in one text block. */
 export type ToolResult = CallToolResult;
@@ -55,8 +55,8 @@ export interface IngredientRefArgs {
 
 /**
  * Resolve `ingredientId` or an ingredient name (names/aliases/plurals) to an
- * existing id. Unknown names are an `unprocessable` error — tools never create
- * ingredients implicitly.
+ * existing id. Unknown names are an `unprocessable` error with suggestions — tools never
+ * create ingredients implicitly.
  */
 export function requireIngredientId(ctx: Ctx, ref: IngredientRefArgs): string {
   if (ref.ingredientId !== undefined) return getIngredient(ctx, ref.ingredientId).id;
@@ -65,10 +65,8 @@ export function requireIngredientId(ctx: Ctx, ref: IngredientRefArgs): string {
     throw new AppError("validation", "Provide `ingredientId` or `ingredient`");
   }
   const found = findIngredientByName(ctx, name);
-  if (found === null) {
-    throw new AppError("unprocessable", `Unknown ingredient: ${name}`, { unresolved: [name] });
-  }
-  return found.id;
+  // Unknown: resolving throws the shared 422 with suggestions.
+  return found === null ? resolveIngredientRef(ctx, { ingredient: name }).id : found.id;
 }
 
 /** Require a field the flat `action` schema cannot mark as conditionally required. */

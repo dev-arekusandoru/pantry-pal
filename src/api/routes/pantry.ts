@@ -94,7 +94,7 @@ const setStockRoute = createRoute({
   tags: ["pantry"],
   summary: "Set stock for an ingredient",
   description:
-    "Absolute quantity. Unknown ingredient names are created; the ledger records a `set` movement.",
+    "Absolute quantity. Ingredients are named by `ingredientId`, an existing `ingredient` name, or `fdcId` (a USDA food; creates a linked ingredient when the household has none); unknown names are 422 with suggestions. The ledger records a `set` movement.",
   request: {
     body: { content: { "application/json": { schema: setStockSchema } }, required: true },
   },

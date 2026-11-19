@@ -14,7 +14,7 @@ import {
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
-import { resolveIngredient, type Ingredient } from "./ingredients.js";
+import { resolveIngredientRefs, type Ingredient, type IngredientRefInput } from "./ingredients.js";
 import { convert, normalizeUnit } from "./units.js";
 
 export type PantryItem = typeof pantryItems.$inferSelect;
@@ -299,15 +299,10 @@ export function getPantryItem(ctx: Ctx, pantryItemId: string): PantryItemView {
 // Inputs
 // ---------------------------------------------------------------------------
 
-export interface IngredientRefInput {
-  ingredientId?: string;
-  /** Free-text name; created when the caller allows it. */
-  ingredient?: string;
-  /** Category used when the ingredient is created. */
-  category?: IngredientCategory;
-}
+/** Exactly one of `ingredientId`, `ingredient` (an existing name or alias) or `fdcId` (+ `name`, `category`). */
+export type StockRefInput = IngredientRefInput;
 
-export interface SetStockInput extends IngredientRefInput {
+export interface SetStockInput extends StockRefInput {
   qty: number | null;
   unit?: string | null;
   status?: PantryStatus;
@@ -322,7 +317,7 @@ export interface SetStockInput extends IngredientRefInput {
   refId?: string;
 }
 
-export interface AdjustStockInput extends IngredientRefInput {
+export interface AdjustStockInput extends StockRefInput {
   delta: number;
   unit?: string | null;
   note?: string | null;
@@ -336,30 +331,12 @@ export type StockLine =
   | ({ op: "set" } & SetStockInput)
   | ({ op: "adjust" } & AdjustStockInput);
 
-/** Resolve `ingredientId` or a name; names resolve through aliases/plurals. */
-export function resolveIngredientRef(
-  ctx: Ctx,
-  ref: IngredientRefInput,
-  create: boolean,
-): Ingredient {
-  if (ref.ingredientId !== undefined && ref.ingredientId !== "") {
-    return requireIngredient(ctx, ref.ingredientId);
-  }
-  if (ref.ingredient !== undefined && ref.ingredient.trim() !== "") {
-    return resolveIngredient(ctx, ref.ingredient, {
-      create,
-      ...(ref.category === undefined ? {} : { category: ref.category }),
-    });
-  }
-  throw new AppError("validation", "ingredient or ingredientId is required");
-}
-
 // ---------------------------------------------------------------------------
 // Set / adjust
 // ---------------------------------------------------------------------------
 
 function setStockIn(ctx: Ctx, input: SetStockInput): MovementResult {
-  const ingredient = resolveIngredientRef(ctx, input, true);
+  const ingredient = resolveIngredientRefs(ctx, [input])[0]!;
   const result = applyMovementIn(ctx, {
     ingredientId: ingredient.id,
     kind: "set",
@@ -394,7 +371,7 @@ function adjustStockIn(ctx: Ctx, input: AdjustStockInput): MovementResult {
   if (!Number.isFinite(input.delta)) {
     throw new AppError("validation", "delta must be a finite number");
   }
-  const ingredient = resolveIngredientRef(ctx, input, input.delta > 0);
+  const ingredient = resolveIngredientRefs(ctx, [input])[0]!;
   return applyMovementIn(ctx, {
     ingredientId: ingredient.id,
     kind: "delta",
@@ -407,24 +384,27 @@ function adjustStockIn(ctx: Ctx, input: AdjustStockInput): MovementResult {
   });
 }
 
-/** Absolute stock ("I have 2 lb of rice"). Creates unknown ingredients. */
+/** Absolute stock ("I have 2 lb of rice"). Unknown names are `unprocessable` (use `fdcId` to create a linked ingredient). */
 export function setStock(ctx: Ctx, input: SetStockInput): MovementResult {
   return withTx(ctx, (tx) => setStockIn(tx, input));
 }
 
-/**
- * Relative stock change. Positive deltas create unknown ingredients; negative
- * deltas require the ingredient to exist.
- */
+/** Relative stock change. Unknown names are `unprocessable`, like {@link setStock}. */
 export function adjustStock(ctx: Ctx, input: AdjustStockInput): MovementResult {
   return withTx(ctx, (tx) => adjustStockIn(tx, input));
 }
 
-/** Apply many set/adjust lines atomically; any invalid line rolls everything back. */
+/**
+ * Apply many set/adjust lines atomically; any invalid line rolls everything back. Every
+ * ingredient reference is resolved first, so one 422 lists all unknown names.
+ */
 export function bulkUpdate(ctx: Ctx, lines: StockLine[]): MovementResult[] {
-  return withTx(ctx, (tx) =>
-    lines.map((line) => (line.op === "adjust" ? adjustStockIn(tx, line) : setStockIn(tx, line))),
-  );
+  return withTx(ctx, (tx) => {
+    resolveIngredientRefs(tx, lines);
+    return lines.map((line) =>
+      line.op === "adjust" ? adjustStockIn(tx, line) : setStockIn(tx, line),
+    );
+  });
 }
 
 /** Mark stock as checked now and record a `verify` movement with the same qty. */

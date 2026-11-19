@@ -1,22 +1,36 @@
-import { and, asc, eq, inArray, isNull, like, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 import type { Ctx } from "../context.js";
+import type { Db } from "../db/client.js";
 import {
   dietaryRules,
   ingredientAliases,
   ingredients,
   pantryItems,
+  recipeIngredientAlternatives,
   recipeIngredients,
+  recipes,
   shoppingListItems,
+  shoppingLists,
   stockMovements,
   unitConversions,
   type IngredientCategory,
   type PantryStatus,
+  type RuleSeverity,
+  type ShoppingListStatus,
 } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { normalizeImageUrl } from "../lib/icons.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
-import { autoMatchFood, getFood, type Nutrients } from "./foods.js";
+import { titleCaseName } from "../lib/titleCase.js";
+import { autoMatchFood, getFood, searchFoods, type FoodPortion, type Nutrients } from "./foods.js";
+import {
+  lintIngredientName,
+  nameWords,
+  searchTextFor,
+  splitAlternatives,
+  suggestedNameForFood,
+} from "./ingredientNames.js";
 import { convert, normalizeUnit } from "./units.js";
 
 export type Ingredient = typeof ingredients.$inferSelect;
@@ -83,54 +97,325 @@ export function findIngredientByName(ctx: Ctx, name: string): Ingredient | null 
   return null;
 }
 
-export interface ResolveIngredientOptions {
-  /** Create the ingredient when nothing matches. */
-  create?: boolean;
-  /** Category used when creating a new ingredient (defaults to "other"). */
-  category?: IngredientCategory;
+// ---------------------------------------------------------------------------
+// Suggestions
+// ---------------------------------------------------------------------------
+
+export type Suggestion =
+  | { kind: "ingredient"; ingredientId: string; name: string; score: number }
+  | { kind: "food"; fdcId: number; description: string; suggestedName: string; score: number };
+
+const DEFAULT_SUGGESTIONS = 5;
+const MIN_INGREDIENT_SCORE = 0.5;
+
+const round3 = (value: number): number => Math.round(value * 1000) / 1000;
+
+/** Word-overlap similarity (Dice) of two word lists, 0..1. */
+function wordSimilarity(a: string[], b: string[]): number {
+  if (a.length === 0 || b.length === 0) return 0;
+  const inB = new Set(b);
+  const shared = new Set(a.filter((word) => inB.has(word))).size;
+  return (2 * shared) / (new Set(a).size + inB.size);
+}
+
+interface RankedIngredient {
+  row: Ingredient;
+  aliases: string[];
+  score: number;
+}
+
+/** Household ingredients (not archived) that look like `text`, best first. */
+function rankIngredients(ctx: Ctx, text: string, excludeId?: string): RankedIngredient[] {
+  const query = nameWords(text);
+  if (query.length === 0) return [];
+  const needle = normalizeName(searchTextFor(text));
+
+  const rows = ctx.db
+    .select()
+    .from(ingredients)
+    .where(and(eq(ingredients.householdId, ctx.householdId), isNull(ingredients.archivedAt)))
+    .all();
+  const aliasesById = new Map<string, string[]>();
+  for (const alias of ctx.db
+    .select({ ingredientId: ingredientAliases.ingredientId, alias: ingredientAliases.alias })
+    .from(ingredientAliases)
+    .where(eq(ingredientAliases.householdId, ctx.householdId))
+    .all()) {
+    const list = aliasesById.get(alias.ingredientId);
+    if (list) list.push(alias.alias);
+    else aliasesById.set(alias.ingredientId, [alias.alias]);
+  }
+
+  const ranked: RankedIngredient[] = [];
+  for (const row of rows) {
+    if (row.id === excludeId) continue;
+    const aliases = aliasesById.get(row.id) ?? [];
+    let score = 0;
+    for (const candidate of [row.name, ...aliases]) {
+      score = Math.max(score, wordSimilarity(query, nameWords(candidate)));
+      if (needle.length >= 3 && normalizeName(candidate).includes(needle)) score = Math.max(score, 0.7);
+    }
+    if (score >= MIN_INGREDIENT_SCORE) ranked.push({ row, aliases, score: round3(score) });
+  }
+  return ranked.sort(
+    (a, b) => b.score - a.score || a.row.normalizedName.localeCompare(b.row.normalizedName),
+  );
+}
+
+/** Household ingredients linked to a USDA food, oldest first, archived last. */
+function ingredientsLinkedTo(ctx: Ctx, fdcId: number): Ingredient[] {
+  return ctx.db
+    .select()
+    .from(ingredients)
+    .where(and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.nutritionFdcId, fdcId)))
+    .orderBy(asc(sql`${ingredients.archivedAt} is not null`), asc(ingredients.createdAt), asc(ingredients.id))
+    .all();
+}
+
+function suggestForPart(ctx: Ctx, text: string, limit: number, excludeId?: string): Suggestion[] {
+  const out: Suggestion[] = [];
+  const seen = new Set<string>();
+  const add = (suggestion: Suggestion): void => {
+    const key = suggestion.kind === "ingredient" ? suggestion.ingredientId : `food:${suggestion.fdcId}`;
+    if (seen.has(key) || out.length >= limit) return;
+    seen.add(key);
+    out.push(suggestion);
+  };
+
+  const ingredientLimit = Math.max(1, Math.ceil(limit * 0.6));
+  for (const { row, score } of rankIngredients(ctx, text, excludeId).slice(0, ingredientLimit)) {
+    add({ kind: "ingredient", ingredientId: row.id, name: row.name, score });
+  }
+
+  const query = searchTextFor(text);
+  if (query === "") return out;
+  for (const match of searchFoods(query, limit + 3)) {
+    // A food the household already links to is suggested as that ingredient.
+    const linked = ingredientsLinkedTo(ctx, match.food.fdcId).find(
+      (row) => row.archivedAt === null && row.id !== excludeId,
+    );
+    if (linked) {
+      add({ kind: "ingredient", ingredientId: linked.id, name: linked.name, score: match.score });
+      continue;
+    }
+    add({
+      kind: "food",
+      fdcId: match.food.fdcId,
+      description: match.food.description,
+      suggestedName: suggestedNameForFood(match.food.description),
+      score: match.score,
+    });
+  }
+  return out;
 }
 
 /**
- * Resolve a free-text ingredient name; with `create: true` a missing ingredient is
- * inserted (original casing, trimmed) and returned. Otherwise throws `unprocessable`
- * with `{ unresolved: [name] }`.
+ * Up to `limit` (default 5) ways to resolve a name: household ingredients first, then USDA
+ * foods. A name with alternatives ("milk or water") gets suggestions for each part.
  */
-export function resolveIngredient(
+export function suggestForName(
   ctx: Ctx,
   name: string,
-  options: ResolveIngredientOptions = {},
-): Ingredient {
-  const displayName = name.trim().replace(/\s+/g, " ");
-  const normalized = normalizeName(name);
-  if (normalized === "") {
-    throw new AppError("validation", "Ingredient name is required");
+  options: { limit?: number; excludeId?: string } = {},
+): Suggestion[] {
+  const limit = Math.max(1, options.limit ?? DEFAULT_SUGGESTIONS);
+  const parts = splitAlternatives(name);
+  if (parts.length === 1) return suggestForPart(ctx, name, limit, options.excludeId);
+
+  const perPart = Math.max(2, Math.ceil(limit / parts.length));
+  const lists = parts.map((part) => suggestForPart(ctx, part, perPart, options.excludeId));
+  const merged: Suggestion[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; merged.length < limit && lists.some((list) => i < list.length); i++) {
+    for (const list of lists) {
+      const suggestion = list[i];
+      if (suggestion === undefined) continue;
+      const key =
+        suggestion.kind === "ingredient" ? suggestion.ingredientId : `food:${suggestion.fdcId}`;
+      if (seen.has(key) || merged.length >= limit) continue;
+      seen.add(key);
+      merged.push(suggestion);
+    }
   }
+  return merged;
+}
 
-  const existing = findIngredientByName(ctx, name);
-  if (existing) return existing;
+export interface IngredientMatch {
+  id: string;
+  name: string;
+  category: IngredientCategory;
+  defaultUnit: string | null;
+  defaultPortion: string | null;
+  aliases: string[];
+  /** Linked to a USDA food (false = custom). */
+  linked: boolean;
+  fdcId: number | null;
+  needsReview: boolean;
+  score: number;
+}
 
-  if (!options.create) {
-    throw new AppError("unprocessable", `Unknown ingredient: ${displayName}`, {
-      unresolved: [displayName],
-    });
+export interface FoodMatchView {
+  fdcId: number;
+  description: string;
+  suggestedName: string;
+  score: number;
+  /** The household ingredient already linked to this food, if any. */
+  ingredientId: string | null;
+}
+
+/** Existing household ingredients and USDA foods that match a query (for choosing a reference). */
+export function findIngredientCandidates(
+  ctx: Ctx,
+  query: string,
+  limit = 10,
+): { ingredients: IngredientMatch[]; foods: FoodMatchView[] } {
+  const text = query.trim();
+  if (text === "") throw new AppError("validation", "query is required");
+  const found = rankIngredients(ctx, text).slice(0, limit);
+  const foods = searchFoods(searchTextFor(text) || text, limit).map((match): FoodMatchView => ({
+    fdcId: match.food.fdcId,
+    description: match.food.description,
+    suggestedName: suggestedNameForFood(match.food.description),
+    score: match.score,
+    ingredientId:
+      ingredientsLinkedTo(ctx, match.food.fdcId).find((row) => row.archivedAt === null)?.id ?? null,
+  }));
+  return {
+    ingredients: found.map(({ row, aliases, score }) => ({
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      defaultUnit: row.defaultUnit,
+      defaultPortion: row.defaultPortion,
+      aliases,
+      linked: row.nutritionFdcId !== null,
+      fdcId: row.nutritionFdcId,
+      needsReview: row.needsReview,
+      score,
+    })),
+    foods,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// References (recipe lines, alternatives, pantry lines, dietary rules)
+// ---------------------------------------------------------------------------
+
+/** Exactly one of `ingredientId`, `ingredient` or `fdcId` names the ingredient. */
+export interface IngredientRefInput {
+  /** An existing ingredient. */
+  ingredientId?: string | undefined;
+  /** An existing ingredient name or alias. Never creates. */
+  ingredient?: string | undefined;
+  /** A USDA food: reuses the household ingredient linked to it, else creates one. */
+  fdcId?: number | undefined;
+  /** Name for an ingredient created from `fdcId` (default: derived from the USDA description). */
+  name?: string | undefined;
+  /** Category for an ingredient created from `fdcId` (default other). */
+  category?: IngredientCategory | undefined;
+}
+
+export interface UnresolvedIngredient {
+  name: string;
+  suggestions: Suggestion[];
+  hint?: string;
+}
+
+function unresolvedEntry(ctx: Ctx, name: string): UnresolvedIngredient {
+  const lint = lintIngredientName(name);
+  return {
+    name,
+    suggestions: suggestForName(ctx, name),
+    ...(lint.ok ? {} : { hint: `${lint.reason}. ${lint.hint}` }),
+  };
+}
+
+function unresolvedError(entries: UnresolvedIngredient[]): AppError {
+  const names = entries.map((entry) => `"${entry.name}"`).join(", ");
+  const hints = entries
+    .filter((entry) => entry.hint !== undefined)
+    .map((entry) => `"${entry.name}": ${entry.hint}`)
+    .join(" ");
+  return new AppError(
+    "unprocessable",
+    `Unknown ingredient${entries.length === 1 ? "" : "s"}: ${names}. ` +
+      "Use an existing ingredient (ingredientId or its exact name), or a USDA food (fdcId with name) to create one." +
+      (hints === "" ? "" : ` ${hints}`),
+    { unresolved: entries },
+  );
+}
+
+function invalidNameError(name: string, lint: { reason: string; hint: string }): AppError {
+  return new AppError(
+    "unprocessable",
+    `Invalid ingredient name "${name}": ${lint.reason}. ${lint.hint}`,
+    { name, reason: lint.reason, hint: lint.hint },
+  );
+}
+
+function displayName(raw: string): string {
+  return raw.trim().replace(/\s+/g, " ");
+}
+
+/** The household ingredient for a USDA food: the one already linked to it, else a new linked one. */
+function ingredientForFood(ctx: Ctx, ref: IngredientRefInput & { fdcId: number }): Ingredient {
+  const linked = ingredientsLinkedTo(ctx, ref.fdcId);
+  if (linked.length > 0) {
+    const wanted = ref.name === undefined ? null : normalizeName(ref.name);
+    return linked.find((row) => row.normalizedName === wanted) ?? (linked[0] as Ingredient);
   }
+  return insertIngredient(ctx, {
+    fdcId: ref.fdcId,
+    ...(ref.name === undefined ? {} : { name: ref.name }),
+    ...(ref.category === undefined ? {} : { category: ref.category }),
+  });
+}
 
-  const timestamp = nowIso(ctx);
-  return ctx.db
-    .insert(ingredients)
-    .values({
-      id: newId("ing"),
-      householdId: ctx.householdId,
-      name: displayName,
-      normalizedName: normalized,
-      nutritionFdcId: autoMatchFood(displayName)?.fdcId ?? null,
-      nutritionSource: "auto",
-      category: options.category ?? "other",
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    })
-    .returning()
-    .get();
+/**
+ * Resolve ingredient references, in order, without creating free-text ingredients.
+ * Every unknown name of the request is collected first and reported in one `unprocessable`
+ * error (`details.unresolved`), each with suggestions. Run inside a transaction: foods
+ * referenced by `fdcId` are created as linked ingredients while resolving.
+ */
+export function resolveIngredientRefs(ctx: Ctx, refs: IngredientRefInput[]): Ingredient[] {
+  const resolved: Array<Ingredient | null> = [];
+  const unresolved = new Map<string, UnresolvedIngredient>();
+
+  refs.forEach((ref, index) => {
+    const byId = ref.ingredientId !== undefined && ref.ingredientId !== "";
+    const byName = ref.ingredient !== undefined && ref.ingredient.trim() !== "";
+    const byFood = ref.fdcId !== undefined;
+    if (Number(byId) + Number(byName) + Number(byFood) !== 1) {
+      throw new AppError(
+        "validation",
+        "Each ingredient reference needs exactly one of `ingredientId`, `ingredient` or `fdcId`",
+        { index },
+      );
+    }
+    if (byId) {
+      resolved.push(requireIngredient(ctx, ref.ingredientId as string));
+    } else if (byName) {
+      const found = findIngredientByName(ctx, ref.ingredient as string);
+      if (found) {
+        resolved.push(found);
+      } else {
+        const name = displayName(ref.ingredient as string);
+        const key = normalizeName(name);
+        if (!unresolved.has(key)) unresolved.set(key, unresolvedEntry(ctx, name));
+        resolved.push(null);
+      }
+    } else {
+      resolved.push(ingredientForFood(ctx, ref as IngredientRefInput & { fdcId: number }));
+    }
+  });
+
+  if (unresolved.size > 0) throw unresolvedError([...unresolved.values()]);
+  return resolved as Ingredient[];
+}
+
+/** One reference; see {@link resolveIngredientRefs}. */
+export function resolveIngredientRef(ctx: Ctx, ref: IngredientRefInput): Ingredient {
+  return resolveIngredientRefs(ctx, [ref])[0] as Ingredient;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,6 +451,8 @@ export interface IngredientNutritionView {
   fdcId: number | null;
   description: string | null;
   per100g: Nutrients | null;
+  /** Portions of the linked food; `defaultPortion` is one of these labels. */
+  portions: FoodPortion[];
 }
 
 /** Ingredient row plus its aliases, custom conversions, pantry stock and USDA match. */
@@ -187,6 +474,7 @@ function nutritionView(row: Ingredient): IngredientNutritionView | null {
     fdcId: food?.fdcId ?? null,
     description: food?.description ?? null,
     per100g: food?.per100g ?? null,
+    portions: food?.portions ?? [],
   };
 }
 
@@ -382,7 +670,8 @@ export function getIngredient(ctx: Ctx, id: string): IngredientView {
 // ---------------------------------------------------------------------------
 
 export interface CreateIngredientInput {
-  name: string;
+  /** Required for a custom ingredient; derived from the USDA description when `fdcId` is set. */
+  name?: string;
   description?: string | null;
   category?: IngredientCategory;
   aliases?: string[];
@@ -392,22 +681,68 @@ export interface CreateIngredientInput {
   parQty?: number | null;
   parUnit?: string | null;
   notes?: string | null;
+  /** Link the new ingredient to this USDA food (a linked ingredient). */
+  fdcId?: number | null;
+  /** Create an ingredient with no USDA food (last resort). Exclusive with `fdcId`. */
+  custom?: boolean;
+  /** Portion label of the linked food that a plain count means (e.g. "large" for eggs). */
+  defaultPortion?: string | null;
+  /** Custom only: flag the ingredient for review (default true; web sessions and the seed pass false). */
+  needsReview?: boolean;
+  /** Skip the conflict when another ingredient already links this food (the seed links "Red onion" and "Yellow onion" to one food). */
+  allowSharedFood?: boolean;
 }
 
-function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientView {
-  const name = input.name.trim().replace(/\s+/g, " ");
-  const normalized = normalizeName(input.name);
-  if (normalized === "") throw new AppError("validation", "Ingredient name is required");
-  if (findByNormalizedName(ctx, normalized)) {
-    throw new AppError("conflict", `Ingredient already exists: ${name}`);
+/** The label as the food spells it, or a validation error when the food has no such portion. */
+function checkDefaultPortion(fdcId: number | null, label: string | null | undefined): string | null {
+  if (label === null || label === undefined) return null;
+  const wanted = label.trim().toLowerCase();
+  if (wanted === "") return null;
+  const food = fdcId === null ? null : getFood(fdcId);
+  if (food === null) {
+    throw new AppError("validation", "defaultPortion needs an ingredient linked to a USDA food", {
+      defaultPortion: label,
+    });
+  }
+  const portion = food.portions.find((item) => item.label.trim().toLowerCase() === wanted);
+  if (!portion) {
+    throw new AppError("validation", `The linked food has no portion "${label}"`, {
+      defaultPortion: label,
+      portions: food.portions.map((item) => item.label),
+    });
+  }
+  return portion.label;
+}
+
+/** Insert an ingredient row: a linked one (`fdcId`) or a custom one. Lint and conflicts are checked. */
+function insertIngredient(ctx: Ctx, input: CreateIngredientInput): Ingredient {
+  const fdcId = input.fdcId ?? null;
+  const food = fdcId === null ? null : getFood(fdcId);
+  if (fdcId !== null && food === null) {
+    throw new AppError("not_found", `Unknown USDA food: ${fdcId}`, { fdcId });
+  }
+
+  const supplied = input.name === undefined ? "" : titleCaseName(input.name);
+  const name = supplied !== "" ? supplied : food === null ? "" : titleCaseName(suggestedNameForFood(food.description));
+  if (name === "") throw new AppError("validation", "Ingredient name is required");
+  const lint = lintIngredientName(name);
+  if (!lint.ok) throw invalidNameError(name, lint);
+
+  const normalized = normalizeName(name);
+  const clash = findByNormalizedName(ctx, normalized);
+  if (clash) {
+    throw new AppError("conflict", `Ingredient already exists: ${name}`, {
+      ingredientId: clash.id,
+      name: clash.name,
+      linkedFdcId: clash.nutritionFdcId,
+    });
   }
 
   const timestamp = nowIso(ctx);
-  const id = newId("ing");
-  const row = ctx.db
+  return ctx.db
     .insert(ingredients)
     .values({
-      id,
+      id: newId("ing"),
       householdId: ctx.householdId,
       name,
       normalizedName: normalized,
@@ -419,26 +754,56 @@ function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientV
       parQty: requireParQty(input.parQty),
       parUnit: normalizeUnitInput(input.parUnit, "unit"),
       notes: input.notes ?? null,
-      nutritionFdcId: autoMatchFood(name)?.fdcId ?? null,
-      nutritionSource: "auto",
+      // A deliberate choice: renaming never re-matches (a custom has no food, a linked one keeps its food).
+      nutritionFdcId: fdcId,
+      nutritionSource: "manual",
+      defaultPortion: checkDefaultPortion(fdcId, input.defaultPortion),
+      needsReview: fdcId === null && (input.needsReview ?? true),
       createdAt: timestamp,
       updatedAt: timestamp,
     })
     .returning()
     .get();
+}
 
+function createIngredientIn(ctx: Ctx, input: CreateIngredientInput): IngredientView {
+  const fdcId = input.fdcId ?? null;
+  if (fdcId !== null && input.custom === true) {
+    throw new AppError("validation", "Send `fdcId` or `custom: true`, not both");
+  }
+  if (fdcId === null && input.custom !== true) {
+    const name = input.name === undefined ? "" : displayName(input.name);
+    if (name === "") throw new AppError("validation", "Ingredient name is required");
+    throw unresolvedError([unresolvedEntry(ctx, name)]);
+  }
+
+  if (fdcId !== null && input.allowSharedFood !== true) {
+    const existing = ingredientsLinkedTo(ctx, fdcId).find((row) => row.archivedAt === null);
+    if (existing) {
+      throw new AppError(
+        "conflict",
+        `USDA food ${fdcId} is already linked to the ingredient "${existing.name}"`,
+        { ingredientId: existing.id, name: existing.name, fdcId },
+      );
+    }
+  }
+
+  const row = insertIngredient(ctx, input);
   const seen = new Set<string>();
   for (const raw of input.aliases ?? []) {
     const alias = normalizeName(raw);
     if (alias === "" || seen.has(alias)) continue;
     seen.add(alias);
-    addAliasIn(ctx, id, raw);
+    addAliasIn(ctx, row.id, raw);
   }
-
   return ingredientView(ctx, row);
 }
 
-/** Create an ingredient (aliases included). Duplicate names/aliases are a conflict. */
+/**
+ * Create an ingredient (aliases included): linked to a USDA food (`fdcId`) or, as a last
+ * resort, custom (`custom: true`). Without either the call is `unprocessable` with suggestions.
+ * Duplicate names/aliases are a conflict; names must pass the name lint.
+ */
 export function createIngredient(ctx: Ctx, input: CreateIngredientInput): IngredientView {
   return withTx(ctx, (tx) => createIngredientIn(tx, input));
 }
@@ -453,6 +818,29 @@ export interface UpdateIngredientInput {
   parQty?: number | null;
   parUnit?: string | null;
   notes?: string | null;
+  /** Portion label of the linked food a plain count means; null clears it. */
+  defaultPortion?: string | null;
+}
+
+/** Shopping items keep a copy of the ingredient name; follow a rename unless the item has its own text. */
+function renameShoppingItems(ctx: Ctx, row: Ingredient, name: string): void {
+  const items = ctx.db
+    .select({ id: shoppingListItems.id, name: shoppingListItems.name })
+    .from(shoppingListItems)
+    .where(
+      and(
+        eq(shoppingListItems.householdId, ctx.householdId),
+        eq(shoppingListItems.ingredientId, row.id),
+      ),
+    )
+    .all();
+  const ids = items.filter((item) => normalizeName(item.name) === row.normalizedName).map((item) => item.id);
+  if (ids.length === 0) return;
+  ctx.db
+    .update(shoppingListItems)
+    .set({ name })
+    .where(and(eq(shoppingListItems.householdId, ctx.householdId), inArray(shoppingListItems.id, ids)))
+    .run();
 }
 
 function updateIngredientIn(
@@ -464,18 +852,28 @@ function updateIngredientIn(
   const patch: Partial<typeof ingredients.$inferInsert> = {};
 
   if (input.name !== undefined) {
-    const name = input.name.trim().replace(/\s+/g, " ");
-    const normalized = normalizeName(input.name);
+    const name = titleCaseName(input.name);
+    const normalized = normalizeName(name);
     if (normalized === "") throw new AppError("validation", "Ingredient name is required");
+    // Existing bad names stay as they are; only a new name has to pass the lint (a case-only change is not new).
+    const renamed = normalized !== row.normalizedName;
+    if (renamed) {
+      const lint = lintIngredientName(name);
+      if (!lint.ok) throw invalidNameError(name, lint);
+    }
     const clash = findByNormalizedName(ctx, normalized);
     if (clash && clash.id !== row.id) {
-      throw new AppError("conflict", `Ingredient already exists: ${name}`);
+      throw new AppError("conflict", `Ingredient already exists: ${name}`, {
+        ingredientId: clash.id,
+        name: clash.name,
+      });
     }
     patch.name = name;
     patch.normalizedName = normalized;
-    if (name !== row.name && row.nutritionSource !== "manual") {
+    if (renamed && row.nutritionSource !== "manual") {
       patch.nutritionFdcId = autoMatchFood(name)?.fdcId ?? null;
       patch.nutritionSource = "auto";
+      if (patch.nutritionFdcId !== null) patch.needsReview = false;
     }
   }
   if (input.description !== undefined) patch.description = input.description;
@@ -491,6 +889,18 @@ function updateIngredientIn(
   }
   if (input.notes !== undefined) patch.notes = input.notes;
 
+  const fdcId = patch.nutritionFdcId === undefined ? row.nutritionFdcId : patch.nutritionFdcId;
+  if (input.defaultPortion !== undefined) {
+    patch.defaultPortion = checkDefaultPortion(fdcId, input.defaultPortion);
+  } else if (patch.nutritionFdcId !== undefined && row.defaultPortion !== null) {
+    // A new food may not have the portion the old one had.
+    const food = fdcId === null ? null : getFood(fdcId);
+    const wanted = row.defaultPortion.toLowerCase();
+    if (!food?.portions.some((portion) => portion.label.toLowerCase() === wanted)) {
+      patch.defaultPortion = null;
+    }
+  }
+
   if (Object.keys(patch).length === 0) return ingredientView(ctx, row);
 
   patch.updatedAt = nowIso(ctx);
@@ -500,6 +910,7 @@ function updateIngredientIn(
     .where(and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.id, row.id)))
     .returning()
     .get();
+  if (patch.name !== undefined && patch.name !== row.name) renameShoppingItems(ctx, row, patch.name);
   return ingredientView(ctx, updated);
 }
 
@@ -596,6 +1007,152 @@ export interface MergeIngredientsResult {
   };
 }
 
+/** After recipe lines moved from `sourceId` to `targetId`: no alternative may equal its line's main or repeat. */
+function repointAlternatives(tx: Ctx, sourceId: string, targetId: string): void {
+  const lineIds = (ingredientId: string): string[] =>
+    tx.db
+      .select({ id: recipeIngredients.id })
+      .from(recipeIngredients)
+      .where(
+        and(
+          eq(recipeIngredients.householdId, tx.householdId),
+          eq(recipeIngredients.ingredientId, ingredientId),
+        ),
+      )
+      .all()
+      .map((row) => row.id);
+
+  // Lines whose main is now the target cannot also list it as an alternative.
+  const targetLines = lineIds(targetId);
+  if (targetLines.length > 0) {
+    tx.db
+      .delete(recipeIngredientAlternatives)
+      .where(
+        and(
+          eq(recipeIngredientAlternatives.ingredientId, targetId),
+          inArray(recipeIngredientAlternatives.recipeIngredientId, targetLines),
+        ),
+      )
+      .run();
+  }
+
+  const asAlternative = tx.db
+    .select()
+    .from(recipeIngredientAlternatives)
+    .where(eq(recipeIngredientAlternatives.ingredientId, sourceId))
+    .all();
+  for (const row of asAlternative) {
+    const duplicate =
+      tx.db
+        .select({ id: recipeIngredientAlternatives.id })
+        .from(recipeIngredientAlternatives)
+        .where(
+          and(
+            eq(recipeIngredientAlternatives.recipeIngredientId, row.recipeIngredientId),
+            eq(recipeIngredientAlternatives.ingredientId, targetId),
+          ),
+        )
+        .get() !== undefined;
+    const isMain = targetLines.includes(row.recipeIngredientId);
+    if (duplicate || isMain) {
+      tx.db.delete(recipeIngredientAlternatives).where(eq(recipeIngredientAlternatives.id, row.id)).run();
+    } else {
+      tx.db
+        .update(recipeIngredientAlternatives)
+        .set({ ingredientId: targetId })
+        .where(eq(recipeIngredientAlternatives.id, row.id))
+        .run();
+    }
+  }
+}
+
+/**
+ * Move `source`'s pantry rows to `target`: one row per ingredient, so amounts are summed when
+ * the units convert and the ledger history follows. Returns how many source rows moved.
+ */
+function movePantryRows(tx: Ctx, source: Ingredient, target: Ingredient, timestamp: string): number {
+  // Pantry: one row per ingredient; sum when the units match, otherwise keep the target's row.
+  const sourceRows = tx.db
+    .select()
+    .from(pantryItems)
+    .where(
+      and(
+        eq(pantryItems.householdId, tx.householdId),
+        eq(pantryItems.ingredientId, source.id),
+      ),
+    )
+    .all();
+  const targetRows = tx.db
+    .select()
+    .from(pantryItems)
+    .where(
+      and(
+        eq(pantryItems.householdId, tx.householdId),
+        eq(pantryItems.ingredientId, target.id),
+      ),
+    )
+    .all();
+  const dst = targetRows[0];
+
+  let pantryItemsMoved = 0;
+  for (const src of sourceRows) {
+    if (!dst) {
+      tx.db
+        .update(pantryItems)
+        .set({ ingredientId: target.id, updatedAt: timestamp })
+        .where(eq(pantryItems.id, src.id))
+        .run();
+      pantryItemsMoved += 1;
+      continue;
+    }
+
+    let qty = dst.qty;
+    let unit = dst.unit;
+    let changed = false;
+    if (qty === null && src.qty !== null) {
+      qty = src.qty;
+      unit = src.unit;
+      changed = true;
+    } else if (qty !== null && src.qty !== null) {
+      // The source's own conversion rows are still in scope here (they move to the
+      // target later), so a conversion defined only on the source is still usable.
+      const converted =
+        convert(tx, src.qty, src.unit, unit, target.id) ??
+        convert(tx, src.qty, src.unit, unit, source.id);
+      if (converted === null) {
+        throw new AppError(
+          "unprocessable",
+          `Cannot merge ${source.name} into ${target.name}: ${src.qty} ${src.unit ?? "unit"} is not convertible to ${unit ?? "unit"}`,
+          {
+            ingredient: target.id,
+            source: source.id,
+            fromUnit: src.unit,
+            toUnit: unit,
+          },
+        );
+      }
+      qty = qty + converted;
+      changed = true;
+    }
+    const status = changed ? statusFor(tx, target, qty, unit) : dst.status;
+    tx.db
+      .update(pantryItems)
+      .set({ qty, unit, status, updatedAt: timestamp })
+      .where(eq(pantryItems.id, dst.id))
+      .run();
+    // Keep the ledger history on the surviving row (movements cascade-delete).
+    tx.db
+      .update(stockMovements)
+      .set({ pantryItemId: dst.id })
+      .where(eq(stockMovements.pantryItemId, src.id))
+      .run();
+    tx.db.delete(pantryItems).where(eq(pantryItems.id, src.id)).run();
+    pantryItemsMoved += 1;
+  }
+
+  return pantryItemsMoved;
+}
+
 /**
  * Fold `sourceId` into `targetId` in one transaction: recipe ingredients, pantry
  * stock (summed when the units match), shopping items, rules and conversions
@@ -616,16 +1173,16 @@ export function mergeIngredients(
     const timestamp = nowIso(tx);
 
     // Keep the target's USDA match; carry the source's over when the target has none.
-    const targetMatched = target.nutritionSource === "manual" || target.nutritionFdcId !== null;
-    const sourceMatched = source.nutritionSource === "manual" || source.nutritionFdcId !== null;
-    if (!targetMatched && sourceMatched) {
+    if (target.nutritionFdcId === null && source.nutritionFdcId !== null) {
       target.nutritionFdcId = source.nutritionFdcId;
       target.nutritionSource = source.nutritionSource;
+      target.needsReview = false;
       tx.db
         .update(ingredients)
         .set({
           nutritionFdcId: source.nutritionFdcId,
           nutritionSource: source.nutritionSource,
+          needsReview: false,
           updatedAt: timestamp,
         })
         .where(and(eq(ingredients.householdId, tx.householdId), eq(ingredients.id, target.id)))
@@ -642,85 +1199,9 @@ export function mergeIngredients(
         ),
       )
       .run().changes;
+    repointAlternatives(tx, source.id, target.id);
 
-    // Pantry: one row per ingredient; sum when the units match, otherwise keep the target's row.
-    const sourceRows = tx.db
-      .select()
-      .from(pantryItems)
-      .where(
-        and(
-          eq(pantryItems.householdId, tx.householdId),
-          eq(pantryItems.ingredientId, source.id),
-        ),
-      )
-      .all();
-    const targetRows = tx.db
-      .select()
-      .from(pantryItems)
-      .where(
-        and(
-          eq(pantryItems.householdId, tx.householdId),
-          eq(pantryItems.ingredientId, target.id),
-        ),
-      )
-      .all();
-    const dst = targetRows[0];
-
-    let pantryItemsMoved = 0;
-    for (const src of sourceRows) {
-      if (!dst) {
-        tx.db
-          .update(pantryItems)
-          .set({ ingredientId: target.id, updatedAt: timestamp })
-          .where(eq(pantryItems.id, src.id))
-          .run();
-        pantryItemsMoved += 1;
-        continue;
-      }
-
-      let qty = dst.qty;
-      let unit = dst.unit;
-      let changed = false;
-      if (qty === null && src.qty !== null) {
-        qty = src.qty;
-        unit = src.unit;
-        changed = true;
-      } else if (qty !== null && src.qty !== null) {
-        // The source's own conversion rows are still in scope here (they move to the
-        // target later), so a conversion defined only on the source is still usable.
-        const converted =
-          convert(tx, src.qty, src.unit, unit, target.id) ??
-          convert(tx, src.qty, src.unit, unit, source.id);
-        if (converted === null) {
-          throw new AppError(
-            "unprocessable",
-            `Cannot merge ${source.name} into ${target.name}: ${src.qty} ${src.unit ?? "unit"} is not convertible to ${unit ?? "unit"}`,
-            {
-              ingredient: target.id,
-              source: source.id,
-              fromUnit: src.unit,
-              toUnit: unit,
-            },
-          );
-        }
-        qty = qty + converted;
-        changed = true;
-      }
-      const status = changed ? statusFor(tx, target, qty, unit) : dst.status;
-      tx.db
-        .update(pantryItems)
-        .set({ qty, unit, status, updatedAt: timestamp })
-        .where(eq(pantryItems.id, dst.id))
-        .run();
-      // Keep the ledger history on the surviving row (movements cascade-delete).
-      tx.db
-        .update(stockMovements)
-        .set({ pantryItemId: dst.id })
-        .where(eq(stockMovements.pantryItemId, src.id))
-        .run();
-      tx.db.delete(pantryItems).where(eq(pantryItems.id, src.id)).run();
-      pantryItemsMoved += 1;
-    }
+    const pantryItemsMoved = movePantryRows(tx, source, target, timestamp);
 
     const shoppingItemsMoved = tx.db
       .update(shoppingListItems)
@@ -849,4 +1330,507 @@ export function mergeIngredients(
       },
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Review
+// ---------------------------------------------------------------------------
+
+export type ReviewReason = "unlinked" | "lint" | "custom_unreviewed";
+
+export interface ReviewItem {
+  ingredient: IngredientView;
+  reasons: ReviewReason[];
+  /** Why the name fails the lint (when `reasons` has "lint"). */
+  lint?: { reason: string; hint: string };
+  /** Ways to fix an unlinked or badly named ingredient: existing ingredients and USDA foods. */
+  suggestions: Suggestion[];
+}
+
+/** The review entry for an ingredient, or null when nothing needs attention. */
+function reviewItemFor(ctx: Ctx, row: Ingredient): ReviewItem | null {
+  const lint = lintIngredientName(row.name);
+  if (!row.needsReview && lint.ok) return null;
+
+  const reasons: ReviewReason[] = [];
+  if (row.nutritionFdcId === null) reasons.push("unlinked");
+  if (!lint.ok) reasons.push("lint");
+  if (row.needsReview) reasons.push("custom_unreviewed");
+  return {
+    ingredient: ingredientView(ctx, row),
+    reasons,
+    ...(lint.ok ? {} : { lint: { reason: lint.reason, hint: lint.hint } }),
+    suggestions:
+      row.nutritionFdcId === null || !lint.ok
+        ? suggestForName(ctx, row.name, { excludeId: row.id })
+        : [],
+  };
+}
+
+/**
+ * Ingredients a person should look at: flagged for review (customs made over the API/MCP,
+ * unlinked legacy rows) or with a name that fails the name lint. Archived ones are skipped.
+ * Accepting an ingredient clears the flag; a lint problem stays until the name is fixed.
+ */
+export function listIngredientsForReview(ctx: Ctx): ReviewItem[] {
+  const rows = ctx.db
+    .select()
+    .from(ingredients)
+    .where(and(eq(ingredients.householdId, ctx.householdId), isNull(ingredients.archivedAt)))
+    .orderBy(asc(ingredients.normalizedName))
+    .all();
+  return rows.flatMap((row) => {
+    const item = reviewItemFor(ctx, row);
+    return item === null ? [] : [item];
+  });
+}
+
+/** Accept an ingredient as it is: clears the review flag. */
+export function acceptIngredient(ctx: Ctx, id: string): IngredientView {
+  const row = requireIngredient(ctx, id);
+  if (!row.needsReview) return ingredientView(ctx, row);
+  const updated = ctx.db
+    .update(ingredients)
+    .set({ needsReview: false, updatedAt: nowIso(ctx) })
+    .where(and(eq(ingredients.householdId, ctx.householdId), eq(ingredients.id, row.id)))
+    .returning()
+    .get();
+  return ingredientView(ctx, updated);
+}
+
+// ---------------------------------------------------------------------------
+// Split
+// ---------------------------------------------------------------------------
+
+export interface SplitIngredientInput {
+  /** Becomes the main ingredient of every recipe line that used the split ingredient. */
+  main: IngredientRefInput;
+  /** Become alternatives of those lines. */
+  alternatives?: IngredientRefInput[];
+}
+
+export interface SplitIngredientResult {
+  /** The archived ingredient that was split. */
+  source: IngredientView;
+  main: IngredientView;
+  alternatives: IngredientView[];
+  moved: {
+    /** Recipe lines whose main ingredient was the source. */
+    recipeLines: number;
+    /** Recipe lines that listed the source as an alternative. */
+    alternativeLines: number;
+    pantryItems: number;
+    shoppingItems: number;
+  };
+}
+
+/** Add alternatives to a line, skipping its main ingredient and ones it already has. */
+function appendAlternatives(tx: Ctx, lineId: string, mainId: string, ids: string[]): void {
+  const existing = tx.db
+    .select({ ingredientId: recipeIngredientAlternatives.ingredientId, position: recipeIngredientAlternatives.position })
+    .from(recipeIngredientAlternatives)
+    .where(eq(recipeIngredientAlternatives.recipeIngredientId, lineId))
+    .all();
+  const have = new Set(existing.map((row) => row.ingredientId));
+  have.add(mainId);
+  let position = existing.reduce((max, row) => Math.max(max, row.position), -1);
+  for (const ingredientId of ids) {
+    if (have.has(ingredientId)) continue;
+    have.add(ingredientId);
+    position += 1;
+    tx.db
+      .insert(recipeIngredientAlternatives)
+      .values({
+        id: newId("ria"),
+        householdId: tx.householdId,
+        recipeIngredientId: lineId,
+        ingredientId,
+        position,
+      })
+      .run();
+  }
+}
+
+/**
+ * Split an ingredient that names several ("Milk or water") into real ones. Every recipe line
+ * that used it gets `main` as its ingredient and `alternatives` as alternatives; lines that
+ * listed it as an alternative get all of them as alternatives. Pantry stock and shopping items
+ * move to `main`. The split ingredient is archived. Unknown names are `unprocessable`.
+ */
+export function splitIngredient(
+  ctx: Ctx,
+  id: string,
+  input: SplitIngredientInput,
+): SplitIngredientResult {
+  return withTx(ctx, (tx) => {
+    const source = requireIngredient(tx, id);
+    const resolved = resolveIngredientRefs(tx, [input.main, ...(input.alternatives ?? [])]);
+    const main = resolved[0] as Ingredient;
+    if (main.id === source.id) {
+      throw new AppError("validation", "The main ingredient must differ from the ingredient being split");
+    }
+    const alternativeRows: Ingredient[] = [];
+    for (const row of resolved.slice(1)) {
+      if (row.id === main.id || row.id === source.id) continue;
+      if (!alternativeRows.some((item) => item.id === row.id)) alternativeRows.push(row);
+    }
+    const replacement = [main, ...alternativeRows];
+    const timestamp = nowIso(tx);
+
+    const lines = tx.db
+      .select({ id: recipeIngredients.id })
+      .from(recipeIngredients)
+      .where(
+        and(
+          eq(recipeIngredients.householdId, tx.householdId),
+          eq(recipeIngredients.ingredientId, source.id),
+        ),
+      )
+      .all();
+    for (const line of lines) {
+      tx.db
+        .update(recipeIngredients)
+        .set({ ingredientId: main.id })
+        .where(eq(recipeIngredients.id, line.id))
+        .run();
+      tx.db
+        .delete(recipeIngredientAlternatives)
+        .where(
+          and(
+            eq(recipeIngredientAlternatives.recipeIngredientId, line.id),
+            eq(recipeIngredientAlternatives.ingredientId, main.id),
+          ),
+        )
+        .run();
+      appendAlternatives(tx, line.id, main.id, alternativeRows.map((row) => row.id));
+    }
+
+    const asAlternative = tx.db
+      .select()
+      .from(recipeIngredientAlternatives)
+      .where(
+        and(
+          eq(recipeIngredientAlternatives.householdId, tx.householdId),
+          eq(recipeIngredientAlternatives.ingredientId, source.id),
+        ),
+      )
+      .all();
+    for (const row of asAlternative) {
+      const line = tx.db
+        .select({ ingredientId: recipeIngredients.ingredientId })
+        .from(recipeIngredients)
+        .where(eq(recipeIngredients.id, row.recipeIngredientId))
+        .get();
+      tx.db.delete(recipeIngredientAlternatives).where(eq(recipeIngredientAlternatives.id, row.id)).run();
+      if (line) {
+        appendAlternatives(tx, row.recipeIngredientId, line.ingredientId, replacement.map((item) => item.id));
+      }
+    }
+
+    const pantryItemsMoved = movePantryRows(tx, source, main, timestamp);
+    const shoppingItemsMoved = tx.db
+      .update(shoppingListItems)
+      .set({ ingredientId: main.id })
+      .where(
+        and(
+          eq(shoppingListItems.householdId, tx.householdId),
+          eq(shoppingListItems.ingredientId, source.id),
+        ),
+      )
+      .run().changes;
+    tx.db
+      .update(shoppingListItems)
+      .set({ substituteIngredientId: main.id })
+      .where(
+        and(
+          eq(shoppingListItems.householdId, tx.householdId),
+          eq(shoppingListItems.substituteIngredientId, source.id),
+        ),
+      )
+      .run();
+
+    const archived = tx.db
+      .update(ingredients)
+      .set({ archivedAt: timestamp, needsReview: false, updatedAt: timestamp })
+      .where(and(eq(ingredients.householdId, tx.householdId), eq(ingredients.id, source.id)))
+      .returning()
+      .get();
+
+    return {
+      source: ingredientView(tx, archived),
+      main: ingredientView(tx, requireIngredient(tx, main.id)),
+      alternatives: alternativeRows.map((row) => ingredientView(tx, requireIngredient(tx, row.id))),
+      moved: {
+        recipeLines: lines.length,
+        alternativeLines: asAlternative.length,
+        pantryItems: pantryItemsMoved,
+        shoppingItems: shoppingItemsMoved,
+      },
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Detail and usage
+// ---------------------------------------------------------------------------
+
+export interface IngredientRecipeUsage {
+  id: string;
+  slug: string;
+  title: string;
+  /** Recipe lines that use the ingredient, as the main ingredient or as an alternative. */
+  lines: number;
+  asMain: number;
+  asAlternative: number;
+}
+
+export interface IngredientShoppingUsage {
+  itemId: string;
+  listId: string;
+  listTitle: string;
+  listStatus: ShoppingListStatus;
+  name: string;
+  qty: number | null;
+  unit: string | null;
+  checked: boolean;
+}
+
+export interface IngredientRuleUsage {
+  id: string;
+  severity: RuleSeverity;
+  reason: string | null;
+  conditionNote: string | null;
+  /** null = the whole household. */
+  memberId: string | null;
+}
+
+/** Where an ingredient is used: recipes, pantry, open shopping lists and dietary rules. */
+export interface IngredientUsage {
+  recipes: IngredientRecipeUsage[];
+  pantryItem: IngredientStockView | null;
+  /** Items of shopping lists that are not done. */
+  shoppingItems: IngredientShoppingUsage[];
+  /** Dietary rules for this ingredient (scope ingredient). */
+  rules: IngredientRuleUsage[];
+}
+
+export interface IngredientDetail extends IngredientView {
+  usage: IngredientUsage;
+  /** Why the ingredient needs attention; null when it does not. */
+  review: Omit<ReviewItem, "ingredient"> | null;
+}
+
+function recipeUsage(ctx: Ctx, ingredientId: string): IngredientRecipeUsage[] {
+  const main = ctx.db
+    .select({ id: recipes.id, slug: recipes.slug, title: recipes.title, lines: sql<number>`count(*)` })
+    .from(recipeIngredients)
+    .innerJoin(recipes, eq(recipes.id, recipeIngredients.recipeId))
+    .where(
+      and(
+        eq(recipeIngredients.householdId, ctx.householdId),
+        eq(recipeIngredients.ingredientId, ingredientId),
+      ),
+    )
+    .groupBy(recipes.id)
+    .all();
+  const alternative = ctx.db
+    .select({ id: recipes.id, slug: recipes.slug, title: recipes.title, lines: sql<number>`count(*)` })
+    .from(recipeIngredientAlternatives)
+    .innerJoin(recipeIngredients, eq(recipeIngredients.id, recipeIngredientAlternatives.recipeIngredientId))
+    .innerJoin(recipes, eq(recipes.id, recipeIngredients.recipeId))
+    .where(
+      and(
+        eq(recipeIngredientAlternatives.householdId, ctx.householdId),
+        eq(recipeIngredientAlternatives.ingredientId, ingredientId),
+      ),
+    )
+    .groupBy(recipes.id)
+    .all();
+
+  const byRecipe = new Map<string, IngredientRecipeUsage>();
+  for (const row of main) {
+    byRecipe.set(row.id, { id: row.id, slug: row.slug, title: row.title, lines: row.lines, asMain: row.lines, asAlternative: 0 });
+  }
+  for (const row of alternative) {
+    const entry = byRecipe.get(row.id);
+    if (entry) {
+      entry.asAlternative = row.lines;
+      entry.lines += row.lines;
+    } else {
+      byRecipe.set(row.id, { id: row.id, slug: row.slug, title: row.title, lines: row.lines, asMain: 0, asAlternative: row.lines });
+    }
+  }
+  return [...byRecipe.values()].sort((a, b) => a.title.localeCompare(b.title));
+}
+
+function shoppingUsage(ctx: Ctx, ingredientId: string): IngredientShoppingUsage[] {
+  return ctx.db
+    .select({
+      itemId: shoppingListItems.id,
+      listId: shoppingLists.id,
+      listTitle: shoppingLists.title,
+      listStatus: shoppingLists.status,
+      name: shoppingListItems.name,
+      qty: shoppingListItems.qty,
+      unit: shoppingListItems.unit,
+      checkedAt: shoppingListItems.checkedAt,
+    })
+    .from(shoppingListItems)
+    .innerJoin(shoppingLists, eq(shoppingLists.id, shoppingListItems.shoppingListId))
+    .where(
+      and(
+        eq(shoppingListItems.householdId, ctx.householdId),
+        eq(shoppingListItems.ingredientId, ingredientId),
+        ne(shoppingLists.status, "done"),
+      ),
+    )
+    .orderBy(asc(shoppingLists.createdAt), asc(shoppingListItems.position))
+    .all()
+    .map(({ checkedAt, ...item }) => ({ ...item, checked: checkedAt !== null }));
+}
+
+/** One ingredient with its usage (recipes, pantry, open shopping items, rules) and review state. */
+export function getIngredientDetail(ctx: Ctx, id: string): IngredientDetail {
+  const row = requireIngredient(ctx, id);
+  const view = ingredientView(ctx, row);
+  const rules = ctx.db
+    .select({
+      id: dietaryRules.id,
+      severity: dietaryRules.severity,
+      reason: dietaryRules.reason,
+      conditionNote: dietaryRules.conditionNote,
+      memberId: dietaryRules.memberId,
+    })
+    .from(dietaryRules)
+    .where(
+      and(
+        eq(dietaryRules.householdId, ctx.householdId),
+        eq(dietaryRules.scope, "ingredient"),
+        eq(dietaryRules.ingredientId, row.id),
+      ),
+    )
+    .all();
+  const review = row.archivedAt === null ? reviewItemFor(ctx, row) : null;
+  return {
+    ...view,
+    usage: {
+      recipes: recipeUsage(ctx, row.id),
+      pantryItem: view.pantry[0] ?? null,
+      shoppingItems: shoppingUsage(ctx, row.id),
+      rules,
+    },
+    review: review === null ? null : { reasons: review.reasons, ...(review.lint === undefined ? {} : { lint: review.lint }), suggestions: review.suggestions },
+  };
+}
+
+export interface IngredientUsageCount {
+  ingredientId: string;
+  recipes: number;
+  pantry: number;
+  shopping: number;
+  rules: number;
+}
+
+/**
+ * Use counts for every ingredient that is used somewhere (recipe line or alternative,
+ * pantry row, open shopping item, ingredient rule). Ingredients that are not listed are unused.
+ */
+export function listIngredientUsageCounts(ctx: Ctx): IngredientUsageCount[] {
+  const counts = new Map<string, IngredientUsageCount>();
+  const entry = (ingredientId: string): IngredientUsageCount => {
+    let item = counts.get(ingredientId);
+    if (!item) {
+      item = { ingredientId, recipes: 0, pantry: 0, shopping: 0, rules: 0 };
+      counts.set(ingredientId, item);
+    }
+    return item;
+  };
+
+  const mainRows = ctx.db
+    .selectDistinct({ ingredientId: recipeIngredients.ingredientId, recipeId: recipeIngredients.recipeId })
+    .from(recipeIngredients)
+    .where(eq(recipeIngredients.householdId, ctx.householdId))
+    .all();
+  const alternativeRows = ctx.db
+    .selectDistinct({
+      ingredientId: recipeIngredientAlternatives.ingredientId,
+      recipeId: recipeIngredients.recipeId,
+    })
+    .from(recipeIngredientAlternatives)
+    .innerJoin(recipeIngredients, eq(recipeIngredients.id, recipeIngredientAlternatives.recipeIngredientId))
+    .where(eq(recipeIngredientAlternatives.householdId, ctx.householdId))
+    .all();
+  const recipesOf = new Map<string, Set<string>>();
+  for (const row of [...mainRows, ...alternativeRows]) {
+    const seen = recipesOf.get(row.ingredientId) ?? new Set<string>();
+    seen.add(row.recipeId);
+    recipesOf.set(row.ingredientId, seen);
+  }
+  for (const [ingredientId, seen] of recipesOf) entry(ingredientId).recipes = seen.size;
+
+  const pantryRows = ctx.db
+    .select({ ingredientId: pantryItems.ingredientId, count: sql<number>`count(*)` })
+    .from(pantryItems)
+    .where(eq(pantryItems.householdId, ctx.householdId))
+    .groupBy(pantryItems.ingredientId)
+    .all();
+  for (const row of pantryRows) entry(row.ingredientId).pantry += row.count;
+
+  const shoppingRows = ctx.db
+    .select({ ingredientId: shoppingListItems.ingredientId, count: sql<number>`count(*)` })
+    .from(shoppingListItems)
+    .innerJoin(shoppingLists, eq(shoppingLists.id, shoppingListItems.shoppingListId))
+    .where(and(eq(shoppingListItems.householdId, ctx.householdId), ne(shoppingLists.status, "done")))
+    .groupBy(shoppingListItems.ingredientId)
+    .all();
+  for (const row of shoppingRows) if (row.ingredientId !== null) entry(row.ingredientId).shopping += row.count;
+
+  const ruleRows = ctx.db
+    .select({ ingredientId: dietaryRules.ingredientId, count: sql<number>`count(*)` })
+    .from(dietaryRules)
+    .where(and(eq(dietaryRules.householdId, ctx.householdId), eq(dietaryRules.scope, "ingredient")))
+    .groupBy(dietaryRules.ingredientId)
+    .all();
+  for (const row of ruleRows) if (row.ingredientId !== null) entry(row.ingredientId).rules += row.count;
+
+  return [...counts.values()];
+}
+
+// ---------------------------------------------------------------------------
+// Title Case migration
+// ---------------------------------------------------------------------------
+
+/**
+ * One-time cleanup, safe to run at every start: store every ingredient name (all households)
+ * in Title Case, and let shopping items that carry the old name follow. Only the display `name`
+ * changes. `normalized_name` is lowercase already, so a case-only change cannot collide with
+ * another ingredient; a row whose normalized name would change is skipped. Returns how many
+ * ingredients changed.
+ */
+export function titleCaseIngredientNames(db: Db): number {
+  const rows = db
+    .select({ id: ingredients.id, name: ingredients.name, normalizedName: ingredients.normalizedName })
+    .from(ingredients)
+    .all();
+  const changes = rows.flatMap((row) => {
+    const name = titleCaseName(row.name);
+    return name !== row.name && normalizeName(name) === row.normalizedName ? [{ ...row, next: name }] : [];
+  });
+  if (changes.length === 0) return 0;
+
+  db.transaction((tx) => {
+    for (const change of changes) {
+      tx.update(ingredients).set({ name: change.next }).where(eq(ingredients.id, change.id)).run();
+      const items = tx
+        .select({ id: shoppingListItems.id, name: shoppingListItems.name })
+        .from(shoppingListItems)
+        .where(eq(shoppingListItems.ingredientId, change.id))
+        .all();
+      const ids = items.filter((item) => normalizeName(item.name) === change.normalizedName).map((item) => item.id);
+      if (ids.length > 0) {
+        tx.update(shoppingListItems).set({ name: change.next }).where(inArray(shoppingListItems.id, ids)).run();
+      }
+    }
+  });
+  return changes.length;
 }

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { App } from "../src/api/app.js";
 import { completeCookEvent } from "../src/services/cooking.js";
-import { findIngredientByName, resolveIngredient } from "../src/services/ingredients.js";
+import { findIngredientByName } from "../src/services/ingredients.js";
 import { applyMovement } from "../src/services/pantry.js";
 import { addCookEvent, createPlan } from "../src/services/plans.js";
-import { createRecipe, listStatusHistory } from "../src/services/recipes.js";
+import { createRecipe, getRecipe, listStatusHistory } from "../src/services/recipes.js";
 import { createRule } from "../src/services/rules.js";
 import { createShoppingList } from "../src/services/shopping.js";
-import { makeTestApp } from "./helpers.js";
+import { ensureIngredient, makeTestApp } from "./helpers.js";
 
 /** Every tool the server must expose, by name. */
 const TOOL_NAMES = [
@@ -15,6 +15,9 @@ const TOOL_NAMES = [
   "household_update",
   "ingredient_search",
   "ingredient_upsert",
+  "find_ingredient",
+  "create_custom_ingredient",
+  "review_ingredients",
   "list_icons",
   "unit_conversions",
   "pantry_query",
@@ -171,7 +174,7 @@ describe("MCP endpoint", () => {
   });
 
   it("reflects stock math through pantry_update and pantry_query", async () => {
-    const { app, token } = makeTestApp();
+    const { app, token } = makeTestApp({ ingredients: ["Chicken breast"] });
 
     const update = await callTool(app, token, "pantry_update", {
       action: "bulk",
@@ -187,13 +190,13 @@ describe("MCP endpoint", () => {
       items: { qty: number | null; unit: string | null; ingredient: { name: string } }[];
     };
     expect(payload.items).toHaveLength(1);
-    expect(payload.items[0]?.ingredient.name).toBe("Chicken breast");
+    expect(payload.items[0]?.ingredient.name).toBe("Chicken Breast");
     expect(payload.items[0]?.qty).toBe(1.5);
     expect(payload.items[0]?.unit).toBe("lb");
   });
 
   it("deletes a pantry row through pantry_update and answers not_found for an unknown id", async () => {
-    const { app, token } = makeTestApp();
+    const { app, token } = makeTestApp({ ingredients: ["Sesame oil"] });
 
     await callTool(app, token, "pantry_update", {
       action: "bulk",
@@ -236,7 +239,8 @@ describe("MCP endpoint", () => {
 
   it("retargets an ingredient rule when rules_manage update passes a name", async () => {
     const { app, token, ctx } = makeTestApp();
-    const peanuts = resolveIngredient(ctx, "Peanuts", { create: true });
+    const peanuts = ensureIngredient(ctx, "Peanuts");
+    ensureIngredient(ctx, "Tree nuts");
     const rule = createRule(ctx, {
       scope: "ingredient",
       ingredientId: peanuts.id,
@@ -289,7 +293,7 @@ describe("MCP endpoint", () => {
   });
 
   it("includes the pantry movements a cook produced in cook_history", async () => {
-    const { app, token, ctx } = makeTestApp();
+    const { app, token, ctx } = makeTestApp({ ingredients: ["Black beans"] });
     const recipe = createRecipe(ctx, {
       title: "Bean Bowl",
       servings: 2,
@@ -321,7 +325,7 @@ describe("MCP endpoint", () => {
       refType: "cook_event",
       refId: event.id,
       ingredientId: beans,
-      ingredientName: "Black beans",
+      ingredientName: "Black Beans",
       qty: -1,
       unit: "can",
       qtyAfter: 2,
@@ -354,6 +358,10 @@ describe("MCP endpoint", () => {
     const foods = (search.payload as { items: { fdcId: number }[] }).items;
     expect(foods.length).toBeGreaterThan(0);
 
+    const custom = await callTool(app, token, "create_custom_ingredient", { name: "Mystery onion" });
+    expect(custom.result.isError).toBeUndefined();
+    expect(custom.payload).toMatchObject({ ingredient: { name: "Mystery Onion", needsReview: true } });
+
     const saved = await callTool(app, token, "recipe_save", {
       title: "Onion soup",
       servings: 2,
@@ -377,5 +385,133 @@ describe("MCP endpoint", () => {
 
     const nutrition = await callTool(app, token, "get_recipe_nutrition", { idOrSlug: "onion-soup" });
     expect(nutrition.payload).toMatchObject({ servings: 2, countedLines: 1, missingLines: 0 });
+  });
+
+  it("finds existing ingredients and USDA foods with suggested names", async () => {
+    const { app, token, ctx } = makeTestApp({ ingredients: ["Yellow onion"] });
+
+    const { result, payload } = await callTool(app, token, "find_ingredient", { query: "onion" });
+    expect(result.isError).toBeUndefined();
+    const found = payload as {
+      ingredients: { id: string; name: string; linked: boolean }[];
+      foods: { fdcId: number; suggestedName: string }[];
+    };
+    expect(found.ingredients.map((item) => item.name)).toEqual(["Yellow Onion"]);
+    expect(found.ingredients[0]).toMatchObject({ id: findIngredientByName(ctx, "yellow onion")!.id, linked: false });
+    expect(found.foods.length).toBeGreaterThan(0);
+    expect(found.foods.map((food) => food.suggestedName)).toContain("Onion");
+  });
+
+  it("returns one ingredient with its usage from ingredient_search", async () => {
+    const { app, token, ctx } = makeTestApp({ ingredients: ["Yellow onion"] });
+    const onion = findIngredientByName(ctx, "yellow onion")!;
+    createRecipe(ctx, { title: "Onion soup", servings: 2, ingredients: [{ ingredientId: onion.id, qty: 2, unit: "count" }] });
+
+    const byName = await callTool(app, token, "ingredient_search", { ingredient: "yellow onion" });
+    expect(byName.result.isError).toBeUndefined();
+    expect(byName.payload).toMatchObject({
+      ingredient: {
+        id: onion.id,
+        name: "Yellow Onion",
+        usage: { recipes: [{ title: "Onion soup", lines: 1, asMain: 1, asAlternative: 0 }], pantryItem: null },
+      },
+    });
+
+    const byId = await callTool(app, token, "ingredient_search", { ingredientId: onion.id });
+    expect(byId.payload).toMatchObject({ ingredient: { id: onion.id } });
+  });
+
+  it("answers unknown names with every unresolved name, hints and suggestions", async () => {
+    const { app, token, ctx } = makeTestApp();
+
+    const { result, payload } = await callTool(app, token, "recipe_save", {
+      title: "Needs ingredients",
+      ingredients: [
+        { ingredient: "milk or water", qty: 1, unit: "cup" },
+        { ingredient: "Zzyzx root", qty: 1, unit: "g" },
+      ],
+    });
+
+    expect(result.isError).toBe(true);
+    const error = (payload as {
+      error: {
+        code: string;
+        details: { unresolved: { name: string; hint?: string; suggestions: { kind: string }[] }[] };
+      };
+    }).error;
+    expect(error.code).toBe("unprocessable");
+    expect(error.details.unresolved.map((item) => item.name)).toEqual(["milk or water", "Zzyzx root"]);
+    expect(error.details.unresolved[0]!.hint).toContain("alternatives");
+    expect(error.details.unresolved[0]!.suggestions.length).toBeGreaterThan(0);
+    expect(findIngredientByName(ctx, "Zzyzx root")).toBeNull();
+  });
+
+  it("creates linked ingredients only from ingredient_upsert and customs from create_custom_ingredient", async () => {
+    const { app, token } = makeTestApp();
+
+    const plain = await callTool(app, token, "ingredient_upsert", { action: "create", name: "Kumquat" });
+    expect(plain.result.isError).toBe(true);
+    expect(plain.payload).toMatchObject({ error: { code: "unprocessable" } });
+
+    const custom = await callTool(app, token, "ingredient_upsert", {
+      action: "create",
+      name: "Kumquat",
+    custom: true,
+    });
+    expect(custom.result.isError).toBe(true);
+
+    const [food] = (
+      (await callTool(app, token, "search_foods", { query: "onion", limit: 1 })).payload as {
+        items: { fdcId: number; suggestedName: string }[];
+      }
+    ).items;
+    const linked = await callTool(app, token, "ingredient_upsert", { action: "create", fdcId: food!.fdcId });
+    expect(linked.result.isError).toBeUndefined();
+    expect(linked.payload).toMatchObject({
+      ingredient: { name: food!.suggestedName, needsReview: false, nutrition: { fdcId: food!.fdcId } },
+    });
+
+    const flagged = await callTool(app, token, "create_custom_ingredient", { name: "Kumquat" });
+    expect(flagged.payload).toMatchObject({ ingredient: { name: "Kumquat", needsReview: true } });
+    const bad = await callTool(app, token, "create_custom_ingredient", { name: "2 large kumquats" });
+    expect(bad.result.isError).toBe(true);
+  });
+
+  it("lists, accepts and splits ingredients through review_ingredients", async () => {
+    const { app, token, ctx } = makeTestApp();
+    const milk = ensureIngredient(ctx, "Milk");
+    ensureIngredient(ctx, "Water");
+
+    const custom = await callTool(app, token, "create_custom_ingredient", { name: "Kumquat" });
+    const kumquat = (custom.payload as { ingredient: { id: string } }).ingredient;
+    const listed = await callTool(app, token, "review_ingredients", { action: "list" });
+    const items = (listed.payload as { items: { ingredient: { name: string }; reasons: string[] }[] }).items;
+    expect(items.map((item) => item.ingredient.name)).toEqual(["Kumquat"]);
+    expect(items[0]!.reasons).toEqual(["unlinked", "custom_unreviewed"]);
+
+    const accepted = await callTool(app, token, "review_ingredients", {
+      action: "accept",
+      ingredientId: kumquat.id,
+    });
+    expect(accepted.payload).toMatchObject({ ingredient: { needsReview: false } });
+    const empty = await callTool(app, token, "review_ingredients", { action: "list" });
+    expect(empty.payload).toEqual({ items: [] });
+
+    // A legacy ingredient that names two: split it across the recipe lines that use it.
+    const both = ensureIngredient(ctx, "Milk and cream");
+    const recipe = createRecipe(ctx, {
+      title: "Latte",
+      ingredients: [{ ingredientId: both.id, qty: 1, unit: "cup" }],
+    });
+    const split = await callTool(app, token, "review_ingredients", {
+      action: "split",
+      ingredientId: both.id,
+      main: { ingredientId: milk.id },
+      alternatives: [{ ingredient: "Water" }],
+    });
+    expect(split.result.isError).toBeUndefined();
+    const line = getRecipe(ctx, recipe.id).ingredients[0]!;
+    expect(line.ingredient.name).toBe("Milk");
+    expect(line.alternatives.map((item) => item.name)).toEqual(["Water"]);
   });
 });

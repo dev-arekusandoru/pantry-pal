@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { createApp } from "./api/app.js";
 import { defaultWebDir, hasWebApp } from "./api/web.js";
 import { openDb, runMigrations } from "./db/client.js";
+import { titleCaseIngredientNames } from "./services/ingredients.js";
 import { backfillNutritionMatches } from "./services/nutrition.js";
 
 const DEFAULT_PORT = 4787;
@@ -18,6 +19,8 @@ const { db, sqlite } = openDb(dbPath);
 runMigrations(db);
 const backfilled = backfillNutritionMatches(db);
 if (backfilled > 0) console.log(`Matched ${backfilled} ingredient(s) to USDA foods.`);
+const renamed = titleCaseIngredientNames(db);
+if (renamed > 0) console.log(`Set ${renamed} ingredient name(s) to Title Case.`);
 
 const app = createApp({
   db,

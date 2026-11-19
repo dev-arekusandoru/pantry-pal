@@ -5,6 +5,7 @@ import {
   RECIPE_STATUSES,
   SPICE_LEVELS,
 } from "../db/schema.js";
+import { ingredientRefFields, ingredientRefSchema } from "./ingredients.js";
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -47,22 +48,12 @@ export const nutritionSchema = z
 
 export const recipeIngredientInputSchema = z
   .object({
-    ingredientId: z
-      .string()
-      .min(1)
-      .optional()
-      .describe("Existing ingredient id. Provide this or `ingredient` (name)."),
-    ingredient: z
-      .string()
-      .min(1)
+    ...ingredientRefFields,
+    alternatives: z
+      .array(ingredientRefSchema)
       .optional()
       .describe(
-        "Ingredient name. Resolved against existing ingredients, aliases and simple plural variants; created when unknown.",
-      ),
-    category: ingredientCategorySchema
-      .optional()
-      .describe(
-        "Category used when the named ingredient has to be created (defaults to other).",
+        'Ingredients that can stand in for the main one ("milk or water" => ingredient milk, alternatives [water]). Same references and 422 rules as the main ingredient. Nutrition, stock, shopping and dietary rules use the main ingredient only.',
       ),
     qty: z
       .number()
@@ -80,7 +71,9 @@ export const recipeIngredientInputSchema = z
       .string()
       .nullable()
       .optional()
-      .describe('Unit as written ("Tbsp", "pounds"); normalized to a canonical unit.'),
+      .describe(
+        'Unit as written ("Tbsp", "pounds", "large"); normalized to a canonical unit. Sizes (small, medium, large, extra-large, jumbo) are count units: "2 large eggs" is qty 2, unit "large".',
+      ),
     prepNote: z.string().nullable().optional().describe('Preparation note, e.g. "diced".'),
     originalText: z
       .string()
@@ -291,6 +284,9 @@ export const recipeIngredientSchema = z
           .describe("Bundled icon name or http(s) URL; null = automatic icon."),
       })
       .describe("Referenced ingredient."),
+    alternatives: z
+      .array(z.object({ ingredientId: z.string(), name: z.string() }))
+      .describe('Stand-ins for the main ingredient, in order, e.g. [{"name":"Water"}] for "Milk (or water)".'),
     qty: z.number().nullable(),
     qtyMax: z.number().nullable(),
     unit: z.string().nullable(),
@@ -409,6 +405,7 @@ export const scaledIngredientSchema = z
     optional: z.boolean(),
     scalingExempt: z.boolean(),
     prepNote: z.string().nullable(),
+    alternatives: z.array(z.object({ ingredientId: z.string(), name: z.string() })),
   })
   .openapi("ScaledIngredient");
 

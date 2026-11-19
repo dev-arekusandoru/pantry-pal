@@ -27,6 +27,9 @@ export const foodSchema = z
     per100g: nutrientsSchema.describe("Nutrients per 100 g (sodium in mg)."),
     portions: z.array(foodPortionSchema),
     score: z.number().describe("Match score 0..1; higher is better."),
+    suggestedName: z
+      .string()
+      .describe('Friendly ingredient name for this food, e.g. "Onion" for "Onions, raw". Pass it as `name` with `fdcId`.'),
   })
   .openapi("Food");
 
@@ -43,6 +46,9 @@ export const ingredientNutritionSchema = z
     fdcId: z.number().int().nullable().describe("Matched USDA food; null = deliberately cleared."),
     description: z.string().nullable(),
     per100g: nutrientsSchema.nullable(),
+    portions: z
+      .array(foodPortionSchema)
+      .describe("Portions of the linked food. `defaultPortion` is one of these labels."),
   })
   .nullable()
   .describe("USDA food matched to this ingredient; null = no match.")

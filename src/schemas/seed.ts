@@ -65,8 +65,30 @@ export const seedIngredientSchema = z
     shelfLifeDays: z.number().int().nonnegative().optional(),
     parQty: z.number().finite().nonnegative().optional(),
     parUnit: unitSchema.optional(),
+    fdcId: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe("USDA FoodData Central id of the linked food. Declare this or `custom: true`."),
+    custom: z
+      .boolean()
+      .optional()
+      .describe("true = an ingredient with no USDA food (last resort). Declare this or `fdcId`."),
+    defaultPortion: nullableText
+      .optional()
+      .describe('Portion label of the linked food that a plain count means, e.g. "large" for eggs.'),
   })
-  .strict();
+  .strict()
+  .superRefine((ingredient, ctx) => {
+    if ((ingredient.fdcId === undefined) === (ingredient.custom !== true)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fdcId"],
+        message: "an ingredient needs exactly one of `fdcId` or `custom: true`",
+      });
+    }
+  });
 
 export const seedUnitConversionSchema = z
   .object({

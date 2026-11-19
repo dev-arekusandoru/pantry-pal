@@ -5,7 +5,6 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createApp } from "../src/api/app.js";
 import { AppError, type ErrorCode } from "../src/lib/errors.js";
 import { completeCookEvent } from "../src/services/cooking.js";
-import { resolveIngredient } from "../src/services/ingredients.js";
 import { applyMovement, getStockForIngredient } from "../src/services/pantry.js";
 import {
   addDish,
@@ -24,7 +23,7 @@ import {
   getShoppingList,
   listShoppingLists,
 } from "../src/services/shopping.js";
-import { makeTestApp, makeTestCtx } from "./helpers.js";
+import { ensureIngredient, makeTestApp, makeTestCtx } from "./helpers.js";
 
 function expectAppError(fn: () => unknown, code: ErrorCode): AppError {
   try {
@@ -122,7 +121,7 @@ interface CookResult {
 describe("POST /cook-events (ad-hoc cook)", () => {
   function kitchen() {
     const test = makeTestApp();
-    const chicken = resolveIngredient(test.ctx, "chicken breast", { create: true });
+    const chicken = ensureIngredient(test.ctx, "chicken breast");
     const recipe = createRecipe(test.ctx, {
       title: "Chicken skillet",
       servings: 2,

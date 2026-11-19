@@ -42,7 +42,7 @@ const createRuleRoute = createRoute({
   tags: ["rules"],
   summary: "Create a dietary rule",
   description:
-    "Targets depend on scope: ingredient (id or name, created when unknown), recipe (recipeId), category/tag/keyword (targetText).",
+    "Targets depend on scope: ingredient (`ingredientId`, an existing `ingredient` name, or `fdcId` to link a USDA food; unknown names are 422 with suggestions), recipe (recipeId), category/tag/keyword (targetText).",
   request: {
     body: { content: json(createRuleSchema), required: true },
   },

@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { errorMessage } from "@/api";
-import { Button, Emoji, Icon, IconPicker, Sheet, ingredientEmoji, toast } from "@/ui";
+import { Button, Emoji, Icon, IconPicker, Sheet, buttonClass, ingredientEmoji, toast } from "@/ui";
 import type { ShoppingItem } from "./cart";
 import { parseQty, qtyToInput, unitLabel } from "./format";
 import styles from "./Shop.module.css";
@@ -115,6 +116,11 @@ function ItemDetail({ listId, item, onClose }: { listId: string; item: ShoppingI
         />
       )}
       <UsedIn item={item} />
+      {item.ingredientId !== null && (
+        <Link to="/ingredients/$id" params={{ id: item.ingredientId }} className={buttonClass({ variant: "ghost" })}>
+          Ingredient page
+        </Link>
+      )}
       <div className={styles.addField}>
         <label htmlFor="shop-item-qty">Quantity to buy</label>
         <span className={styles.qtyEdit}>
