@@ -4,6 +4,42 @@ Updates replace the application code and apply database migrations. Migrations a
 
 The Compose stack builds a local image from the Dockerfile. It does not pull a published image. To update, get the new source and rebuild.
 
+## Update with the script
+
+`scripts/deploy.sh` does the whole update for the Cloudflare Tunnel stack. Run it from the repository root:
+
+```sh
+scripts/deploy.sh
+```
+
+The script does these steps in order:
+
+1. It checks that Docker, `data/`, `nutrition/`, and `.env` are in place.
+2. It runs `git pull --ff-only`.
+3. It builds the new image. If the build fails, the old container keeps running.
+4. It asks for confirmation, then stops the service. SQLite closes the database cleanly.
+5. It archives `data/` to `backups/pantrypal-data-<date>-<commit>.tar.gz` and checks that the archive holds `data/pantrypal.db`. If the backup fails, it restarts the old container and stops.
+6. It starts the new container. Migrations run when the server starts.
+7. It waits for the Docker health check and prints the server log and `/health`. If the container does not become healthy, it prints the exact rollback commands. It never restores a backup by itself.
+8. It deletes all but the newest 10 archives.
+
+| Option | Effect |
+| --- | --- |
+| `--dry-run` | Prints every step and changes nothing. |
+| `--file FILE` | Uses another Compose file, for example `docker-compose.yml`. The default is `docker-compose.tunnel.yml`. |
+| `--skip-pull` | Deploys the checked-out commit without `git pull`. |
+| `--yes` | Does not ask before stopping the service. |
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `BACKUP_DIR` | `backups` | Where the archives go. |
+| `KEEP_BACKUPS` | `10` | How many archives to keep. |
+| `HEALTH_TIMEOUT` | `120` | Seconds to wait for a healthy container. |
+
+The service is down from step 4 until step 7 ends, about a minute. The archive is only on this host. Copy it off the host as well. See [Backups and restore](backups.md).
+
+The manual steps below do the same work. Use them if you cannot use the script.
+
 ## Before you start
 
 Run the commands from the repository root. They target the default stack. If you use the base file only, add `-f docker-compose.yml` to every Compose command. If you use the Cloudflare Tunnel stack, use `-f docker-compose.tunnel.yml` instead. Do not combine the tunnel file with the override.
