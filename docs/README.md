@@ -41,7 +41,6 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 - [Configuration](host/configuration.md) — environment variables and storage.
 - [Access and security](host/security.md) — accounts, sessions, and tokens.
 - [Public hosting](host/tunnel.md) — Cloudflare Tunnel and remote access.
-- [Waitlist service](host/waitlist.md) — collect sign-ups for a landing page.
 - [Backups and restore](host/backups.md) — save and recover the database.
 - [Updates](host/updates.md) — build a new version and apply migrations.
 - [Troubleshooting](host/troubleshooting.md) — checks for common problems.

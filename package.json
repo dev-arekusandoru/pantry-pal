@@ -17,7 +17,7 @@
     "build": "pnpm build:server && pnpm web:build",
     "start": "node dist/server.js",
     "cli": "tsx src/cli.ts",
-    "typecheck": "tsc --noEmit && pnpm --filter @pantrypal/web typecheck && pnpm --filter @pantrypal/waitlist typecheck",
+    "typecheck": "tsc --noEmit && pnpm --filter @pantrypal/web typecheck",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "icons:manifest": "tsx scripts/icons-manifest.ts",
@@ -25,7 +25,7 @@
     "deploy": "scripts/deploy.sh",
     "build:server": "tsc -p tsconfig.build.json",
     "test:web": "pnpm --filter @pantrypal/web test",
-    "test:all": "vitest run && pnpm test:web && pnpm waitlist:test",
+    "test:all": "vitest run && pnpm test:web",
     "openapi": "tsx scripts/openapi.ts && pnpm --filter @pantrypal/web openapi:types",
     "web:dev": "pnpm --filter @pantrypal/web dev",
     "web:build": "pnpm --filter @pantrypal/web build",
@@ -34,10 +34,7 @@
     "docs:serve": "pnpm --filter @pantrypal/docs serve",
     "landing:dev": "pnpm --filter @pantrypal/landing dev",
     "landing:build": "pnpm --filter @pantrypal/landing build",
-    "landing:preview": "pnpm --filter @pantrypal/landing preview",
-    "waitlist:dev": "pnpm --filter @pantrypal/waitlist dev",
-    "waitlist:cli": "pnpm --filter @pantrypal/waitlist cli",
-    "waitlist:test": "pnpm --filter @pantrypal/waitlist test"
+    "landing:preview": "pnpm --filter @pantrypal/landing preview"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

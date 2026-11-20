@@ -4,11 +4,10 @@ Run commands from the repository root after you install dependencies.
 
 | Command | Check |
 | --- | --- |
-| `pnpm typecheck` | Server, web app, and waitlist service types |
+| `pnpm typecheck` | Server and web app types |
 | `pnpm test` | API, service, database, and MCP tests |
 | `pnpm test:web` | Web app tests in jsdom |
-| `pnpm waitlist:test` | Waitlist service tests |
-| `pnpm test:all` | All three test suites |
+| `pnpm test:all` | Both test suites |
 | `pnpm build` | Compile the server and build the web app |
 
 ## Check a change

@@ -28,9 +28,7 @@ export const site = {
     terms: "",
     contact: "",
   },
-  // POST target for waitlist signups, from the waitlist service (see
-  // docs/host/waitlist.md): `https://<waitlist host>/v1/sites/pantrypal/subscribe`.
-  // The form sends `{ email, website }` as JSON; any 2xx is success. Empty means
-  // the waitlist is not wired up, and the form says so.
+  // POST target for waitlist signups: `{ "email": string }` as JSON, any 2xx is
+  // success. Empty means the waitlist is not wired up, and the form says so.
   waitlistEndpoint: "",
 } as const;
