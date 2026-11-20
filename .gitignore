@@ -33,3 +33,5 @@ backups/
 landing/dist/
 landing/.astro/
 !landing/src/data/
+
+waitlist/config/waitlist.config.json

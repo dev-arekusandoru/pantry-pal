@@ -2,9 +2,13 @@ packages:
   - web
   - site
   - landing
+  - waitlist
 
 allowBuilds:
   better-sqlite3: true
   esbuild: true
   # This postinstall only prints a funding notice; it produces no build output.
   core-js: false
+
+minimumReleaseAgeExclude:
+  - nodemailer@10.6.1

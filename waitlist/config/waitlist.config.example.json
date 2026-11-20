@@ -1,0 +1,17 @@
+{
+  "publicUrl": "https://waitlist.example.com",
+  "trustedIpHeader": "cf-connecting-ip",
+  "smtp": {
+    "host": "smtp.resend.com",
+    "port": 465,
+    "secure": true,
+    "user": "resend",
+    "from": "PantryPal <hello@example.com>"
+  },
+  "sites": {
+    "pantrypal": {
+      "name": "PantryPal",
+      "origins": ["https://example.com"]
+    }
+  }
+}
