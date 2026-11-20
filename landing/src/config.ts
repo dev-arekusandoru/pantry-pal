@@ -31,5 +31,5 @@ export const site = {
   // URL of the waitlist Worker (see docs/host/waitlist.md). The form posts
   // `{ email, website }` as JSON; any 2xx is success. Empty means the waitlist is
   // not wired up, and the form says so.
-  waitlistEndpoint: "",
+  waitlistEndpoint: "https://pantrypal-waitlist.pantrypal-waitlist.workers.dev",
 } as const;
