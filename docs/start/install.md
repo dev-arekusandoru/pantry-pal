@@ -1,6 +1,6 @@
-# Install PantryPal
+# Install Rakumi
 
-PantryPal runs as one server process. It needs one writable directory for its SQLite database. The Docker image includes the server, web app, migrations, and example seed.
+Rakumi runs as one server process. It needs one writable directory for its SQLite database. The Docker image includes the server, web app, migrations, and example seed.
 
 Use Docker Compose for a normal install. You can also run the built app with Node.js.
 
@@ -41,7 +41,7 @@ Open [http://127.0.0.1:8787](http://127.0.0.1:8787). Only the host and local pro
 
 ### Public access
 
-Use the standalone tunnel stack to publish PantryPal on the internet. It adds a Cloudflare Tunnel, publishes no host ports, and requires the tunnel token. It replaces the default stack; do not run both against the same database. See [Public access with Cloudflare Tunnel](../host/tunnel.md).
+Use the standalone tunnel stack to publish Rakumi on the internet. It adds a Cloudflare Tunnel, publishes no host ports, and requires the tunnel token. It replaces the default stack; do not run both against the same database. See [Public access with Cloudflare Tunnel](../host/tunnel.md).
 
 ### Run the base file only
 

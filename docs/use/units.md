@@ -1,7 +1,7 @@
 # Units and measures
 
 A recipe says "3 cups" of spinach. The pantry holds "5 oz". Nutrition needs grams.
-PantryPal turns one unit into another with one converter. The pantry, recipes,
+Rakumi turns one unit into another with one converter. The pantry, recipes,
 shopping lists, cooking, and nutrition all use it. This page explains the two
 things you control: the stock unit and the measures of an ingredient.
 
@@ -13,7 +13,7 @@ things you control: the stock unit and the measures of an ingredient.
 | **Measure** | The weight in grams of one unit of an ingredient, for example 1 cup of Baby Spinach is 30 g. |
 
 Every ingredient has at most one stock unit. You can type an amount in any unit
-that the ingredient converts. PantryPal converts it into the stock unit before it
+that the ingredient converts. Rakumi converts it into the stock unit before it
 saves it. The movement history keeps the amount and unit you entered.
 
 An ingredient with no stock unit gets one from its first pantry entry. If you add
@@ -32,13 +32,13 @@ count unit, such as `handful`, `can`, `bunch`, or `clove`, needs its own measure
 
 ## Where the measures come from
 
-PantryPal gives each ingredient measures from three sources. The **Measures**
+Rakumi gives each ingredient measures from three sources. The **Measures**
 section of the [ingredient page](ingredients.md#the-ingredient-page) shows them.
 
 | Badge | Source |
 | --- | --- |
 | **USDA** | A portion of the USDA food that the ingredient links to. |
-| **Estimated** | A portion that PantryPal borrowed from a similar USDA food. See [Estimated sizes](#estimated-usda-sizes). |
+| **Estimated** | A portion that Rakumi borrowed from a similar USDA food. See [Estimated sizes](#estimated-usda-sizes). |
 | **Yours** | A measure that you set. It replaces the USDA measure for the same unit. |
 
 The USDA measures follow the linked food. If you link another food, the USDA and
@@ -61,7 +61,7 @@ You find the **Unit** box in these places:
 
 Type to narrow the list. With a keyboard, press the Down and Up arrow keys to
 move, **Enter** to choose, and **Esc** to close the list. "cups" and "tablespoon"
-are accepted: PantryPal changes them to `cup` and `tbsp`.
+are accepted: Rakumi changes them to `cup` and `tbsp`.
 
 ## Add a measure for a new unit
 
@@ -106,7 +106,7 @@ For example, set 1 cup of Baby Spinach to 25 g, and a recipe with 3 cups counts
 that pantry amounts and the minimum use this unit. **Keep at least** shows the
 unit next to its name.
 
-To change the stock unit, choose a unit and tap **Save changes**. PantryPal
+To change the stock unit, choose a unit and tap **Save changes**. Rakumi
 converts the pantry amount and the minimum into the new unit. If it cannot, it
 changes nothing and tells you which unit has no weight. The message has buttons:
 
@@ -126,14 +126,14 @@ When you save a recipe, the message appears above **Save recipe**. The recipe is
 not saved until every unit is valid. Nothing is saved in part.
 
 A unit can be valid but have no weight. For example, a recipe line "2 cups" of an
-ingredient with no volume measure and no linked food. PantryPal keeps the line
+ingredient with no volume measure and no linked food. Rakumi keeps the line
 and marks it. See [Why a line is blank](nutrition.md#why-a-line-is-blank). The
 ingredient shows **Unit has no weight** under **Needs attention**.
 
 ## Estimated USDA sizes
 
 The bundled USDA data lists no portions for most Foundation foods. For these
-foods, PantryPal borrows the portions of the closest SR Legacy food: the same food
+foods, Rakumi borrows the portions of the closest SR Legacy food: the same food
 in the same form, such as raw or canned. It marks the portions as **Estimated**.
 
 Treat an estimated weight as a good guess. A cup of baby spinach is about 30 g.

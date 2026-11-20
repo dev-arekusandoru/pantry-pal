@@ -10,7 +10,7 @@ export type Cell =
   | { kind: "text"; text: string } // "\n" starts a new line
   | { kind: "soon"; note?: string };
 
-export const products = ["PantryPal", "Plan to Eat", "Paprika", "Mealie"] as const;
+export const products = ["Rakumi", "Plan to Eat", "Paprika", "Mealie"] as const;
 
 export interface Row {
   label: string;

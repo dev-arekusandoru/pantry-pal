@@ -3,7 +3,7 @@ import type { Ctx } from "../../context.js";
 import { AppError, isAppError } from "../../lib/errors.js";
 import { findIngredientByName, getIngredient, resolveIngredientRef } from "../../services/ingredients.js";
 
-/** What every PantryPal tool returns: compact JSON in one text block. */
+/** What every Rakumi tool returns: compact JSON in one text block. */
 export type ToolResult = CallToolResult;
 
 /** Serialise a successful tool result. */

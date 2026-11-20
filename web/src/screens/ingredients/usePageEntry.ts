@@ -9,7 +9,7 @@ export function usePageEntry(title: string | undefined): void {
   const focused = useRef(false);
   useEffect(() => {
     if (title === undefined) return;
-    document.title = `${title} · PantryPal`;
+    document.title = `${title} · Rakumi`;
     if (focused.current) return;
     focused.current = true;
     const heading = document.querySelector<HTMLElement>("main h1");

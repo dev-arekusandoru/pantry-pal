@@ -39,10 +39,10 @@ export function ErrorState({ error, variant, title, onRetry, className }: ErrorS
       <span className={styles.icon} aria-hidden="true">
         <Icon name={unreachable ? "offline" : "alert"} />
       </span>
-      <h2 className={styles.title}>{title ?? (unreachable ? "Can't reach PantryPal" : "Something went wrong")}</h2>
+      <h2 className={styles.title}>{title ?? (unreachable ? "Can't reach Rakumi" : "Something went wrong")}</h2>
       <p className={styles.text}>
         {unreachable
-          ? "Check that PantryPal is running and that this device is on the same network, then try again."
+          ? "Check that Rakumi is running and that this device is on the same network, then try again."
           : error !== undefined
             ? errorMessage(error)
             : "Please try again."}

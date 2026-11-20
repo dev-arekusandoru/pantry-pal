@@ -5,5 +5,5 @@ compatibility_date = "2026-11-01"
 [vars]
 # Origins of the pages that host the form, comma-separated, no trailing slash.
 ALLOWED_ORIGINS = "http://localhost:4321"
-# Resend segment that new contacts join (the PantryPal segment).
+# Resend segment that new contacts join (the Rakumi segment).
 RESEND_SEGMENT_ID = "e1d0d43d-0827-48d7-8122-44cb7367fb8a"

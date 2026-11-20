@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { UNREACHABLE_STATUSES } from "./errors";
 
 /**
- * Global "can the browser reach PantryPal" flag. The fetch wrapper in client.ts
+ * Global "can the browser reach Rakumi" flag. The fetch wrapper in client.ts
  * flips it; the app shell shows a banner and polls /health until it recovers.
  */
 type Listener = () => void;

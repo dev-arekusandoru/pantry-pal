@@ -29,7 +29,7 @@ export const UNREACHABLE_STATUSES: ReadonlySet<number> = new Set([502, 503, 504]
 export class NetworkError extends Error {
   override readonly name = "NetworkError";
 
-  constructor(message = "Can't reach PantryPal", options?: { cause?: unknown }) {
+  constructor(message = "Can't reach Rakumi", options?: { cause?: unknown }) {
     super(message, options);
   }
 }

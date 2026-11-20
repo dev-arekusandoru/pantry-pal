@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/images/logo-placeholder.svg" alt="PantryPal logo placeholder" width="128" height="128">
+  <img src="docs/images/logo-placeholder.svg" alt="Rakumi logo placeholder" width="128" height="128">
 </p>
 
-<h1 align="center">PantryPal</h1>
+<h1 align="center">Rakumi</h1>
 
 <p align="center">
   Plan meals. Track food. Shop for what you need.
@@ -25,7 +25,7 @@
 
 ## About
 
-PantryPal is a self-hosted app for household meal planning. Keep your recipes,
+Rakumi is a self-hosted app for household meal planning. Keep your recipes,
 food stock, meal plans, and shopping lists in one place. Use the web app or
 connect an AI assistant through MCP. Your data stays on your server.
 
@@ -78,7 +78,7 @@ suggest a change, or submit a pull request.
 
 ## License & credits
 
-PantryPal uses the [MIT license](LICENSE).
+Rakumi uses the [MIT license](LICENSE).
 
 - UI icons: [Phosphor](https://phosphoricons.com),
   [MIT](https://github.com/phosphor-icons/react/blob/master/LICENSE).

@@ -1,6 +1,6 @@
 # Ingredients
 
-Every ingredient in PantryPal is one of two kinds:
+Every ingredient in Rakumi is one of two kinds:
 
 - **Linked**: it uses a food from the bundled USDA database. It has nutrition
   data.
@@ -139,13 +139,13 @@ nutrition count. To add nutrition later, link it to a food on its
 
 A custom ingredient made in the web app counts as reviewed when your instance
 uses [browser password login](../host/security.md). When the instance has no
-password and uses network trust, PantryPal cannot tell the web app from an API
+password and uses network trust, Rakumi cannot tell the web app from an API
 client. The new custom ingredient then appears under **Needs attention**. Tap
 **Keep as custom** on its page to accept it.
 
 ## Naming rules
 
-An ingredient name is only the ingredient. PantryPal saves every name in Title
+An ingredient name is only the ingredient. Rakumi saves every name in Title
 Case, when you add an ingredient and when you rename one. Type `birria paste`
 and it is saved as **Birria Paste**.
 
@@ -199,7 +199,7 @@ For "2 large eggs", enter **Qty** `2` and **Unit** `large`. The recipe page show
 `extra-large`.
 
 A size counts as a plain count for the pantry and shopping. For nutrition,
-PantryPal uses the portion of the USDA food with the same name. When the food
+Rakumi uses the portion of the USDA food with the same name. When the food
 has no such portion, it falls back to a medium or piece-like portion.
 
 An amount with no unit, such as "2" eggs, needs a portion too. Set **A plain

@@ -1,6 +1,6 @@
 # MCP tool reference
 
-PantryPal registers 36 MCP tools. The `tools/list` request returns each tool's
+Rakumi registers 36 MCP tools. The `tools/list` request returns each tool's
 full JSON Schema, generated from the Zod schemas in the source. Use this page to
 choose a tool and see its main inputs. Use `tools/list` or the linked source
 files for every field, default, and enum.

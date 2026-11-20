@@ -43,7 +43,7 @@ function expectAppError(fn: () => unknown, code: ErrorCode): AppError {
 describe("static web app", () => {
   const dir = mkdtempSync(path.join(tmpdir(), "pantrypal-web-"));
   mkdirSync(path.join(dir, "assets"));
-  writeFileSync(path.join(dir, "index.html"), "<!doctype html><title>PantryPal</title>");
+  writeFileSync(path.join(dir, "index.html"), "<!doctype html><title>Rakumi</title>");
   writeFileSync(path.join(dir, "assets", "app-abc123.js"), "console.log('hi')");
   writeFileSync(path.join(dir, "favicon.svg"), "<svg/>");
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -59,7 +59,7 @@ describe("static web app", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
     expect(response.headers.get("cache-control")).toBe("no-cache");
-    await expect(response.text()).resolves.toContain("PantryPal");
+    await expect(response.text()).resolves.toContain("Rakumi");
   });
 
   it("caches fingerprinted assets for a year", async () => {
@@ -76,7 +76,7 @@ describe("static web app", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-cache");
-    await expect(response.text()).resolves.toContain("PantryPal");
+    await expect(response.text()).resolves.toContain("Rakumi");
   });
 
   it("does not turn missing assets or API paths into index.html", async () => {

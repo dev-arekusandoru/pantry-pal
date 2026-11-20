@@ -1,6 +1,6 @@
 # Access and security
 
-PantryPal has accounts. Each account signs in with an email and password and owns
+Rakumi has accounts. Each account signs in with an email and password and owns
 one household. Bearer tokens protect API and MCP clients and grant full access to
 the token's household.
 
@@ -92,7 +92,7 @@ proxy can supply a bearer token instead.
 
 ## Stored data
 
-Restrict access to the database and backups. PantryPal does not encrypt them; use
+Restrict access to the database and backups. Rakumi does not encrypt them; use
 volume encryption when needed. The database holds password hashes (scrypt) and
 session hashes. A restore also restores token and session state, so revoked
 tokens can become valid again. Review tokens after a restore.

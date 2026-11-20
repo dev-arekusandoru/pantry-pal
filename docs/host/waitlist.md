@@ -3,7 +3,7 @@
 The landing page waitlist saves each email address as a contact in
 [Resend](https://resend.com). A small Cloudflare Worker sits between the page and
 Resend. The Worker holds the Resend API key, so the key never reaches the browser.
-The PantryPal app does not use the waitlist. Self-hosters do not need it.
+The Rakumi app does not use the waitlist. Self-hosters do not need it.
 
 ```mermaid
 flowchart LR

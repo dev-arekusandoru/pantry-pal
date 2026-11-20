@@ -16,7 +16,7 @@ export function DexScreen() {
   return <>
     <PageHeader title="Sticker book" sub={`${entries.length} of ${catalog.length} ingredients collected`} />
     <div className={styles.progress} role="progressbar" aria-label="Ingredients collected" aria-valuemin={0} aria-valuemax={catalog.length} aria-valuenow={entries.length}><span style={{ width: `${catalog.length ? entries.length / catalog.length * 100 : 0}%` }} /></div>
-    {entries.length === 0 ? <EmptyState emoji="relish" title="Your sticker book is waiting" action={<Link className={buttonClass({ variant: "primary" })} to="/">Visit the week</Link>}>Cook something together and Pal will help you collect ingredient stickers.</EmptyState> : groups.map(({ category, items }) => <section className={styles.group} key={category}><h2>{aisleLabel(category)}</h2><div className={styles.grid}>{items.map((item) => {
+    {entries.length === 0 ? <EmptyState emoji="relish" title="Your sticker book is waiting" action={<Link className={buttonClass({ variant: "primary" })} to="/">Visit the week</Link>}>Cook something together and Raku will help you collect ingredient stickers.</EmptyState> : groups.map(({ category, items }) => <section className={styles.group} key={category}><h2>{aisleLabel(category)}</h2><div className={styles.grid}>{items.map((item) => {
       const entry = collected.get(item.id);
       const expanded = open === item.id;
       return <article key={item.id} className={`${styles.tile} ${!entry ? styles.uncollected : ""}`}>

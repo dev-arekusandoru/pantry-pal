@@ -105,7 +105,7 @@ export function PantryScreen() {
         />
         {items.length === 0 ? (
           <EmptyState emoji="relish" title="Your pantry is empty" action={addButton}>
-            Add what you have and PantryPal can plan around it.
+            Add what you have and Rakumi can plan around it.
           </EmptyState>
         ) : (
           <>

@@ -1,4 +1,4 @@
-# Update PantryPal
+# Update Rakumi
 
 Updates replace the application code and apply database migrations. Migrations are forward-only: there is no down migration. Take a backup before each update.
 

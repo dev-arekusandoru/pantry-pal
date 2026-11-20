@@ -1,6 +1,6 @@
 # Documentation
 
-PantryPal keeps one copy of the documentation in `docs/`. Docusaurus builds the
+Rakumi keeps one copy of the documentation in `docs/`. Docusaurus builds the
 documentation site from these files. Do not copy pages into `site/` or another
 directory.
 

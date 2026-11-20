@@ -191,7 +191,7 @@ export function SettingsScreen() {
         <LogoutButton />
 
         <p className={styles.about}>
-          PantryPal{version.data ? ` v${version.data}` : ""}
+          Rakumi{version.data ? ` v${version.data}` : ""}
           <br />
           Self-hosted. Your pantry stays on your own server.
           <br />
@@ -213,7 +213,7 @@ function MissingIcons({ ingredients, onPick }: { ingredients: Ingredient[]; onPi
   if (missing.length === 0) return null;
   const params = new URLSearchParams({
     title: "Ingredient icons needed",
-    body: `PantryPal has no icon for these ingredients:\n\n${missing.map((i) => `- ${i.name}`).join("\n")}`.slice(0, 3000),
+    body: `Rakumi has no icon for these ingredients:\n\n${missing.map((i) => `- ${i.name}`).join("\n")}`.slice(0, 3000),
   });
   return (
     <Card as="section" aria-labelledby="settings-icons" className={styles.section}>

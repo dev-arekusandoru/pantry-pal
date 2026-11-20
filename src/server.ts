@@ -52,7 +52,7 @@ if (serveWeb) {
 }
 
 const server = serve({ fetch: app.fetch, port, hostname }, (info) => {
-  console.log(`PantryPal listening on http://${hostname}:${info.port}`);
+  console.log(`Rakumi listening on http://${hostname}:${info.port}`);
   console.log(`Database: ${dbPath}`);
 });
 

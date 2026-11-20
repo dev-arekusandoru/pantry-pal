@@ -21,7 +21,7 @@ describe("public endpoints", () => {
       info: { title: string };
       components: { securitySchemes: Record<string, { type: string; scheme?: string }> };
     };
-    expect(doc.info.title).toBe("PantryPal");
+    expect(doc.info.title).toBe("Rakumi");
     expect(doc.components.securitySchemes.bearerAuth).toMatchObject({
       type: "http",
       scheme: "bearer",

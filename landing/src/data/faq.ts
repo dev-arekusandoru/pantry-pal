@@ -2,7 +2,7 @@ import { money, site } from "../config";
 
 export const faq = [
   {
-    q: "What is PantryPal?",
+    q: "What is Rakumi?",
     a: "A kitchen companion for the whole house. Plan meals, keep track of your pantry, save recipes, cook step by step, and shop from one list. It's open source.",
   },
   {
@@ -31,11 +31,11 @@ export const faq = [
   },
   {
     q: "Is there an app?",
-    a: "Not yet. PantryPal works great in your phone's browser. A native app is a maybe for later.",
+    a: "Not yet. Rakumi works great in your phone's browser. A native app is a maybe for later.",
   },
   {
     q: "What's the AI assistant thing?",
-    a: "It's optional. If you use an AI assistant, it can connect to PantryPal to read and change your plans and lists. You can ignore it completely.",
+    a: "It's optional. If you use an AI assistant, it can connect to Rakumi to read and change your plans and lists. You can ignore it completely.",
   },
   {
     q: "Who makes this?",

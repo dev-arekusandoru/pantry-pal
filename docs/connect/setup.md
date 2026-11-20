@@ -1,7 +1,7 @@
 # MCP setup
 
 Connect an AI assistant through Model Context Protocol (MCP). The assistant can
-read and change household data. First, [install PantryPal](../start/install.md).
+read and change household data. First, [install Rakumi](../start/install.md).
 
 ## Create a token
 

@@ -1,7 +1,7 @@
 # Nutrition
 
 Each recipe page has a **Nutrition** panel. It shows calories, protein, carbs,
-fat, fiber, sugar, and sodium. PantryPal adds up the ingredient lines of the
+fat, fiber, sugar, and sodium. Rakumi adds up the ingredient lines of the
 recipe. It does not guess: a line it cannot calculate stays blank.
 
 ![Nutrition panel with calories, a partial count, the ingredient breakdown, and an Add measure button on a blank line](../images/nutrition.png)
@@ -26,7 +26,7 @@ recipe. It does not guess: a line it cannot calculate stays blank.
 | Row text | Meaning | What to do |
 | --- | --- | --- |
 | **No matching food** | The ingredient has no USDA food. | Choose a food. See [Change a food match](#change-a-food-match). A custom ingredient has no food by design. |
-| **No amount, not counted** | The recipe line has no quantity, such as "salt, to taste". | Nothing. PantryPal does not guess an amount. |
+| **No amount, not counted** | The recipe line has no quantity, such as "salt, to taste". | Nothing. Rakumi does not guess an amount. |
 | **Can't convert cup to grams** | The unit has no known gram weight for this ingredient. The row also shows a hint, such as **Add a measure: 1 cup = ? g**. | Tap **Add measure** on the row, enter the weight of one unit in grams, and tap **Save measure**. The line counts at once. See [Add a measure from a blank line](#add-a-measure-from-a-blank-line). |
 | **Optional, not counted** | The line is marked optional. | Nothing. |
 
@@ -60,7 +60,7 @@ wrong. A custom ingredient has no food.
 
 The same sheet has two more choices:
 
-- **No match** leaves the ingredient out of the totals. PantryPal does not
+- **No match** leaves the ingredient out of the totals. Rakumi does not
   match it again by itself.
 - **Auto match** runs the name match again and replaces your choice.
 
@@ -75,7 +75,7 @@ new name must follow the [naming rules](ingredients.md#naming-rules).
 When the ingredient has a food with portions, the same sheet shows **A plain
 count means**. It says which portion one count stands for. For "2" eggs, choose
 `large` and each egg weighs the large portion. **Automatic** leaves the choice
-to PantryPal. A size unit on the recipe line, such as `large`, uses the portion
+to Rakumi. A size unit on the recipe line, such as `large`, uses the portion
 of that size. See
 [Sizes and default portion](ingredients.md#sizes-and-default-portion).
 
@@ -83,7 +83,7 @@ of that size. See
 
 The data comes from [USDA FoodData Central](https://fdc.nal.usda.gov/): SR Legacy
 and Foundation Foods. It is public domain (CC0). The data file is part of
-PantryPal, so nutrition works offline and sends nothing to USDA. The panel names
+Rakumi, so nutrition works offline and sends nothing to USDA. The panel names
 the dataset versions.
 
 Values are estimates for raw or standard foods. Brands, cooking losses, and

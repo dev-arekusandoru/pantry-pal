@@ -60,7 +60,7 @@ describe("WeekScreen household settings robustness", () => {
       throw new TypeError("Failed to fetch");
     });
     renderWeek();
-    expect(await screen.findByRole("alert")).toHaveTextContent("Can't reach PantryPal");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Can't reach Rakumi");
   });
 
   it("keeps the previous week mounted while the next one loads", async () => {

@@ -29,9 +29,9 @@ describe("snoozes", () => {
   });
 
   it("prunes expired entries from storage on read and sets and clears one", () => {
-    localStorage.setItem("pantrypal.sweep.snooze", JSON.stringify({ old: "2026-11-01", kept: "2026-11-20" }));
-    expect(readSnoozes("2026-11-12")).toEqual({ kept: "2026-11-20" });
-    expect(JSON.parse(localStorage.getItem("pantrypal.sweep.snooze") ?? "")).toEqual({ kept: "2026-11-20" });
+    localStorage.setItem("pantrypal.sweep.snooze", JSON.stringify({ old: "2026-11-01", kept: "2999-01-01" }));
+    expect(readSnoozes("2026-11-12")).toEqual({ kept: "2999-01-01" });
+    expect(JSON.parse(localStorage.getItem("pantrypal.sweep.snooze") ?? "")).toEqual({ kept: "2999-01-01" });
     setSnooze("x", "2999-01-01");
     expect(Object.keys(readSnoozes()).sort()).toEqual(["kept", "x"]);
     setSnooze("x", undefined);

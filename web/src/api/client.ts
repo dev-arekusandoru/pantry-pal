@@ -15,11 +15,11 @@ const trackedFetch: typeof fetch = async (input, init) => {
     // AbortError is a cancelled query, not an outage.
     if (cause instanceof DOMException && cause.name === "AbortError") throw cause;
     connection.markUnreachable();
-    throw new NetworkError("Can't reach PantryPal", { cause });
+    throw new NetworkError("Can't reach Rakumi", { cause });
   }
   if (UNREACHABLE_STATUSES.has(res.status)) {
     connection.markUnreachable();
-    throw new NetworkError("Can't reach PantryPal");
+    throw new NetworkError("Can't reach Rakumi");
   }
   if (res.status === 401 && typeof window !== "undefined") {
     window.dispatchEvent(new Event("pantrypal:unauthorized"));

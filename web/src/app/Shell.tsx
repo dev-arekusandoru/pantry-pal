@@ -30,7 +30,7 @@ export function Shell() {
           <span className={styles.brandMark} aria-hidden="true">
             <Pal size={44} />
           </span>
-          <span className={styles.brandName}>PantryPal</span>
+          <span className={styles.brandName}>Rakumi</span>
         </div>
         <div className={styles.tabs}>
           {TABS.map((t) => (

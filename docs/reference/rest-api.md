@@ -98,7 +98,7 @@ ingredient with exactly one of these forms:
 | --- | --- |
 | `{"ingredientId": "ing_..."}` | An existing ingredient. |
 | `{"ingredient": "Onion"}` | An existing ingredient name or alias. It never creates an ingredient. |
-| `{"fdcId": 170000, "name": "Onion", "category": "produce"}` | A USDA food. PantryPal reuses the household ingredient that links to this food, or creates a linked one. `name` and `category` are optional. Without `name`, the name comes from the USDA description. The default category is `other`. |
+| `{"fdcId": 170000, "name": "Onion", "category": "produce"}` | A USDA food. Rakumi reuses the household ingredient that links to this food, or creates a linked one. `name` and `category` are optional. Without `name`, the name comes from the USDA description. The default category is `other`. |
 
 Zero or several forms in one reference returns `validation` (400). Rule targets
 accept `ingredientId`, `ingredient`, or `fdcId` with `name`; if more than one is

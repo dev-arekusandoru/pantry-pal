@@ -115,7 +115,7 @@ again. `delete_item` removes one item; it does not change the pantry.
 
 1. Call `find_ingredient` for each ingredient. It returns household ingredients
    and USDA foods. Reuse an existing ingredient when one fits.
-2. If only a USDA food fits, pass its `fdcId` in the recipe line. PantryPal
+2. If only a USDA food fits, pass its `fdcId` in the recipe line. Rakumi
    creates the linked ingredient. Do not put "or" lists in a name. Use the main
    ingredient, and add the others in `alternatives`.
 3. Put a size, such as `large`, in `unit`, and put cooking notes in `prepNote`.

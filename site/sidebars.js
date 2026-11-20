@@ -7,7 +7,7 @@ const sidebars = {
       items: ['start/overview', 'start/install', 'start/example-data'],
     },
     {
-      type: 'category', label: 'Use PantryPal',
+      type: 'category', label: 'Use Rakumi',
       items: ['use/pantry', 'use/recipes', 'use/recipe-editor', 'use/ingredients', 'use/units', 'use/nutrition', 'use/meal-plans', 'use/shopping', 'use/icons', 'use/ingredient-dex', 'use/dietary-rules'],
     },
     {
@@ -15,7 +15,7 @@ const sidebars = {
       items: ['connect/setup', 'connect/tasks', 'reference/mcp-tools'],
     },
     {
-      type: 'category', label: 'Host PantryPal',
+      type: 'category', label: 'Host Rakumi',
       items: ['host/configuration', 'host/security', 'host/tunnel', 'host/waitlist', 'host/backups', 'host/updates', 'host/troubleshooting'],
     },
     {

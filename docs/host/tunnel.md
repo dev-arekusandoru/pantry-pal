@@ -1,6 +1,6 @@
 # Public access with Cloudflare Tunnel
 
-Use the Cloudflare Tunnel stack to reach PantryPal from the internet without
+Use the Cloudflare Tunnel stack to reach Rakumi from the internet without
 opening inbound ports. Cloudflare provides HTTPS at the edge, and accounts
 protect the browser app.
 
@@ -8,7 +8,7 @@ protect the browser app.
 `docker-compose.override.yml`. Stop the local stack first; do not run both
 against the same database.
 
-PantryPal joins two networks on this host:
+Rakumi joins two networks on this host:
 
 - `tunnel` — private to this compose project, where `cloudflared` reaches
   `pantrypal:8787`. No ports are published.
@@ -32,7 +32,7 @@ In the Cloudflare dashboard:
    - **URL**: `pantrypal:8787`
 4. Save. Cloudflare creates the DNS record for `https://pantry.example.com`.
 
-The public URL is HTTPS; the connector reaches PantryPal over plain HTTP on the
+The public URL is HTTPS; the connector reaches Rakumi over plain HTTP on the
 private Docker network. Keep ports closed and do not add an `A`/`AAAA` record for
 the host. Do not put Cloudflare Access in front of this hostname: it blocks MCP
 clients before their bearer token is read.

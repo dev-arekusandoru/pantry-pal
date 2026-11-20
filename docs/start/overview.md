@@ -1,6 +1,6 @@
 # Overview
 
-PantryPal keeps a household's food stock, recipes, meal plans, and shopping lists
+Rakumi keeps a household's food stock, recipes, meal plans, and shopping lists
 in one place. Run it on your server. Use the web app or connect an AI assistant
 through MCP.
 

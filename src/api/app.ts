@@ -111,7 +111,7 @@ export function createApp(options: CreateAppOptions): App {
   app.doc31("/openapi.json", {
     openapi: "3.1.0",
     info: {
-      title: "PantryPal",
+      title: "Rakumi",
       version: packageVersion(),
       description:
         "Self-hosted household pantry, recipe, meal-plan and shopping backend. /api/v1 accepts a bearer API token or the browser session cookie issued by POST /auth/login; each account owns one household. /mcp is bearer-only.",

@@ -10,7 +10,7 @@ type Session =
 
 async function readSession(signal?: AbortSignal): Promise<Session> {
   const response = await fetch("/auth/session", { cache: "no-store", signal });
-  if (!response.ok) throw new Error("Can't reach PantryPal. Try again.");
+  if (!response.ok) throw new Error("Can't reach Rakumi. Try again.");
   return response.json() as Promise<Session>;
 }
 
@@ -41,7 +41,7 @@ export function BrowserSession({ children }: { children: ReactNode }) {
           void queryClient.cancelQueries().then(() => queryClient.clear());
         }
       }).catch(() => {
-        if (!controller.signal.aborted) setError("Can't reach PantryPal. Try again.");
+        if (!controller.signal.aborted) setError("Can't reach Rakumi. Try again.");
       });
     };
     const unauthorized = () => {
@@ -66,7 +66,7 @@ export function BrowserSession({ children }: { children: ReactNode }) {
 
   if (!session) {
     return <main className={styles.page}><div className={styles.form}>
-      <h1 className={styles.title}>PantryPal</h1>
+      <h1 className={styles.title}>Rakumi</h1>
       <p role={error ? "alert" : "status"}>{error || "Opening your pantry…"}</p>
       {error && <Button onClick={() => { setError(""); setAttempt((n) => n + 1); }}>Try again</Button>}
     </div></main>;
@@ -107,7 +107,7 @@ function AuthForm({ signupOpen, onAuthenticated }: { signupOpen: boolean; onAuth
       }
       onAuthenticated();
     } catch {
-      setError("Can't reach PantryPal. Try again.");
+      setError("Can't reach Rakumi. Try again.");
     } finally {
       setBusy(false);
     }
@@ -119,7 +119,7 @@ function AuthForm({ signupOpen, onAuthenticated }: { signupOpen: boolean; onAuth
       <h1 className={styles.title}>{signup ? "Start your pantry." : "Your pantry awaits."}</h1>
       <p className={styles.hint}>{signup
         ? "Create an account for your household."
-        : "Log in with your email to open PantryPal."}</p>
+        : "Log in with your email to open Rakumi."}</p>
       <label className={styles.label} htmlFor="auth-email">Email</label>
       <input id="auth-email" className={styles.input} type="email" autoComplete="email" autoFocus required
         value={email} onChange={(event) => setEmail(event.target.value)}

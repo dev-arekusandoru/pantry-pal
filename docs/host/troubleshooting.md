@@ -108,14 +108,14 @@ A token in a query parameter does not work. A revoked token also returns `401`.
 A source run defaults to 4787. The Docker image sets 8787. Check the startup log line:
 
 ```text
-PantryPal listening on http://0.0.0.0:8787
+Rakumi listening on http://0.0.0.0:8787
 ```
 
 Set `PORT` to choose a port. If you change the container port, also change the Compose mapping. See [Configuration](configuration.md).
 
 ## The database is locked
 
-PantryPal waits up to 5 seconds for a lock. If the error continues, another process is using the same database.
+Rakumi waits up to 5 seconds for a lock. If the error continues, another process is using the same database.
 
 - Run one server against one database file.
 - Stop old containers or local servers that use the same `data` directory.
@@ -123,7 +123,7 @@ PantryPal waits up to 5 seconds for a lock. If the error continues, another proc
 
 ## An update or migration fails
 
-The new server exits before it serves traffic. Read the logs, then restore the backup from before the update and run the previous code. Do not delete the data directory. See [Update PantryPal](updates.md) and [Backups and restore](backups.md).
+The new server exits before it serves traffic. Read the logs, then restore the backup from before the update and run the previous code. Do not delete the data directory. See [Update Rakumi](updates.md) and [Backups and restore](backups.md).
 
 Do not run CLI commands to inspect the database if you plan to roll back. Every CLI command that opens the database applies pending migrations.
 

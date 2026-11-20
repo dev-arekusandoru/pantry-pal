@@ -167,7 +167,7 @@ export function WeekScreen({ week, onSelectWeek, planning = false, onPlanning }:
             </Button>
           }
         >
-          Ask your AI assistant to plan the week (it connects to PantryPal over MCP), or start an empty week and fill in
+          Ask your AI assistant to plan the week (it connects to Rakumi over MCP), or start an empty week and fill in
           each meal yourself.
         </EmptyState>
       </>

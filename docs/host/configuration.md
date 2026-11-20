@@ -1,6 +1,6 @@
 # Configuration
 
-PantryPal reads its settings from environment variables. It has no configuration file. Settings that belong to the household, such as the timezone and default servings, are stored in the database. Change those in the web app or API.
+Rakumi reads its settings from environment variables. It has no configuration file. Settings that belong to the household, such as the timezone and default servings, are stored in the database. Change those in the web app or API.
 
 ## Environment variables
 
@@ -56,13 +56,13 @@ If you change `PORT` in the container, update both the mapping and the environme
 
 Keep `HOST=0.0.0.0` inside the container. Docker forwards the published port to the container network. Set `HOST=127.0.0.1` only for a source run that should accept local connections.
 
-The base file without the override publishes `8787` on all interfaces. See [Install PantryPal](../start/install.md) and [Access and security](security.md).
+The base file without the override publishes `8787` on all interfaces. See [Install Rakumi](../start/install.md) and [Access and security](security.md).
 
 ## Data directory
 
 Compose bind-mounts `./data` to `/data`. The database uses WAL, so the directory can contain `pantrypal.db`, `pantrypal.db-wal`, and `pantrypal.db-shm`. Keep the directory on a local filesystem. SQLite locking over NFS or SMB is not reliable.
 
-The image runs as uid 1000. The host directory must be writable by that user. See [Install PantryPal](../start/install.md).
+The image runs as uid 1000. The host directory must be writable by that user. See [Install Rakumi](../start/install.md).
 
 Back up the whole directory, not one file. See [Backups and restore](backups.md).
 
@@ -74,4 +74,4 @@ For a source run, `pnpm build` builds the web app as well as the server. `pnpm b
 
 ## Migrations
 
-Pending migrations run automatically when the server starts and before every CLI command that opens the database. There is no separate migrate step or setting. See [Update PantryPal](updates.md).
+Pending migrations run automatically when the server starts and before every CLI command that opens the database. There is no separate migrate step or setting. See [Update Rakumi](updates.md).

@@ -8,10 +8,10 @@ export const money = (amount: number) =>
   Number.isInteger(amount) ? `$${amount}` : `$${amount.toFixed(2)}`;
 
 export const site = {
-  name: "PantryPal",
+  name: "Rakumi",
   tagline: "Dinner, figured out.",
   description:
-    "PantryPal is an open-source kitchen companion. Plan meals, track your pantry, keep your recipes, cook step by step, and shop from one list.",
+    "Rakumi is an open-source kitchen companion. Plan meals, track your pantry, keep your recipes, cook step by step, and shop from one list.",
   trialDays: 14,
   price: {
     monthly,

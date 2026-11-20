@@ -1,5 +1,5 @@
 /*
- * PantryPal design tokens (Kitchen Diary: paper, cocoa ink, pastel stickers).
+ * Rakumi design tokens (Kitchen Diary: paper, cocoa ink, pastel stickers).
  *
  * Three layers:
  *   1. Theme-independent: type, radii, skin, motion, layout.
@@ -43,7 +43,7 @@
 
   /* ----- skin: the look of surfaces and controls ----- */
   --font-head: "Kiwi Maru", "Zen Maru Gothic", serif;
-  --font-note: "Klee One", "Zen Maru Gothic", cursive; /* handwritten notes: kickers, meal labels, dates, Pal's line */
+  --font-note: "Klee One", "Zen Maru Gothic", cursive; /* handwritten notes: kickers, meal labels, dates, Raku's line */
   --fw-head: 500;
   --lh-head: 1.12;
   --tracking-head: 0;

@@ -12,10 +12,10 @@ export const MCP_SERVER_NAME = "pantrypal";
 
 /**
  * Instructions sent with `initialize`: the rules an agent must follow to use
- * PantryPal correctly instead of re-implementing pantry arithmetic.
+ * Rakumi correctly instead of re-implementing pantry arithmetic.
  */
 export const MCP_INSTRUCTIONS = [
-  "PantryPal is the household's pantry, recipe, meal-plan and shopping backend.",
+  "Rakumi is the household's pantry, recipe, meal-plan and shopping backend.",
   "You pick the meals, portions and substitutions; the server does all quantity math: unit conversion, recipe scaling, plan demand, availability and shopping deltas. Send numbers and choices, never converted or summed quantities.",
   "Ids are prefixed strings (hh_, mem_, ing_, rcp_, plan_, ce_, slot_, prep_, sl_, sli_, pi_, mv_) and are stable; pass them between calls instead of re-reading. Ingredient references also accept names and aliases, but ids are exact.",
   "Ingredients are controlled: nothing creates an ingredient from free text. Call find_ingredient first, then use the existing ingredient (ingredientId or its exact name) or a USDA food (fdcId with name) on recipe lines, pantry lines and rules. One ingredient per name: put \"x or y\" in alternatives, sizes in the unit (large) and preparation in prepNote. create_custom_ingredient is a last resort.",

@@ -4,7 +4,7 @@ slug: /
 sidebar_label: Documentation
 ---
 
-# PantryPal documentation
+# Rakumi documentation
 
 Plan meals, track food, and shop for what you need.
 
@@ -12,11 +12,11 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 
 ## Start
 
-- [Overview](start/overview.md) — what PantryPal does and its limits.
+- [Overview](start/overview.md) — what Rakumi does and its limits.
 - [Install](start/install.md) — Docker setup and first launch.
 - [Example data](start/example-data.md) — try sample recipes, stock, and a meal plan.
 
-## Use PantryPal
+## Use Rakumi
 
 - [Pantry](use/pantry.md) — add food and change stock.
 - [Recipes](use/recipes.md) — servings, recipe status, cook mode, and cooking together.
@@ -36,7 +36,7 @@ New here? Start with [Overview](start/overview.md), then [Install](start/install
 - [Common tasks](connect/tasks.md) — plan a week, update stock, and record a cook.
 - [Tool reference](reference/mcp-tools.md) — available tools and key inputs.
 
-## Host PantryPal
+## Host Rakumi
 
 - [Configuration](host/configuration.md) — environment variables and storage.
 - [Access and security](host/security.md) — accounts, sessions, and tokens.

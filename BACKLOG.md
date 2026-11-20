@@ -44,7 +44,7 @@
 - Week page: wall tablet layout. The page now allows 1560px, but the week timeline fills only the left part of a 1920px screen; use the free width, for example two days side by side or a week grid beside it
 - Week page: let people edit the meal time windows (breakfast until 10:30, lunch until 15:00) in Settings; keep a week grid view as an option beside the timeline
 - Week page: check other weeks (browsing next and last week), 200% zoom and measured text contrast over recipe photos
-- Living Pal (cozy): Pal reacts to pantry health and cooking, and unlocks outfits. Pal gets sleepy, never sad
+- Living Raku (cozy): Raku reacts to pantry health and cooking, and unlocks outfits. Raku gets sleepy, never sad
 
 ## Tooling
 - CI (typecheck + tests + docker build), linter/formatter config
@@ -52,9 +52,10 @@
 
 ## Launch readiness
 - Legal minimum for taking payments: privacy policy, terms (including the 30-day deletion after a lock), refund/cancellation wording, and a product contact address (not a personal one). Polar also requires these
-- Brand: pick and buy a domain (landing page at the root, app on a subdomain, docs on a subdomain or `/docs`); check trademark collisions for "PantryPal" (the name is common); replace the placeholder logo
+- Brand: the product is now named Rakumi and `rakumi.app` is bought (Cloudflare). Still to do: check trademark collisions for "Rakumi", replace the placeholder logo, decide the subdomains (app, docs). Marketing and docs now say "Rakumi"; the mascot is "Raku"
 - Marketing screenshots: seed realistic demo data (recipes with photos) and shoot clean hero shots of Week, Pantry, Recipes, Cook mode, Shop; the current docs screenshots are not marketing quality
 - Pre-launch strategy: the waitlist uses Resend contacts through a Cloudflare Worker (`landing/worker/`, docs/host/waitlist.md). Still to do: deploy the Worker, verify a sending domain in Resend and send a welcome email, decide how and when to invite people (Resend broadcasts), then switch the call to action to the 14-day trial when signup and billing work
 - Hosted-version requirements: invite-code signup, Polar billing ($3.99/mo or $39/yr, 14-day Polar trial with card, no free tier), lock on lapse or failed renewal, delete data 30 days after the lock, 7-day refund on the first charge, email sending, scheduled backups, and a support channel. Plan: `scratch/hosting-plan.md`. Overlaps with the Platform items above (email verification, password reset, multi-tenant database). Several people already sign in on one account from different devices; separate logins per person stay in Platform
 - Landing page FAQ promises: a member can ask for a copy of their data (a manual export is fine, there is no export feature), and all data is deleted 30 days after the plan ends. The comparison grid and FAQ show "Save recipes from a link" as available, so recipe import must ship before launch
 - Landing page links: write the privacy, terms, and contact pages, then set their URLs in `landing/src/config.ts` (the footer hides each link until its URL is set). Set `site` in `landing/astro.config.mjs` once the domain is chosen (enables canonical URLs and a sitemap). Set `waitlistEndpoint` in the same config file once the waitlist is wired up (Resend)
+- Finish the Rakumi rename in internals (only user-facing text is renamed so far): package names (`pantrypal`, `@pantrypal/*`), the `pantrypal` CLI and MCP server name, `PANTRYPAL_*` env vars, `data/pantrypal.db`, Docker service, image and network names, the session cookie and localStorage keys (`pantrypal.*`, `pantry-pal:*`; renaming signs people out and resets local state), the `Pal` component and file names, the Worker name `pantrypal-waitlist` (its URL changes), `scripts/deploy.sh`, and the GitHub repo and Pages URL (`pantry-pal`). Needs a migration plan for the running instance

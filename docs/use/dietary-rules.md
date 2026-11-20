@@ -20,11 +20,11 @@ Rules are guidance, not an allergy guarantee. See [Limits](#limits).
 | `reason` | Why the rule exists, such as "allergy" or "dislike". |
 | `memberId` | The household member it applies to. Null means the whole household. Add, rename, or remove members in **Settings** > **People**. Removing a member also deletes their rules. |
 
-An ingredient rule must name an ingredient that PantryPal can find. Send one of:
+An ingredient rule must name an ingredient that Rakumi can find. Send one of:
 
 - `ingredientId` for an ingredient you have.
 - `ingredient` with the exact name or an alias of an ingredient you have.
-- `fdcId` with `name` for a USDA food you do not have yet. PantryPal creates a
+- `fdcId` with `name` for a USDA food you do not have yet. Rakumi creates a
   linked ingredient, so a ban can be recorded before the food is used. If one
   ingredient already links that food, the rule uses it.
 
@@ -103,7 +103,7 @@ The same check is available at `GET /recipes/{idOrSlug}/check`. Use
 
 ## Limits
 
-- PantryPal is not a medical device and does not certify food as safe.
+- Rakumi is not a medical device and does not certify food as safe.
 - A check only sees stored data: ingredient names, aliases, categories, tags,
   and recipe lines. It cannot read package labels or manufacturer warnings.
 - Missing, vague, or misspelled ingredients can be missed. This includes lines

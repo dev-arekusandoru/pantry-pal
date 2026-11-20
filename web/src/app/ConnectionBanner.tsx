@@ -7,7 +7,7 @@ import styles from "./ConnectionBanner.module.css";
 const POLL_MS = 5000;
 
 /**
- * Global "can't reach PantryPal" notice. Shown whenever any request failed at the
+ * Global "can't reach Rakumi" notice. Shown whenever any request failed at the
  * network level; polls the health endpoint until the server answers, then refetches
  * everything. Screens still show their own ErrorState for their failed queries.
  */
@@ -37,7 +37,7 @@ export function ConnectionBanner() {
   return (
     <div className={styles.banner} role="alert">
       <Icon name="offline" size={22} />
-      <span>Can't reach PantryPal. Trying again…</span>
+      <span>Can't reach Rakumi. Trying again…</span>
       <Button
         variant="ghost"
         onClick={async () => {
