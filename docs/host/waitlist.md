@@ -23,10 +23,10 @@ To limit abuse, add a Cloudflare rate limiting rule for the Worker.
 ## Set up
 
 1. In Resend, open **API Keys**. Create a key with **Full access**.
-2. Optional: in Resend, create a segment and copy its ID.
+2. In Resend, create a segment and copy its ID.
 3. In `landing/worker/wrangler.toml`, set `ALLOWED_ORIGINS` to the origin of the
    landing page, for example `https://example.com`. Use a comma between
-   several origins. Add `RESEND_SEGMENT_ID` if you made a segment.
+   several origins. Set `RESEND_SEGMENT_ID` to the segment ID.
 4. From `landing/worker/`, sign in and deploy:
 
    ```sh
