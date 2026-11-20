@@ -16,7 +16,7 @@ const sidebars = {
     },
     {
       type: 'category', label: 'Host Rakumi',
-      items: ['host/configuration', 'host/security', 'host/tunnel', 'host/waitlist', 'host/backups', 'host/updates', 'host/troubleshooting'],
+      items: ['host/configuration', 'host/security', 'host/tunnel', 'host/landing-page', 'host/waitlist', 'host/backups', 'host/updates', 'host/troubleshooting'],
     },
     {
       type: 'category', label: 'Develop and contribute',
