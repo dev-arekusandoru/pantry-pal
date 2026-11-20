@@ -7,3 +7,5 @@ compatibility_date = "2026-11-01"
 ALLOWED_ORIGINS = "https://rakumi.app,https://www.rakumi.app,http://localhost:4321"
 # Resend segment that new contacts join (the Rakumi segment).
 RESEND_SEGMENT_ID = "e1d0d43d-0827-48d7-8122-44cb7367fb8a"
+# Sender of the welcome email. The domain must be verified in Resend.
+WELCOME_FROM = "Rakumi <hello@rakumi.app>"

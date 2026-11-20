@@ -1,61 +1,142 @@
 # Backlog (post-v1)
 
-## Frontend
-- Fuller plan editing beyond the swap sheet: drag leftovers between days, per-slot servings
-- Step ↔ ingredient links in cook mode (needs the backend join table below)
-- Dietary rules screen. The landing page mentions dietary rules; today they work through the API and MCP only (no screen, no warnings on recipe, week, or shop)
-- Ingredient merge UI
-- Cache recipe images under `/media` instead of hotlinking seed URLs
-- "Use soon" strip from `expiry` / `shelfLifeDays`
-- Pantry expiry: show "use soon" on the week and shopping screens too (today only the Pantry tab warns)
-- Mascot / illustrated character
-- Playwright smoke flows (shop check-off, pantry adjust, cook mode)
+Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live in Launch readiness below.
 
 ## Platform
-- OAuth 2.1 for remote MCP clients
-- Accounts: email verification on signup (open signup accepts any address today)
-- Accounts: password reset over email (needs SMTP; today the admin resets with the CLI)
-- Accounts: share one household between several logins (today 1 account = 1 household)
-- Database for many tenants: Postgres support (all tenants share one SQLite file today; one busy tenant slows the rest, no per-tenant backup/restore)
-- Backups: scheduled backups for the hosted service (the landing page promises "backups handled"; today they are manual commands). Data export (JSON dump, markdown week export) only if it is needed
-- Optional `recipe_step_ingredient` join table, per-step refs in recipe create/update and MCP, a
-  server-side whole-word suggester, hand-checked backfill of the seed recipes
+### Accounts
+- [ ] P0 Email verification on signup (open signup accepts any address)
+- [ ] P0 Password reset over email (needs SMTP; admin resets with the CLI today)
+- [ ] P2 Share one household between several logins (1 account = 1 household today)
+- [ ] P2 OAuth 2.1 for remote MCP clients
+
+### Data and hosting
+- [ ] P0 Scheduled backups for the hosted service (landing page promises "backups handled")
+- [ ] P1 Manual data-copy runbook (JSON dump or markdown week export only if needed)
+- [ ] P1 Per-tenant backup and restore
+- [ ] P2 Postgres support (all tenants share one SQLite file; one busy tenant slows the rest)
+- [ ] P2 `recipe_step_ingredient` join table, per-step refs in recipe create/update and MCP
+- [ ] P2 Server-side whole-word step-to-ingredient suggester
+- [ ] P2 Hand-checked backfill of seed recipes for the join table
+
+### Tooling
+- [ ] P0 Verify the Docker image build (never run: build host had no Docker socket access)
+- [ ] P1 CI for typecheck, tests, docker build (only the docs workflow exists)
+- [ ] P1 Linter and formatter config
+- [ ] P2 Playwright smoke flows: shop check-off, pantry adjust, cook mode
 
 ## Features
-- Recipe import from a link (schema.org/Recipe scraping). LAUNCH GATE: the landing page comparison shows "Save recipes from a link" as available, so ship it before the page goes live. The web app has no import today (manual editor, API and MCP only)
-- Barcode scanning for the pantry (priority)
-- Voice control in cook mode: read steps aloud, voice commands for next step and timers (priority)
-- Calendar feed (iCal) for the meal plan
-- Monthly plan view (week arrows only today)
-- Daily nutrition totals on the week plan (nutrition shows per recipe only today)
-- Translations / localization (English only today)
-- Metric/imperial: add a household unit-system control in Settings (the setting exists, no screen)
-- Native or installable mobile app (future; today a responsive mobile website with no PWA)
-- Receipt/photo → pantry bulk import
-- Analytics: what we actually eat, waste, cost per meal
-- Price tracking per ingredient/store
-- Purchase-friendly units on shopping lists: tiny converted amounts show as "0.02 cup" sugar or "0.13 cup" flour; show them in the recipe unit or round to package sizes
-- Weekly missions are the same three rules every week (home dinners, try something new, finish prep, plus sweep). Vary them: rotating or seasonal missions, pantry-driven ones such as "use up the celery", co-op missions
-- Co-op cooking celebrations: a joint "cooked together" moment and shared stamp when two people cook the same meal in multiplayer cook mode
-- Pantry sweep: skip a duplicate shopping list entry when the item is already on the list; offer Undo from the summary; test swiping on a real touch device; make the snooze lengths (3 and 7 days) a setting
-- Gamification state (treat used, sweep count, sweep snooze) is stored per browser; move it to the household so it follows you across devices
-- Sticker book: check the recipe details on tap, and add a per-recipe collection (cooked recipes as stickers)
-- Design: redo dark mode in the Kitchen Diary look (the dark palette is the old one and is opt-in); update docs screenshots; check Cook mode, Settings, 320px width and 200% zoom after the restyle
-- Week page: wall tablet layout. The page now allows 1560px, but the week timeline fills only the left part of a 1920px screen; use the free width, for example two days side by side or a week grid beside it
-- Week page: let people edit the meal time windows (breakfast until 10:30, lunch until 15:00) in Settings; keep a week grid view as an option beside the timeline
-- Week page: check other weeks (browsing next and last week), 200% zoom and measured text contrast over recipe photos
-- Living Raku (cozy): Raku reacts to pantry health and cooking, and unlocks outfits. Raku gets sleepy, never sad
+### Recipes
+- [ ] P0 Import recipe from a link (schema.org/Recipe). LAUNCH GATE: landing page shows it as available. Web app has none today (editor, API, MCP only)
+- [ ] P1 Cache recipe images under `/media` instead of hotlinking seed URLs
+- [ ] P2 Step to ingredient links in cook mode (needs the join table)
+- [ ] P2 Sticker book: check recipe details on tap
+- [ ] P2 Sticker book: per-recipe collection (cooked recipes as stickers)
 
-## Tooling
-- CI (typecheck + tests + docker build), linter/formatter config
-- Verify the Docker image build (not yet run: the build host had no Docker socket access)
+### Dietary rules
+- [ ] P0 Dietary rules screen (landing page mentions rules). The ingredient page lists rules read-only; add and edit work only through API and MCP
+- [ ] P1 Warnings on recipe, week, and shop screens
+
+### Pantry
+- [ ] P1 "Use soon" strip from `expiry` / `shelfLifeDays`
+- [ ] P1 Show "use soon" on week and shopping screens (only the Pantry tab warns today)
+- [ ] P1 Barcode scanning
+- [ ] P2 Receipt/photo to pantry bulk import
+- [ ] P2 Pantry sweep: skip entries already on the shopping list
+- [ ] P2 Pantry sweep: Undo from the summary
+- [ ] P2 Pantry sweep: test swiping on a real touch device
+- [ ] P2 Pantry sweep: make snooze lengths (3 and 7 days) a setting
+
+### Shopping
+- [ ] P1 Purchase-friendly units ("0.02 cup" sugar): show recipe unit or round to package sizes
+- [ ] P2 Price tracking per ingredient/store
+
+### Cooking
+- [ ] P1 Voice control in cook mode: read steps aloud
+- [ ] P1 Voice commands for next step and timers
+
+### Week plan
+- [ ] P1 Check other weeks (next/last), 200% zoom, text contrast over recipe photos
+- [ ] P1 Wall tablet layout: use free width on 1920px (two days side by side or week grid)
+- [ ] P2 Editable meal time windows in Settings (breakfast until 10:30, lunch until 15:00)
+- [ ] P2 Week grid view as an option beside the timeline
+- [ ] P2 Fuller plan editing: drag leftovers between days
+- [ ] P2 Fuller plan editing: per-slot servings
+- [ ] P2 Monthly plan view
+- [ ] P2 Daily nutrition totals on the week plan
+- [ ] P2 Calendar feed (iCal)
+
+### Settings
+- [ ] P1 Household unit-system control (setting exists, no screen)
+- [ ] P2 Translations / localization (English only)
+
+### Design
+- [ ] P1 Redo dark mode in the Kitchen Diary look (palette is old, opt-in)
+- [ ] P1 Update docs screenshots
+- [ ] P1 Check Cook mode, Settings, 320px width, 200% zoom after restyle
+- [ ] P2 Mascot / illustrated character
+- [ ] P2 Native or installable app (no PWA today)
+
+### Gamification
+- [ ] P1 Move treat used, sweep count, sweep snooze from per-browser to household
+- [ ] P2 Vary weekly missions: rotating or seasonal
+- [ ] P2 Pantry-driven missions ("use up the celery")
+- [ ] P2 Co-op missions
+- [ ] P2 Co-op cooked-together moment and shared stamp
+- [ ] P2 Living Raku: reacts to pantry health and cooking (sleepy, never sad)
+- [ ] P2 Raku outfits unlocks
+
+### Insights
+- [ ] P2 Insights: what we eat, waste, cost per meal
 
 ## Launch readiness
-- Legal minimum for taking payments: privacy policy, terms (including the 30-day deletion after a lock), refund/cancellation wording, and a product contact address (not a personal one). Polar also requires these
-- Brand: the product is now named Rakumi and `rakumi.app` is bought (Cloudflare). Still to do: check trademark collisions for "Rakumi", replace the placeholder logo, decide the subdomains (app, docs). Marketing and docs now say "Rakumi"; the mascot is "Raku"
-- Marketing screenshots: seed realistic demo data (recipes with photos) and shoot clean hero shots of Week, Pantry, Recipes, Cook mode, Shop; the current docs screenshots are not marketing quality
-- Pre-launch strategy: the waitlist uses Resend contacts through a Cloudflare Worker (`landing/worker/`, docs/host/waitlist.md). Still to do: deploy the Worker, verify a sending domain in Resend and send a welcome email, decide how and when to invite people (Resend broadcasts), then switch the call to action to the 14-day trial when signup and billing work
-- Hosted-version requirements: invite-code signup, Polar billing ($3.99/mo or $39/yr, 14-day Polar trial with card, no free tier), lock on lapse or failed renewal, delete data 30 days after the lock, 7-day refund on the first charge, email sending, scheduled backups, and a support channel. Plan: `scratch/hosting-plan.md`. Overlaps with the Platform items above (email verification, password reset, multi-tenant database). Several people already sign in on one account from different devices; separate logins per person stay in Platform
-- Landing page FAQ promises: a member can ask for a copy of their data (a manual export is fine, there is no export feature), and all data is deleted 30 days after the plan ends. The comparison grid and FAQ show "Save recipes from a link" as available, so recipe import must ship before launch
-- Landing page links: write the privacy, terms, and contact pages, then set their URLs in `landing/src/config.ts` (the footer hides each link until its URL is set). Set `waitlistEndpoint` in the same config file once the waitlist is wired up (Resend)
-- Finish the Rakumi rename in internals (only user-facing text is renamed so far): package names (`pantrypal`, `@pantrypal/*`), the `pantrypal` CLI and MCP server name, `PANTRYPAL_*` env vars, `data/pantrypal.db`, Docker service, image and network names, the session cookie and localStorage keys (`pantrypal.*`, `pantry-pal:*`; renaming signs people out and resets local state), the `Pal` component and file names, the Worker name `pantrypal-waitlist` (its URL changes), `scripts/deploy.sh`, and the GitHub repo and Pages URL (`pantry-pal`). Needs a migration plan for the running instance
+
+### Legal and contact
+- [ ] Privacy policy page
+- [ ] Terms page (include 30-day deletion after a lock)
+- [ ] Refund and cancellation wording (7-day refund on first charge)
+- [ ] Product contact address (not personal)
+- [ ] Set `privacy`, `terms`, `contact` URLs in `landing/src/config.ts` (footer hides links until set)
+- [ ] Check Polar's legal requirements are met
+
+### Brand
+- [x] Name Rakumi, `rakumi.app` bought, user-facing text renamed
+- [ ] Check trademark collisions for "Rakumi"
+- [ ] Replace placeholder logo
+- [ ] Decide subdomains (app, docs)
+
+### Marketing assets
+- [ ] Seed realistic demo data (recipes with photos)
+- [ ] Shoot hero shots: Week, Pantry, Recipes, Cook mode, Shop
+
+### Waitlist and pre-launch
+- [x] Worker written and deployed; `waitlistEndpoint` set
+- [x] Resend sending domain verified
+- [x] Welcome email sent from the Worker (HTML, with Raku image from `rakumi.app/raku-email.png`; deploy landing for the image to load)
+- [ ] Decide how and when to invite people (Resend broadcasts)
+- [ ] Switch call to action to the 14-day trial once signup and billing work
+
+### Hosted version (plan: `scratch/hosting-plan.md`)
+- [ ] Invite-code signup
+- [ ] Polar billing: $3.99/mo or $39/yr, 14-day trial with card, no free tier
+- [ ] Lock on lapse or failed renewal
+- [ ] Delete data 30 days after the lock
+- [ ] 7-day refund on first charge
+- [ ] Email sending (also needed for Platform: verification, password reset)
+- [ ] Scheduled backups
+- [ ] Support channel
+- [ ] Multi-tenant database decision (see Platform)
+
+### Promises on the landing page
+- [ ] Recipe import from a link (LAUNCH GATE, see Features)
+- [ ] Manual data-copy process for members (no export feature needed)
+- [ ] Data deleted 30 days after the plan ends (same as the hosted-version item)
+
+### Rename internals (user-facing text is done)
+- [ ] Write a migration plan for the running instance (cookie and localStorage renames sign people out)
+- [ ] Packages (`pantrypal`, `@pantrypal/*`), CLI, MCP server name
+- [ ] `PANTRYPAL_*` env vars, `data/pantrypal.db`
+- [ ] Docker service, image, network names; `scripts/deploy.sh`
+- [ ] Session cookie and localStorage keys (`pantrypal.*`, `pantry-pal:*`)
+- [ ] `Pal` component and file names
+- [ ] Worker name `pantrypal-waitlist` (URL changes; update `waitlistEndpoint`)
+- [ ] GitHub repo and Pages URL (`pantry-pal`); update links in `landing/src/config.ts`
