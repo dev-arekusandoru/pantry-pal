@@ -1,0 +1,8 @@
+name = "pantrypal-waitlist"
+main = "index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Origins of the pages that host the form, comma-separated, no trailing slash.
+ALLOWED_ORIGINS = "http://localhost:4321"
+# RESEND_SEGMENT_ID = "..."

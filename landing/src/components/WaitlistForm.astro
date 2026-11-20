@@ -12,6 +12,7 @@ const { id } = Astro.props;
   <form class="wait" data-waitlist data-endpoint={site.waitlistEndpoint}>
     <label class="sr-only" for={id}>Email address</label>
     <input id={id} name="email" type="email" required placeholder="you@example.com" autocomplete="email" />
+    <input class="trap" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
     <button class="btn primary" type="submit">Join the waitlist</button>
   </form>
   <p class="wait-status" role="status" data-status></p>
@@ -43,7 +44,7 @@ const { id } = Astro.props;
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: new FormData(form).get("email") }),
+          body: JSON.stringify(Object.fromEntries(new FormData(form))),
         });
         if (!response.ok) throw new Error(String(response.status));
         form.hidden = true;
@@ -59,6 +60,7 @@ const { id } = Astro.props;
 <style is:global>
   .wait { display: flex; gap: 10px; flex-wrap: wrap; max-width: 520px; }
   .wait[hidden] { display: none; }
+  .wait .trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
   .wait input {
     flex: 1 1 220px; height: 46px; padding: 0 14px; border-radius: var(--r-field);
     background: var(--field-bg); border: 0; box-shadow: 0 0 0 1.5px var(--line), inset 0 2px 0 rgba(84,39,17,.05);

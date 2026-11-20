@@ -28,7 +28,8 @@ export const site = {
     terms: "",
     contact: "",
   },
-  // POST target for waitlist signups: `{ "email": string }` as JSON, any 2xx is
-  // success. Empty means the waitlist is not wired up, and the form says so.
+  // URL of the waitlist Worker (see docs/host/waitlist.md). The form posts
+  // `{ email, website }` as JSON; any 2xx is success. Empty means the waitlist is
+  // not wired up, and the form says so.
   waitlistEndpoint: "",
 } as const;
