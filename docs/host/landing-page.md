@@ -22,12 +22,21 @@ Run `pnpm landing:dev` to preview. Run `pnpm landing:build` to build into
 3. Create the project, one time only:
    `pnpm dlx wrangler pages project create rakumi --production-branch main`.
 4. Deploy: `pnpm dlx wrangler pages deploy landing/dist --project-name rakumi`.
-   Run steps 1 and 4 again for each update.
 5. In the Cloudflare dashboard, open **Workers & Pages**, then **rakumi**, then
    **Custom domains**. Add `rakumi.app`. Cloudflare creates the DNS record when
    the domain is in the same account.
 6. Optional: add `www.rakumi.app` the same way. Add a redirect rule from `www`
    to `rakumi.app`.
+
+## Publish an update
+
+1. Edit the page, and check it with `pnpm landing:dev`.
+2. Commit the change.
+3. Run `pnpm landing:deploy`. It builds the page and uploads it. The site updates
+   in about a minute.
+
+The waitlist Worker deploys on its own. After you change `landing/worker/`, run
+`pnpm dlx wrangler deploy` from that directory.
 
 The waitlist form needs the Worker to allow the site origin. See
 [Waitlist](waitlist.md).

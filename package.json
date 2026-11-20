@@ -34,7 +34,8 @@
     "docs:serve": "pnpm --filter @pantrypal/docs serve",
     "landing:dev": "pnpm --filter @pantrypal/landing dev",
     "landing:build": "pnpm --filter @pantrypal/landing build",
-    "landing:preview": "pnpm --filter @pantrypal/landing preview"
+    "landing:preview": "pnpm --filter @pantrypal/landing preview",
+    "landing:deploy": "pnpm landing:build && pnpm dlx wrangler pages deploy landing/dist --project-name rakumi"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
