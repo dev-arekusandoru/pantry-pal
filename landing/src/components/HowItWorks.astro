@@ -1,0 +1,52 @@
+---
+import { Image } from "astro:assets";
+import { steps } from "../data/steps";
+---
+
+<section id="how">
+  <div class="head">
+    <h2><span class="wavy">How a week works</span></h2>
+    <p>Four steps, and each one feeds the next. No spreadsheets, no sticky notes on the fridge.</p>
+  </div>
+
+  <div class="steps">
+    {steps.map((step, index) => (
+      <article class="step" data-tab={step.tab}>
+        <span class="num">{index + 1}</span>
+        <Image class="sticker ico" src={step.icon} width={124} height={124} alt="" />
+        <div class="mat">
+          <Image
+            src={step.image}
+            widths={[480, 720, 960]}
+            sizes="(max-width: 700px) 90vw, 520px"
+            style={`--crop: ${step.crop}`}
+            alt={step.imageAlt}
+          />
+        </div>
+        <h3>{step.title}</h3>
+        <p>{step.text}</p>
+      </article>
+    ))}
+  </div>
+
+  <p class="loop"><span><b>Plan</b></span> → <span><b>Shop</b></span> → <span><b>Cook</b></span> → <span><b>Restock</b></span> → <span>and round it goes</span></p>
+</section>
+
+<style is:global>
+  .steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 26px; }
+  .step { position: relative; padding: 14px 14px 22px; border-radius: var(--r-xl); background: color-mix(in srgb, var(--tab) 48%, var(--card)) var(--grain); box-shadow: var(--tile-ring, 0 0 0 var(--btn-w) var(--bd), 0 calc(var(--press) + 3px) 0 var(--btn-w) color-mix(in srgb, var(--bd) 55%, transparent)), 0 22px 28px -22px color-mix(in srgb, var(--bd) 60%, transparent); }
+  .step:nth-child(odd) { transform: rotate(-.5deg); }
+  .step:nth-child(even) { transform: rotate(.5deg); }
+  .step .mat { background: var(--card); border-radius: var(--r-lg); padding: 8px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--bd) 40%, transparent); overflow: hidden; }
+  .step .mat img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: var(--crop, top left); border-radius: 10px; }
+  .step h3 { font-size: 27px; margin: 18px 8px 6px; }
+  .step p { margin: 0 8px; font-size: 17px; max-width: 44ch; }
+  .step .num { position: absolute; top: -16px; left: 18px; z-index: 3; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: var(--on-accent); font-family: var(--font-head); font-size: 22px; transform: rotate(var(--tilt-b)); box-shadow: 0 0 0 3px var(--card), 0 6px 8px -4px rgba(80,30,0,.4); }
+  .step .ico { position: absolute; top: -26px; right: 22px; width: 62px; z-index: 3; transform: rotate(9deg); }
+  .loop { margin-top: 40px; display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; font-family: var(--font-note); font-size: 20px; color: var(--muted); text-align: center; }
+  .loop b { color: var(--ink); font-weight: 600; }
+  @media (max-width: 700px) {
+    .steps { grid-template-columns: 1fr; gap: 40px; }
+    .step:nth-child(n) { transform: none; }
+  }
+</style>

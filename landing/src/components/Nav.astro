@@ -1,0 +1,40 @@
+---
+import Pal from "./Pal.astro";
+import { site } from "../config";
+
+const links = [
+  { href: "#how", label: "Features" },
+  { href: "#compare", label: "Compare" },
+  { href: "#pricing", label: "Pricing" },
+];
+---
+
+<header class="nav paper">
+  <a class="brand" href="#top" aria-label={`${site.name} home`}>
+    <Pal size={42} />
+    <span>{site.name}</span>
+  </a>
+  <ul>
+    {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+  </ul>
+  <div class="actions">
+    <a class="btn sm star" href={site.links.github}>
+      <svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub
+    </a>
+    <a class="btn sm primary" href="#join">Join the waitlist</a>
+  </div>
+</header>
+
+<style is:global>
+  .nav { margin-top: 16px; display: flex; align-items: center; gap: 20px; padding: 8px 14px 8px 12px; border-radius: var(--nav-r); position: relative; z-index: 5; }
+  .nav ul { display: flex; gap: 4px; }
+  .nav ul a { display: block; padding: 8px 12px; border-radius: var(--tab-r); text-decoration: none; font-weight: var(--fw-bold); color: var(--muted); transition: background-color var(--dur-fast); }
+  .nav ul a:hover { background: var(--butter-s); color: var(--ink); }
+  .nav .actions { display: flex; gap: 10px; align-items: center; }
+  @media (max-width: 960px) {
+    .nav ul { display: none; }
+  }
+  @media (max-width: 560px) {
+    .nav .actions .star { display: none; }
+  }
+</style>

@@ -16,6 +16,7 @@ flowchart LR
 | Path | Purpose |
 | --- | --- |
 | `web/src/` | React web app, routes, screens, and shared UI |
+| `landing/` | Marketing page (Astro). Reuses the web app's design tokens. Run it with `pnpm landing:dev`, build it with `pnpm landing:build`. Prices, trial length, links, and the waitlist endpoint are in `landing/src/config.ts` |
 | `src/api/` | Hono routes, OpenAPI, and static file serving |
 | `src/auth/` | Accounts, passwords, bearer tokens, sessions, and origin checks |
 | `src/mcp/` | MCP transport and tool handlers |

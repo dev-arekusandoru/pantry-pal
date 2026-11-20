@@ -1,0 +1,127 @@
+---
+import { money, site } from "../config";
+
+const { monthly, yearly, yearlySaving } = site.price;
+
+const hostedTicks = [
+  "Nothing to install, host, or set up",
+  "Backups and updates, handled",
+  "Email the person who built it",
+  "Your feature ideas count for more",
+  "One account for the whole household",
+];
+
+const selfHostTicks = [
+  "The whole app, no feature gates",
+  "Run it with Docker on your own box",
+  "Your data stays on your hardware",
+  "Help from the community on GitHub",
+];
+
+const whyNotes = [
+  { tone: "a", title: "No server, no setup", body: "Sign up and start planning. No Docker, no config files, no 2 a.m. fixes." },
+  { tone: "b", title: "Real support", body: "Questions go straight to the person who wrote the code." },
+  { tone: "c", title: "Louder ideas", body: "Members' suggestions get more weight when we choose what to build next." },
+  { tone: "d", title: "Keeps it independent", body: "PantryPal is built and hosted by one independent developer. Your subscription keeps it going." },
+];
+---
+
+<section id="pricing">
+  <div class="head">
+    <h2><span class="wavy">Pick your way in</span></h2>
+    <p>It's the same app either way. Hosted just means we do the boring parts.</p>
+  </div>
+
+  <div class="plans">
+    <article class="plan hosted">
+      <span class="tape"></span>
+      <span class="stamp">Easiest</span>
+      <h3>Hosted</h3>
+      <p class="tag note">We run it. You cook.</p>
+      <p class="price"><strong>{money(monthly)}</strong><span>/ month</span></p>
+      <p class="alt">or <b>{money(yearly)} a year</b>, which saves about {money(yearlySaving)}</p>
+      <ul class="ticks">
+        {hostedTicks.map((tick) => (
+          <li><svg aria-hidden="true"><use href="#i-tick"></use></svg>{tick}</li>
+        ))}
+      </ul>
+      <div class="cta">
+        <a class="btn primary block" href="#join">Join the waitlist</a>
+        <p class="note fine">{site.trialDays}-day free trial when we open. Cancel any time.</p>
+      </div>
+    </article>
+
+    <article class="plan">
+      <h3>Self-host</h3>
+      <p class="tag note">Your server, your rules.</p>
+      <p class="price"><strong>Free</strong></p>
+      <p class="alt">MIT licensed, every feature, forever</p>
+      <ul class="ticks">
+        {selfHostTicks.map((tick) => (
+          <li><svg aria-hidden="true"><use href="#i-tick"></use></svg>{tick}</li>
+        ))}
+      </ul>
+      <div class="cta">
+        <div class="row">
+          <a class="btn" href={site.links.github}><svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub</a>
+          <a class="btn ghost" href={site.links.selfHost}><svg aria-hidden="true" style="color:var(--ink)"><use href="#i-book"></use></svg>Self-hosting guide</a>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <div class="why">
+    <h3>Why pay when it's free?</h3>
+    <p class="note">Fair question. Here's what your {money(monthly)} does.</p>
+    <div class="notes">
+      {whyNotes.map((note) => (
+        <div class={`nt ${note.tone}`}><span class="tape"></span><h4>{note.title}</h4><p>{note.body}</p></div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  /* pricing */
+  .plans { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: stretch; }
+  .plan { position: relative; padding: 34px 32px 30px; display: flex; flex-direction: column; border-radius: var(--r-xl); background: var(--card) var(--grain); box-shadow: 0 0 0 var(--btn-w) var(--bd), 0 calc(var(--press) + 3px) 0 var(--btn-w) color-mix(in srgb, var(--bd) 55%, transparent), 0 24px 30px -22px color-mix(in srgb, var(--bd) 60%, transparent); }
+  .plan.hosted { background-color: var(--butter-s); box-shadow: 0 0 0 2px var(--ink), 0 6px 0 2px color-mix(in srgb, var(--ink) 60%, transparent), 0 28px 34px -22px color-mix(in srgb, var(--bd) 70%, transparent); }
+  .plan .tape { top: -11px; left: 50%; margin-left: -38px; transform: rotate(-3deg); --tape: var(--gum); }
+  .plan .stamp { position: absolute; top: 22px; right: 22px; transform: rotate(6deg); background: var(--ink); color: var(--on-accent); font-family: var(--font-note); font-weight: 600; font-size: 15px; padding: 4px 10px; border-radius: 6px; }
+  .plan h3 { font-size: 27px; }
+  .plan .tag { margin-top: 4px; font-size: 17px; }
+  .price { display: flex; align-items: baseline; gap: 8px; margin: 22px 0 4px; }
+  .price strong { font-family: var(--font-head); font-weight: 500; font-size: 64px; line-height: 1; }
+  .price span { font-size: 18px; color: var(--muted); }
+  .alt { font-size: 17px; }
+  .alt b { color: var(--accent-text); font-family: var(--font-note); font-weight: 600; }
+  .ticks { margin: 24px 0 28px; display: grid; gap: 11px; }
+  .ticks li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font-size: 17px; }
+  .ticks svg { width: 24px; height: 24px; margin-top: 1px; }
+  .plan .cta { margin-top: auto; display: grid; gap: 12px; }
+  .plan .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .plan .fine { font-size: 16px; text-align: center; }
+
+  .why { margin-top: 56px; }
+  .why h3 { font-size: 30px; text-align: center; margin-bottom: 8px; }
+  .why > .note { text-align: center; font-size: 18px; margin-bottom: 30px; }
+  .notes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+  .nt { position: relative; padding: 22px 18px 20px; border-radius: 6px; color: var(--ink); transform: rotate(var(--r, -1deg)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--bd) 40%, transparent), 0 14px 16px -10px color-mix(in srgb, var(--bd) 60%, transparent); }
+  .nt h4 { font-family: var(--font-note); font-weight: 600; font-size: 21px; line-height: 1.2; margin-bottom: 8px; }
+  .nt p { font-size: 16px; line-height: 1.45; }
+  .nt .tape { top: -11px; left: 50%; margin-left: -38px; width: 64px; height: 20px; }
+  .nt.a { --r: -1.4deg; background: var(--peach-s); --tape: var(--peach); }
+  .nt.b { --r: 1.1deg; background: var(--butter-s); --tape: var(--butter); }
+  .nt.c { --r: -.6deg; background: var(--blue-s); --tape: var(--blue); }
+  .nt.d { --r: 1.5deg; background: var(--pistachio-s); --tape: var(--pistachio); }
+
+  @media (max-width: 960px) {
+    .plans { grid-template-columns: 1fr; }
+    .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
+  }
+  @media (max-width: 560px) {
+    .plan { padding: 30px 22px 26px; }
+    .price strong { font-size: 54px; }
+    .notes { grid-template-columns: 1fr; }
+  }
+</style>

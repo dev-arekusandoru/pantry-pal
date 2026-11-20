@@ -1,6 +1,7 @@
 packages:
   - web
   - site
+  - landing
 
 allowBuilds:
   better-sqlite3: true

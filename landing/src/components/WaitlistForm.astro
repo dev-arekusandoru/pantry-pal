@@ -1,0 +1,74 @@
+---
+import { site } from "../config";
+
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<div class="waitlist">
+  <form class="wait" data-waitlist data-endpoint={site.waitlistEndpoint}>
+    <label class="sr-only" for={id}>Email address</label>
+    <input id={id} name="email" type="email" required placeholder="you@example.com" autocomplete="email" />
+    <button class="btn primary" type="submit">Join the waitlist</button>
+  </form>
+  <p class="wait-status" role="status" data-status></p>
+</div>
+
+<script>
+  const messages = {
+    done: "You're on the list! We'll send one email when the doors open.",
+    closed: "The waitlist isn't open yet. Please check back soon.",
+    failed: "Something went wrong. Please try again.",
+  };
+
+  document.querySelectorAll<HTMLFormElement>("form[data-waitlist]").forEach((form) => {
+    const status = form.parentElement!.querySelector<HTMLElement>("[data-status]")!;
+    const button = form.querySelector<HTMLButtonElement>("button")!;
+    const endpoint = form.dataset.endpoint ?? "";
+
+    const show = (state: "done" | "closed" | "failed") => {
+      status.textContent = messages[state];
+      status.dataset.state = state;
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!endpoint) return show("closed");
+
+      button.disabled = true;
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: new FormData(form).get("email") }),
+        });
+        if (!response.ok) throw new Error(String(response.status));
+        form.hidden = true;
+        show("done");
+      } catch {
+        button.disabled = false;
+        show("failed");
+      }
+    });
+  });
+</script>
+
+<style is:global>
+  .wait { display: flex; gap: 10px; flex-wrap: wrap; max-width: 520px; }
+  .wait[hidden] { display: none; }
+  .wait input {
+    flex: 1 1 220px; height: 46px; padding: 0 14px; border-radius: var(--r-field);
+    background: var(--field-bg); border: 0; box-shadow: 0 0 0 1.5px var(--line), inset 0 2px 0 rgba(84,39,17,.05);
+  }
+  .wait input::placeholder { color: var(--muted); opacity: .8; }
+  .wait input:focus-visible { outline-offset: 2px; }
+  .wait-status { margin-top: 10px; font-family: var(--font-note); font-weight: 600; font-size: 18px; color: var(--accent-text); }
+  .wait-status:empty { margin: 0; }
+  .wait-status[data-state="closed"], .wait-status[data-state="failed"] { color: var(--danger-text); }
+  @media (max-width: 560px) {
+    .wait .btn { width: 100%; }
+  }
+</style>

@@ -1,0 +1,21 @@
+{
+  "name": "@pantrypal/landing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "build": "astro check && astro build",
+    "preview": "astro preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "astro": "^7.4.13"
+  },
+  "devDependencies": {
+    "@astrojs/check": "latest",
+    "@fontsource/kiwi-maru": "^5.3.1",
+    "@fontsource/klee-one": "^5.3.1",
+    "@fontsource/zen-maru-gothic": "^5.3.1",
+    "typescript": "~5.9.3"
+  }
+}

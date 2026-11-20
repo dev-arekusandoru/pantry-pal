@@ -1,0 +1,21 @@
+---
+import Pal from "./Pal.astro";
+import WaitlistForm from "./WaitlistForm.astro";
+import { site } from "../config";
+---
+
+<div class="closing paper">
+  <Pal class="pal" size={112} />
+  <h2>{site.tagline}</h2>
+  <p>Join the waitlist and we'll send one email when PantryPal opens. Your first {site.trialDays} days are on us.</p>
+  <WaitlistForm id="email-end" />
+</div>
+
+<style is:global>
+  .closing { margin: 84px 0 0; padding: 48px 32px 40px; text-align: center; position: relative; }
+  .closing .pal { margin: -92px auto 8px; width: 112px; filter: drop-shadow(0 6px 6px rgba(80,30,0,.18)); }
+  .closing h2 { font-size: clamp(32px, 4.6vw, 48px); }
+  .closing p { margin: 12px auto 24px; font-size: 19px; max-width: 40ch; }
+  .closing .wait { margin: 0 auto; justify-content: center; }
+  .closing .wait-status:not(:empty) { margin: 10px auto 0; }
+</style>

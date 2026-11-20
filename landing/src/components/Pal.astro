@@ -1,0 +1,25 @@
+---
+// Pal, the jar mascot. The artwork lives in SvgDefs.astro.
+interface Props {
+  mood?: "happy" | "cheer";
+  size: number;
+  /** Alt text. Leave out when the mascot is decoration. */
+  label?: string;
+  class?: string;
+}
+
+const { mood = "happy", size, label, class: className } = Astro.props;
+---
+
+<svg
+  class={className}
+  width={size}
+  height={size}
+  viewBox="0 0 120 120"
+  overflow="visible"
+  role={label ? "img" : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : "true"}
+>
+  <use href={`#pal-${mood}`}></use>
+</svg>

@@ -1,0 +1,36 @@
+---
+import Pal from "./Pal.astro";
+import { site } from "../config";
+
+const links = [
+  { label: "Docs", href: site.links.docs },
+  { label: "GitHub", href: site.links.github },
+  { label: "Self-hosting guide", href: site.links.selfHost },
+  { label: "Privacy", href: site.links.privacy },
+  { label: "Terms", href: site.links.terms },
+  { label: "Contact", href: site.links.contact },
+].filter((link) => link.href);
+---
+
+<footer>
+  <div class="in">
+    <a class="brand" href="#top" aria-label={`${site.name} home`}>
+      <Pal size={36} />
+      <span>{site.name}</span>
+    </a>
+    <nav aria-label="Footer">
+      {links.map((link) => <a href={link.href}>{link.label}</a>)}
+    </nav>
+    <p class="note fine">Open source under the MIT license. Built and hosted by one independent developer.</p>
+  </div>
+</footer>
+
+<style is:global>
+  footer { padding: 56px 0 48px; }
+  footer .in { display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: center; justify-content: space-between; }
+  footer .brand span { font-size: 22px; }
+  footer nav { display: flex; gap: 22px; flex-wrap: wrap; font-weight: var(--fw-bold); }
+  footer nav a { text-decoration: none; }
+  footer nav a:hover { text-decoration: underline wavy var(--accent) 1.5px; text-underline-offset: 5px; }
+  footer .fine { width: 100%; font-size: 16px; }
+</style>

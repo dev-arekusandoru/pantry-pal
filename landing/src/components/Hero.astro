@@ -1,0 +1,108 @@
+---
+import { Image } from "astro:assets";
+import Pal from "./Pal.astro";
+import WaitlistForm from "./WaitlistForm.astro";
+import { money, site } from "../config";
+import week from "../assets/img/week.webp";
+import cook from "../assets/img/cook.webp";
+import egg from "../assets/icons/egg.webp";
+import lemon from "../assets/icons/lemon.webp";
+import peppers from "../assets/icons/bell-peppers.webp";
+---
+
+<main id="top">
+  <div class="hero">
+    <div>
+      <span class="kicker">{site.tagline}</span>
+      <h1>
+        <span>Plan the week.</span>
+        <span>Shop once.</span>
+        <span class="wavy">Cook together.</span>
+      </h1>
+      <p class="lead">Meals, pantry, recipes, and groceries in one cozy place. Open source, and yours to keep.</p>
+
+      <div id="join">
+        <WaitlistForm id="email-hero" />
+      </div>
+      <p class="note fine">Free for {site.trialDays} days when we open. One email, no spam.</p>
+
+      <div class="sub">
+        <a class="btn" href={site.links.github}>
+          <svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub
+        </a>
+        <span class="note">The code is open for anyone to read.</span>
+      </div>
+
+      <div class="chips" aria-label="Highlights">
+        <span class="chip" style="background:var(--butter-s)">MIT licensed</span>
+        <span class="chip" style="background:var(--pistachio-s)">Self-host for free</span>
+        <span class="chip" style="background:var(--gum-s)">{money(site.price.monthly)}/mo hosted</span>
+      </div>
+    </div>
+
+    <div class="stage" aria-label={`${site.name} screenshots`}>
+      <span class="tape t1"></span>
+      <figure class="frame f-week">
+        <Image
+          src={week}
+          widths={[640, 960, 1280]}
+          sizes="(max-width: 960px) 90vw, 540px"
+          loading="eager"
+          fetchpriority="high"
+          alt="PantryPal week view: a Marry Me Chicken Pasta dinner, tomorrow's meals, and weekly missions"
+        />
+      </figure>
+      <span class="tape t2"></span>
+      <figure class="frame f-cook">
+        <Image
+          src={cook}
+          widths={[400, 640, 960]}
+          sizes="(max-width: 960px) 50vw, 300px"
+          loading="eager"
+          alt="Cook mode showing one recipe step in large type with a timer button"
+        />
+        <figcaption>Cook mode, one step at a time</figcaption>
+      </figure>
+      <Image class="sticker s-egg" src={egg} width={84} height={84} alt="" />
+      <Image class="sticker s-lemon" src={lemon} width={62} height={62} alt="" />
+      <Image class="sticker s-peppers" src={peppers} width={78} height={78} alt="" />
+      <p class="hey sticky">What's for dinner?<br />I've got a plan.</p>
+      <Pal class="pal" mood="cheer" size={120} label="Pal, the PantryPal jar mascot" />
+    </div>
+  </div>
+</main>
+
+<style is:global>
+  .hero { display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: 40px; align-items: center; padding: 56px 0 40px; }
+  .hero h1 { font-size: clamp(42px, 5.6vw, 70px); line-height: 1.1; margin: 22px 0 20px; }
+  .hero h1 span { display: block; }
+  .hero .lead { font-size: 20px; max-width: 36ch; margin-bottom: 28px; }
+  .hero .sub { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 16px; }
+  .hero .fine { margin-top: 18px; font-size: 16px; }
+  .hero .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+
+  .stage { position: relative; min-height: 560px; }
+  .frame { position: absolute; padding: 10px; border-radius: var(--r-lg); background: var(--card) var(--grain); box-shadow: 0 0 0 var(--btn-w) var(--bd), 0 4px 0 1.5px color-mix(in srgb, var(--bd) 55%, transparent), 0 24px 30px -18px color-mix(in srgb, var(--bd) 70%, transparent); }
+  .frame img { width: 100%; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); }
+  .frame figcaption { font-family: var(--font-note); font-size: 15px; color: var(--muted); padding: 8px 4px 0; }
+  .f-week { top: 26px; right: 0; width: 96%; transform: rotate(1.8deg); }
+  .f-cook { left: -6%; bottom: 14px; width: 54%; transform: rotate(-3.2deg); background-color: var(--butter-s); z-index: 3; }
+  .stage .tape.t1 { top: 6px; left: 38%; transform: rotate(-5deg); --tape: var(--blue); }
+  .stage .tape.t2 { left: 30%; bottom: 192px; transform: rotate(4deg); --tape: var(--gum); }
+  .stage .s-egg { position: absolute; top: -12px; right: 3%; width: 84px; transform: rotate(10deg); z-index: 4; }
+  .stage .s-peppers { position: absolute; right: 26%; bottom: 8px; width: 78px; transform: rotate(-8deg); z-index: 4; }
+  .stage .s-lemon { position: absolute; left: 0; top: 70px; width: 62px; transform: rotate(-14deg); z-index: 4; }
+  .stage .pal { position: absolute; right: -6px; bottom: -24px; z-index: 4; filter: drop-shadow(0 6px 6px rgba(80,30,0,.18)); }
+  .stage .hey { position: absolute; right: 70px; bottom: 96px; z-index: 5; font-family: var(--font-note); font-weight: 600; font-size: 17px; max-width: 150px; }
+
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; padding-top: 36px; }
+    .stage { min-height: 500px; max-width: 620px; margin: 0 auto; width: 100%; }
+  }
+  @media (max-width: 560px) {
+    .stage { min-height: 400px; }
+    .f-cook { left: -2%; width: 60%; }
+    .stage .hey { display: none; }
+    .stage .pal { width: 92px; height: 92px; bottom: -34px; }
+  }
+</style>

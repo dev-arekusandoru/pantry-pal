@@ -31,7 +31,10 @@
     "web:build": "pnpm --filter @pantrypal/web build",
     "docs:dev": "pnpm --filter @pantrypal/docs dev",
     "docs:build": "pnpm --filter @pantrypal/docs build",
-    "docs:serve": "pnpm --filter @pantrypal/docs serve"
+    "docs:serve": "pnpm --filter @pantrypal/docs serve",
+    "landing:dev": "pnpm --filter @pantrypal/landing dev",
+    "landing:build": "pnpm --filter @pantrypal/landing build",
+    "landing:preview": "pnpm --filter @pantrypal/landing preview"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

@@ -3,10 +3,11 @@
 ## Frontend
 - Fuller plan editing beyond the swap sheet: drag leftovers between days, per-slot servings
 - Step ↔ ingredient links in cook mode (needs the backend join table below)
-- Dietary rules screen
+- Dietary rules screen. The landing page mentions dietary rules; today they work through the API and MCP only (no screen, no warnings on recipe, week, or shop)
 - Ingredient merge UI
 - Cache recipe images under `/media` instead of hotlinking seed URLs
 - "Use soon" strip from `expiry` / `shelfLifeDays`
+- Pantry expiry: show "use soon" on the week and shopping screens too (today only the Pantry tab warns)
 - Mascot / illustrated character
 - Playwright smoke flows (shop check-off, pantry adjust, cook mode)
 
@@ -16,12 +17,20 @@
 - Accounts: password reset over email (needs SMTP; today the admin resets with the CLI)
 - Accounts: share one household between several logins (today 1 account = 1 household)
 - Database for many tenants: Postgres support (all tenants share one SQLite file today; one busy tenant slows the rest, no per-tenant backup/restore)
-- Backups/export (JSON dump, markdown week export)
+- Backups: scheduled backups for the hosted service (the landing page promises "backups handled"; today they are manual commands). Data export (JSON dump, markdown week export) only if it is needed
 - Optional `recipe_step_ingredient` join table, per-step refs in recipe create/update and MCP, a
   server-side whole-word suggester, hand-checked backfill of the seed recipes
 
 ## Features
-- Recipe URL import (schema.org/Recipe scraping)
+- Recipe import from a link (schema.org/Recipe scraping). LAUNCH GATE: the landing page comparison shows "Save recipes from a link" as available, so ship it before the page goes live. The web app has no import today (manual editor, API and MCP only)
+- Barcode scanning for the pantry (priority)
+- Voice control in cook mode: read steps aloud, voice commands for next step and timers (priority)
+- Calendar feed (iCal) for the meal plan
+- Monthly plan view (week arrows only today)
+- Daily nutrition totals on the week plan (nutrition shows per recipe only today)
+- Translations / localization (English only today)
+- Metric/imperial: add a household unit-system control in Settings (the setting exists, no screen)
+- Native or installable mobile app (future; today a responsive mobile website with no PWA)
 - Receipt/photo → pantry bulk import
 - Analytics: what we actually eat, waste, cost per meal
 - Price tracking per ingredient/store
@@ -40,3 +49,12 @@
 ## Tooling
 - CI (typecheck + tests + docker build), linter/formatter config
 - Verify the Docker image build (not yet run: the build host had no Docker socket access)
+
+## Launch readiness
+- Legal minimum for taking payments: privacy policy, terms (including the 30-day deletion after a lock), refund/cancellation wording, and a product contact address (not a personal one). Polar also requires these
+- Brand: pick and buy a domain (landing page at the root, app on a subdomain, docs on a subdomain or `/docs`); check trademark collisions for "PantryPal" (the name is common); replace the placeholder logo
+- Marketing screenshots: seed realistic demo data (recipes with photos) and shoot clean hero shots of Week, Pantry, Recipes, Cook mode, Shop; the current docs screenshots are not marketing quality
+- Pre-launch strategy: waitlist (email capture, where it is stored, how and when to invite people), then switch the call to action to the 14-day trial when signup and billing work
+- Hosted-version requirements: invite-code signup, Polar billing ($3.99/mo or $39/yr, 14-day Polar trial with card, no free tier), lock on lapse or failed renewal, delete data 30 days after the lock, 7-day refund on the first charge, email sending, scheduled backups, and a support channel. Plan: `scratch/hosting-plan.md`. Overlaps with the Platform items above (email verification, password reset, multi-tenant database). Several people already sign in on one account from different devices; separate logins per person stay in Platform
+- Landing page FAQ promises: a member can ask for a copy of their data (a manual export is fine, there is no export feature), and all data is deleted 30 days after the plan ends. The comparison grid and FAQ show "Save recipes from a link" as available, so recipe import must ship before launch
+- Landing page links: write the privacy, terms, and contact pages, then set their URLs in `landing/src/config.ts` (the footer hides each link until its URL is set). Set `site` in `landing/astro.config.mjs` once the domain is chosen (enables canonical URLs and a sitemap). Set `waitlistEndpoint` in the same config file once the waitlist backend exists
