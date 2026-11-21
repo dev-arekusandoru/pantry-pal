@@ -108,7 +108,11 @@ describe("signup", () => {
     const app = makeAuthApp({ signupOpen: false });
 
     const anonymous = await app.request("GET", "/auth/session");
-    expect(anonymous.body).toEqual({ authenticated: false, signupOpen: false });
+    expect(anonymous.body).toEqual({
+      authenticated: false,
+      signupOpen: false,
+      features: { email: false, billing: false },
+    });
 
     const response = await signup(app);
     expect(response.status).toBe(403);
@@ -210,6 +214,7 @@ describe("session lifecycle", () => {
     expect((await app.request("GET", "/auth/session", { cookie })).body).toEqual({
       authenticated: false,
       signupOpen: true,
+      features: { email: false, billing: false },
     });
   });
 

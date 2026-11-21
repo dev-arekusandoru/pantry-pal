@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Link, Outlet, useMatches } from "@tanstack/react-router";
 import { Icon, Pal, cx, emojiSrc } from "../ui";
+import { AccountBanners } from "./AccountBanners";
 import styles from "./Shell.module.css";
 import { TABS, type TabId } from "./tabs";
 
@@ -50,6 +51,7 @@ export function Shell() {
         </div>
       </nav>
       <main className={styles.main}>
+        <AccountBanners />
         <Outlet />
       </main>
     </div>

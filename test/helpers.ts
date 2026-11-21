@@ -1,3 +1,4 @@
+import type Database from "better-sqlite3";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { createApp } from "../src/api/app.js";
 import { createToken } from "../src/auth/tokens.js";
@@ -5,6 +6,7 @@ import type { AppEnv } from "../src/auth/middleware.js";
 import { makeCtx, type Ctx } from "../src/context.js";
 import { openDb, runMigrations, type Db } from "../src/db/client.js";
 import type { HouseholdSettings } from "../src/db/schema.js";
+import type { Hosted } from "../src/hosted.js";
 import { createHousehold, type Household } from "../src/services/households.js";
 import {
   createIngredient,
@@ -121,6 +123,7 @@ export interface AppResponse<T> {
 
 export interface AuthTestApp {
   db: Db;
+  sqlite: Database.Database;
   app: OpenAPIHono<AppEnv>;
   now: () => Date;
   request<T = unknown>(
@@ -135,15 +138,16 @@ export interface AuthTestApp {
  * {@link makeTestApp}, no household or token exists yet.
  */
 export function makeAuthApp(
-  options: { signupOpen?: boolean; now?: Date | (() => Date) } = {},
+  options: { signupOpen?: boolean; now?: Date | (() => Date); hosted?: Hosted } = {},
 ): AuthTestApp {
-  const { db } = openDb(":memory:");
+  const { db, sqlite } = openDb(":memory:");
   runMigrations(db);
   const now = clockFrom(options.now);
   const app = createApp({
     db,
     now,
     ...(options.signupOpen === undefined ? {} : { signupOpen: options.signupOpen }),
+    ...(options.hosted === undefined ? {} : { hosted: options.hosted }),
   });
 
   async function request<T = unknown>(
@@ -171,7 +175,7 @@ export function makeAuthApp(
     return { status: response.status, body: parsed as T, headers: response.headers };
   }
 
-  return { db, app, now, request };
+  return { db, sqlite, app, now, request };
 }
 
 /** The `name=value` pair from a response's `Set-Cookie` header. */

@@ -1,10 +1,13 @@
 import { OpenAPIHono, type Hook } from "@hono/zod-openapi";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { createAccessGate } from "../access.js";
 import { createAuthMiddleware, type AppEnv } from "../auth/middleware.js";
 import { registerAuthRoutes } from "../auth/routes.js";
 import { SESSION_COOKIE_NAME } from "../auth/session.js";
+import { registerBillingRoutes } from "../billing/routes.js";
 import type { Db } from "../db/client.js";
+import { accessPolicy, SELF_HOST, type Hosted } from "../hosted.js";
 import { isAppError } from "../lib/errors.js";
 import { mountMcp as defaultMountMcp, type McpDeps } from "../mcp/mount.js";
 import { routeRegistrars } from "./routes/index.js";
@@ -27,6 +30,8 @@ export interface CreateAppOptions {
   mountMcp?: (app: App, deps: McpDeps) => void;
   /** Whether `POST /auth/signup` accepts new accounts. Default true. */
   signupOpen?: boolean;
+  /** Email and billing services of the hosted version. Omit for a self-hosted instance (no paywall, no verification). */
+  hosted?: Hosted;
   /** Directory of the built web app to serve at `/` (SPA fallback). Omit to serve none. */
   webDir?: string;
 }
@@ -54,6 +59,9 @@ export function createApp(options: CreateAppOptions): App {
   const { db } = options;
   const now = options.now ?? (() => new Date());
   const mountMcp = options.mountMcp ?? defaultMountMcp;
+  const hosted = options.hosted ?? SELF_HOST;
+  const policy = accessPolicy(hosted);
+  const gated = policy.emailOn || policy.billingOn;
 
   const app = new OpenAPIHono<AppEnv>({ defaultHook });
 
@@ -75,6 +83,12 @@ export function createApp(options: CreateAppOptions): App {
   const auth = createAuthMiddleware(db, now);
   app.use("/api/v1", auth);
   app.use("/api/v1/*", auth);
+  // Hosted: a locked household (no plan, or unverified email past the grace period) gets 402.
+  if (gated) {
+    const gate = createAccessGate(db, policy, now);
+    app.use("/api/v1", gate);
+    app.use("/api/v1/*", gate);
+  }
   app.route("/api/v1", api);
 
   // Account endpoints. Live outside /api/v1 because they must stay public.
@@ -82,12 +96,19 @@ export function createApp(options: CreateAppOptions): App {
     db,
     now,
     signupOpen: options.signupOpen ?? true,
+    hosted,
   });
+  registerBillingRoutes(app, { db, now, hosted });
 
   // MCP transport shares the same service layer but accepts bearer tokens only.
   const mcpAuth = createAuthMiddleware(db, now, { allowSession: false });
   app.use("/mcp", mcpAuth);
   app.use("/mcp/*", mcpAuth);
+  if (gated) {
+    const gate = createAccessGate(db, policy, now);
+    app.use("/mcp", gate);
+    app.use("/mcp/*", gate);
+  }
   mountMcp(app, { db, now });
 
   // Public endpoints.

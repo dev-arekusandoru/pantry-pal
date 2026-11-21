@@ -1,7 +1,10 @@
 import { serve } from "@hono/node-server";
 import { createApp } from "./api/app.js";
 import { defaultWebDir, hasWebApp } from "./api/web.js";
+import { startLifecycleJob } from "./billing/lifecycle.js";
+import { ConfigError, loadHostedConfig } from "./config.js";
 import { openDb, runMigrations } from "./db/client.js";
+import { createHosted } from "./hosted.js";
 import { titleCaseIngredientNames } from "./services/ingredients.js";
 import { migrateLegacyUnits } from "./services/legacyUnits.js";
 import { backfillNutritionMatches } from "./services/nutrition.js";
@@ -15,6 +18,16 @@ const port = Number.isFinite(parsedPort) ? parsedPort : DEFAULT_PORT;
 const signupOpen = (process.env.PANTRYPAL_SIGNUP ?? "open").trim().toLowerCase() !== "closed";
 const webDir = defaultWebDir();
 const serveWeb = hasWebApp(webDir);
+
+let hostedConfig: ReturnType<typeof loadHostedConfig>;
+try {
+  hostedConfig = loadHostedConfig();
+} catch (error) {
+  if (!(error instanceof ConfigError)) throw error;
+  console.error(`Configuration error: ${error.message}`);
+  process.exit(1);
+}
+const hosted = createHosted(hostedConfig);
 
 const { db, sqlite } = openDb(dbPath);
 runMigrations(db);
@@ -37,6 +50,7 @@ if (units.migrated) {
 const app = createApp({
   db,
   signupOpen,
+  hosted,
   ...(serveWeb ? { webDir } : {}),
 });
 
@@ -44,6 +58,9 @@ console.log(
   signupOpen
     ? "Signup is open: anyone who can reach this instance can create an account and household."
     : "Signup is closed: existing accounts can sign in. Create accounts with `pantrypal account create`.",
+);
+console.log(
+  `Email: ${hosted.mailer ? "on" : "off"}. Billing: ${hosted.billing ? `Polar (${hostedConfig.polar?.server})` : "off"}.`,
 );
 if (serveWeb) {
   console.log(`Serving web app from ${webDir}`);
@@ -56,10 +73,17 @@ const server = serve({ fetch: app.fetch, port, hostname }, (info) => {
   console.log(`Database: ${dbPath}`);
 });
 
+// Billing on: lock and delete households whose plan ended (at startup, then hourly).
+const stopLifecycle =
+  hosted.billing !== null && hosted.mailer !== null && hosted.publicUrl !== null
+    ? startLifecycleJob({ db, billing: hosted.billing, mailer: hosted.mailer, publicUrl: hosted.publicUrl })
+    : () => {};
+
 let shuttingDown = false;
 function shutdown(signal: string): void {
   if (shuttingDown) return;
   shuttingDown = true;
+  stopLifecycle();
   console.log(`Received ${signal}, shutting down…`);
   const force = setTimeout(() => {
     console.error("Shutdown timed out; exiting.");

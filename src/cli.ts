@@ -1,7 +1,23 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
-import { createAccount, getAccountByEmail, listAccounts, normalizeEmail, resetPassword } from "./auth/accounts.js";
+import {
+  createAccount,
+  getAccountByEmail,
+  listAccounts,
+  markEmailVerified,
+  normalizeEmail,
+  resetPassword,
+} from "./auth/accounts.js";
 import { createToken, listTokens, revokeToken } from "./auth/tokens.js";
+import {
+  getBillingRow,
+  isEntitled,
+  listSubscriptions,
+  refreshLock,
+  setExempt,
+  summarizeBilling,
+} from "./billing/state.js";
+import { billingEnabled, emailEnabled } from "./config.js";
 import { makeCtx } from "./context.js";
 import { openDb, runMigrations, type Db } from "./db/client.js";
 import { households } from "./db/schema.js";
@@ -17,10 +33,13 @@ Usage:
   pantrypal account create --email <email> --household <name> [--password-stdin]
   pantrypal account create --email <email> --household-id <id> [--password-stdin]
   pantrypal account reset-password <email> [--password-stdin]
+  pantrypal account verify --email <email>
   pantrypal account list
   pantrypal token create --name <name> [--household-id <id> | --email <email>]
   pantrypal token list [--household-id <id> | --email <email>]
   pantrypal token revoke <token-id> [--household-id <id> | --email <email>]
+  pantrypal billing exempt [--off] [--household-id <id> | --email <email>]
+  pantrypal billing status [--household-id <id> | --email <email>]
   pantrypal seed <file.json> [--force] [--household-id <id> | --email <email>]
 
 Global options:
@@ -29,6 +48,11 @@ Global options:
 
 Passwords are read from the terminal unless --password-stdin is set, in which
 case the first line of standard input is used.
+
+Billing (hosted version): an exempt household never needs a plan and is never
+deleted. Run "billing exempt" for your own household before you turn billing on.
+"account verify" marks an email as verified without a link.
+Billing and email settings come from the environment (see .env.example).
 
 Household commands take --household-id or --email when the instance has more
 than one household. With exactly one, it is the default.
@@ -49,7 +73,7 @@ const VALUE_FLAGS: Record<string, true> = {
   household: true,
   "household-id": true,
 };
-const BOOLEAN_FLAGS: Record<string, true> = { force: true, "password-stdin": true };
+const BOOLEAN_FLAGS: Record<string, true> = { force: true, "password-stdin": true, off: true };
 
 function parseArgs(argv: string[]): ParsedArgs {
   const positionals: string[] = [];
@@ -211,12 +235,15 @@ async function runAccountCreate(db: Db, flags: Record<string, string>): Promise<
   }
 
   const password = await readNewPassword(flags);
+  // Email off: nothing to verify. Email on: verify with `account verify` or the emailed link.
+  const emailVerified = !emailEnabled();
   const { account, household } = createAccount(
     db,
     email,
     password,
-    householdId === undefined ? { householdName } : { householdId },
+    householdId === undefined ? { householdName, emailVerified } : { householdId, emailVerified },
   );
+  if (billingEnabled()) refreshLock(db, household.id, new Date());
   console.log(`Created account ${account.email} for household ${household.name}.`);
   print({
     account: { id: account.id, email: account.email },
@@ -238,6 +265,48 @@ async function runAccountResetPassword(
   const password = await readNewPassword(flags);
   const account = resetPassword(db, email, password);
   console.log(`Password reset for ${account.email}. Existing sessions were ended.`);
+}
+
+function runAccountVerify(db: Db, flags: Record<string, string>): void {
+  const email = flags.email;
+  if (email === undefined) {
+    throw new AppError("validation", "Missing required option: --email <email>");
+  }
+  const account = getAccountByEmail(db, email);
+  if (!account) throw new AppError("not_found", `Account not found: ${normalizeEmail(email)}`);
+  markEmailVerified(db, account.id, new Date());
+  console.log(`Marked ${account.email} as verified.`);
+}
+
+function runBillingExempt(db: Db, flags: Record<string, string>): void {
+  const household = selectHousehold(db, flags);
+  const now = new Date();
+  const exempt = flags.off !== "true";
+  setExempt(db, household.id, exempt, now);
+  // Billing on: clear or start the lock right away instead of waiting for the hourly job.
+  if (billingEnabled()) refreshLock(db, household.id, now);
+  console.log(
+    exempt
+      ? `Household ${household.name} is exempt. It never needs a plan and is never deleted.`
+      : `Household ${household.name} is no longer exempt.`,
+  );
+}
+
+function runBillingStatus(db: Db, flags: Record<string, string>): void {
+  const household = selectHousehold(db, flags);
+  const now = new Date();
+  const row = getBillingRow(db, household.id);
+  print({
+    household: { id: household.id, name: household.name },
+    billingEnabled: billingEnabled(),
+    entitled: isEntitled(db, household.id, now),
+    summary: summarizeBilling(db, household.id, now),
+    polarCustomerId: row?.polarCustomerId ?? null,
+    lockedAt: row?.lockedAt ?? null,
+    warnedDay23At: row?.warnedDay23At ?? null,
+    warnedDay29At: row?.warnedDay29At ?? null,
+    subscriptions: listSubscriptions(db, household.id),
+  });
 }
 
 function runAccountList(db: Db): void {
@@ -340,6 +409,7 @@ async function main(argv: string[]): Promise<void> {
       case "account":
         if (second === "create") return await runAccountCreate(db, flags);
         if (second === "reset-password") return await runAccountResetPassword(db, rest[0], flags);
+        if (second === "verify") return runAccountVerify(db, flags);
         if (second === "list") return runAccountList(db);
         throw new AppError("validation", `Unknown account command: ${second ?? "(none)"}`);
       case "token":
@@ -347,6 +417,10 @@ async function main(argv: string[]): Promise<void> {
         if (second === "list") return runTokenList(db, flags);
         if (second === "revoke") return runTokenRevoke(db, rest[0], flags);
         throw new AppError("validation", `Unknown token command: ${second ?? "(none)"}`);
+      case "billing":
+        if (second === "exempt") return runBillingExempt(db, flags);
+        if (second === "status") return runBillingStatus(db, flags);
+        throw new AppError("validation", `Unknown billing command: ${second ?? "(none)"}`);
       case "seed":
         return await runSeed(db, second, flags);
       default:

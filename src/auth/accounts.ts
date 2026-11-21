@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { accounts, households } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
@@ -29,6 +29,7 @@ export interface AccountSummary {
   householdId: string;
   householdName: string;
   createdAt: string;
+  emailVerifiedAt: string | null;
 }
 
 export function listAccounts(db: Db): AccountSummary[] {
@@ -39,6 +40,7 @@ export function listAccounts(db: Db): AccountSummary[] {
       householdId: households.id,
       householdName: households.name,
       createdAt: accounts.createdAt,
+      emailVerifiedAt: accounts.emailVerifiedAt,
     })
     .from(accounts)
     .innerJoin(households, eq(households.id, accounts.householdId))
@@ -51,6 +53,10 @@ export interface CreateAccountInput {
   householdName?: string;
   /** …or attach the account to an existing one. */
   householdId?: string;
+  /** Mark the email verified at creation (instances with email off have nothing to verify). Default: unverified. */
+  emailVerified?: boolean;
+  /** Creation time; defaults to the database clock. Tests and signup pass the app clock. */
+  now?: Date;
 }
 
 export interface CreatedAccount {
@@ -92,6 +98,8 @@ export function createAccount(
         email: normalized,
         passwordHash: hashPassword(password),
         householdId: household.id,
+        ...(input.now === undefined ? {} : { createdAt: input.now.toISOString() }),
+        emailVerifiedAt: input.emailVerified === true ? (input.now ?? new Date()).toISOString() : null,
       })
       .returning()
       .get();
@@ -119,4 +127,12 @@ export function resetPassword(db: Db, email: string, password: string): Account 
     .get();
   deleteAccountSessions(db, account.id);
   return updated;
+}
+
+/** Mark the account's email as verified (keeps an earlier verification time). */
+export function markEmailVerified(db: Db, accountId: string, now: Date): void {
+  db.update(accounts)
+    .set({ emailVerifiedAt: now.toISOString() })
+    .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)))
+    .run();
 }

@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { Ctx } from "../context.js";
 import type { Db } from "../db/client.js";
-import { householdMembers, households, type HouseholdSettings } from "../db/schema.js";
+import { cookEvents, householdMembers, households, recipes, type HouseholdSettings } from "../db/schema.js";
 import { AppError } from "../lib/errors.js";
 import { newId } from "../lib/ids.js";
 import { nowIso } from "../lib/time.js";
@@ -184,4 +184,20 @@ export function deleteMember(ctx: Ctx, id: string): { deleted: true; id: string 
     )
     .run();
   return { deleted: true as const, id: existing.id };
+}
+
+/**
+ * Delete a household and everything it owns. Every household-scoped table cascades
+ * from `household`, but three foreign keys are `RESTRICT` (cook event -> recipe,
+ * recipe ingredient -> ingredient, alternative -> ingredient) and SQLite checks those
+ * at once, so the rows they protect go first. test/hosted-lifecycle.test.ts deletes a
+ * fully seeded household to catch any new restriction.
+ */
+export function deleteHousehold(db: Db, householdId: string): void {
+  db.transaction((tx) => {
+    const handle = tx as unknown as Db;
+    handle.delete(cookEvents).where(eq(cookEvents.householdId, householdId)).run();
+    handle.delete(recipes).where(eq(recipes.householdId, householdId)).run();
+    handle.delete(households).where(eq(households.id, householdId)).run();
+  });
 }

@@ -2,63 +2,19 @@ import { bodyLimit } from "hono/body-limit";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import type { OpenAPIHono } from "@hono/zod-openapi";
-import { authenticate, createAccount } from "./accounts.js";
+import { accessPolicy, type Hosted, SELF_HOST } from "../hosted.js";
+import { computeAccess, verifyBy } from "../access.js";
+import { refreshLock } from "../billing/state.js";
+import { authenticate, createAccount, getAccount } from "./accounts.js";
+import { registerEmailRoutes } from "./emailRoutes.js";
+import { crossOriginBlock, noStore, rateLimited, readJson, validation } from "./http.js";
+import { sendVerificationLink } from "./mail.js";
 import type { AppEnv } from "./middleware.js";
-import { clientAddress, isSameOriginRequest } from "./middleware.js";
+import { clientAddress } from "./middleware.js";
 import { createSession, deleteSession, resolveSession, SESSION_COOKIE_NAME } from "./session.js";
+import { Throttle } from "./throttle.js";
 import type { Db } from "../db/client.js";
 import { getHousehold } from "../services/households.js";
-
-/** Signup/login attempts allowed per peer inside one window. */
-const AUTH_LIMIT = 10;
-const AUTH_WINDOW_MS = 15 * 60_000;
-const MAX_THROTTLE_ENTRIES = 2048;
-
-interface ThrottleWindow {
-  count: number;
-  resetAt: number;
-}
-
-/**
- * Bounded in-memory fixed-window throttle for signup and login.
- *
- * Keys are socket peer addresses, never `X-Forwarded-For` or similar headers a
- * client can spoof.
- *
- * shortcut: the counters live in this process only, so a restart clears them and
- * several server processes do not share a limit. Move to a shared store when the
- * app runs more than one process.
- */
-class Throttle {
-  private readonly buckets = new Map<string, ThrottleWindow>();
-
-  retryAfterSeconds(key: string, nowMs: number = Date.now()): number | null {
-    const bucket = this.buckets.get(key);
-    if (bucket === undefined || bucket.count < AUTH_LIMIT) return null;
-    return bucket.resetAt > nowMs ? Math.max(1, Math.ceil((bucket.resetAt - nowMs) / 1000)) : null;
-  }
-
-  record(key: string, nowMs: number = Date.now()): void {
-    let bucket = this.buckets.get(key);
-    if (bucket === undefined) {
-      if (this.buckets.size >= MAX_THROTTLE_ENTRIES) {
-        const oldest = this.buckets.keys().next();
-        if (!oldest.done) this.buckets.delete(oldest.value);
-      }
-      bucket = { count: 0, resetAt: nowMs + AUTH_WINDOW_MS };
-      this.buckets.set(key, bucket);
-    }
-    if (bucket.resetAt <= nowMs) {
-      bucket.count = 0;
-      bucket.resetAt = nowMs + AUTH_WINDOW_MS;
-    }
-    bucket.count += 1;
-  }
-
-  reset(key: string): void {
-    this.buckets.delete(key);
-  }
-}
 
 export interface AuthRouteOptions {
   db: Db;
@@ -68,27 +24,21 @@ export interface AuthRouteOptions {
   now: () => Date;
   /** Peer address for throttling; defaults to the socket address. */
   clientKey?: (c: Context<AppEnv>) => string;
+  /** Email and billing services; omit for a self-hosted instance. */
+  hosted?: Hosted;
+}
+
+/** What the email routes share with the core account routes. */
+export interface AuthRouteContext {
+  db: Db;
+  now: () => Date;
+  hosted: Hosted;
+  throttle: Throttle;
+  clientKey: (c: Context<AppEnv>) => string;
+  startSession: (c: Context<AppEnv>, accountId: string) => void;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function noStore(c: { header(name: string, value: string): void }): void {
-  c.header("Cache-Control", "no-store");
-  c.header("Pragma", "no-cache");
-}
-
-async function readJson(c: Context<AppEnv>): Promise<Record<string, unknown> | null> {
-  try {
-    const body: unknown = await c.req.json();
-    return typeof body === "object" && body !== null ? (body as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
-
-function validation(c: Context<AppEnv>, message: string) {
-  return c.json({ error: { code: "validation" as const, message } }, 400);
-}
 
 /**
  * Register the account endpoints on the root app (paths `/auth/*`).
@@ -96,10 +46,13 @@ function validation(c: Context<AppEnv>, message: string) {
  * - `POST /auth/signup` creates an account, its household and a session.
  * - `POST /auth/login` signs in an existing account.
  * - `POST /auth/logout` deletes the session row and clears the cookie.
- * - `GET /auth/session` reports the signed-in account or whether signup is open.
+ * - `GET /auth/session` reports the signed-in account, its access and billing state.
+ * - Email verification and password reset: see `emailRoutes.ts`.
  */
 export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteOptions): void {
   const { db, now } = options;
+  const hosted = options.hosted ?? SELF_HOST;
+  const policy = accessPolicy(hosted);
   const throttle = new Throttle();
   const clientKey = (c: Context<AppEnv>) => options.clientKey?.(c) ?? clientAddress(c);
 
@@ -130,18 +83,31 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
     }),
   );
 
-  app.get("/auth/session", (c) => {
+  const features = { email: policy.emailOn, billing: policy.billingOn };
+
+  app.get("/auth/session", async (c) => {
     noStore(c);
     const value = getCookie(c, SESSION_COOKIE_NAME);
     const session = value === undefined ? null : resolveSession(db, value, now());
     if (session === null) {
-      return c.json({ authenticated: false as const, signupOpen: options.signupOpen }, 200);
+      return c.json({ authenticated: false as const, signupOpen: options.signupOpen, features }, 200);
     }
+
+    const account = getAccount(db, session.account.id);
+    const deadline = verifyBy(policy, account);
+    const billing = hosted.billing === null ? null : await hosted.billing.summary(db, session.household.id);
     return c.json(
       {
         authenticated: true as const,
-        account: { email: session.account.email },
+        account: {
+          email: account.email,
+          emailVerified: account.emailVerifiedAt !== null,
+          verifyBy: deadline === null ? null : deadline.toISOString(),
+        },
         household: session.household,
+        features,
+        access: computeAccess(db, policy, session.household.id, now()),
+        billing,
       },
       200,
     );
@@ -149,25 +115,15 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
 
   app.post("/auth/signup", async (c) => {
     noStore(c);
-    if (!isSameOriginRequest(c)) {
-      return c.json(
-        { error: { code: "forbidden" as const, message: "Cross-origin request blocked" } },
-        403,
-      );
-    }
+    const blocked = crossOriginBlock(c);
+    if (blocked) return blocked;
     if (!options.signupOpen) {
       return c.json({ error: { code: "forbidden" as const, message: "Signup is closed" } }, 403);
     }
 
     const key = clientKey(c);
     const retryAfter = throttle.retryAfterSeconds(key);
-    if (retryAfter !== null) {
-      c.header("Retry-After", String(retryAfter));
-      return c.json(
-        { error: { code: "rate_limited" as const, message: "Too many attempts. Try again later." } },
-        429,
-      );
-    }
+    if (retryAfter !== null) return rateLimited(c, retryAfter);
     throttle.record(key);
 
     const body = await readJson(c);
@@ -183,7 +139,16 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
     if (householdName === "") return validation(c, "Household name is required");
 
     try {
-      const { account, household } = createAccount(db, email, password, { householdName });
+      const created = now();
+      const { account, household } = createAccount(db, email, password, {
+        householdName,
+        // With email off there is nothing to verify.
+        emailVerified: !policy.emailOn,
+        now: created,
+      });
+      // Billing on: the household starts locked until a plan starts.
+      if (hosted.billing !== null) refreshLock(db, household.id, created);
+      sendVerificationLink(db, hosted, account, created);
       startSession(c, account.id);
       return c.json(
         { account: { email: account.email }, household: { id: household.id, name: household.name } },
@@ -202,22 +167,12 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
 
   app.post("/auth/login", async (c) => {
     noStore(c);
-    if (!isSameOriginRequest(c)) {
-      return c.json(
-        { error: { code: "forbidden" as const, message: "Cross-origin request blocked" } },
-        403,
-      );
-    }
+    const blocked = crossOriginBlock(c);
+    if (blocked) return blocked;
 
     const key = clientKey(c);
     const retryAfter = throttle.retryAfterSeconds(key);
-    if (retryAfter !== null) {
-      c.header("Retry-After", String(retryAfter));
-      return c.json(
-        { error: { code: "rate_limited" as const, message: "Too many attempts. Try again later." } },
-        429,
-      );
-    }
+    if (retryAfter !== null) return rateLimited(c, retryAfter);
 
     const body = await readJson(c);
     if (body === null) return validation(c, "Expected a JSON object");
@@ -248,15 +203,13 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
 
   app.post("/auth/logout", (c) => {
     noStore(c);
-    if (!isSameOriginRequest(c)) {
-      return c.json(
-        { error: { code: "forbidden" as const, message: "Cross-origin request blocked" } },
-        403,
-      );
-    }
+    const blocked = crossOriginBlock(c);
+    if (blocked) return blocked;
     const value = getCookie(c, SESSION_COOKIE_NAME);
     if (value !== undefined) deleteSession(db, value);
     deleteCookie(c, SESSION_COOKIE_NAME, cookieOptions(0));
     return c.body(null, 204);
   });
+
+  registerEmailRoutes(app, { db, now, hosted, throttle, clientKey, startSession });
 }

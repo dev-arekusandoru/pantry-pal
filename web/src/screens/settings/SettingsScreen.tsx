@@ -3,7 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { Label, Separator } from "radix-ui";
 import { errorMessage } from "@/api";
 import { useTheme, type ThemePreference } from "@/app/theme";
-import { LogoutButton } from "@/app/BrowserSession";
+import { LogoutButton } from "@/app/LogoutButton";
+import { PlanSection } from "./PlanSection";
 import {
   Button,
   Card,
@@ -132,6 +133,8 @@ export function SettingsScreen() {
           </h2>
           <NameForm key={name} name={name} saving={update.isPending} onSave={(next) => update.mutate({ name: next })} />
         </Card>
+
+        <PlanSection />
 
         <Card as="section" aria-labelledby="settings-people" className={styles.section}>
           <h2 id="settings-people" className={styles.heading}>

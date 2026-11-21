@@ -1,24 +1,35 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { toApiError } from "../api/errors";
-import { Button, Emoji } from "../ui";
+import { useEffect, useState, type ReactNode } from "react";
+import { Button } from "../ui";
 import { queryClient } from "./queryClient";
+import {
+  AuthForm,
+  CheckoutReturn,
+  EmailLockScreen,
+  PaywallScreen,
+  ResetPasswordPage,
+  VerifyEmailPage,
+} from "./AccountScreens";
+import { SessionContext, UNREACHABLE, readSession, type Session } from "./session";
 import styles from "./BrowserSession.module.css";
 
-type Session =
-  | { authenticated: true; account: { email: string }; household: { id: string; name: string } }
-  | { authenticated: false; signupOpen: boolean };
+type EmailLink = { kind: "verify" | "reset"; token: string };
 
-async function readSession(signal?: AbortSignal): Promise<Session> {
-  const response = await fetch("/auth/session", { cache: "no-store", signal });
-  if (!response.ok) throw new Error("Can't reach Rakumi. Try again.");
-  return response.json() as Promise<Session>;
+/** The `/verify-email?token=` or `/reset-password?token=` page the user opened from an email. */
+function readEmailLink(): EmailLink | null {
+  const { pathname, search } = window.location;
+  const kind = pathname === "/verify-email" ? "verify" : pathname === "/reset-password" ? "reset" : null;
+  const token = new URLSearchParams(search).get("token");
+  return kind && token ? { kind, token } : null;
 }
 
-/** The server's `{ error: { code, message } }` message, or a shape-free fallback. */
-async function failureMessage(response: Response, fallback: string): Promise<string> {
-  const body: unknown = await response.json().catch(() => null);
-  const error = toApiError(response.status, body);
-  return error.code === "unknown" ? fallback : error.message;
+/** Rewrite the address bar and tell the router, which only listens for `popstate`. */
+function replaceUrl(url: string) {
+  window.history.replaceState(null, "", url);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function readCheckoutReturn(): boolean {
+  return new URLSearchParams(window.location.search).has("checkout") && !readEmailLink();
 }
 
 /**
@@ -29,6 +40,13 @@ export function BrowserSession({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session>();
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [link, setLink] = useState(readEmailLink);
+  const [checkout, setCheckout] = useState(readCheckoutReturn);
+
+  // The token is single use and secret: keep it out of history and the address bar.
+  useEffect(() => {
+    if (link) window.history.replaceState(null, "", "/");
+  }, [link]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -41,7 +59,7 @@ export function BrowserSession({ children }: { children: ReactNode }) {
           void queryClient.cancelQueries().then(() => queryClient.clear());
         }
       }).catch(() => {
-        if (!controller.signal.aborted) setError("Can't reach Rakumi. Try again.");
+        if (!controller.signal.aborted) setError(UNREACHABLE);
       });
     };
     const unauthorized = () => {
@@ -51,10 +69,13 @@ export function BrowserSession({ children }: { children: ReactNode }) {
     };
     check();
     window.addEventListener("pantrypal:unauthorized", unauthorized);
+    // A 402 means the lock changed. Re-read quietly; the lock screen replaces the app.
+    window.addEventListener("pantrypal:payment-required", check);
     window.addEventListener("focus", check);
     return () => {
       controller.abort();
       window.removeEventListener("pantrypal:unauthorized", unauthorized);
+      window.removeEventListener("pantrypal:payment-required", check);
       window.removeEventListener("focus", check);
     };
   }, [attempt]);
@@ -63,6 +84,25 @@ export function BrowserSession({ children }: { children: ReactNode }) {
     setSession(undefined);
     setAttempt((n) => n + 1);
   };
+  const refresh = () => setAttempt((n) => n + 1);
+  const leaveLink = () => {
+    setLink(null);
+    replaceUrl("/");
+    reread();
+  };
+  const finishCheckout = (next: Session) => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("checkout");
+    // Polar appends a customer portal token; keep it out of history and screenshots.
+    params.delete("customer_session_token");
+    const query = params.toString();
+    replaceUrl(window.location.pathname + (query ? `?${query}` : ""));
+    setCheckout(false);
+    setSession(next);
+  };
+
+  if (link?.kind === "verify") return <VerifyEmailPage token={link.token} onContinue={leaveLink} />;
+  if (link?.kind === "reset") return <ResetPasswordPage token={link.token} onDone={leaveLink} onCancel={leaveLink} />;
 
   if (!session) {
     return <main className={styles.page}><div className={styles.form}>
@@ -72,99 +112,13 @@ export function BrowserSession({ children }: { children: ReactNode }) {
     </div></main>;
   }
   if (!session.authenticated) {
-    return <AuthForm signupOpen={session.signupOpen} onAuthenticated={reread} />;
+    return <AuthForm signupOpen={session.signupOpen} emailOn={session.features.email} onAuthenticated={reread} />;
   }
-  return <>{children}</>;
-}
-
-function AuthForm({ signupOpen, onAuthenticated }: { signupOpen: boolean; onAuthenticated: () => void }) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [householdName, setHouseholdName] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const signup = mode === "signup";
-  const filled = email.length > 0
-    && (signup ? password.length >= 8 && householdName.trim().length > 0 : password.length > 0);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (busy || !filled) return;
-    setBusy(true);
-    setError("");
-    try {
-      const response = await fetch(signup ? "/auth/signup" : "/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signup ? { email, password, householdName: householdName.trim() } : { email, password }),
-      });
-      if (!response.ok) {
-        setError(await failureMessage(response, signup
-          ? "Couldn't create your account. Try again."
-          : "Couldn't log in. Try again."));
-        return;
-      }
-      onAuthenticated();
-    } catch {
-      setError("Can't reach Rakumi. Try again.");
-    } finally {
-      setBusy(false);
-    }
+  if (checkout) return <CheckoutReturn onDone={finishCheckout} />;
+  if (session.access.status === "locked") {
+    return session.access.reason === "email_unverified"
+      ? <EmailLockScreen email={session.account.email} />
+      : <PaywallScreen session={session} onRefresh={refresh} />;
   }
-
-  return <main className={styles.page}>
-    <form className={styles.form} onSubmit={(event) => void submit(event)}>
-      <Emoji code="relish" size={72} />
-      <h1 className={styles.title}>{signup ? "Start your pantry." : "Your pantry awaits."}</h1>
-      <p className={styles.hint}>{signup
-        ? "Create an account for your household."
-        : "Log in with your email to open Rakumi."}</p>
-      <label className={styles.label} htmlFor="auth-email">Email</label>
-      <input id="auth-email" className={styles.input} type="email" autoComplete="email" autoFocus required
-        value={email} onChange={(event) => setEmail(event.target.value)}
-        aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
-      <label className={styles.label} htmlFor="auth-password">Password</label>
-      <input id="auth-password" className={styles.input} type="password" required
-        autoComplete={signup ? "new-password" : "current-password"} minLength={signup ? 8 : undefined}
-        value={password} onChange={(event) => setPassword(event.target.value)}
-        aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
-      {signup && <>
-        <label className={styles.label} htmlFor="auth-household">Household name</label>
-        <input id="auth-household" className={styles.input} type="text" autoComplete="organization" required
-          value={householdName} onChange={(event) => setHouseholdName(event.target.value)}
-          aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} />
-      </>}
-      {error && <p id="auth-error" className={styles.error} role="alert">{error}</p>}
-      <Button type="submit" variant="primary" loading={busy} disabled={!filled || busy}>
-        {signup ? "Create account" : "Log in"}
-      </Button>
-      {signup && <p className={styles.hint}>Use at least 8 characters for your password.</p>}
-      <p className={styles.hint}>Stay logged in for 30 days on this device.</p>
-      {signupOpen && <Button variant="ghost" onClick={() => { setMode(signup ? "login" : "signup"); setError(""); }}>
-        {signup ? "I already have an account" : "New here? Create an account"}
-      </Button>}
-    </form>
-  </main>;
-}
-
-export function LogoutButton() {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  async function logout() {
-    setBusy(true);
-    setError("");
-    try {
-      const response = await fetch("/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" } });
-      if (!response.ok) throw new Error();
-      // No session any more: the listener in BrowserSession clears the cache and
-      // re-reads /auth/session, which swaps the app for the login form.
-      window.dispatchEvent(new Event("pantrypal:unauthorized"));
-    } catch {
-      setError("Couldn't log out. Check your connection and try again.");
-      setBusy(false);
-    }
-  }
-  return <div><Button onClick={() => void logout()} loading={busy} disabled={busy}>Log out</Button>
-    {error && <p role="alert">{error}</p>}</div>;
+  return <SessionContext.Provider value={{ session, refresh }}>{children}</SessionContext.Provider>;
 }

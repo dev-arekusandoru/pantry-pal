@@ -187,6 +187,8 @@ export const accounts = sqliteTable(
       .notNull()
       .references(() => households.id, { onDelete: "cascade" }),
     createdAt: createdAt(),
+    /** When the email was confirmed; null while unverified. Rows that existed before verification shipped are backfilled with `created_at`. */
+    emailVerifiedAt: text("email_verified_at"),
   },
   (t) => [
     uniqueIndex("account_email_uq").on(t.email),
@@ -207,6 +209,76 @@ export const sessions = sqliteTable(
   },
   (t) => [index("session_account_idx").on(t.accountId)],
 );
+
+export const EMAIL_TOKEN_PURPOSES = ["verify", "reset"] as const;
+export type EmailTokenPurpose = (typeof EMAIL_TOKEN_PURPOSES)[number];
+
+/** Single-use link token for email verification or password reset. Only the SHA-256 hex of the token is stored. */
+export const emailTokens = sqliteTable(
+  "email_token",
+  {
+    id: id(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    purpose: text("purpose", { enum: EMAIL_TOKEN_PURPOSES }).notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: text("expires_at").notNull(),
+    usedAt: text("used_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("email_token_hash_uq").on(t.tokenHash),
+    index("email_token_account_idx").on(t.accountId, t.purpose),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Hosted billing (rows exist only when billing is on, plus exemptions set with the CLI)
+// ---------------------------------------------------------------------------
+
+/** One row per household: Polar customer link, exemption and the lock/deletion clock. */
+export const householdBilling = sqliteTable("household_billing", {
+  householdId: text("household_id")
+    .primaryKey()
+    .references(() => households.id, { onDelete: "cascade" }),
+  polarCustomerId: text("polar_customer_id"),
+  /** Exempt households never lock and are never deleted (the owner's own household). */
+  exempt: bool("exempt").notNull().default(false),
+  /** When the household lost (or never had) access; null while entitled. Starts the 30-day deletion clock. */
+  lockedAt: text("locked_at"),
+  /** When the day-23 and day-29 deletion warning emails were sent. */
+  warnedDay23At: text("warned_day23_at"),
+  warnedDay29At: text("warned_day29_at"),
+  updatedAt: updatedAt(),
+});
+
+/** Local copy of a Polar subscription, keyed by the Polar subscription id. */
+export const subscriptions = sqliteTable(
+  "subscription",
+  {
+    id: text("id").primaryKey(),
+    householdId: householdId(),
+    /** Polar status: trialing, active, past_due, canceled, unpaid, ... */
+    status: text("status").notNull(),
+    /** `month` or `year`; null for any other Polar interval. */
+    interval: text("interval"),
+    currentPeriodEnd: text("current_period_end"),
+    trialEnd: text("trial_end"),
+    cancelAtPeriodEnd: bool("cancel_at_period_end").notNull().default(false),
+    endsAt: text("ends_at"),
+    /** Polar's `modified_at` (or `created_at` when never modified). Older updates are ignored. */
+    polarModifiedAt: text("polar_modified_at").notNull(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("subscription_household_idx").on(t.householdId)],
+);
+
+/** Webhook event ids already handled (Polar redelivers). */
+export const billingEvents = sqliteTable("billing_event", {
+  id: text("id").primaryKey(),
+  receivedAt: text("received_at").notNull(),
+});
 
 // ---------------------------------------------------------------------------
 // Ingredients & units

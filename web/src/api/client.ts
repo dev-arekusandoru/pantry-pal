@@ -24,6 +24,10 @@ const trackedFetch: typeof fetch = async (input, init) => {
   if (res.status === 401 && typeof window !== "undefined") {
     window.dispatchEvent(new Event("pantrypal:unauthorized"));
   }
+  // Locked by billing or email: BrowserSession re-reads /auth/session and swaps in the lock screen.
+  if (res.status === 402 && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("pantrypal:payment-required"));
+  }
   connection.markReachable();
   return res;
 };
