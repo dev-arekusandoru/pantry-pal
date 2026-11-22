@@ -52,7 +52,7 @@ export const steps: Step[] = [
     title: "Your pantry keeps up",
     text: "Finish a recipe and your stock updates. Expiry dates keep you using things up in time.",
     image: pantry,
-    imageAlt: "Pantry tiles with amounts and expiry dates",
+    imageAlt: "Pantry tiles with amounts and plus and minus buttons",
     crop: "40% 20%",
     icon: milk,
     tab: "pantry",
