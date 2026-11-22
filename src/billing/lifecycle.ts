@@ -9,7 +9,7 @@ import { DAY_MS, LOCK_DELETE_DAYS, refreshLock } from "./state.js";
 
 export const FIRST_WARNING_DAY = 23;
 export const FINAL_WARNING_DAY = 29;
-const JOB_INTERVAL_MS = 60 * 60_000;
+const JOB_INTERVAL_MS = 24 * 60 * 60_000;
 
 export interface LifecycleDeps {
   db: Db;
@@ -73,7 +73,7 @@ export async function runLifecycle(deps: LifecycleDeps): Promise<LifecycleResult
       row.warnedDay29At !== null &&
       now.getTime() >= Date.parse(row.warnedDay29At) + DAY_MS
     ) {
-      // Polar first: if it fails the household stays, so the next hourly run retries.
+      // Polar first: if it fails the household stays, so the next daily run retries.
       // Deleting the customer cancels its subscriptions. That is safe: only locked,
       // non-exempt households reach this point, so they have no active plan.
       try {
@@ -113,7 +113,7 @@ export async function runLifecycle(deps: LifecycleDeps): Promise<LifecycleResult
   return result;
 }
 
-/** Run the job now and then hourly. Returns a function that stops it. */
+/** Run the job now and then daily. Returns a function that stops it. */
 export function startLifecycleJob(deps: LifecycleDeps): () => void {
   let running = false;
   const tick = (): void => {

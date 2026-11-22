@@ -119,8 +119,8 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live
 - [x] Polar billing: $3.99/mo or $39/yr, 14-day trial with card, no free tier (sandbox tested)
   - [ ] Switch call to action to the 14-day trial once signup and billing work
 - [x] Lock on lapse or failed renewal
-- [x] Delete data 30 days after the lock (hourly job, warning emails)
-- [x] Delete the Polar customer when a household is deleted (anonymized; retried hourly on failure)
+- [x] Delete data 30 days after the lock (daily job, warning emails)
+- [x] Delete the Polar customer when a household is deleted (anonymized; retried daily on failure)
 - [ ] 7-day refund on first charge
 - [x] Email sending: verification, password reset, deletion warnings
 - [ ] Manual test pass of the hosted flows (sandbox)

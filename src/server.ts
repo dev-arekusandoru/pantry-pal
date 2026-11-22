@@ -73,7 +73,7 @@ const server = serve({ fetch: app.fetch, port, hostname }, (info) => {
   console.log(`Database: ${dbPath}`);
 });
 
-// Billing on: lock and delete households whose plan ended (at startup, then hourly).
+// Billing on: lock and delete households whose plan ended (at startup, then daily).
 const stopLifecycle =
   hosted.billing !== null && hosted.mailer !== null && hosted.publicUrl !== null
     ? startLifecycleJob({ db, billing: hosted.billing, mailer: hosted.mailer, publicUrl: hosted.publicUrl })

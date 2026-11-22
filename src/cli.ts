@@ -283,7 +283,7 @@ function runBillingExempt(db: Db, flags: Record<string, string>): void {
   const now = new Date();
   const exempt = flags.off !== "true";
   setExempt(db, household.id, exempt, now);
-  // Billing on: clear or start the lock right away instead of waiting for the hourly job.
+  // Billing on: clear or start the lock right away instead of waiting for the daily job.
   if (billingEnabled()) refreshLock(db, household.id, now);
   console.log(
     exempt
