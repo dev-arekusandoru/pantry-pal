@@ -37,9 +37,15 @@ function Notice({ message, ok }: { message: string; ok: boolean }) {
 
 type Mode = "login" | "signup" | "forgot";
 
-export function AuthForm({ signupOpen, emailOn, onAuthenticated }: {
+/** Legal pages of the hosted service, on the landing site. Shown only when billing is on. */
+const TERMS_URL = "https://rakumi.app/terms";
+const PRIVACY_URL = "https://rakumi.app/privacy";
+
+export function AuthForm({ signupOpen, emailOn, billingOn, onAuthenticated }: {
   signupOpen: boolean;
   emailOn: boolean;
+  /** Hosted service: sign-up shows the Terms and Privacy Policy consent line. */
+  billingOn: boolean;
   onAuthenticated: () => void;
 }) {
   const [mode, setMode] = useState<Mode>("login");
@@ -124,6 +130,10 @@ export function AuthForm({ signupOpen, emailOn, onAuthenticated }: {
         {forgot ? "Send link" : signup ? "Create account" : "Log in"}
       </Button>
       {signup && <p className={styles.hint}>Use at least 8 characters for your password.</p>}
+      {signup && billingOn && <p className={styles.hint}>
+        By creating an account, you agree to the <a href={TERMS_URL} target="_blank" rel="noreferrer">Terms of Service</a>
+        {" "}and <a href={PRIVACY_URL} target="_blank" rel="noreferrer">Privacy Policy</a>.
+      </p>}
       {mode === "login" && <p className={styles.hint}>Stay logged in for 30 days on this device.</p>}
       {mode === "login" && emailOn && <Button variant="ghost" onClick={() => switchMode("forgot")}>Forgot password?</Button>}
       {forgot && <Button variant="ghost" onClick={() => switchMode("login")}>Back to log in</Button>}

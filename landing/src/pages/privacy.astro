@@ -1,0 +1,140 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+import { site } from "../config";
+
+const mail = `mailto:${site.contactEmail}`;
+---
+
+<LegalLayout
+  title="Privacy Policy"
+  description={`What ${site.name} collects, why, who else processes it, and how to get it deleted.`}
+  updated={site.legalUpdated}
+>
+  <p>
+    This policy covers the hosted {site.name} service at <strong>app.rakumi.app</strong>, this website, and the
+    waitlist. {site.operator} runs {site.name} as an independent developer in Maryland, USA ("we", "us").
+  </p>
+  <p>
+    If you self-host {site.name}, your data stays on your own server. We cannot see it, and this policy does
+    not apply to it.
+  </p>
+
+  <h2>Short version</h2>
+  <ul>
+    <li>We collect only what we need to run and improve the app.</li>
+    <li>We do not sell your data. We do not show ads. Our analytics show how people use {site.name}, not who they are.</li>
+    <li>We never see your card number. Our payment partner handles it.</li>
+    <li>When your plan ends, we delete your household's data after 30 days.</li>
+  </ul>
+
+  <h2>What we collect</h2>
+  <table>
+    <thead>
+      <tr><th scope="col">Data</th><th scope="col">Why</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Email address and password</td><td>To sign you in, verify your email, and reset your password.</td></tr>
+      <tr><td>Household name and what you add: recipes, pantry items, meal plans, shopping lists, cooking history, and dietary rules</td><td>This is the app. We store it so you and your household can use it.</td></tr>
+      <tr><td>Plan and payment status (trial, active, cancelled, dates)</td><td>To know if your household has access.</td></tr>
+      <tr><td>API tokens you create</td><td>To let tools such as an AI assistant connect to your household.</td></tr>
+      <tr><td>IP address</td><td>To deliver pages and to block abuse, such as too many log-in attempts.</td></tr>
+      <tr><td>Usage data: pages you visit, features you use, browser and device type, and approximate country</td><td>To learn which parts of {site.name} help people and what to improve. We do not use it for ads, and we do not sell it.</td></tr>
+      <tr><td>Waitlist email address</td><td>To tell you when {site.name} opens.</td></tr>
+      <tr><td>Emails you send us</td><td>To answer you.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cookies and local storage</h2>
+  <p>
+    The app uses one cookie to keep you signed in. It lasts up to 30 days, or until you log out. The app also
+    saves some settings on your device, such as your color theme.
+  </p>
+  <p>
+    The app and this website use analytics to collect usage data. We do not use advertising or cross-site tracking
+    cookies. If our analytics tool sets a cookie, we name the cookie here.
+  </p>
+
+  <h2>Who else processes your data</h2>
+  <p>We use these services to run {site.name}. Each one gets only the data it needs.</p>
+  <table>
+    <thead>
+      <tr><th scope="col">Service</th><th scope="col">What it does</th><th scope="col">Data it gets</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://polar.sh/legal/privacy">Polar</a></td>
+        <td>Sells the subscription as merchant of record: checkout, payment, tax, receipts, and billing portal.</td>
+        <td>Email, name, payment details, billing address.</td>
+      </tr>
+      <tr>
+        <td><a href="https://resend.com/legal/privacy-policy">Resend</a></td>
+        <td>Sends emails: verification, password reset, account warnings, and waitlist emails. Stores the waitlist.</td>
+        <td>Email address and the email content.</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.cloudflare.com/privacypolicy/">Cloudflare</a></td>
+        <td>Hosts this website, connects the app to the internet, and protects it from attacks.</td>
+        <td>IP address and the traffic between your browser and {site.name}.</td>
+      </tr>
+      <tr>
+        <td>Analytics service</td>
+        <td>Counts page views and feature use, so we can see how people use {site.name}.</td>
+        <td>Usage data (see above). The analytics service does not get your recipes, pantry, or plans.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    The app server and its database run on hardware we own, in Maryland, USA. Your data is stored in the
+    United States.
+  </p>
+  <p>
+    If you connect an AI assistant or another tool to {site.name}, that tool can read and change your household
+    data. Its own privacy policy applies to what it does with the data.
+  </p>
+  <p>We share data with others only if the law requires it.</p>
+
+  <h2>How long we keep data</h2>
+  <ul>
+    <li>
+      <strong>Household data:</strong> while your plan is active. When your plan ends or a payment fails, your
+      household locks. 30 days after the lock, we delete the household, its accounts, and all its data. We send
+      warning emails before we delete it.
+    </li>
+    <li><strong>Payment records:</strong> Polar keeps them as tax law requires. When we delete your household, we also ask Polar to delete your customer record.</li>
+    <li><strong>Waitlist:</strong> until you unsubscribe (use the link in any waitlist email) or ask us to remove you.</li>
+    <li><strong>Support emails:</strong> as long as we need them to help you.</li>
+  </ul>
+
+  <h2>Your choices and rights</h2>
+  <p>Email <a href={mail}>{site.contactEmail}</a> from the address on your account to:</p>
+  <ul>
+    <li>Get a copy of your data.</li>
+    <li>Correct your data.</li>
+    <li>Delete your account and data now, without waiting 30 days.</li>
+    <li>Ask what data we have about you.</li>
+  </ul>
+  <p>We answer within 30 days. We give these rights to everyone, wherever you live.</p>
+
+  <h2>Security</h2>
+  <p>
+    Connections use HTTPS. We protect passwords and sign-in data with standard security practices. No system is
+    perfectly secure. If we learn of a breach that affects your data, we will email you.
+  </p>
+
+  <h2>Children</h2>
+  <p>
+    {site.name} is not for children under 13. We do not knowingly collect data from them. If you think a child under
+    13 gave us data, email us and we will delete it.
+  </p>
+
+  <h2>Changes to this policy</h2>
+  <p>
+    We will update the date at the top when this policy changes. If a change is important, we will email account
+    holders before it takes effect.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    {site.operator}, Maryland, USA. Email <a href={mail}>{site.contactEmail}</a>.
+  </p>
+</LegalLayout>

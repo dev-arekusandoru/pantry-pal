@@ -1,0 +1,31 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+import { site } from "../config";
+
+const mail = `mailto:${site.contactEmail}`;
+---
+
+<LegalLayout title="Contact" description={`How to reach the person who makes ${site.name}.`}>
+  <p>{site.name} is made by one independent developer. A real person reads every email.</p>
+
+  <h2>Email</h2>
+  <p><a class="btn primary" href={mail}>{site.contactEmail}</a></p>
+  <p>Write to this address for:</p>
+  <ul>
+    <li>Help with your account or the app</li>
+    <li>Billing questions and refunds (see the <a href="/terms">Terms</a>)</li>
+    <li>A copy of your data, or deleting it (see the <a href="/privacy">Privacy Policy</a>)</li>
+    <li>Ideas and feedback</li>
+  </ul>
+  <p>For account questions, write from the email address on your account. We usually answer within two working days.</p>
+
+  <h2>Bugs and self-hosting</h2>
+  <p>
+    Found a bug, or running {site.name} on your own server? Open an issue on{" "}
+    <a href={`${site.links.github}/issues`}>GitHub</a>, or read the <a href={site.links.docs}>docs</a>.
+  </p>
+</LegalLayout>
+
+<style is:global>
+  .legal .btn { text-decoration: none; }
+</style>

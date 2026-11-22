@@ -11,6 +11,13 @@ Cloudflare Pages.
 | Prices, trial length, links, waitlist URL, sign-up URL | `landing/src/config.ts` |
 | Comparison rows, FAQ, how-it-works steps | `landing/src/data/` |
 | Site URL, sitemap | `landing/astro.config.mjs` |
+| Privacy Policy, Terms of Service, Contact | `landing/src/pages/privacy.astro`, `terms.astro`, `contact.astro` |
+| Operator name, support email, legal "Last updated" date | `landing/src/config.ts` |
+
+When you change the Privacy Policy or the Terms, set `legalUpdated` to the new
+date. The hosted app links to `https://rakumi.app/terms` and
+`https://rakumi.app/privacy` from its sign-up form. If the pages move, change the
+links in `web/src/app/AccountScreens.tsx`.
 
 Run `pnpm landing:dev` to preview. Run `pnpm landing:build` to build into
 `landing/dist/`.

@@ -22,12 +22,16 @@ export const site = {
     github: "https://github.com/dev-arekusandoru/pantry-pal",
     docs: "https://dev-arekusandoru.github.io/pantry-pal/",
     selfHost: "https://dev-arekusandoru.github.io/pantry-pal/start/install",
-    // Legal pages and the contact address do not exist yet. Links with an empty
-    // href are left out of the footer.
-    privacy: "",
-    terms: "",
-    contact: "",
+    privacy: "/privacy",
+    terms: "/terms",
+    contact: "/contact",
   },
+  // Product support address (Cloudflare Email Routing forwards it).
+  contactEmail: "support@rakumi.app",
+  // Who runs the hosted service; named in the Privacy Policy and Terms.
+  operator: "Alexandru Muresan",
+  // Date the Privacy Policy and Terms last changed. Update it with every change.
+  legalUpdated: "2026-11-22",
   // URL of the waitlist Worker (see docs/host/waitlist.md). The form posts
   // `{ email, website }` as JSON; any 2xx is success. Empty means the waitlist is
   // not wired up, and the form says so.

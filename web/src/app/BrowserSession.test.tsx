@@ -181,6 +181,21 @@ describe("BrowserSession", () => {
     expect(await screen.findByRole("button", { name: "Forgot password?" })).toBeInTheDocument();
   });
 
+  it("links the Terms and Privacy Policy on signup only for the hosted service", async () => {
+    const user = userEvent.setup();
+    stubFetch(() => json({ ...signedOut, features: { email: true, billing: false } }));
+    const selfHost = render(<BrowserSession><p>Pantry is open</p></BrowserSession>);
+    await user.click(await screen.findByRole("button", { name: "New here? Create an account" }));
+    expect(screen.queryByRole("link", { name: "Terms of Service" })).not.toBeInTheDocument();
+    selfHost.unmount();
+
+    stubFetch(() => json(signedOut));
+    render(<BrowserSession><p>Pantry is open</p></BrowserSession>);
+    await user.click(await screen.findByRole("button", { name: "New here? Create an account" }));
+    expect(screen.getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "https://rakumi.app/terms");
+    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "https://rakumi.app/privacy");
+  });
+
   it("sends the email for a forgotten password without saying if the account exists", async () => {
     const fetchMock = stubFetch((url) => url === "/auth/session" ? json(signedOut) : new Response(null, { status: 204 }));
     render(<BrowserSession><p>Pantry is open</p></BrowserSession>);

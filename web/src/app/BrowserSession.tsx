@@ -112,7 +112,8 @@ export function BrowserSession({ children }: { children: ReactNode }) {
     </div></main>;
   }
   if (!session.authenticated) {
-    return <AuthForm signupOpen={session.signupOpen} emailOn={session.features.email} onAuthenticated={reread} />;
+    return <AuthForm signupOpen={session.signupOpen} emailOn={session.features.email}
+      billingOn={session.features.billing} onAuthenticated={reread} />;
   }
   if (checkout) return <CheckoutReturn onDone={finishCheckout} />;
   if (session.access.status === "locked") {

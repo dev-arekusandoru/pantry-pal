@@ -87,8 +87,10 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch work lives
 1. [x] Housekeeping: email verification and password reset are built and sandbox tested (removed from Accounts)
 2. [x] Check trademark collisions for "Rakumi": low risk. Only US "RAKUMI" mark is jewelry (class 14); a Japan-only restaurant-ordering app "Rakumi (ラクミー)" exists. Not checked (JS/captcha): USPTO tmsearch, WIPO, EUIPO, TMview
 3. [ ] Product contact address, not personal (for example `hello@rakumi.app` through Cloudflare Email Routing)
-4. [ ] Privacy policy page (the waitlist collects emails)
-5. [ ] Set the `privacy` and `contact` URLs in `landing/src/config.ts` (the footer hides links until they are set)
+4. [x] Privacy policy page (`landing/src/pages/privacy.astro`)
+5. [x] Contact page; `privacy`, `terms`, `contact` URLs set in `landing/src/config.ts`
+   - [ ] Have a lawyer review the Privacy Policy and Terms
+   - [ ] Choose the analytics tool (app and landing site), then name it and any cookie it sets in the Privacy Policy
 6. [x] Logo: Raku the jar (`docs/images/logo.svg`), used for the README, docs site, and both favicons
 7. [ ] Seed realistic demo data (recipes with photos)
 8. [ ] Shoot the hero shots: Week, Pantry, Recipes, Cook mode, Shop
@@ -115,8 +117,8 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch work lives
    - [ ] Worker name `pantrypal-waitlist` (URL changes; update `waitlistEndpoint`)
    - [ ] GitHub repo and Pages URL (`pantry-pal`); update links in `landing/src/config.ts`
 8. [ ] Move the landing page to `get.rakumi.app` or `rakumi.app/get` (decide which; decide the docs subdomain too). Signed-out visitors to `rakumi.app` redirect there; the landing page shows the sign-in and sign-up buttons. Links shared in Milestone 1 keep working through the redirect
-9. [ ] Terms page (include 30-day deletion after a lock)
-10. [ ] Refund and cancellation wording (policy decided, see Done), then set the `terms` URL in `landing/src/config.ts`
+9. [x] Terms page with 30-day deletion after a lock (`landing/src/pages/terms.astro`); sign-up form links it on hosted
+10. [x] Refund and cancellation wording (section 6 of the Terms)
 11. [ ] Check that Polar's legal requirements are met
 12. [ ] Support channel
 13. [ ] Go-live setup: Polar production org, products, token (scopes: `checkouts:write`, `customer_sessions:write`, `subscriptions:read`, `products:read`, `customers:write`), webhook, trial-abuse setting; `app.rakumi.app` DNS and tunnel; production env; `billing exempt` for own household; Resend transactional on Pro for launch week (free plan caps app emails at 100/day)

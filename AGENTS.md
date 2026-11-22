@@ -14,6 +14,18 @@
   setup steps and detailed instructions in the docs. Its documentation link
   points to `https://dev-arekusandoru.github.io/pantry-pal/`.
 
+## Keep the legal pages current
+
+- The Privacy Policy, Terms of Service, and Contact page are in
+  `landing/src/pages/privacy.astro`, `terms.astro`, and `contact.astro`.
+- If a change makes these pages wrong, update them in the same change. Examples:
+  new data you collect, a new third-party service or analytics tool, cookies,
+  prices, the trial, refunds, cancellation, lock or deletion timing, the support
+  email, or the minimum age.
+- After you change the Privacy Policy or the Terms, set `legalUpdated` in
+  `landing/src/config.ts` to the current date. Tell the user what changed: an
+  important change may need an email to users before it takes effect.
+
 ## Write clearly
 
 - Follow ASD-STE100 principles: common words, short sentences, and active voice.

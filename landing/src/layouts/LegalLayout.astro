@@ -1,0 +1,52 @@
+---
+// Shell for the plain text pages: Privacy, Terms, Contact.
+import Layout from "./Layout.astro";
+import Pal from "../components/Pal.astro";
+import Footer from "../components/Footer.astro";
+import { site } from "../config";
+
+interface Props {
+  title: string;
+  description: string;
+  /** ISO date shown as "Last updated". Leave out for pages that are not policies. */
+  updated?: string;
+}
+
+const { title, description, updated } = Astro.props;
+const updatedLabel = updated
+  ? new Date(`${updated}T00:00:00Z`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })
+  : undefined;
+---
+
+<Layout title={`${title} | ${site.name}`} description={description}>
+  <div class="wrap">
+    <header class="legal-top">
+      <a class="brand" href="/" aria-label={`${site.name} home`}>
+        <Pal size={36} />
+        <span>{site.name}</span>
+      </a>
+    </header>
+    <main>
+      <article class="paper legal">
+        <h1>{title}</h1>
+        {updatedLabel && <p class="note">Last updated: {updatedLabel}</p>}
+        <slot />
+      </article>
+    </main>
+    <Footer />
+  </div>
+</Layout>
+
+<style is:global>
+  .legal-top { padding: 24px 0 8px; display: flex; }
+  .legal { max-width: 760px; margin: 24px auto 0; padding: clamp(24px, 5vw, 56px); }
+  .legal h1 { font-size: clamp(32px, 5vw, 46px); line-height: 1.15; }
+  .legal > .note { margin-top: 6px; }
+  .legal h2 { font-size: 24px; margin-top: 36px; }
+  .legal p, .legal ul { margin-top: 12px; }
+  .legal ul { list-style: disc; padding-left: 24px; }
+  .legal li + li { margin-top: 6px; }
+  .legal table { width: 100%; margin-top: 12px; border-collapse: collapse; }
+  .legal th, .legal td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--bd) 30%, transparent); }
+  .legal a { text-decoration: underline wavy var(--accent) 1.5px; text-underline-offset: 4px; }
+</style>
