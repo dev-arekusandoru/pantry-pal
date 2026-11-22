@@ -1,7 +1,7 @@
 {
   "household": {
-    "name": "Example Household",
-    "timezone": "UTC",
+    "name": "Demo Kitchen",
+    "timezone": "America/New_York",
     "settings": {
       "defaultServings": 2,
       "spiceLevel": "mild",
@@ -14,335 +14,115 @@
     "members": [
       {
         "name": "Robin",
-        "notes": "Mild spice, added after cooking. Eats all planned meals."
+        "notes": "Mild spice preferred; heat added after cooking. Eats all planned meals."
       },
       {
         "name": "Sam",
-        "notes": "No mushrooms, no pork, no seafood beyond tuna and salmon; beef only as ground beef. Mayonnaise only in a minor role. Mild spice."
+        "notes": "Beef only as ground beef (no steak or roast cuts). No mushrooms, no pork, no seafood beyond tuna and salmon. Mayonnaise only in a minor role. Mild spice."
       }
     ]
   },
   "ingredients": [
     {
-      "name": "Olive Oil",
-      "category": "pantry",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "extra virgin olive oil",
-        "evoo"
-      ],
-      "description": "Everyday cooking oil; also used for roasting and sauteing.",
-      "shelfLifeDays": 365,
-      "fdcId": 171413
-    },
-    {
-      "name": "Rice",
-      "category": "pantry",
-      "stockUnit": "cup",
-      "aliases": [
-        "white rice",
-        "long grain rice",
-        "jasmine rice"
-      ],
-      "description": "Dry rice; about 1 cup dry yields 3 cups cooked.",
-      "fdcId": 168877
-    },
-    {
-      "name": "Chicken Stock",
-      "category": "pantry",
-      "stockUnit": "cup",
-      "aliases": [
-        "chicken broth",
-        "chicken soup base"
-      ],
-      "description": "Stock or broth used for soup and sauces.",
-      "fdcId": 172884
-    },
-    {
-      "name": "Soy Sauce",
-      "category": "condiment",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "soy"
-      ],
-      "description": "Low-sodium preferred for stir-fry.",
-      "fdcId": 174277
-    },
-    {
-      "name": "Cornstarch",
-      "category": "baking",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "corn starch"
-      ],
-      "description": "Thickener for stir-fry sauce.",
-      "fdcId": 169698
-    },
-    {
-      "name": "Butter",
-      "category": "dairy",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "unsalted butter",
-        "salted butter"
-      ],
-      "shelfLifeDays": 30,
-      "fdcId": 173410
-    },
-    {
       "name": "All-Purpose Flour",
       "category": "baking",
       "stockUnit": "cup",
       "aliases": [
-        "flour",
-        "ap flour"
+        "ap flour",
+        "flour"
       ],
       "description": "Roux thickener and pancake base.",
       "fdcId": 168894
     },
     {
-      "name": "Honey",
-      "category": "pantry",
-      "stockUnit": "tbsp",
+      "name": "Avocado",
+      "category": "produce",
+      "stockUnit": null,
       "aliases": [],
-      "fdcId": 169640
+      "fdcId": 171705
     },
     {
-      "name": "Unsweetened Cocoa Powder",
-      "category": "baking",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "cocoa powder",
-        "cocoa"
-      ],
-      "description": "Secret chili ingredient; adds depth without chocolate flavor.",
-      "fdcId": 169593
+      "name": "Baby Spinach",
+      "category": "produce",
+      "stockUnit": "oz",
+      "aliases": [],
+      "fdcId": 1750352
     },
     {
-      "name": "Granulated Sugar",
+      "name": "Baking Powder",
       "category": "baking",
+      "stockUnit": "tsp",
+      "aliases": [],
+      "fdcId": 172803
+    },
+    {
+      "name": "Baking Soda",
+      "category": "baking",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 175040
+    },
+    {
+      "name": "Bananas",
+      "category": "produce",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 173944
+    },
+    {
+      "name": "BBQ Sauce",
+      "category": "condiment",
+      "stockUnit": "cup",
+      "aliases": [],
+      "fdcId": 174523
+    },
+    {
+      "name": "Beef Broth",
+      "category": "canned",
       "stockUnit": "cup",
       "aliases": [
-        "sugar",
-        "white sugar"
+        "beef stock"
       ],
-      "description": "Also used as a 1 tsp measure in chili.",
-      "fdcId": 169655
+      "description": "Carton or can; used in chili and pasta sauce.",
+      "fdcId": 171538
     },
     {
-      "name": "Red Pepper Flakes",
-      "category": "spice",
-      "stockUnit": "tsp",
-      "aliases": [
-        "crushed red pepper"
-      ],
-      "description": "Served on the side so the household can add heat after cooking.",
-      "fdcId": 170932
-    },
-    {
-      "name": "Toasted Sesame Oil",
-      "category": "pantry",
-      "stockUnit": "tsp",
-      "aliases": [
-        "sesame oil"
-      ],
-      "description": "Finishing oil for stir-fry; small bottle.",
-      "fdcId": 171016
-    },
-    {
-      "name": "Brown Sugar",
-      "category": "baking",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "light brown sugar",
-        "dark brown sugar"
-      ],
-      "fdcId": 168833
-    },
-    {
-      "name": "Penne Pasta",
-      "category": "pantry",
-      "stockUnit": "oz",
-      "aliases": [
-        "pasta",
-        "penne"
-      ],
-      "description": "Pantry holds 10 oz penne plus other pasta shapes.",
-      "fdcId": 169736
-    },
-    {
-      "name": "Dried Oregano",
-      "category": "spice",
-      "stockUnit": "tsp",
-      "aliases": [
-        "oregano"
-      ],
-      "fdcId": 171328
-    },
-    {
-      "name": "Ground Ginger",
-      "category": "spice",
-      "stockUnit": "tsp",
-      "aliases": [
-        "ginger powder",
-        "ginger"
-      ],
-      "fdcId": 170926
-    },
-    {
-      "name": "Salt",
-      "category": "spice",
-      "stockUnit": "tsp",
-      "aliases": [
-        "kosher salt",
-        "table salt",
-        "sea salt"
-      ],
-      "fdcId": 173468
+      "name": "Black Beans",
+      "category": "canned",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 175188
     },
     {
       "name": "Black Pepper",
       "category": "spice",
       "stockUnit": "tsp",
       "aliases": [
-        "pepper",
+        "freshly ground black pepper",
         "ground black pepper",
-        "freshly ground black pepper"
+        "pepper"
       ],
       "fdcId": 170931
     },
     {
-      "name": "Ground Beef",
+      "name": "Boneless Skinless Chicken Thighs",
       "category": "protein",
-      "stockUnit": "lb",
-      "aliases": [
-        "lean ground beef",
-        "85% lean ground beef",
-        "ground beef 85% lean",
-        "hamburger meat"
-      ],
-      "description": "85% lean. The only beef cut the household uses.",
-      "shelfLifeDays": 2,
-      "fdcId": 171796
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 173627,
+      "defaultPortion": "thigh without skin"
     },
     {
-      "name": "Chicken Breast",
-      "category": "protein",
-      "stockUnit": "lb",
+      "name": "Bread",
+      "category": "bakery",
+      "stockUnit": "slice",
       "aliases": [
-        "boneless skinless chicken breast",
-        "chicken breasts",
-        "chicken breast pieces"
+        "sandwich bread",
+        "toast",
+        "white bread"
       ],
-      "description": "Boneless, skinless. About 8 oz per breast.",
-      "shelfLifeDays": 2,
-      "fdcId": 171077
-    },
-    {
-      "name": "Salmon Fillets",
-      "category": "protein",
-      "stockUnit": "count",
-      "aliases": [
-        "salmon",
-        "skinless salmon fillets",
-        "salmon fillet",
-        "salmon filets"
-      ],
-      "description": "Skinless fillets, about 6 oz each.",
-      "shelfLifeDays": 2,
-      "fdcId": 175167
-    },
-    {
-      "name": "Red Onion",
-      "category": "produce",
-      "stockUnit": "count",
-      "aliases": [
-        "red onions"
-      ],
-      "shelfLifeDays": 30,
-      "fdcId": 790577
-    },
-    {
-      "name": "Yellow Onion",
-      "category": "produce",
-      "stockUnit": "count",
-      "aliases": [
-        "yellow onions",
-        "onion",
-        "onions",
-        "large yellow onion",
-        "small onion"
-      ],
-      "shelfLifeDays": 30,
-      "fdcId": 170000
-    },
-    {
-      "name": "Garlic",
-      "category": "produce",
-      "stockUnit": "clove",
-      "aliases": [
-        "garlic cloves",
-        "garlic clove",
-        "minced garlic",
-        "roasted garlic cloves"
-      ],
-      "description": "About 10 cloves per head.",
-      "shelfLifeDays": 60,
-      "fdcId": 169230
-    },
-    {
-      "name": "Carrots",
-      "category": "produce",
-      "stockUnit": "count",
-      "aliases": [
-        "carrot"
-      ],
-      "shelfLifeDays": 14,
-      "fdcId": 170393
-    },
-    {
-      "name": "Celery",
-      "category": "produce",
-      "stockUnit": "stalk",
-      "aliases": [
-        "celery stalks",
-        "celery stalk"
-      ],
-      "shelfLifeDays": 14,
-      "fdcId": 169988
-    },
-    {
-      "name": "Turnips",
-      "category": "produce",
-      "stockUnit": "count",
-      "aliases": [
-        "turnip"
-      ],
-      "shelfLifeDays": 14,
-      "fdcId": 170465
-    },
-    {
-      "name": "Parsnips",
-      "category": "produce",
-      "stockUnit": "count",
-      "aliases": [
-        "parsnip"
-      ],
-      "shelfLifeDays": 14,
-      "fdcId": 170417
-    },
-    {
-      "name": "Red Bell Pepper",
-      "category": "produce",
-      "stockUnit": "count",
-      "aliases": [
-        "red bell peppers",
-        "red pepper",
-        "bell pepper",
-        "bell peppers"
-      ],
-      "shelfLifeDays": 7,
-      "fdcId": 170108
+      "shelfLifeDays": 5,
+      "fdcId": 325871
     },
     {
       "name": "Broccoli Florets",
@@ -357,40 +137,219 @@
       "fdcId": 170379
     },
     {
-      "name": "Zucchini",
-      "category": "produce",
-      "stockUnit": "count",
+      "name": "Brown Sugar",
+      "category": "baking",
+      "stockUnit": "tbsp",
       "aliases": [
-        "zucchinis",
-        "medium zucchini"
+        "dark brown sugar",
+        "light brown sugar"
       ],
-      "shelfLifeDays": 7,
-      "fdcId": 169291
+      "fdcId": 168833
     },
     {
-      "name": "White Potato",
+      "name": "Brussels Sprouts",
       "category": "produce",
-      "stockUnit": "count",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 170383
+    },
+    {
+      "name": "Butter",
+      "category": "dairy",
+      "stockUnit": "tbsp",
       "aliases": [
-        "white potatoes",
-        "potato",
-        "potatoes",
-        "large white potato"
+        "salted butter",
+        "unsalted butter"
       ],
-      "description": "One large potato is about 8 oz.",
       "shelfLifeDays": 30,
-      "fdcId": 170028
+      "fdcId": 173410
     },
     {
-      "name": "Lemon",
+      "name": "Butternut Squash",
       "category": "produce",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 169295
+    },
+    {
+      "name": "Chia Seeds",
+      "category": "pantry",
+      "stockUnit": "tbsp",
+      "aliases": [
+        "chia"
+      ],
+      "fdcId": 170554
+    },
+    {
+      "name": "Chicken Breast",
+      "category": "protein",
+      "stockUnit": "lb",
+      "aliases": [
+        "boneless skinless chicken breast",
+        "chicken breast pieces",
+        "chicken breasts"
+      ],
+      "description": "Boneless, skinless. About 8 oz per breast.",
+      "shelfLifeDays": 90,
+      "fdcId": 171077
+    },
+    {
+      "name": "Chicken Breast Cutlets",
+      "category": "protein",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 171077
+    },
+    {
+      "name": "Chicken Stock",
+      "category": "pantry",
+      "stockUnit": "cup",
+      "aliases": [
+        "chicken broth",
+        "chicken soup base"
+      ],
+      "description": "Stock or broth used for soup and sauces.",
+      "fdcId": 172884
+    },
+    {
+      "name": "Chili Powder",
+      "category": "spice",
+      "stockUnit": "tbsp",
+      "aliases": [
+        "ground chili powder"
+      ],
+      "fdcId": 171319
+    },
+    {
+      "name": "Chipotle Powder",
+      "category": "spice",
+      "stockUnit": null,
+      "aliases": [],
+      "custom": true
+    },
+    {
+      "name": "Cilantro",
+      "category": "produce",
+      "stockUnit": null,
+      "aliases": [
+        "fresh cilantro"
+      ],
+      "fdcId": 169997
+    },
+    {
+      "name": "Coconut Milk",
+      "category": "canned",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 170173
+    },
+    {
+      "name": "Corn Tortillas",
+      "category": "bakery",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 175036
+    },
+    {
+      "name": "Cornstarch",
+      "category": "baking",
+      "stockUnit": "tbsp",
+      "aliases": [
+        "corn starch"
+      ],
+      "description": "Thickener for stir-fry sauce.",
+      "fdcId": 169698
+    },
+    {
+      "name": "Cream Cheese",
+      "category": "dairy",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 173418
+    },
+    {
+      "name": "Dark Red Kidney Beans",
+      "category": "canned",
+      "stockUnit": "can",
+      "aliases": [
+        "dark kidney beans"
+      ],
+      "description": "15 oz can.",
+      "fdcId": 175195
+    },
+    {
+      "name": "Diced Tomatoes with Green Chilies",
+      "category": "canned",
+      "stockUnit": "can",
+      "aliases": [
+        "canned tomatoes with green chilies",
+        "diced tomatoes w/ green chilies",
+        "diced tomatoes with green chiles",
+        "rotel"
+      ],
+      "description": "Mild; 14.5 oz cans.",
+      "fdcId": 170053
+    },
+    {
+      "name": "Dried Oregano",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [
+        "oregano"
+      ],
+      "fdcId": 171328
+    },
+    {
+      "name": "Dried Parsley",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [
+        "parsley flakes"
+      ],
+      "fdcId": 170930
+    },
+    {
+      "name": "Eggs",
+      "category": "protein",
       "stockUnit": "count",
       "aliases": [
-        "lemons",
-        "lemon wedges"
+        "egg",
+        "large egg",
+        "large eggs"
       ],
-      "shelfLifeDays": 14,
-      "fdcId": 167746
+      "shelfLifeDays": 21,
+      "fdcId": 171287,
+      "defaultPortion": "large"
+    },
+    {
+      "name": "Feta",
+      "category": "dairy",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 173420
+    },
+    {
+      "name": "Fine Sea Salt",
+      "category": "spice",
+      "stockUnit": null,
+      "aliases": [
+        "sea salt"
+      ],
+      "fdcId": 173468
+    },
+    {
+      "name": "Fire Roasted Crushed Tomatoes",
+      "category": "canned",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 170501
+    },
+    {
+      "name": "Flour Tortillas",
+      "category": "bakery",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 175037
     },
     {
       "name": "Fresh Basil",
@@ -417,187 +376,173 @@
       "fdcId": 172233
     },
     {
-      "name": "Fresh Rosemary",
+      "name": "Garlic",
       "category": "produce",
-      "stockUnit": "sprig",
+      "stockUnit": "clove",
       "aliases": [
-        "rosemary",
-        "fresh rosemary sprig"
+        "garlic clove",
+        "garlic cloves",
+        "minced garlic",
+        "roasted garlic cloves"
       ],
-      "shelfLifeDays": 10,
-      "fdcId": 173473
+      "description": "About 10 cloves per head.",
+      "shelfLifeDays": 60,
+      "fdcId": 169230
+    },
+    {
+      "name": "Garlic Powder",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [],
+      "fdcId": 171325
+    },
+    {
+      "name": "Granulated Sugar",
+      "category": "baking",
+      "stockUnit": "cup",
+      "aliases": [
+        "sugar",
+        "white granulated sugar",
+        "white sugar"
+      ],
+      "description": "Also used as a 1 tsp measure in chili.",
+      "fdcId": 169655
+    },
+    {
+      "name": "Green Bell Pepper",
+      "category": "produce",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 170427
+    },
+    {
+      "name": "Green Chilies",
+      "category": "canned",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 168577
+    },
+    {
+      "name": "Green Onions",
+      "category": "produce",
+      "stockUnit": "bunch",
+      "aliases": [],
+      "fdcId": 170005
+    },
+    {
+      "name": "Ground Beef",
+      "category": "protein",
+      "stockUnit": "lb",
+      "aliases": [
+        "85% lean ground beef",
+        "ground beef 85% lean",
+        "hamburger meat",
+        "lean ground beef"
+      ],
+      "description": "85% lean. The only beef cut the household uses.",
+      "shelfLifeDays": 2,
+      "fdcId": 171796
+    },
+    {
+      "name": "Ground Beef Chuck",
+      "category": "protein",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 174036
+    },
+    {
+      "name": "Ground Cinnamon",
+      "category": "spice",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 171320
+    },
+    {
+      "name": "Ground Coriander",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [
+        "coriander"
+      ],
+      "fdcId": 170922
+    },
+    {
+      "name": "Ground Cumin",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [
+        "cumin"
+      ],
+      "fdcId": 170923
+    },
+    {
+      "name": "Ground Ginger",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [
+        "ginger powder"
+      ],
+      "fdcId": 170926
     },
     {
       "name": "Heavy Cream",
       "category": "dairy",
       "stockUnit": "cup",
       "aliases": [
-        "heavy whipping cream",
-        "cream"
+        "cream",
+        "heavy whipping cream"
       ],
       "shelfLifeDays": 10,
       "fdcId": 170859
     },
     {
-      "name": "Parmesan Cheese",
-      "category": "dairy",
-      "stockUnit": "cup",
-      "aliases": [
-        "parmesan",
-        "grated parmesan",
-        "parmesan cheese grated",
-        "grated parmesan cheese"
-      ],
-      "description": "Grated; freshly grated melts best.",
-      "shelfLifeDays": 30,
-      "fdcId": 171247
+      "name": "Honey",
+      "category": "pantry",
+      "stockUnit": "tbsp",
+      "aliases": [],
+      "fdcId": 169640
     },
     {
-      "name": "Shredded Cheddar",
-      "category": "dairy",
-      "stockUnit": "bag",
-      "aliases": [
-        "cheddar",
-        "cheddar cheese",
-        "shredded cheddar cheese",
-        "mild cheddar"
-      ],
-      "description": "Mild cheddar for chili topping.",
-      "shelfLifeDays": 14,
-      "fdcId": 173414
+      "name": "Hot Sauce",
+      "category": "condiment",
+      "stockUnit": "oz",
+      "aliases": [],
+      "fdcId": 174527
     },
     {
-      "name": "Milk",
-      "category": "dairy",
-      "stockUnit": "cup",
+      "name": "Italian Seasoning",
+      "category": "spice",
+      "stockUnit": "tsp",
       "aliases": [
-        "whole milk",
-        "2% milk"
+        "dried italian seasoning",
+        "italian herb seasoning"
       ],
-      "shelfLifeDays": 7,
-      "fdcId": 171265
+      "fdcId": 171331
     },
     {
-      "name": "Bread",
-      "category": "bakery",
-      "stockUnit": "slice",
-      "aliases": [
-        "toast",
-        "sandwich bread",
-        "white bread"
-      ],
-      "shelfLifeDays": 5,
-      "fdcId": 325871
+      "name": "Jalapeno",
+      "category": "produce",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 168576
     },
     {
-      "name": "Egg",
+      "name": "Lean Ground Turkey",
       "category": "protein",
+      "stockUnit": "lb",
+      "aliases": [],
+      "fdcId": 172850
+    },
+    {
+      "name": "Lemon",
+      "category": "produce",
       "stockUnit": "count",
       "aliases": [
-        "eggs",
-        "large eggs",
-        "large egg"
+        "lemon wedges",
+        "lemons"
       ],
-      "shelfLifeDays": 21,
-      "fdcId": 171287,
-      "defaultPortion": "large"
-    },
-    {
-      "name": "Rolled Oats",
-      "category": "pantry",
-      "stockUnit": "cup",
-      "aliases": [
-        "oats",
-        "old-fashioned oats",
-        "oatmeal"
-      ],
-      "fdcId": 173904
-    },
-    {
-      "name": "Chia Seeds",
-      "category": "pantry",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "chia"
-      ],
-      "fdcId": 170554
-    },
-    {
-      "name": "Vanilla Extract",
-      "category": "baking",
-      "stockUnit": "tsp",
-      "aliases": [
-        "vanilla"
-      ],
-      "fdcId": 173471
-    },
-    {
-      "name": "Baking Powder",
-      "category": "baking",
-      "stockUnit": "tsp",
-      "aliases": [],
-      "fdcId": 172803
-    },
-    {
-      "name": "Water",
-      "category": "other",
-      "stockUnit": "cup",
-      "aliases": [
-        "cold water"
-      ],
-      "description": "Used for cornstarch slurry and rice.",
-      "fdcId": 174158
-    },
-    {
-      "name": "Peanut Oil",
-      "category": "pantry",
-      "stockUnit": "tbsp",
-      "aliases": [],
-      "description": "High-heat stir-fry oil; vegetable or olive oil can substitute.",
-      "fdcId": 171410
-    },
-    {
-      "name": "Mayonnaise",
-      "category": "condiment",
-      "stockUnit": "tbsp",
-      "aliases": [
-        "mayo"
-      ],
-      "description": "Declared only so the avoid rule can reference it; not currently stocked.",
-      "fdcId": 171009
-    },
-    {
-      "name": "Diced Tomatoes with Green Chilies",
-      "category": "canned",
-      "stockUnit": "can",
-      "aliases": [
-        "diced tomatoes with green chiles",
-        "canned tomatoes with green chilies",
-        "diced tomatoes w/ green chilies",
-        "rotel"
-      ],
-      "description": "Mild; 14.5 oz cans.",
-      "fdcId": 333281
-    },
-    {
-      "name": "Tomato Sauce",
-      "category": "canned",
-      "stockUnit": "can",
-      "aliases": [
-        "canned tomato sauce"
-      ],
-      "description": "8 oz cans; 3 cans equal about 24 oz.",
-      "fdcId": 170054
-    },
-    {
-      "name": "Dark Red Kidney Beans",
-      "category": "canned",
-      "stockUnit": "can",
-      "aliases": [
-        "dark kidney beans"
-      ],
-      "description": "15 oz can.",
-      "fdcId": 175195
+      "shelfLifeDays": 14,
+      "fdcId": 167746
     },
     {
       "name": "Light Red Kidney Beans",
@@ -610,16 +555,39 @@
       "fdcId": 175195
     },
     {
-      "name": "Sun-Dried Tomatoes",
-      "category": "canned",
-      "stockUnit": "jar",
+      "name": "Lime",
+      "category": "produce",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 168155
+    },
+    {
+      "name": "Lime Juice",
+      "category": "produce",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 168156
+    },
+    {
+      "name": "Mayonnaise",
+      "category": "condiment",
+      "stockUnit": "tbsp",
       "aliases": [
-        "sun-dried tomatoes in oil",
-        "sundried tomatoes",
-        "sun dried tomatoes"
+        "mayo"
       ],
-      "description": "Oil-packed; a small jar drains to about 1 cup.",
-      "fdcId": 169384
+      "description": "Declared only so the avoid rule can reference it; not currently stocked.",
+      "fdcId": 171009
+    },
+    {
+      "name": "Milk",
+      "category": "dairy",
+      "stockUnit": "cup",
+      "aliases": [
+        "2% milk",
+        "whole milk"
+      ],
+      "shelfLifeDays": 7,
+      "fdcId": 171265
     },
     {
       "name": "Mixed Pitted Olives",
@@ -627,39 +595,39 @@
       "stockUnit": "jar",
       "aliases": [
         "mixed olives",
-        "pitted olives",
-        "olives"
+        "olives",
+        "pitted olives"
       ],
       "description": "Kalamata/Castelvetrano mix; small jar holds about 1/2 cup drained.",
       "fdcId": 169094
     },
     {
-      "name": "Beef Broth",
-      "category": "canned",
-      "stockUnit": "cup",
-      "aliases": [
-        "beef stock"
-      ],
-      "description": "Carton or can; used in chili and pasta sauce.",
-      "fdcId": 171538
+      "name": "Monterey Jack Cheese",
+      "category": "dairy",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 170844
     },
     {
-      "name": "Chili Powder",
-      "category": "spice",
+      "name": "Olive Oil",
+      "category": "pantry",
       "stockUnit": "tbsp",
       "aliases": [
-        "ground chili powder"
+        "cooking oil",
+        "evoo",
+        "extra virgin olive oil",
+        "neutral oil"
       ],
-      "fdcId": 171319
+      "description": "Everyday cooking oil; also used for roasting and sauteing.",
+      "shelfLifeDays": 365,
+      "fdcId": 171413
     },
     {
-      "name": "Ground Cumin",
+      "name": "Onion Powder",
       "category": "spice",
-      "stockUnit": "tsp",
-      "aliases": [
-        "cumin"
-      ],
-      "fdcId": 170923
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 171327
     },
     {
       "name": "Paprika",
@@ -671,6 +639,196 @@
       "fdcId": 171329
     },
     {
+      "name": "Parmesan Cheese",
+      "category": "dairy",
+      "stockUnit": "cup",
+      "aliases": [
+        "grated parmesan",
+        "grated parmesan cheese",
+        "parmesan",
+        "parmesan cheese grated"
+      ],
+      "description": "Grated; freshly grated melts best.",
+      "shelfLifeDays": 30,
+      "fdcId": 171247
+    },
+    {
+      "name": "Peanut Oil",
+      "category": "pantry",
+      "stockUnit": "tbsp",
+      "aliases": [],
+      "description": "High-heat stir-fry oil; vegetable or olive oil can substitute.",
+      "fdcId": 171410
+    },
+    {
+      "name": "Pecans",
+      "category": "pantry",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 170182
+    },
+    {
+      "name": "Penne Pasta",
+      "category": "pantry",
+      "stockUnit": "oz",
+      "aliases": [
+        "pasta",
+        "penne"
+      ],
+      "description": "Pantry holds 10 oz penne plus other pasta shapes.",
+      "fdcId": 169736
+    },
+    {
+      "name": "Powdered Sugar",
+      "category": "baking",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 169656
+    },
+    {
+      "name": "Red Bell Pepper",
+      "category": "produce",
+      "stockUnit": "count",
+      "aliases": [
+        "bell pepper",
+        "bell peppers",
+        "red bell peppers",
+        "red pepper"
+      ],
+      "shelfLifeDays": 7,
+      "fdcId": 170108
+    },
+    {
+      "name": "Red Onion",
+      "category": "produce",
+      "stockUnit": "count",
+      "aliases": [
+        "red onions"
+      ],
+      "shelfLifeDays": 30,
+      "fdcId": 790577
+    },
+    {
+      "name": "Red Pepper Flakes",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [
+        "crushed red pepper"
+      ],
+      "description": "Served on the side so the household can add heat after cooking.",
+      "fdcId": 170932
+    },
+    {
+      "name": "Rice",
+      "category": "pantry",
+      "stockUnit": "cup",
+      "aliases": [
+        "jasmine rice",
+        "long grain rice",
+        "white rice"
+      ],
+      "description": "Dry rice; about 1 cup dry yields 3 cups cooked.",
+      "fdcId": 168877
+    },
+    {
+      "name": "Rolled Oats",
+      "category": "pantry",
+      "stockUnit": "cup",
+      "aliases": [
+        "oatmeal",
+        "oats",
+        "old-fashioned oats"
+      ],
+      "fdcId": 173904
+    },
+    {
+      "name": "Salmon Fillets",
+      "category": "protein",
+      "stockUnit": "count",
+      "aliases": [
+        "salmon",
+        "salmon filets",
+        "salmon fillet",
+        "skinless salmon fillets"
+      ],
+      "description": "Skinless fillets, about 6 oz each.",
+      "shelfLifeDays": 2,
+      "fdcId": 175167
+    },
+    {
+      "name": "Salsa",
+      "category": "condiment",
+      "stockUnit": null,
+      "aliases": [
+        "chunky tomato salsa (mild)",
+        "mild salsa"
+      ],
+      "fdcId": 174524
+    },
+    {
+      "name": "Salt",
+      "category": "spice",
+      "stockUnit": "tsp",
+      "aliases": [
+        "fine salt",
+        "kosher salt",
+        "table salt"
+      ],
+      "fdcId": 173468
+    },
+    {
+      "name": "Shredded Cheddar",
+      "category": "dairy",
+      "stockUnit": "bag",
+      "aliases": [
+        "cheddar",
+        "cheddar cheese",
+        "mild cheddar",
+        "shredded cheddar cheese"
+      ],
+      "description": "Mild cheddar for chili topping.",
+      "shelfLifeDays": 14,
+      "fdcId": 173414
+    },
+    {
+      "name": "Smoked Paprika",
+      "category": "spice",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 171329
+    },
+    {
+      "name": "Soy Sauce",
+      "category": "condiment",
+      "stockUnit": "tbsp",
+      "aliases": [
+        "soy"
+      ],
+      "description": "Low-sodium preferred for stir-fry.",
+      "fdcId": 174277
+    },
+    {
+      "name": "Sun-Dried Tomatoes",
+      "category": "canned",
+      "stockUnit": "jar",
+      "aliases": [
+        "sun dried tomatoes",
+        "sun-dried tomatoes (in oil)",
+        "sundried tomatoes"
+      ],
+      "description": "Oil-packed; a small jar drains to about 1 cup.",
+      "fdcId": 169384
+    },
+    {
+      "name": "Sweet Corn",
+      "category": "canned",
+      "stockUnit": null,
+      "aliases": [
+        "corn"
+      ],
+      "fdcId": 169214
+    },
+    {
       "name": "Sweet Paprika",
       "category": "spice",
       "stockUnit": "tsp",
@@ -679,39 +837,70 @@
       "fdcId": 171329
     },
     {
-      "name": "Ground Coriander",
-      "category": "spice",
-      "stockUnit": "tsp",
-      "aliases": [
-        "coriander"
-      ],
-      "fdcId": 170922
-    },
-    {
-      "name": "Garlic Powder",
-      "category": "spice",
-      "stockUnit": "tsp",
+      "name": "Sweet Potatoes",
+      "category": "produce",
+      "stockUnit": null,
       "aliases": [],
-      "fdcId": 171325
+      "fdcId": 168482
     },
     {
-      "name": "Dried Parsley",
+      "name": "Taco Seasoning",
       "category": "spice",
-      "stockUnit": "tsp",
+      "stockUnit": null,
       "aliases": [
-        "parsley flakes"
+        "taco seasoning (mild)"
       ],
-      "fdcId": 170930
+      "fdcId": 172243
     },
     {
-      "name": "Italian Seasoning",
-      "category": "spice",
+      "name": "Toasted Sesame Oil",
+      "category": "pantry",
       "stockUnit": "tsp",
       "aliases": [
-        "dried italian seasoning",
-        "italian herb seasoning"
+        "sesame oil"
       ],
-      "custom": true
+      "description": "Finishing oil for stir-fry; small bottle.",
+      "fdcId": 171016
+    },
+    {
+      "name": "Tomato Sauce",
+      "category": "canned",
+      "stockUnit": "can",
+      "aliases": [
+        "canned tomato sauce"
+      ],
+      "description": "8 oz cans; 3 cans equal about 24 oz.",
+      "fdcId": 170054
+    },
+    {
+      "name": "Unsweetened Cocoa Powder",
+      "category": "baking",
+      "stockUnit": "tbsp",
+      "aliases": [
+        "cocoa",
+        "cocoa powder"
+      ],
+      "description": "Secret chili ingredient; adds depth without chocolate flavor.",
+      "fdcId": 169593
+    },
+    {
+      "name": "Vanilla Extract",
+      "category": "baking",
+      "stockUnit": "tsp",
+      "aliases": [
+        "vanilla"
+      ],
+      "fdcId": 173471
+    },
+    {
+      "name": "Water",
+      "category": "other",
+      "stockUnit": "cup",
+      "aliases": [
+        "cold water"
+      ],
+      "description": "Used for cornstarch slurry and rice.",
+      "fdcId": 174158
     },
     {
       "name": "White Pepper",
@@ -721,80 +910,117 @@
         "ground white pepper"
       ],
       "fdcId": 170933
+    },
+    {
+      "name": "White Potato",
+      "category": "produce",
+      "stockUnit": "count",
+      "aliases": [
+        "large white potato",
+        "potato",
+        "potatoes",
+        "white potatoes"
+      ],
+      "description": "One large potato is about 8 oz.",
+      "shelfLifeDays": 30,
+      "fdcId": 170028
+    },
+    {
+      "name": "Yellow Bell Pepper",
+      "category": "produce",
+      "stockUnit": null,
+      "aliases": [],
+      "fdcId": 169383
+    },
+    {
+      "name": "Yellow Mustard",
+      "category": "condiment",
+      "stockUnit": "oz",
+      "aliases": [
+        "mustard"
+      ],
+      "fdcId": 172234
+    },
+    {
+      "name": "Yellow Onion",
+      "category": "produce",
+      "stockUnit": "count",
+      "aliases": [
+        "large yellow onion",
+        "onion",
+        "onions",
+        "small onion",
+        "yellow onions"
+      ],
+      "shelfLifeDays": 30,
+      "fdcId": 170000
+    },
+    {
+      "name": "Zucchini",
+      "category": "produce",
+      "stockUnit": "count",
+      "aliases": [
+        "medium zucchini",
+        "zucchinis"
+      ],
+      "shelfLifeDays": 7,
+      "fdcId": 169291
     }
   ],
   "measures": [
     {
-      "ingredient": "Diced Tomatoes with Green Chilies",
-      "unit": "can",
-      "grams": 411.07,
-      "note": "One 14.5 oz can."
-    },
-    {
-      "ingredient": "Tomato Sauce",
-      "unit": "can",
-      "grams": 226.8,
-      "note": "One 8 oz can; 3 cans approximately equal one 24 oz can."
-    },
-    {
-      "ingredient": "Dark Red Kidney Beans",
-      "unit": "can",
-      "grams": 425.24,
-      "note": "One 15 oz can."
-    },
-    {
-      "ingredient": "Light Red Kidney Beans",
-      "unit": "can",
-      "grams": 425.24,
-      "note": "One 15 oz can."
-    },
-    {
-      "ingredient": "Chicken Breast",
-      "unit": "count",
-      "grams": 226.8,
-      "note": "One boneless skinless breast is about 8 oz."
-    },
-    {
       "ingredient": "Garlic",
       "unit": "clove",
-      "grams": 3,
+      "grams": 1.4,
       "note": "One minced clove is about 1/2 tsp."
     },
     {
       "ingredient": "Garlic",
       "unit": "head",
-      "grams": 30,
+      "grams": 14,
       "note": "One head yields about 10 cloves."
     },
     {
-      "ingredient": "Broccoli Florets",
-      "unit": "head",
-      "grams": 270,
-      "note": "One large head yields about 3 cups of florets."
+      "ingredient": "Diced Tomatoes with Green Chilies",
+      "unit": "can",
+      "grams": 411.0681,
+      "note": "One 14.5 oz can."
     },
     {
-      "ingredient": "Salmon Fillets",
+      "ingredient": "Tomato Sauce",
+      "unit": "can",
+      "grams": 226.7962,
+      "note": "One 8 oz can; 3 cans approximately equal one 24 oz can."
+    },
+    {
+      "ingredient": "Dark Red Kidney Beans",
+      "unit": "can",
+      "grams": 425.2428,
+      "note": "One 15 oz can."
+    },
+    {
+      "ingredient": "Light Red Kidney Beans",
+      "unit": "can",
+      "grams": 425.2428,
+      "note": "One 15 oz can."
+    },
+    {
+      "ingredient": "Shredded Cheddar",
+      "unit": "bag",
+      "grams": 264,
+      "note": "One 8 oz bag is about 2 cups shredded."
+    },
+    {
+      "ingredient": "Black Beans",
+      "unit": "can",
+      "grams": 425.2428,
+      "note": "One 15 oz can."
+    },
+    {
+      "ingredient": "Chicken Breast",
       "unit": "count",
-      "grams": 170.1,
-      "note": "One fillet is about 6 oz."
-    },
-    {
-      "ingredient": "White Potato",
-      "unit": "count",
-      "grams": 226.8,
-      "note": "One large potato is about 8 oz."
-    },
-    {
-      "ingredient": "Fresh Dill",
-      "unit": "bunch",
-      "grams": 32,
-      "note": "One small bunch yields about 8 sprigs."
-    },
-    {
-      "ingredient": "Fresh Dill",
-      "unit": "sprig",
-      "grams": 4,
-      "note": "One bunch yields about 8 sprigs."
+      "grams": 226.7962,
+      "note": "One boneless skinless breast is about 8 oz."
     },
     {
       "ingredient": "Sun-Dried Tomatoes",
@@ -803,183 +1029,80 @@
       "note": "One small jar drains to about 1 cup."
     },
     {
-      "ingredient": "Mixed Pitted Olives",
-      "unit": "jar",
-      "grams": 68,
-      "note": "One small jar drains to about 1/2 cup."
+      "ingredient": "Broccoli Florets",
+      "unit": "head",
+      "grams": 273,
+      "note": "One large head yields about 3 cups of florets."
     },
     {
-      "ingredient": "Shredded Cheddar",
-      "unit": "bag",
-      "grams": 226.8,
-      "note": "One 8 oz bag is about 2 cups shredded."
+      "ingredient": "Salmon Fillets",
+      "unit": "count",
+      "grams": 170.0971,
+      "note": "One 6 oz fillet is 0.375 lb; 4 fillets equal 1.5 lb."
+    },
+    {
+      "ingredient": "Fresh Dill",
+      "unit": "bunch",
+      "grams": 25,
+      "note": "One small bunch."
+    },
+    {
+      "ingredient": "White Potato",
+      "unit": "count",
+      "grams": 226.7962,
+      "note": "One large potato is about 8 oz."
+    },
+    {
+      "ingredient": "Mixed Pitted Olives",
+      "unit": "jar",
+      "grams": 67.2,
+      "note": "One small jar drains to about 1/2 cup."
     },
     {
       "ingredient": "Fresh Basil",
       "unit": "bunch",
       "grams": 25,
-      "note": "One grocery bunch is about 25 g of leaves."
+      "note": "One small bunch."
     },
     {
-      "ingredient": "Fresh Rosemary",
-      "unit": "sprig",
-      "grams": 1,
-      "note": "One 4 inch sprig."
+      "ingredient": "Green Onions",
+      "unit": "bunch",
+      "grams": 100,
+      "note": "One bunch, about 6 stalks."
     }
   ],
   "pantry": [
-    {
-      "ingredient": "Olive Oil",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Olive oil | on hand | pantry | 2026-02-01",
-      "note": "Amount not tracked."
-    },
-    {
-      "ingredient": "Rice",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Rice | on hand | pantry | 2026-02-01",
-      "note": "Amount not tracked."
-    },
-    {
-      "ingredient": "Chicken Stock",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Chicken stock | on hand | pantry | 2026-02-01",
-      "note": "Amount not tracked."
-    },
-    {
-      "ingredient": "Soy Sauce",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Soy sauce | on hand | pantry | 2026-02-01",
-      "note": "Amount not tracked."
-    },
-    {
-      "ingredient": "Cornstarch",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Cornstarch | on hand | baking | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Butter",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Butter | on hand | dairy | 2026-02-01",
-      "note": null
-    },
     {
       "ingredient": "All-Purpose Flour",
       "qty": null,
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "All-purpose flour | on hand | baking | 2026-02-01",
-      "note": null
+      "rawText": "All-Purpose Flour | on hand"
     },
     {
-      "ingredient": "Honey",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Honey | on hand | pantry | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Unsweetened Cocoa Powder",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Unsweetened cocoa powder | on hand | baking | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Granulated Sugar",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Granulated sugar | on hand | baking | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Red Pepper Flakes",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Red pepper flakes | on hand | spice | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Toasted Sesame Oil",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Toasted sesame oil | on hand | pantry | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Brown Sugar",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Brown sugar | on hand | baking | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Penne Pasta",
-      "qty": null,
-      "unit": null,
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Penne pasta | on hand | pantry | 2026-02-01",
-      "note": "Amount not tracked."
-    },
-    {
-      "ingredient": "Dried Oregano",
+      "ingredient": "BBQ Sauce",
       "qty": 0.5,
-      "unit": "tsp",
+      "unit": "cup",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Dried oregano | 0.5 tsp | spice | 2026-02-01",
-      "note": null
+      "rawText": "BBQ Sauce | 0.5 cup"
     },
     {
-      "ingredient": "Ground Ginger",
-      "qty": 0.5,
-      "unit": "tsp",
+      "ingredient": "Baby Spinach",
+      "qty": 5,
+      "unit": "oz",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Ground ginger | 0.5 tsp | spice | 2026-02-01",
-      "note": null
+      "rawText": "Baby Spinach | 5 oz"
     },
     {
-      "ingredient": "Salt",
-      "qty": null,
-      "unit": null,
+      "ingredient": "Beef Broth",
+      "qty": 3.5,
+      "unit": "cup",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Salt | on hand | spice | 2026-02-01",
-      "note": null
+      "rawText": "Beef Broth | 3.5 cup"
     },
     {
       "ingredient": "Black Pepper",
@@ -987,242 +1110,207 @@
       "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Black pepper | on hand | spice | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Ground Beef",
-      "qty": 3,
-      "unit": "lb",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Ground beef | 3 lb | protein | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Chicken Breast",
-      "qty": 1.5,
-      "unit": "lb",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Chicken breast | 1.5 lb | protein | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Salmon Fillets",
-      "qty": 2,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Salmon fillets | 2 count | protein | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Red Onion",
-      "qty": 2,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Red onion | 2 count | produce | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Yellow Onion",
-      "qty": 2,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Yellow onion | 2 count | produce | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Garlic",
-      "qty": 6,
-      "unit": "clove",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Garlic | 6 clove | produce | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Carrots",
-      "qty": 1,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Carrots | 1 count | produce | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Celery",
-      "qty": 3,
-      "unit": "stalk",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Celery | 3 stalk | produce | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Turnips",
-      "qty": 4,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Turnips | 4 count | produce | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Parsnips",
-      "qty": 1,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Parsnips | 1 count | produce | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Red Bell Pepper",
-      "qty": 1,
-      "unit": "count",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Red bell pepper | 1 count | produce | 2026-02-01",
-      "note": null
+      "rawText": "Black Pepper | on hand"
     },
     {
       "ingredient": "Broccoli Florets",
-      "qty": 1,
+      "qty": 0,
       "unit": "head",
       "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Broccoli florets | 1 head | produce | 2026-02-01",
-      "note": null
+      "status": "out",
+      "rawText": "Broccoli Florets | 0 head"
     },
     {
-      "ingredient": "Zucchini",
-      "qty": 2,
-      "unit": "count",
+      "ingredient": "Brown Sugar",
+      "qty": null,
+      "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Zucchini | 2 count | produce | 2026-02-01",
-      "note": null
+      "rawText": "Brown Sugar | on hand"
     },
     {
-      "ingredient": "White Potato",
-      "qty": 2,
-      "unit": "count",
+      "ingredient": "Butter",
+      "qty": 16,
+      "unit": "tbsp",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "White potato | 2 count | produce | 2026-02-01",
-      "note": null
+      "rawText": "Butter | 16 tbsp"
     },
     {
-      "ingredient": "Lemon",
+      "ingredient": "Chicken Breast",
+      "qty": 2.5,
+      "unit": "lb",
+      "qtyApprox": true,
+      "status": "on_hand",
+      "rawText": "Chicken Breast | 2.5 lb"
+    },
+    {
+      "ingredient": "Chicken Stock",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Chicken Stock | on hand"
+    },
+    {
+      "ingredient": "Cornstarch",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Cornstarch | on hand"
+    },
+    {
+      "ingredient": "Dark Red Kidney Beans",
       "qty": 1,
+      "unit": "can",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Dark Red Kidney Beans | 1 can"
+    },
+    {
+      "ingredient": "Diced Tomatoes with Green Chilies",
+      "qty": 2,
+      "unit": "can",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Diced Tomatoes with Green Chilies | 2 can"
+    },
+    {
+      "ingredient": "Dried Oregano",
+      "qty": 1,
+      "unit": "tsp",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Dried Oregano | 1 tsp"
+    },
+    {
+      "ingredient": "Eggs",
+      "qty": 16,
       "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Lemon | 1 count | produce | 2026-02-01",
-      "note": null
+      "rawText": "Eggs | 16 count"
     },
     {
       "ingredient": "Fresh Basil",
-      "qty": 1,
+      "qty": 5,
       "unit": "bunch",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Fresh basil | 1 bunch | produce | 2026-02-01",
-      "note": null
+      "rawText": "Fresh Basil | 5 bunch"
     },
     {
       "ingredient": "Fresh Dill",
       "qty": 2,
       "unit": "bunch",
-      "qtyApprox": false,
+      "qtyApprox": true,
       "status": "on_hand",
-      "rawText": "Fresh dill | 2 bunch | produce | 2026-02-01",
-      "note": null
+      "rawText": "Fresh Dill | 2 bunch"
     },
     {
-      "ingredient": "Fresh Rosemary",
-      "qty": 1,
-      "unit": "sprig",
+      "ingredient": "Garlic",
+      "qty": 10,
+      "unit": "clove",
+      "qtyApprox": true,
+      "status": "on_hand",
+      "rawText": "Garlic | 10 clove"
+    },
+    {
+      "ingredient": "Garlic Powder",
+      "qty": null,
+      "unit": null,
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Fresh rosemary | 1 sprig | produce | 2026-02-01",
-      "note": null
+      "rawText": "Garlic Powder | on hand"
+    },
+    {
+      "ingredient": "Granulated Sugar",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Granulated Sugar | on hand"
+    },
+    {
+      "ingredient": "Green Onions",
+      "qty": 2,
+      "unit": "bunch",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Green Onions | 2 bunch"
+    },
+    {
+      "ingredient": "Ground Beef",
+      "qty": 2,
+      "unit": "lb",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Ground Beef | 2 lb"
     },
     {
       "ingredient": "Heavy Cream",
-      "qty": 2,
+      "qty": 0.5,
       "unit": "cup",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Heavy cream | 2 cup | dairy | 2026-02-01",
-      "note": null
+      "rawText": "Heavy Cream | 0.5 cup"
     },
     {
-      "ingredient": "Parmesan Cheese",
-      "qty": 1.5,
-      "unit": "cup",
+      "ingredient": "Honey",
+      "qty": 0,
+      "unit": "tbsp",
+      "qtyApprox": false,
+      "status": "out",
+      "rawText": "Honey | 0 tbsp"
+    },
+    {
+      "ingredient": "Hot Sauce",
+      "qty": 6,
+      "unit": "oz",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Parmesan cheese | 1.5 cup | dairy | 2026-02-01",
-      "note": null
+      "rawText": "Hot Sauce | 6 oz"
     },
     {
-      "ingredient": "Shredded Cheddar",
-      "qty": 1,
-      "unit": "bag",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Shredded cheddar | 1 bag | dairy | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Diced Tomatoes with Green Chilies",
-      "qty": 1,
-      "unit": "can",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Diced tomatoes with green chilies | 1 can | canned | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Tomato Sauce",
-      "qty": 3,
-      "unit": "can",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Tomato sauce | 3 can | canned | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Sun-Dried Tomatoes",
+      "ingredient": "Lemon",
       "qty": 2,
-      "unit": "jar",
+      "unit": "count",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Sun-dried tomatoes | 2 jar | canned | 2026-02-01",
-      "note": null
-    },
-    {
-      "ingredient": "Dark Red Kidney Beans",
-      "qty": 2,
-      "unit": "can",
-      "qtyApprox": false,
-      "status": "on_hand",
-      "rawText": "Dark red kidney beans | 2 can | canned | 2026-02-01",
-      "note": null
+      "rawText": "Lemon | 2 count"
     },
     {
       "ingredient": "Light Red Kidney Beans",
-      "qty": 2,
+      "qty": 1,
       "unit": "can",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Light red kidney beans | 2 can | canned | 2026-02-01",
-      "note": null
+      "rawText": "Light Red Kidney Beans | 1 can"
+    },
+    {
+      "ingredient": "Lime",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Lime | on hand"
+    },
+    {
+      "ingredient": "Mayonnaise",
+      "qty": 16,
+      "unit": "tbsp",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Mayonnaise | 16 tbsp"
+    },
+    {
+      "ingredient": "Milk",
+      "qty": 8,
+      "unit": "cup",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Milk | 8 cup"
     },
     {
       "ingredient": "Mixed Pitted Olives",
@@ -1230,17 +1318,167 @@
       "unit": "jar",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Mixed pitted olives | 1 jar | canned | 2026-02-01",
-      "note": null
+      "rawText": "Mixed Pitted Olives | 1 jar"
     },
     {
-      "ingredient": "Beef Broth",
-      "qty": 1,
+      "ingredient": "Olive Oil",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Olive Oil | on hand"
+    },
+    {
+      "ingredient": "Paprika",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Paprika | on hand"
+    },
+    {
+      "ingredient": "Parmesan Cheese",
+      "qty": 1.5,
       "unit": "cup",
       "qtyApprox": false,
       "status": "on_hand",
-      "rawText": "Beef broth | 1 cup | canned | 2026-02-01",
-      "note": null
+      "rawText": "Parmesan Cheese | 1.5 cup"
+    },
+    {
+      "ingredient": "Penne Pasta",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Penne Pasta | on hand"
+    },
+    {
+      "ingredient": "Red Bell Pepper",
+      "qty": 6,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Red Bell Pepper | 6 count"
+    },
+    {
+      "ingredient": "Red Onion",
+      "qty": 1,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Red Onion | 1 count"
+    },
+    {
+      "ingredient": "Red Pepper Flakes",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Red Pepper Flakes | on hand"
+    },
+    {
+      "ingredient": "Rice",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Rice | on hand"
+    },
+    {
+      "ingredient": "Salmon Fillets",
+      "qty": 0,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "out",
+      "rawText": "Salmon Fillets | 0 count"
+    },
+    {
+      "ingredient": "Salt",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Salt | on hand"
+    },
+    {
+      "ingredient": "Shredded Cheddar",
+      "qty": 1,
+      "unit": "bag",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Shredded Cheddar | 1 bag"
+    },
+    {
+      "ingredient": "Soy Sauce",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Soy Sauce | on hand"
+    },
+    {
+      "ingredient": "Sun-Dried Tomatoes",
+      "qty": 0.33,
+      "unit": "jar",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Sun-Dried Tomatoes | 0.33 jar"
+    },
+    {
+      "ingredient": "Toasted Sesame Oil",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Toasted Sesame Oil | on hand"
+    },
+    {
+      "ingredient": "Tomato Sauce",
+      "qty": 3,
+      "unit": "can",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Tomato Sauce | 3 can"
+    },
+    {
+      "ingredient": "Unsweetened Cocoa Powder",
+      "qty": null,
+      "unit": null,
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Unsweetened Cocoa Powder | on hand"
+    },
+    {
+      "ingredient": "White Potato",
+      "qty": 1,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "White Potato | 1 count"
+    },
+    {
+      "ingredient": "Yellow Mustard",
+      "qty": 8,
+      "unit": "oz",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Yellow Mustard | 8 oz"
+    },
+    {
+      "ingredient": "Yellow Onion",
+      "qty": 2,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Yellow Onion | 2 count"
+    },
+    {
+      "ingredient": "Zucchini",
+      "qty": 1,
+      "unit": "count",
+      "qtyApprox": false,
+      "status": "on_hand",
+      "rawText": "Zucchini | 1 count"
     }
   ],
   "rules": [
@@ -1248,42 +1486,49 @@
       "scope": "keyword",
       "targetText": "mushroom",
       "severity": "forbidden",
+      "conditionNote": null,
       "reason": "Household never-use list: mushrooms (any kind)."
     },
     {
       "scope": "keyword",
       "targetText": "pork",
       "severity": "forbidden",
+      "conditionNote": null,
       "reason": "Household never-use list: all pork cuts."
     },
     {
       "scope": "keyword",
       "targetText": "bacon",
       "severity": "forbidden",
+      "conditionNote": null,
       "reason": "Pork product; household never-use list."
     },
     {
       "scope": "keyword",
       "targetText": "sausage",
       "severity": "forbidden",
+      "conditionNote": null,
       "reason": "Pork product by default; household never-use list."
     },
     {
       "scope": "keyword",
       "targetText": "ham",
       "severity": "forbidden",
+      "conditionNote": null,
       "reason": "Pork product; household never-use list."
     },
     {
       "scope": "keyword",
       "targetText": "prosciutto",
       "severity": "forbidden",
+      "conditionNote": null,
       "reason": "Pork product; household never-use list."
     },
     {
       "scope": "keyword",
       "targetText": "pancetta",
       "severity": "forbidden",
+      "conditionNote": null,
       "reason": "Pork product; household never-use list."
     },
     {
@@ -1317,13 +1562,495 @@
   ],
   "recipes": [
     {
+      "key": "overnight-oats",
+      "title": "Overnight Oats",
+      "description": "Creamy no-cook oats soaked overnight with milk, chia, and honey. Ready when you wake up.",
+      "sourceUrl": null,
+      "sourceName": null,
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1497888329096-51c27beff665?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 2,
+      "yieldText": "2 jars",
+      "prepMinutes": 10,
+      "cookMinutes": 0,
+      "totalMinutes": 10,
+      "spiceLevel": "none",
+      "cuisine": "American",
+      "mealTypes": [
+        "breakfast"
+      ],
+      "tags": [
+        "breakfast",
+        "no-cook",
+        "meal-prep",
+        "make-ahead"
+      ],
+      "equipment": [
+        "2 jars with lids",
+        "spoon"
+      ],
+      "nutrition": null,
+      "storageNotes": "Keeps up to 3 days in the fridge. Stir and loosen with a splash of milk before eating; eat cold or reheat.",
+      "leftoverDays": 3,
+      "status": "want_to_try",
+      "rating": null,
+      "notes": "Prep the night before. Top with fruit, nuts, or a spoonful of yogurt.",
+      "ingredients": [
+        {
+          "ingredient": "Rolled Oats",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1 cup rolled oats"
+        },
+        {
+          "ingredient": "Milk",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1 cup milk"
+        },
+        {
+          "ingredient": "Chia Seeds",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 Tbsp chia seeds"
+        },
+        {
+          "ingredient": "Honey",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 Tbsp honey"
+        },
+        {
+          "ingredient": "Vanilla Extract",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1/2 tsp vanilla extract"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": null,
+          "unit": null,
+          "prepNote": "pinch",
+          "originalText": "Pinch of salt",
+          "scalingExempt": true
+        }
+      ],
+      "steps": [
+        {
+          "text": "Divide the oats, milk, chia seeds, honey, vanilla, and a pinch of salt between two jars."
+        },
+        {
+          "text": "Stir well, cover, and refrigerate at least 6 hours or overnight.",
+          "durationMinutes": 480
+        },
+        {
+          "text": "Stir before eating, loosen with a splash of milk if thick, and add toppings."
+        }
+      ]
+    },
+    {
+      "key": "eggs-and-toast",
+      "title": "Eggs & Toast",
+      "description": "Soft-scrambled eggs with buttered toast, the weekday breakfast standby.",
+      "sourceUrl": null,
+      "sourceName": null,
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1674637630870-0786db4ec3cb?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 2,
+      "yieldText": "2 plates",
+      "prepMinutes": 5,
+      "cookMinutes": 8,
+      "totalMinutes": 13,
+      "spiceLevel": "none",
+      "cuisine": "American",
+      "mealTypes": [
+        "breakfast"
+      ],
+      "tags": [
+        "breakfast",
+        "quick",
+        "eggs"
+      ],
+      "equipment": [
+        "non-stick skillet",
+        "toaster"
+      ],
+      "nutrition": null,
+      "storageNotes": "Best eaten fresh; refrigerate leftovers up to 1 day.",
+      "leftoverDays": 1,
+      "status": "want_to_try",
+      "rating": null,
+      "notes": "Quick same-day breakfast; swap in pancakes on weekends.",
+      "ingredients": [
+        {
+          "ingredient": "Eggs",
+          "qty": 4,
+          "unit": "large",
+          "prepNote": "beaten",
+          "originalText": "4 large eggs, beaten"
+        },
+        {
+          "ingredient": "Butter",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 Tbsp butter"
+        },
+        {
+          "ingredient": "Bread",
+          "qty": 2,
+          "unit": "slice",
+          "prepNote": "toasted",
+          "originalText": "2 slices bread, toasted"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": null,
+          "unit": null,
+          "prepNote": "to taste",
+          "originalText": "Salt, to taste",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Black Pepper",
+          "qty": null,
+          "unit": null,
+          "prepNote": "to taste",
+          "originalText": "Black pepper, to taste",
+          "scalingExempt": true
+        }
+      ],
+      "steps": [
+        {
+          "text": "Toast the bread."
+        },
+        {
+          "text": "Beat the eggs with a pinch of salt and pepper."
+        },
+        {
+          "text": "Melt the butter in a non-stick skillet over medium-low heat. Add the eggs and stir gently until just set, about 3-4 minutes.",
+          "durationMinutes": 4
+        },
+        {
+          "text": "Pile the eggs onto the toast and season with more pepper if desired."
+        }
+      ]
+    },
+    {
+      "key": "pancakes",
+      "title": "Pancakes",
+      "description": "Fluffy everyday pancakes made from pantry staples.",
+      "sourceUrl": null,
+      "sourceName": null,
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1710533820700-dd6f6623cc97?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 2,
+      "yieldText": "About 8 pancakes",
+      "prepMinutes": 10,
+      "cookMinutes": 10,
+      "totalMinutes": 20,
+      "spiceLevel": "none",
+      "cuisine": "American",
+      "mealTypes": [
+        "breakfast"
+      ],
+      "tags": [
+        "breakfast",
+        "weekend",
+        "pantry"
+      ],
+      "equipment": [
+        "mixing bowls",
+        "whisk",
+        "griddle or skillet"
+      ],
+      "nutrition": null,
+      "storageNotes": "Refrigerate leftovers up to 2 days; reheat in the toaster or a dry skillet.",
+      "leftoverDays": 2,
+      "status": "want_to_try",
+      "rating": null,
+      "notes": "Weekend breakfast. Serve with butter and syrup or honey.",
+      "ingredients": [
+        {
+          "ingredient": "All-Purpose Flour",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1 cup all-purpose flour"
+        },
+        {
+          "ingredient": "Baking Powder",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp baking powder"
+        },
+        {
+          "ingredient": "Granulated Sugar",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 Tbsp granulated sugar"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": 0.25,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1/4 tsp salt"
+        },
+        {
+          "ingredient": "Milk",
+          "qty": 0.75,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "3/4 cup milk"
+        },
+        {
+          "ingredient": "Eggs",
+          "qty": 1,
+          "unit": "large",
+          "prepNote": null,
+          "originalText": "1 large egg"
+        },
+        {
+          "ingredient": "Butter",
+          "qty": 2,
+          "unit": "tbsp",
+          "prepNote": "melted",
+          "originalText": "2 Tbsp butter, melted"
+        },
+        {
+          "ingredient": "Vanilla Extract",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1/2 tsp vanilla extract"
+        }
+      ],
+      "steps": [
+        {
+          "text": "Whisk the flour, baking powder, sugar, and salt in a bowl."
+        },
+        {
+          "text": "Whisk the milk, egg, melted butter, and vanilla in a second bowl, then pour into the dry ingredients and stir until just combined (lumps are fine)."
+        },
+        {
+          "text": "Heat a lightly greased griddle or skillet over medium heat. Pour about 1/4 cup batter per pancake and cook until bubbles form and the edges look set, about 2 minutes; flip and cook 1-2 minutes more.",
+          "durationMinutes": 4
+        },
+        {
+          "text": "Serve warm with butter and syrup or honey."
+        }
+      ]
+    },
+    {
+      "key": "butter-pecan-banana-bread",
+      "title": "Butter Pecan Banana Bread",
+      "description": "Rich, nutty banana bread flavored like butter pecan ice cream, topped with cream cheese frosting.",
+      "sourceUrl": "https://www.acozykitchen.com/butter-pecan-banana-bread",
+      "sourceName": "A Cozy Kitchen",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1632931057819-4eefffa8e007?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 8,
+      "yieldText": null,
+      "prepMinutes": 20,
+      "cookMinutes": 60,
+      "totalMinutes": 80,
+      "spiceLevel": null,
+      "cuisine": null,
+      "mealTypes": [
+        "breakfast",
+        "snack"
+      ],
+      "tags": [
+        "baking",
+        "banana bread",
+        "pecan",
+        "dessert"
+      ],
+      "equipment": [],
+      "nutrition": {
+        "calories": 590,
+        "proteinG": 6,
+        "carbsG": 70,
+        "fatG": 33,
+        "fiberG": 3,
+        "sugarG": 46,
+        "sodiumMg": 267
+      },
+      "storageNotes": "Store frosted loaf tightly wrapped at room temp up to 3 days. Freeze unfrosted up to 2 months; thaw at room temp.",
+      "leftoverDays": 3,
+      "status": "rotation",
+      "rating": null,
+      "notes": "Bake 55-65 min at 350F in 8x4 or 9x5 loaf pan. Cool completely before frosting. Store frosted loaf tightly wrapped at room temp up to 3 days; freeze unfrosted up to 2 months.",
+      "ingredients": [
+        {
+          "ingredient": "Butter",
+          "qty": 0.5,
+          "unit": "cup",
+          "prepNote": "for butter pecan mixture",
+          "originalText": "0.5 cup butter, for butter pecan mixture"
+        },
+        {
+          "ingredient": "Pecans",
+          "qty": 0.75,
+          "unit": "cup",
+          "prepNote": "finely chopped",
+          "originalText": "0.75 cup pecans, finely chopped"
+        },
+        {
+          "ingredient": "Bananas",
+          "qty": 1.5,
+          "unit": "cup",
+          "prepNote": "mashed, from 3 large or 4 small very ripe",
+          "originalText": "1.5 cup bananas, mashed, from 3 large or 4 small very ripe"
+        },
+        {
+          "ingredient": "Granulated Sugar",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1 cup granulated sugar"
+        },
+        {
+          "ingredient": "Olive Oil",
+          "qty": 3,
+          "unit": "tbsp",
+          "prepNote": "neutral oil",
+          "originalText": "3 tbsp olive oil, neutral oil"
+        },
+        {
+          "ingredient": "Vanilla Extract",
+          "qty": 2,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "2 tsp vanilla extract"
+        },
+        {
+          "ingredient": "Eggs",
+          "qty": 2,
+          "unit": "count",
+          "prepNote": null,
+          "originalText": "2 eggs"
+        },
+        {
+          "ingredient": "Baking Powder",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp baking powder"
+        },
+        {
+          "ingredient": "Baking Soda",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "0.5 tsp baking soda"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": "Diamond Crystal",
+          "originalText": "0.5 tsp salt, Diamond Crystal"
+        },
+        {
+          "ingredient": "All-Purpose Flour",
+          "qty": 1.5,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1.5 cup all-purpose flour"
+        },
+        {
+          "ingredient": "Butter",
+          "qty": 3,
+          "unit": "tbsp",
+          "prepNote": "room temperature",
+          "originalText": "3 tbsp butter, room temperature",
+          "groupLabel": "Cream Cheese Frosting"
+        },
+        {
+          "ingredient": "Cream Cheese",
+          "qty": 3,
+          "unit": "oz",
+          "prepNote": "room temperature",
+          "originalText": "3 oz cream cheese, room temperature",
+          "groupLabel": "Cream Cheese Frosting"
+        },
+        {
+          "ingredient": "Powdered Sugar",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1 cup powdered sugar",
+          "groupLabel": "Cream Cheese Frosting"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": null,
+          "unit": null,
+          "prepNote": null,
+          "originalText": "salt",
+          "optional": true,
+          "groupLabel": "Cream Cheese Frosting"
+        },
+        {
+          "ingredient": "Heavy Cream",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 tbsp heavy cream",
+          "groupLabel": "Cream Cheese Frosting"
+        },
+        {
+          "ingredient": "Vanilla Extract",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp vanilla extract",
+          "groupLabel": "Cream Cheese Frosting"
+        }
+      ],
+      "steps": [
+        {
+          "text": "Make the butter pecan mixture: melt 1/2 cup butter in a small saucepan over low heat. Stir in pecans, raise to medium. Once butter bubbles and foams, cook 2 minutes, stirring frequently and scraping the bottom. Remove from heat and transfer to a large bowl to cool 15 minutes."
+        },
+        {
+          "text": "During the cool-down, preheat oven to 350F. Grease and line an 8x4 or 9x5 loaf pan with parchment. Mash the bananas.",
+          "durationMinutes": 15
+        },
+        {
+          "text": "After 15 minutes, add mashed bananas, sugar, oil, and vanilla to the butter pecan mixture; whisk to combine. Whisk in eggs until fully combined, then whisk in baking powder, baking soda, and salt. Add flour and fold with a spatula just until batter comes together; do not over-mix."
+        },
+        {
+          "text": "Pour batter into prepared pan. Bake 55-65 minutes until golden brown and a toothpick comes out clean.",
+          "durationMinutes": 60
+        },
+        {
+          "text": "Cool 10 minutes in pan, then lift out with parchment to a cooling rack; cool completely."
+        },
+        {
+          "text": "Make frosting: beat cream cheese until smooth, then beat in butter ~15 seconds. Add powdered sugar, salt, vanilla, and heavy cream; beat 2 minutes until fluffy."
+        },
+        {
+          "text": "Assemble: dollop frosting over cooled loaf and swirl with back of spoon. Slice and serve."
+        }
+      ]
+    },
+    {
       "key": "slow-cooker-chili",
       "title": "Easy Slow Cooker Chili",
       "description": "A hearty, rich crockpot chili with ground beef, two kinds of kidney beans, and warm spices. The slow cooker does most of the work.",
       "sourceUrl": "https://www.cookingclassy.com/slow-cooker-chili/",
       "sourceName": "Cooking Classy",
-      "author": "Jaclyn",
-      "imageUrl": "https://www.cookingclassy.com/wp-content/uploads/2013/02/slow-cooker-chili-24.jpg",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1633983055303-2e33e153b7dc?w=1200&q=80&fm=jpg&fit=crop",
       "servings": 8,
       "yieldText": "8 servings (about 12 cups)",
       "prepMinutes": 15,
@@ -1359,124 +2086,98 @@
       "leftoverDays": 4,
       "status": "want_to_try",
       "rating": null,
-      "notes": "Household makes this mild: use diced tomatoes with MILD green chilies and pass red pepper flakes on the side. Ingredient quantities are for 8 servings; the lunch batch is scaled to 6.",
+      "notes": "Made mild: use diced tomatoes with MILD green chilies and pass red pepper flakes on the side. Ingredient quantities are for 8 servings; scaled here to a 6-serving lunch batch.",
       "ingredients": [
         {
           "ingredient": "Olive Oil",
           "qty": 1,
           "unit": "tbsp",
           "prepNote": null,
-          "originalText": "1 Tbsp olive oil",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "1 Tbsp olive oil"
         },
         {
           "ingredient": "Ground Beef",
           "qty": 2,
           "unit": "lb",
           "prepNote": "85% lean",
-          "originalText": "2 lbs lean ground beef",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "2 lbs lean ground beef"
         },
         {
           "ingredient": "Yellow Onion",
           "qty": 1,
-          "unit": "count",
-          "prepNote": "large, finely chopped",
-          "originalText": "1 large yellow onion, finely chopped",
-          "optional": false,
-          "scalingExempt": false
+          "unit": "large",
+          "prepNote": "finely chopped",
+          "originalText": "1 large yellow onion, finely chopped"
         },
         {
           "ingredient": "Garlic",
           "qty": 3,
           "unit": "clove",
           "prepNote": "finely minced",
-          "originalText": "3 cloves garlic, finely minced",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "3 cloves garlic, finely minced"
         },
         {
           "ingredient": "Diced Tomatoes with Green Chilies",
           "qty": 2,
           "unit": "can",
           "prepNote": "mild",
-          "originalText": "2 (14.5 oz) cans diced tomatoes with green chilies",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "2 (14.5 oz) cans diced tomatoes with green chilies"
         },
         {
           "ingredient": "Tomato Sauce",
           "qty": 3,
           "unit": "can",
           "prepNote": "8 oz cans",
-          "originalText": "3 (8 oz) cans tomato sauce",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "3 (8 oz) cans tomato sauce"
         },
         {
           "ingredient": "Beef Broth",
           "qty": 0.5,
           "unit": "cup",
           "prepNote": null,
-          "originalText": "1/2 cup beef broth",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "1/2 cup beef broth"
         },
         {
           "ingredient": "Chili Powder",
           "qty": 2,
           "unit": "tbsp",
           "prepNote": null,
-          "originalText": "2 Tbsp chili powder",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "2 Tbsp chili powder"
         },
         {
           "ingredient": "Ground Cumin",
           "qty": 2.5,
           "unit": "tsp",
           "prepNote": null,
-          "originalText": "2 1/2 tsp ground cumin",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "2 1/2 tsp ground cumin"
         },
         {
           "ingredient": "Paprika",
           "qty": 2,
           "unit": "tsp",
           "prepNote": null,
-          "originalText": "2 tsp paprika",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "2 tsp paprika"
         },
         {
           "ingredient": "Unsweetened Cocoa Powder",
           "qty": 2,
           "unit": "tsp",
           "prepNote": null,
-          "originalText": "2 tsp unsweetened cocoa powder",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "2 tsp unsweetened cocoa powder"
         },
         {
           "ingredient": "Granulated Sugar",
           "qty": 1,
           "unit": "tsp",
           "prepNote": null,
-          "originalText": "1 tsp granulated sugar",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "1 tsp granulated sugar"
         },
         {
           "ingredient": "Ground Coriander",
           "qty": 0.5,
           "unit": "tsp",
           "prepNote": null,
-          "originalText": "1/2 tsp ground coriander",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "1/2 tsp ground coriander"
         },
         {
           "ingredient": "Salt",
@@ -1484,7 +2185,6 @@
           "unit": null,
           "prepNote": "to taste",
           "originalText": "Salt and freshly ground black pepper",
-          "optional": false,
           "scalingExempt": true
         },
         {
@@ -1493,7 +2193,6 @@
           "unit": null,
           "prepNote": "to taste",
           "originalText": "Salt and freshly ground black pepper",
-          "optional": false,
           "scalingExempt": true
         },
         {
@@ -1501,18 +2200,14 @@
           "qty": 1,
           "unit": "can",
           "prepNote": "drained and rinsed",
-          "originalText": "1 (15 oz) can dark red kidney beans, drained and rinsed",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "1 (15 oz) can dark red kidney beans, drained and rinsed"
         },
         {
           "ingredient": "Light Red Kidney Beans",
           "qty": 1,
           "unit": "can",
           "prepNote": "drained and rinsed",
-          "originalText": "1 (15 oz) can light red kidney beans, drained and rinsed",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "1 (15 oz) can light red kidney beans, drained and rinsed"
         },
         {
           "ingredient": "Shredded Cheddar",
@@ -1521,7 +2216,6 @@
           "prepNote": "for serving",
           "originalText": "Shredded cheddar cheese, for serving",
           "optional": true,
-          "scalingExempt": false,
           "groupLabel": "For serving"
         }
       ],
@@ -1553,176 +2247,363 @@
       ]
     },
     {
-      "key": "lazy-chicken-soup",
-      "title": "Lazy Slow Cooker Chicken Soup",
-      "description": "Golden chicken broth with carrots, turnips, parsnips, and fresh herbs. Minimal effort, comfort food in a bowl.",
-      "sourceUrl": "https://thelazyslowcooker.com/lazy-chicken-soup/",
-      "sourceName": "The Lazy Slow Cooker",
-      "author": "Susan Goldenberg",
-      "imageUrl": "https://thelazyslowcooker.com/wp-content/uploads/2022/04/2E35272A-AFA9-4E81-9082-8D4A964C18D9-1024x1024.png",
-      "servings": 10,
-      "yieldText": "10 servings",
+      "key": "healthy-chicken-tortilla-soup",
+      "title": "Healthy Chicken Tortilla Soup",
+      "description": "Flavorful chicken tortilla soup with tender chicken thighs, black beans, fire-roasted tomatoes, and coconut milk. Topped with crispy tortilla strips.",
+      "sourceUrl": "https://allthehealthythings.com/healthy-chicken-tortilla-soup/",
+      "sourceName": "All the Healthy Things",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1695088224233-69cc4f3b19cc?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 6,
+      "yieldText": null,
       "prepMinutes": 15,
-      "cookMinutes": 480,
-      "totalMinutes": 495,
-      "spiceLevel": "none",
-      "cuisine": "American",
+      "cookMinutes": 40,
+      "totalMinutes": 55,
+      "spiceLevel": "mild",
+      "cuisine": "Mexican",
       "mealTypes": [
         "lunch",
         "dinner"
       ],
       "tags": [
-        "slow-cooker",
         "soup",
+        "chicken",
         "batch-cook",
-        "freezer-friendly",
-        "chicken"
+        "mexican",
+        "meal-prep"
       ],
       "equipment": [
-        "6-quart slow cooker",
-        "measuring cups and spoons"
+        "dutch oven or large pot"
       ],
-      "nutrition": {
-        "calories": 129,
-        "proteinG": 7,
-        "carbsG": 18,
-        "fatG": 3,
-        "fiberG": 2,
-        "sugarG": 7,
-        "sodiumMg": 373
-      },
-      "storageNotes": "Refrigerate in an airtight container 3-5 days; freeze 4-6 months. Reheat single servings gently.",
+      "nutrition": null,
+      "storageNotes": "Fridge; freeze. Reheat stovetop. Toppings add at serving.",
       "leftoverDays": 4,
       "status": "want_to_try",
       "rating": null,
-      "notes": "Source recipe is 10 servings; the plan scales the lunch batch to 6. Roasted garlic gives a mellow flavor, but regular garlic cloves can be substituted. Bone-in chicken pieces add flavor; add noodles or rice to make it heartier.",
+      "notes": "Kept mild: seed jalapeno, use 0.5 tsp chipotle (or omit). Toppings optional. Freezes well. Good batch lunch.",
       "ingredients": [
         {
-          "ingredient": "Chicken Breast",
-          "qty": 2,
-          "unit": "count",
-          "prepNote": "boneless skinless; bone-in pieces add flavor",
-          "originalText": "2 pieces chicken breast",
-          "optional": false,
-          "scalingExempt": false
+          "ingredient": "Olive Oil",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 tbsp olive oil"
         },
         {
-          "ingredient": "Carrots",
-          "qty": 2,
-          "unit": "count",
-          "prepNote": "cut in large pieces",
-          "originalText": "2 carrots, cut in large pieces",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Celery",
-          "qty": 2,
-          "unit": "stalk",
-          "prepNote": "cut in large pieces",
-          "originalText": "2 celery stalks, cut in large pieces",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Turnips",
-          "qty": 2,
-          "unit": "count",
-          "prepNote": "cut in large pieces",
-          "originalText": "2 turnips, cut in large pieces",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Parsnips",
-          "qty": 2,
-          "unit": "count",
-          "prepNote": "cut in large pieces",
-          "originalText": "2 parsnips, cut in large pieces",
-          "optional": false,
-          "scalingExempt": false
+          "ingredient": "Boneless Skinless Chicken Thighs",
+          "qty": 1,
+          "unit": "lb",
+          "prepNote": null,
+          "originalText": "1 lb boneless skinless chicken thighs"
         },
         {
           "ingredient": "Garlic",
-          "qty": 4,
-          "qtyMax": 5,
+          "qty": 6,
           "unit": "clove",
-          "prepNote": "roasted; regular cloves work",
-          "originalText": "4-5 roasted garlic cloves",
-          "optional": false,
-          "scalingExempt": false
+          "prepNote": "minced",
+          "originalText": "6 clove garlic, minced"
         },
         {
           "ingredient": "Yellow Onion",
           "qty": 1,
           "unit": "count",
-          "prepNote": "small, chopped",
-          "originalText": "1 small onion, chopped",
-          "optional": false,
-          "scalingExempt": false
+          "prepNote": "diced",
+          "originalText": "1 yellow onion, diced"
         },
         {
-          "ingredient": "Fresh Dill",
+          "ingredient": "Jalapeno",
           "qty": 1,
-          "unit": "sprig",
-          "prepNote": null,
-          "originalText": "1 sprig fresh dill",
-          "optional": false,
-          "scalingExempt": false
+          "unit": "count",
+          "prepNote": "seeded and finely diced",
+          "originalText": "1 jalapeno, seeded and finely diced"
         },
         {
-          "ingredient": "Fresh Rosemary",
+          "ingredient": "Ground Cumin",
           "qty": 1,
-          "unit": "sprig",
+          "unit": "tbsp",
           "prepNote": null,
-          "originalText": "1 sprig fresh rosemary",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "1 tbsp ground cumin"
         },
         {
-          "ingredient": "Chicken Stock",
-          "qty": 10,
-          "unit": "cup",
+          "ingredient": "Paprika",
+          "qty": 0.5,
+          "unit": "tbsp",
           "prepNote": null,
-          "originalText": "10 cups chicken stock",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "0.5 tbsp paprika"
         },
         {
           "ingredient": "Salt",
-          "qty": null,
-          "unit": null,
-          "prepNote": "to taste",
-          "originalText": "Salt and pepper to taste",
-          "optional": false,
-          "scalingExempt": true
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp salt"
         },
         {
           "ingredient": "Black Pepper",
+          "qty": 0.25,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "0.25 tsp black pepper"
+        },
+        {
+          "ingredient": "Chipotle Powder",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": "use 0.5 tsp for mild",
+          "originalText": "0.5 tsp chipotle powder, use 0.5 tsp for mild"
+        },
+        {
+          "ingredient": "Dried Oregano",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp dried oregano"
+        },
+        {
+          "ingredient": "Fire Roasted Crushed Tomatoes",
+          "qty": 28,
+          "unit": "oz",
+          "prepNote": null,
+          "originalText": "28 oz fire roasted crushed tomatoes"
+        },
+        {
+          "ingredient": "Black Beans",
+          "qty": 2,
+          "unit": "can",
+          "prepNote": "drained and rinsed",
+          "originalText": "2 can black beans, drained and rinsed"
+        },
+        {
+          "ingredient": "Green Chilies",
+          "qty": 4,
+          "unit": "oz",
+          "prepNote": null,
+          "originalText": "4 oz green chilies"
+        },
+        {
+          "ingredient": "Chicken Stock",
+          "qty": 4,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "4 cup chicken stock"
+        },
+        {
+          "ingredient": "Lime Juice",
+          "qty": 0.25,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "0.25 cup lime juice"
+        },
+        {
+          "ingredient": "Coconut Milk",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": "full fat canned",
+          "originalText": "1 cup coconut milk, full fat canned"
+        },
+        {
+          "ingredient": "Cilantro",
+          "qty": 0.5,
+          "unit": "cup",
+          "prepNote": "chopped",
+          "originalText": "0.5 cup cilantro, chopped"
+        },
+        {
+          "ingredient": "Corn Tortillas",
+          "qty": 4,
+          "unit": "count",
+          "prepNote": null,
+          "originalText": "4 corn tortillas"
+        },
+        {
+          "ingredient": "Avocado",
+          "qty": 1,
+          "unit": "count",
+          "prepNote": "sliced, for serving",
+          "originalText": "1 avocado, sliced, for serving"
+        },
+        {
+          "ingredient": "Shredded Cheddar",
+          "qty": 0.5,
+          "unit": "cup",
+          "prepNote": "shredded, for serving",
+          "originalText": "0.5 cup shredded cheddar, shredded, for serving"
+        }
+      ],
+      "steps": []
+    },
+    {
+      "key": "turkey-taco-skillet",
+      "title": "Turkey Taco Skillet",
+      "description": null,
+      "sourceUrl": "https://mallorythedietitian.com/turkey-taco-skillet/",
+      "sourceName": "Mallory the Dietitian",
+      "author": null,
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Tacos_with_ground_beef_-_Massachusetts.jpg/1280px-Tacos_with_ground_beef_-_Massachusetts.jpg",
+      "servings": 6,
+      "yieldText": "6 servings",
+      "prepMinutes": 15,
+      "cookMinutes": 25,
+      "totalMinutes": 40,
+      "spiceLevel": "mild",
+      "cuisine": "Tex-Mex",
+      "mealTypes": [
+        "lunch",
+        "dinner"
+      ],
+      "tags": [
+        "ground-turkey",
+        "one-pan",
+        "high-protein",
+        "batch-cook"
+      ],
+      "equipment": [
+        "large skillet"
+      ],
+      "nutrition": null,
+      "storageNotes": "Fridge 4 days; reheat with a splash of water.",
+      "leftoverDays": 4,
+      "status": "want_to_try",
+      "rating": null,
+      "notes": "Source serves 4; amounts scaled x1.5 for 6. Use mild salsa and go light on the taco seasoning.",
+      "ingredients": [
+        {
+          "ingredient": "Lean Ground Turkey",
+          "qty": 1.5,
+          "unit": "lb",
+          "prepNote": null,
+          "originalText": "1.5 lb lean ground turkey"
+        },
+        {
+          "ingredient": "Olive Oil",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 tbsp olive oil"
+        },
+        {
+          "ingredient": "Red Bell Pepper",
+          "qty": 1.5,
+          "unit": "count",
+          "prepNote": "diced",
+          "originalText": "1.5 red bell pepper, diced"
+        },
+        {
+          "ingredient": "Taco Seasoning",
+          "qty": 1.5,
+          "unit": "tbsp",
+          "prepNote": "mild",
+          "originalText": "1.5 tbsp taco seasoning, mild"
+        },
+        {
+          "ingredient": "Salsa",
+          "qty": 1.5,
+          "unit": "cup",
+          "prepNote": "mild",
+          "originalText": "1.5 cup salsa, mild"
+        },
+        {
+          "ingredient": "Black Beans",
+          "qty": 22.5,
+          "unit": "oz",
+          "prepNote": "drained and rinsed",
+          "originalText": "22.5 oz black beans, drained and rinsed"
+        },
+        {
+          "ingredient": "Sweet Corn",
+          "qty": 1.5,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1.5 cup sweet corn"
+        },
+        {
+          "ingredient": "Baby Spinach",
+          "qty": 3,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "3 cup baby spinach"
+        },
+        {
+          "ingredient": "Monterey Jack Cheese",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": "shredded",
+          "originalText": "1 cup monterey jack cheese, shredded",
+          "optional": true
+        },
+        {
+          "ingredient": "Lime",
+          "qty": 1,
+          "unit": "count",
+          "prepNote": null,
+          "originalText": "1 lime",
+          "optional": true
+        },
+        {
+          "ingredient": "Cilantro",
           "qty": null,
           "unit": null,
-          "prepNote": "to taste",
-          "originalText": "Salt and pepper to taste",
-          "optional": false,
-          "scalingExempt": true
+          "prepNote": null,
+          "originalText": "cilantro",
+          "optional": true
         }
       ],
       "steps": [
         {
-          "text": "Place the chicken pieces in the bottom of a 6-quart (or larger) slow cooker."
+          "text": "Brown the turkey in the oil over medium-high heat, breaking it up, about 6–8 min. Stir in taco seasoning.",
+          "durationMinutes": 8,
+          "links": [
+            {
+              "ingredientIndex": 0
+            },
+            {
+              "ingredientIndex": 1
+            },
+            {
+              "ingredientIndex": 3
+            }
+          ]
         },
         {
-          "text": "Add the carrots, celery, turnips, parsnips, garlic, and onion."
+          "text": "Add diced red pepper and cook 3 min until softened.",
+          "durationMinutes": 3,
+          "links": [
+            {
+              "ingredientIndex": 2
+            }
+          ]
         },
         {
-          "text": "Pour in the chicken stock."
+          "text": "Stir in salsa, drained black beans and corn. Simmer 5 min.",
+          "durationMinutes": 5,
+          "links": [
+            {
+              "ingredientIndex": 4
+            },
+            {
+              "ingredientIndex": 5
+            },
+            {
+              "ingredientIndex": 6
+            }
+          ]
         },
         {
-          "text": "Lay the dill and rosemary sprigs on top. Cover and cook on low 6-8 hours (or on high for 4 hours).",
-          "durationMinutes": 480
-        },
-        {
-          "text": "Remove the herb sprigs. Pull out the chicken, shred it with two forks, and return as much as desired to the pot (about half keeps plenty of broth). Season with salt and pepper to taste."
+          "text": "Stir in spinach until wilted. Top with cheese, a squeeze of lime and cilantro.",
+          "links": [
+            {
+              "ingredientIndex": 7
+            },
+            {
+              "ingredientIndex": 8
+            },
+            {
+              "ingredientIndex": 9
+            },
+            {
+              "ingredientIndex": 10
+            }
+          ]
         }
       ]
     },
@@ -1732,8 +2613,8 @@
       "description": "Tender chicken and penne tossed in a creamy sun-dried tomato and parmesan sauce. Ready in 30 minutes.",
       "sourceUrl": "https://therecipecritic.com/marry-me-chicken-pasta/",
       "sourceName": "The Recipe Critic",
-      "author": "Alyssa Rivers",
-      "imageUrl": "https://therecipecritic.com/wp-content/uploads/2024/01/marry_me_pasta-2.jpg",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=1200&q=80&fm=jpg&fit=crop",
       "servings": 6,
       "yieldText": "6 servings",
       "prepMinutes": 10,
@@ -1766,9 +2647,9 @@
       },
       "storageNotes": "Refrigerate tightly covered up to 4 days. Reheat gently on the stove or microwave with a splash of cream.",
       "leftoverDays": 4,
-      "status": "want_to_try",
+      "status": "rotation",
       "rating": null,
-      "notes": "Household keeps this mild: skip added heat in the sauce and pass red pepper flakes at the table if desired. Uses sun-dried tomatoes, not canned tomatoes. Use freshly grated parmesan for the best melt.",
+      "notes": "Kept mild: skip added heat in the sauce and pass red pepper flakes at the table if desired. Uses sun-dried tomatoes, not canned tomatoes. Use freshly grated parmesan for the best melt.",
       "ingredients": [
         {
           "ingredient": "Chicken Breast",
@@ -1776,8 +2657,6 @@
           "unit": "lb",
           "prepNote": "boneless skinless, cut into 1-inch pieces",
           "originalText": "1 1/2 pounds boneless skinless chicken, cut into 1-inch pieces",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Chicken Pasta"
         },
         {
@@ -1786,8 +2665,6 @@
           "unit": "oz",
           "prepNote": null,
           "originalText": "10 ounces penne pasta",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Chicken Pasta"
         },
         {
@@ -1796,8 +2673,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1/2 teaspoon salt",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Chicken Pasta"
         },
         {
@@ -1806,8 +2681,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1/4 teaspoon pepper",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Chicken Pasta"
         },
         {
@@ -1816,8 +2689,6 @@
           "unit": "tbsp",
           "prepNote": null,
           "originalText": "1 tablespoon olive oil",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Chicken Pasta"
         },
         {
@@ -1826,8 +2697,6 @@
           "unit": "tbsp",
           "prepNote": null,
           "originalText": "3 tablespoons butter",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1836,8 +2705,6 @@
           "unit": "tsp",
           "prepNote": "minced",
           "originalText": "2 teaspoons garlic, minced",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1846,8 +2713,6 @@
           "unit": "tbsp",
           "prepNote": null,
           "originalText": "3 tablespoons flour",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1856,8 +2721,6 @@
           "unit": "cup",
           "prepNote": null,
           "originalText": "2 cups chicken broth",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1866,8 +2729,6 @@
           "unit": "cup",
           "prepNote": null,
           "originalText": "1 cup heavy cream",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1876,8 +2737,6 @@
           "unit": "cup",
           "prepNote": "grated",
           "originalText": "1 cup parmesan cheese grated",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1886,8 +2745,6 @@
           "unit": "cup",
           "prepNote": "drained",
           "originalText": "1 cup sun-dried tomatoes, drained",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1896,8 +2753,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1 teaspoon paprika",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1906,8 +2761,6 @@
           "unit": "tsp",
           "prepNote": "dried",
           "originalText": "2 teaspoons dried Italian seasoning",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         },
         {
@@ -1917,7 +2770,6 @@
           "prepNote": "chopped, for garnish",
           "originalText": "fresh basil for garnish",
           "optional": true,
-          "scalingExempt": false,
           "groupLabel": "Sauce"
         }
       ],
@@ -1968,13 +2820,524 @@
       ]
     },
     {
+      "key": "ground-beef-and-broccoli",
+      "title": "Ground Beef and Broccoli",
+      "description": "A 30-minute ground beef and broccoli stir-fry in a sweet-savory soy sauce, served over rice.",
+      "sourceUrl": "https://thecozycook.com/ground-beef-and-broccoli/",
+      "sourceName": "The Cozy Cook",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1783375175952-705a0600e05c?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 4,
+      "yieldText": "4 servings (including rice)",
+      "prepMinutes": 10,
+      "cookMinutes": 20,
+      "totalMinutes": 30,
+      "spiceLevel": "mild",
+      "cuisine": "Asian-American",
+      "mealTypes": [
+        "dinner"
+      ],
+      "tags": [
+        "30-minute",
+        "stir-fry",
+        "ground-beef",
+        "rice",
+        "weeknight"
+      ],
+      "equipment": [
+        "wok or large skillet",
+        "small covered container",
+        "rice cooker (optional)"
+      ],
+      "nutrition": {
+        "calories": 488,
+        "proteinG": 32,
+        "carbsG": 65,
+        "fatG": 11,
+        "fiberG": 4,
+        "sugarG": 21,
+        "sodiumMg": 1138
+      },
+      "storageNotes": "Refrigerate in an airtight container up to 3 days; freeze up to 3 months.",
+      "leftoverDays": 3,
+      "status": "rotation",
+      "rating": null,
+      "notes": "Kept mild; use low-sodium soy sauce if sodium is a concern and pass red pepper flakes on the side. Peanut oil can be replaced with vegetable or olive oil. Ground beef is the only beef cut used.",
+      "ingredients": [
+        {
+          "ingredient": "Peanut Oil",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 Tablespoon peanut oil, can sub vegetable or olive",
+          "groupLabel": "Stir-fry"
+        },
+        {
+          "ingredient": "Broccoli Florets",
+          "qty": 3,
+          "unit": "cup",
+          "prepNote": "washed and patted dry",
+          "originalText": "3 cups broccoli florets, washed and patted dry",
+          "groupLabel": "Stir-fry"
+        },
+        {
+          "ingredient": "Ground Beef",
+          "qty": 1,
+          "unit": "lb",
+          "prepNote": null,
+          "originalText": "1 lb. ground beef",
+          "groupLabel": "Stir-fry"
+        },
+        {
+          "ingredient": "Yellow Onion",
+          "qty": 1,
+          "unit": "count",
+          "prepNote": "diced",
+          "originalText": "1 yellow onion, diced",
+          "groupLabel": "Stir-fry"
+        },
+        {
+          "ingredient": "Red Bell Pepper",
+          "qty": 1,
+          "unit": "count",
+          "prepNote": "sliced",
+          "originalText": "1 red bell pepper, sliced",
+          "groupLabel": "Stir-fry"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": null,
+          "unit": null,
+          "prepNote": "to taste",
+          "originalText": "Salt/White Pepper, to taste",
+          "scalingExempt": true,
+          "groupLabel": "Stir-fry"
+        },
+        {
+          "ingredient": "White Pepper",
+          "qty": null,
+          "unit": null,
+          "prepNote": "to taste",
+          "originalText": "Salt/White Pepper, to taste",
+          "scalingExempt": true,
+          "groupLabel": "Stir-fry"
+        },
+        {
+          "ingredient": "Cornstarch",
+          "qty": 2,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "2 Tablespoons cornstarch",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Water",
+          "qty": 2,
+          "unit": "tbsp",
+          "prepNote": "cold",
+          "originalText": "2 tablespoons cold water",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Beef Broth",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1 cup beef broth",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Soy Sauce",
+          "qty": 0.25,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "1/4 cup soy sauce",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Brown Sugar",
+          "qty": 3,
+          "unit": "tbsp",
+          "prepNote": "packed",
+          "originalText": "3 tablespoons packed brown sugar",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Honey",
+          "qty": 1,
+          "qtyMax": 2,
+          "unit": "tbsp",
+          "prepNote": "start with 1 Tbsp, add more to taste",
+          "originalText": "1-2 tablespoons honey",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Garlic",
+          "qty": 2,
+          "unit": "clove",
+          "prepNote": "minced",
+          "originalText": "2 cloves garlic, minced",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Ground Ginger",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1/2 teaspoon ground ginger",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Toasted Sesame Oil",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 teaspoon toasted sesame oil",
+          "groupLabel": "Sauce"
+        },
+        {
+          "ingredient": "Rice",
+          "qty": 1,
+          "unit": "cup",
+          "prepNote": "makes about 3 cups cooked",
+          "originalText": "3 cups cooked rice, any kind",
+          "groupLabel": "For Serving"
+        }
+      ],
+      "steps": [
+        {
+          "text": "Stir the cornstarch and cold water together in a covered container and set aside. Combine the beef broth, soy sauce, brown sugar, honey, garlic, ginger, and sesame oil in a bowl.",
+          "groupLabel": "Prep Work"
+        },
+        {
+          "text": "Heat the oil over medium heat. Add the broccoli and toss to coat; cook 4-5 minutes until slightly softened. Remove and set aside.",
+          "groupLabel": "Cook the Broccoli",
+          "durationMinutes": 5
+        },
+        {
+          "text": "Season the beef with salt and white pepper. Cook and crumble the ground beef and onion over medium-high heat until browned and cooked through. Drain the grease, add the sliced bell pepper, and cook 1 minute.",
+          "groupLabel": "Cook the Beef",
+          "durationMinutes": 8
+        },
+        {
+          "text": "Add the sauce mixture and bring to a gentle boil. Simmer and reduce 2-3 minutes, then shake the cornstarch mixture and stir it in slowly until the sauce reaches the desired thickness.",
+          "groupLabel": "Add the Sauce",
+          "durationMinutes": 3
+        },
+        {
+          "text": "Reduce the heat to low, return the broccoli, and stir to combine and heat through. Serve over rice, garnished with green onions if desired.",
+          "groupLabel": "Add the Broccoli Back"
+        }
+      ]
+    },
+    {
+      "key": "brown-sugar-garlic-air-fryer-salmon",
+      "title": "Brown Sugar Garlic Air Fryer Salmon",
+      "description": "Melt-in-your-mouth brown sugar garlic air fryer salmon — juicy, tender, full of flavor. Rub brown sugar + chili powder + paprika + Italian seasoning + garlic powder on salmon, air fry 400°F for 10 min skin-side down. 1 lb salmon serves 2. Great with asparagus or broccoli.",
+      "sourceUrl": "https://therecipecritic.com/air-fryer-salmon/",
+      "sourceName": "The Recipe Critic",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1747097950921-6e273f14b47f?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 2,
+      "yieldText": null,
+      "prepMinutes": 10,
+      "cookMinutes": 10,
+      "totalMinutes": 20,
+      "spiceLevel": "mild",
+      "cuisine": null,
+      "mealTypes": [
+        "dinner"
+      ],
+      "tags": [
+        "air-fryer",
+        "salmon",
+        "quick",
+        "weeknight"
+      ],
+      "equipment": [],
+      "nutrition": null,
+      "storageNotes": null,
+      "leftoverDays": null,
+      "status": "rotation",
+      "rating": null,
+      "notes": "Cook 10 min at 400°F skin-side down; check at 145°F internal. Asparagus can be added to basket after 5 min. Leftovers keep 3-4 days; reheat in air fryer 4-5 min at 350°F.",
+      "ingredients": [
+        {
+          "ingredient": "Salmon Fillets",
+          "qty": 1,
+          "unit": "lb",
+          "prepNote": "fillets, skin on",
+          "originalText": "1 lb salmon fillets, fillets, skin on"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": null,
+          "unit": null,
+          "prepNote": null,
+          "originalText": "salt",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Black Pepper",
+          "qty": null,
+          "unit": null,
+          "prepNote": null,
+          "originalText": "black pepper",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Brown Sugar",
+          "qty": 2,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "2 tbsp brown sugar"
+        },
+        {
+          "ingredient": "Chili Powder",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp chili powder"
+        },
+        {
+          "ingredient": "Paprika",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "0.5 tsp paprika"
+        },
+        {
+          "ingredient": "Italian Seasoning",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp italian seasoning"
+        },
+        {
+          "ingredient": "Garlic Powder",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp garlic powder"
+        }
+      ],
+      "steps": [
+        {
+          "text": "Salt and pepper the salmon."
+        },
+        {
+          "text": "In a small bowl, mix brown sugar, chili powder, paprika, Italian seasoning, and garlic powder. Rub onto the salmon."
+        },
+        {
+          "text": "Place salmon in air fryer basket skin-side down. Cook at 400°F for 10 minutes. (Add asparagus after 5 minutes if desired.)"
+        },
+        {
+          "text": "Check internal temp reaches 145°F; remove immediately."
+        }
+      ]
+    },
+    {
+      "key": "lemon-chicken-breast-cutlets-with-dill",
+      "title": "Lemon Chicken Breast Cutlets with Dill",
+      "description": "Quick stovetop lemon-garlic chicken cutlets in a dill pan sauce.",
+      "sourceUrl": "https://healthyfitnessmeals.com/lemon-chicken-breast-recipe/",
+      "sourceName": "Healthy Fitness Meals",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 4,
+      "yieldText": null,
+      "prepMinutes": 5,
+      "cookMinutes": 15,
+      "totalMinutes": 20,
+      "spiceLevel": "none",
+      "cuisine": "American",
+      "mealTypes": [
+        "dinner"
+      ],
+      "tags": [
+        "chicken breast",
+        "lemon",
+        "quick",
+        "stovetop"
+      ],
+      "equipment": [],
+      "nutrition": {
+        "calories": 244,
+        "proteinG": 26,
+        "carbsG": 14,
+        "fatG": 10,
+        "fiberG": 3,
+        "sugarG": 2,
+        "sodiumMg": 139
+      },
+      "storageNotes": "Refrigerate up to 4 days; reheat with a splash of broth.",
+      "leftoverDays": 4,
+      "status": "rotation",
+      "rating": null,
+      "notes": null,
+      "ingredients": [
+        {
+          "ingredient": "Chicken Breast Cutlets",
+          "qty": 1,
+          "unit": "lb",
+          "prepNote": null,
+          "originalText": "1 lb chicken breast cutlets"
+        },
+        {
+          "ingredient": "Italian Seasoning",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp italian seasoning"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": null,
+          "unit": null,
+          "prepNote": null,
+          "originalText": "salt",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Black Pepper",
+          "qty": null,
+          "unit": null,
+          "prepNote": null,
+          "originalText": "black pepper",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "All-Purpose Flour",
+          "qty": 3,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "3 tbsp all-purpose flour"
+        },
+        {
+          "ingredient": "Olive Oil",
+          "qty": 2,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "2 tbsp olive oil"
+        },
+        {
+          "ingredient": "Garlic",
+          "qty": 3,
+          "unit": "clove",
+          "prepNote": null,
+          "originalText": "3 clove garlic"
+        },
+        {
+          "ingredient": "Lemon",
+          "qty": 3,
+          "unit": "count",
+          "prepNote": null,
+          "originalText": "3 lemon"
+        },
+        {
+          "ingredient": "Chicken Stock",
+          "qty": 0.25,
+          "unit": "cup",
+          "prepNote": null,
+          "originalText": "0.25 cup chicken stock"
+        },
+        {
+          "ingredient": "Fresh Dill",
+          "qty": 2,
+          "unit": "tbsp",
+          "prepNote": "chopped",
+          "originalText": "2 tbsp fresh dill, chopped"
+        },
+        {
+          "ingredient": "Green Onions",
+          "qty": 2,
+          "unit": "count",
+          "prepNote": "sliced",
+          "originalText": "2 green onions, sliced"
+        }
+      ],
+      "steps": [
+        {
+          "text": "Season the chicken with Italian seasoning, salt and pepper, then dredge in flour.",
+          "links": [
+            {
+              "ingredientIndex": 0
+            },
+            {
+              "ingredientIndex": 1
+            },
+            {
+              "ingredientIndex": 2
+            },
+            {
+              "ingredientIndex": 3
+            },
+            {
+              "ingredientIndex": 4
+            }
+          ]
+        },
+        {
+          "text": "Heat 1 Tbsp olive oil in a large nonstick skillet over medium heat. Cook chicken in batches until golden and cooked through (165°F), then set aside.",
+          "durationMinutes": 8,
+          "links": [
+            {
+              "ingredientIndex": 5,
+              "qty": 1
+            }
+          ]
+        },
+        {
+          "text": "Add the remaining olive oil and garlic to the pan; sauté 30 seconds.",
+          "links": [
+            {
+              "ingredientIndex": 5,
+              "qty": 1
+            },
+            {
+              "ingredientIndex": 6
+            }
+          ]
+        },
+        {
+          "text": "Add lemon juice from 3 lemons and the chicken broth; scrape up the browned bits.",
+          "links": [
+            {
+              "ingredientIndex": 7,
+              "qty": 3
+            },
+            {
+              "ingredientIndex": 8
+            }
+          ]
+        },
+        {
+          "text": "When the sauce bubbles (2–3 min), stir in the dill, return the chicken, and simmer 1 minute on low.",
+          "durationMinutes": 3,
+          "links": [
+            {
+              "ingredientIndex": 9
+            }
+          ]
+        },
+        {
+          "text": "Top with green onions and serve with lemon wedges.",
+          "links": [
+            {
+              "ingredientIndex": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
       "key": "mediterranean-salmon-sheet-pan",
       "title": "Mediterranean Salmon Sheet Pan Dinner",
       "description": "Skinless salmon roasted on one sheet pan with zucchini, red pepper, potato, olives, and lemon. Gluten-free and dairy-free.",
       "sourceUrl": "https://www.skinnytaste.com/mediterranean-salmon-sheet-pan-dinner/",
       "sourceName": "Skinnytaste",
-      "author": "Gina Homolka",
-      "imageUrl": "https://www.skinnytaste.com/wp-content/uploads/2026/02/Sheet-Pan-Mediterranean-Salmon-11.jpg",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1746728789487-ddf8f3d19447?w=1200&q=80&fm=jpg&fit=crop",
       "servings": 4,
       "yieldText": "4 servings (1 fillet + 1 cup vegetables)",
       "prepMinutes": 20,
@@ -2011,16 +3374,14 @@
       "leftoverDays": 3,
       "status": "want_to_try",
       "rating": null,
-      "notes": "Salmon is explicitly allowed by the household seafood rule. Cut the onion, bell pepper, and zucchini the day before to speed up prep. A second sheet pan can be used to double the vegetables.",
+      "notes": "Cut the onion, bell pepper, and zucchini the day before to speed up prep. A second sheet pan can be used to double the vegetables.",
       "ingredients": [
         {
           "ingredient": "Zucchini",
           "qty": 1,
-          "unit": "count",
-          "prepNote": "medium, cut into 1/2-inch thick rounds",
+          "unit": "medium",
+          "prepNote": "cut into 1/2-inch thick rounds",
           "originalText": "1 medium zucchini, cut into 1/2-inch thick rounds",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2029,18 +3390,14 @@
           "unit": "count",
           "prepNote": "stem and seeds removed, sliced",
           "originalText": "1 red bell pepper, stem and seeds removed and sliced",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
           "ingredient": "Red Onion",
           "qty": 1,
-          "unit": "count",
-          "prepNote": "small, cut into chunks",
+          "unit": "small",
+          "prepNote": "cut into chunks",
           "originalText": "1 small red onion, cut into chunks",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2049,8 +3406,6 @@
           "unit": "oz",
           "prepNote": "from 1 large potato, 1/2-inch rounds, halved",
           "originalText": "8 ounces white potato, from 1 large potato, cut into 1/2-inch thick rounds and halved",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2059,8 +3414,6 @@
           "unit": "tsp",
           "prepNote": "extra virgin",
           "originalText": "2 teaspoons extra virgin olive oil",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2069,8 +3422,6 @@
           "unit": "tsp",
           "prepNote": "kosher",
           "originalText": "1/2 teaspoon kosher salt",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2079,8 +3430,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1/4 teaspoon black pepper",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2089,8 +3438,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1/2 teaspoon garlic powder",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2099,8 +3446,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1 teaspoon dried parsley",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2109,8 +3454,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1 teaspoon dried oregano",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Vegetables"
         },
         {
@@ -2119,8 +3462,6 @@
           "unit": "count",
           "prepNote": "6 oz each, skinless",
           "originalText": "4 skinless salmon filets, 6 ounces each",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         },
         {
@@ -2129,8 +3470,6 @@
           "unit": "tsp",
           "prepNote": "extra virgin",
           "originalText": "1 teaspoon extra virgin olive oil",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         },
         {
@@ -2139,8 +3478,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1/4 teaspoon sweet paprika",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         },
         {
@@ -2149,8 +3486,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1/2 teaspoon garlic powder",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         },
         {
@@ -2159,8 +3494,6 @@
           "unit": "tsp",
           "prepNote": "kosher",
           "originalText": "3/4 teaspoon kosher salt",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         },
         {
@@ -2169,8 +3502,6 @@
           "unit": "tsp",
           "prepNote": null,
           "originalText": "1/4 teaspoon black pepper",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         },
         {
@@ -2179,8 +3510,6 @@
           "unit": "cup",
           "prepNote": null,
           "originalText": "1/2 cup mixed pitted olives",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         },
         {
@@ -2189,8 +3518,6 @@
           "unit": null,
           "prepNote": "wedges, for serving",
           "originalText": "Lemon wedges, for serving",
-          "optional": false,
-          "scalingExempt": false,
           "groupLabel": "For the Salmon"
         }
       ],
@@ -2218,1151 +3545,1133 @@
       ]
     },
     {
-      "key": "ground-beef-and-broccoli",
-      "title": "Ground Beef and Broccoli",
-      "description": "A 30-minute ground beef and broccoli stir-fry in a sweet-savory soy sauce, served over rice.",
-      "sourceUrl": "https://thecozycook.com/ground-beef-and-broccoli/",
-      "sourceName": "The Cozy Cook",
-      "author": "Stephanie",
-      "imageUrl": "https://thecozycook.com/wp-content/uploads/2021/07/Ground-Beef-and-Broccoli-2.0.jpg",
+      "key": "fall-chicken-sheet-pan-dinner",
+      "title": "Fall Chicken Sheet Pan Dinner",
+      "description": "Juicy chicken thighs roasted on one sheet pan with butternut squash, Brussels sprouts, red onion, and crumbled feta. Mild, high-protein, easy cleanup.",
+      "sourceUrl": "https://www.skinnytaste.com/fall-chicken-sheet-pan-dinner/",
+      "sourceName": "Skinnytaste",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1547333440-51f85a3220bf?w=1200&q=80&fm=jpg&fit=crop",
       "servings": 4,
-      "yieldText": "4 servings (including rice)",
-      "prepMinutes": 10,
-      "cookMinutes": 20,
-      "totalMinutes": 30,
+      "yieldText": null,
+      "prepMinutes": 15,
+      "cookMinutes": 35,
+      "totalMinutes": 50,
       "spiceLevel": "mild",
-      "cuisine": "Asian-American",
+      "cuisine": "American",
       "mealTypes": [
         "dinner"
       ],
       "tags": [
-        "30-minute",
-        "stir-fry",
-        "ground-beef",
-        "rice",
-        "weeknight"
+        "sheet-pan",
+        "one-pan",
+        "chicken",
+        "fall",
+        "high-protein"
       ],
       "equipment": [
-        "wok or large skillet",
-        "small covered container",
-        "rice cooker (optional)"
+        "large rimmed sheet pan",
+        "mixing bowl"
       ],
-      "nutrition": {
-        "calories": 488,
-        "proteinG": 32,
-        "carbsG": 65,
-        "fatG": 11,
-        "fiberG": 4,
-        "sugarG": 21,
-        "sodiumMg": 1138
-      },
-      "storageNotes": "Refrigerate in an airtight container up to 3 days; freeze up to 3 months.",
-      "leftoverDays": 3,
+      "nutrition": null,
+      "storageNotes": "Fridge up to 4 days. Reheat oven/air fryer 350F or microwave.",
+      "leftoverDays": 4,
       "status": "want_to_try",
       "rating": null,
-      "notes": "Household keeps this mild; use low-sodium soy sauce if sodium is a concern and pass red pepper flakes on the side. Peanut oil can be replaced with vegetable or olive oil. Ground beef is the only beef cut used.",
+      "notes": "Kept mild; spices warm not hot. Roast 30-35 min at 425F then broil feta 2-3 min. Good for meal prep; leftovers 4 days.",
       "ingredients": [
         {
-          "ingredient": "Peanut Oil",
+          "ingredient": "Boneless Skinless Chicken Thighs",
+          "qty": 1.5,
+          "unit": "lb",
+          "prepNote": "cut into 1-inch pieces",
+          "originalText": "1.5 lb boneless skinless chicken thighs, cut into 1-inch pieces"
+        },
+        {
+          "ingredient": "Red Onion",
           "qty": 1,
-          "unit": "tbsp",
-          "prepNote": "can sub vegetable or olive oil",
-          "originalText": "1 Tablespoon peanut oil, can sub vegetable or olive",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Stir-fry"
+          "unit": "count",
+          "prepNote": "cut into 1-inch pieces",
+          "originalText": "1 red onion, cut into 1-inch pieces"
         },
         {
-          "ingredient": "Broccoli Florets",
-          "qty": 3,
+          "ingredient": "Brussels Sprouts",
+          "qty": 2,
           "unit": "cup",
-          "prepNote": "washed and patted dry",
-          "originalText": "3 cups broccoli florets, washed and patted dry",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Stir-fry"
+          "prepNote": "halved",
+          "originalText": "2 cup brussels sprouts, halved"
         },
         {
-          "ingredient": "Ground Beef",
+          "ingredient": "Butternut Squash",
+          "qty": 2,
+          "unit": "cup",
+          "prepNote": "diced small",
+          "originalText": "2 cup butternut squash, diced small"
+        },
+        {
+          "ingredient": "Olive Oil",
+          "qty": 1.5,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1.5 tbsp olive oil"
+        },
+        {
+          "ingredient": "Feta",
+          "qty": 4,
+          "unit": "oz",
+          "prepNote": "crumbled",
+          "originalText": "4 oz feta, crumbled"
+        },
+        {
+          "ingredient": "Smoked Paprika",
+          "qty": 1.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1.5 tsp smoked paprika"
+        },
+        {
+          "ingredient": "Ground Cumin",
+          "qty": 1.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1.5 tsp ground cumin"
+        },
+        {
+          "ingredient": "Garlic Powder",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp garlic powder"
+        },
+        {
+          "ingredient": "Onion Powder",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp onion powder"
+        },
+        {
+          "ingredient": "Ground Cinnamon",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "0.5 tsp ground cinnamon"
+        },
+        {
+          "ingredient": "Salt",
+          "qty": 1.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1.5 tsp salt"
+        }
+      ],
+      "steps": []
+    },
+    {
+      "key": "ground-beef-fajitas",
+      "title": "Ground Beef Fajitas",
+      "description": "Quick ground beef fajitas with homemade fajita seasoning, bell peppers, and onion. Ready in 30 min, one skillet. Budget-friendly.",
+      "sourceUrl": "https://www.budgetbytes.com/ground-beef-fajitas/",
+      "sourceName": "Budget Bytes",
+      "author": null,
+      "imageUrl": "https://images.unsplash.com/photo-1689773976415-293dd893f77e?w=1200&q=80&fm=jpg&fit=crop",
+      "servings": 4,
+      "yieldText": null,
+      "prepMinutes": 10,
+      "cookMinutes": 15,
+      "totalMinutes": 30,
+      "spiceLevel": "mild",
+      "cuisine": "Tex-Mex",
+      "mealTypes": [
+        "dinner"
+      ],
+      "tags": [
+        "fajitas",
+        "ground-beef",
+        "tex-mex",
+        "quick",
+        "one-skillet",
+        "mild"
+      ],
+      "equipment": [],
+      "nutrition": null,
+      "storageNotes": null,
+      "leftoverDays": null,
+      "status": "want_to_try",
+      "rating": null,
+      "notes": "Kept mild. Serve with Spanish rice, chips & dip, or burrito bowl. Filling (not tortillas) keeps 3-4 days fridge; freeze 3 months.",
+      "ingredients": [
+        {
+          "ingredient": "Chili Powder",
+          "qty": 2,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "2 tsp chili powder",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Ground Cumin",
+          "qty": 2,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "2 tsp ground cumin",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Smoked Paprika",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp smoked paprika",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Garlic Powder",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp garlic powder",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Salt",
+          "qty": 1,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "1 tsp salt",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Black Pepper",
+          "qty": 0.5,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "0.5 tsp black pepper",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Ground Beef Chuck",
           "qty": 1,
           "unit": "lb",
           "prepNote": null,
-          "originalText": "1 lb. ground beef",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Stir-fry"
+          "originalText": "1 lb ground beef chuck"
         },
         {
-          "ingredient": "Yellow Onion",
+          "ingredient": "Water",
+          "qty": 3,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "3 tbsp water"
+        },
+        {
+          "ingredient": "Olive Oil",
+          "qty": 1,
+          "unit": "tbsp",
+          "prepNote": null,
+          "originalText": "1 tbsp olive oil"
+        },
+        {
+          "ingredient": "Green Bell Pepper",
           "qty": 1,
           "unit": "count",
-          "prepNote": "diced",
-          "originalText": "1 yellow onion, diced",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Stir-fry"
+          "prepNote": null,
+          "originalText": "1 green bell pepper"
         },
         {
           "ingredient": "Red Bell Pepper",
           "qty": 1,
           "unit": "count",
+          "prepNote": null,
+          "originalText": "1 red bell pepper"
+        },
+        {
+          "ingredient": "Yellow Bell Pepper",
+          "qty": 1,
+          "unit": "count",
+          "prepNote": null,
+          "originalText": "1 yellow bell pepper"
+        },
+        {
+          "ingredient": "Yellow Onion",
+          "qty": 1,
+          "unit": "small",
           "prepNote": "sliced",
-          "originalText": "1 red bell pepper, sliced",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Stir-fry"
+          "originalText": "1 small yellow onion, sliced"
         },
         {
-          "ingredient": "Salt",
-          "qty": null,
-          "unit": null,
-          "prepNote": "to taste",
-          "originalText": "Salt/White Pepper, to taste",
-          "optional": false,
-          "scalingExempt": true,
-          "groupLabel": "Stir-fry"
-        },
-        {
-          "ingredient": "White Pepper",
-          "qty": null,
-          "unit": null,
-          "prepNote": "to taste",
-          "originalText": "Salt/White Pepper, to taste",
-          "optional": false,
-          "scalingExempt": true,
-          "groupLabel": "Stir-fry"
-        },
-        {
-          "ingredient": "Cornstarch",
+          "ingredient": "Cilantro",
           "qty": 2,
           "unit": "tbsp",
-          "prepNote": null,
-          "originalText": "2 Tablespoons cornstarch",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
+          "prepNote": "chopped",
+          "originalText": "2 tbsp cilantro, chopped"
         },
         {
-          "ingredient": "Water",
-          "qty": 2,
-          "unit": "tbsp",
-          "prepNote": "cold",
-          "originalText": "2 tablespoons cold water",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
-        },
-        {
-          "ingredient": "Beef Broth",
+          "ingredient": "Lime",
           "qty": 1,
-          "unit": "cup",
+          "unit": "count",
           "prepNote": null,
-          "originalText": "1 cup beef broth",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
+          "originalText": "1 lime"
         },
         {
-          "ingredient": "Soy Sauce",
-          "qty": 0.25,
-          "unit": "cup",
-          "prepNote": null,
-          "originalText": "1/4 cup soy sauce",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
-        },
-        {
-          "ingredient": "Brown Sugar",
-          "qty": 3,
-          "unit": "tbsp",
-          "prepNote": "packed",
-          "originalText": "3 tablespoons packed brown sugar",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
-        },
-        {
-          "ingredient": "Honey",
-          "qty": 1,
-          "qtyMax": 2,
-          "unit": "tbsp",
-          "prepNote": "start with 1 Tbsp, add more to taste",
-          "originalText": "1-2 tablespoons honey",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
-        },
-        {
-          "ingredient": "Garlic",
-          "qty": 2,
-          "unit": "clove",
-          "prepNote": "minced",
-          "originalText": "2 cloves garlic, minced",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
-        },
-        {
-          "ingredient": "Ground Ginger",
-          "qty": 0.5,
-          "unit": "tsp",
-          "prepNote": null,
-          "originalText": "1/2 teaspoon ground ginger",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
-        },
-        {
-          "ingredient": "Toasted Sesame Oil",
-          "qty": 1,
-          "unit": "tsp",
-          "prepNote": null,
-          "originalText": "1 teaspoon toasted sesame oil",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "Sauce"
-        },
-        {
-          "ingredient": "Rice",
-          "qty": 3,
-          "unit": "cup",
-          "prepNote": "cooked; about 1 cup dry yields 3 cups",
-          "originalText": "3 cups cooked rice, any kind",
-          "optional": false,
-          "scalingExempt": false,
-          "groupLabel": "For Serving"
+          "ingredient": "Flour Tortillas",
+          "qty": 8,
+          "unit": "count",
+          "prepNote": "fajita size",
+          "originalText": "8 flour tortillas, fajita size"
         }
       ],
       "steps": [
         {
-          "text": "Stir the cornstarch and cold water together in a covered container and set aside. Combine the beef broth, soy sauce, brown sugar, honey, garlic, ginger, and sesame oil in a bowl.",
-          "groupLabel": "Prep Work"
+          "text": "Mix chili powder, cumin, smoked paprika, garlic powder, salt, pepper in small bowl."
         },
         {
-          "text": "Heat the oil over medium heat. Add the broccoli and toss to coat; cook 4-5 minutes until slightly softened. Remove and set aside.",
-          "groupLabel": "Cook the Broccoli",
-          "durationMinutes": 5
+          "text": "Slice bell peppers and onion into thin strips."
         },
         {
-          "text": "Season the beef with salt and white pepper. Cook and crumble the ground beef and onion over medium-high heat until browned and cooked through. Drain the grease, add the sliced bell pepper, and cook 1 minute.",
-          "groupLabel": "Cook the Beef",
-          "durationMinutes": 8
+          "text": "Brown ground beef in large skillet over medium heat. Drain excess fat."
         },
         {
-          "text": "Add the sauce mixture and bring to a gentle boil. Simmer and reduce 2-3 minutes, then shake the cornstarch mixture and stir it in slowly until the sauce reaches the desired thickness.",
-          "groupLabel": "Add the Sauce",
-          "durationMinutes": 3
+          "text": "Add fajita seasoning and water. Cook 2-3 min. Transfer beef to plate."
         },
         {
-          "text": "Reduce the heat to low, return the broccoli, and stir to combine and heat through. Serve over rice, garnished with green onions if desired.",
-          "groupLabel": "Add the Broccoli Back"
+          "text": "In same skillet, add oil, peppers, onion. Sauté 3-4 min until slightly tender."
+        },
+        {
+          "text": "Return beef to skillet. Stir to combine and heat through."
+        },
+        {
+          "text": "Finish with cilantro and lime juice. Serve in warmed tortillas with toppings."
         }
       ]
     },
     {
-      "key": "overnight-oats",
-      "title": "Overnight Oats",
-      "description": "Creamy no-cook oats soaked overnight with milk, chia, and honey. Ready when you wake up.",
-      "sourceUrl": null,
-      "sourceName": null,
+      "key": "air-fryer-sweet-potato-fries",
+      "title": "Air Fryer Sweet Potato Fries",
+      "description": "Crispy and crunchy air fryer sweet potato fries — lighter than deep-fried, naturally gluten-free, ready in under 15 minutes.",
+      "sourceUrl": "https://natashaskitchen.com/air-fryer-sweet-potato-fries/",
+      "sourceName": "Natasha's Kitchen",
       "author": null,
-      "imageUrl": null,
-      "servings": 2,
-      "yieldText": "2 jars",
-      "prepMinutes": 10,
-      "cookMinutes": 0,
-      "totalMinutes": 10,
-      "spiceLevel": "none",
-      "cuisine": "American",
-      "mealTypes": [
-        "breakfast"
-      ],
-      "tags": [
-        "breakfast",
-        "no-cook",
-        "meal-prep",
-        "make-ahead"
-      ],
-      "equipment": [
-        "2 jars with lids",
-        "spoon"
-      ],
-      "nutrition": null,
-      "storageNotes": "Keeps up to 3 days in the fridge. Stir and loosen with a splash of milk before eating; eat cold or reheat.",
-      "leftoverDays": 3,
-      "status": "want_to_try",
-      "rating": null,
-      "notes": "Household breakfast for Mon/Wed/Fri; the cook event is dated the evening before. Top with fruit, nuts, or a spoonful of yogurt if available.",
-      "ingredients": [
-        {
-          "ingredient": "Rolled Oats",
-          "qty": 1,
-          "unit": "cup",
-          "prepNote": null,
-          "originalText": "1 cup rolled oats",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Milk",
-          "qty": 1,
-          "unit": "cup",
-          "prepNote": null,
-          "originalText": "1 cup milk",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Chia Seeds",
-          "qty": 1,
-          "unit": "tbsp",
-          "prepNote": null,
-          "originalText": "1 Tbsp chia seeds",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Honey",
-          "qty": 1,
-          "unit": "tbsp",
-          "prepNote": null,
-          "originalText": "1 Tbsp honey",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Vanilla Extract",
-          "qty": 0.5,
-          "unit": "tsp",
-          "prepNote": null,
-          "originalText": "1/2 tsp vanilla extract",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Salt",
-          "qty": null,
-          "unit": null,
-          "prepNote": "pinch",
-          "originalText": "Pinch of salt",
-          "optional": false,
-          "scalingExempt": true
-        }
-      ],
-      "steps": [
-        {
-          "text": "Divide the oats, milk, chia seeds, honey, vanilla, and a pinch of salt between two jars."
-        },
-        {
-          "text": "Stir well, cover, and refrigerate at least 6 hours or overnight.",
-          "durationMinutes": 480
-        },
-        {
-          "text": "Stir before eating, loosen with a splash of milk if thick, and add toppings."
-        }
-      ]
-    },
-    {
-      "key": "eggs-and-toast",
-      "title": "Eggs & Toast",
-      "description": "Soft-scrambled eggs with buttered toast, the weekday breakfast standby.",
-      "sourceUrl": null,
-      "sourceName": null,
-      "author": null,
-      "imageUrl": null,
-      "servings": 2,
-      "yieldText": "2 plates",
+      "imageUrl": "https://images.pexels.com/photos/33755328/pexels-photo-33755328.jpeg?auto=compress&w=1200",
+      "servings": 4,
+      "yieldText": null,
       "prepMinutes": 5,
-      "cookMinutes": 8,
-      "totalMinutes": 13,
-      "spiceLevel": "none",
+      "cookMinutes": 12,
+      "totalMinutes": 17,
+      "spiceLevel": "mild",
       "cuisine": "American",
       "mealTypes": [
-        "breakfast"
+        "snack",
+        "dinner"
       ],
       "tags": [
-        "breakfast",
-        "quick",
-        "eggs"
+        "air fryer",
+        "gluten-free",
+        "vegetarian",
+        "sweet potato",
+        "side dish",
+        "quick"
       ],
       "equipment": [
-        "non-stick skillet",
-        "toaster"
+        "air fryer"
       ],
-      "nutrition": null,
-      "storageNotes": "Best eaten fresh; refrigerate leftovers up to 1 day.",
-      "leftoverDays": 1,
+      "nutrition": {
+        "calories": 145,
+        "proteinG": 2,
+        "carbsG": 23,
+        "fatG": 5,
+        "fiberG": 3,
+        "sugarG": 5,
+        "sodiumMg": 353
+      },
+      "storageNotes": "Refrigerate up to 5 days in an airtight container. Can freeze uncooked or cooked fries for up to 3 months; reheat from frozen in the air fryer. Reheat in air fryer until crispy.",
+      "leftoverDays": 5,
       "status": "want_to_try",
       "rating": null,
-      "notes": "Saturday variation: pancakes optional instead of (or alongside) eggs & toast. Sunday breakfast may be eggs & toast or oats.",
+      "notes": "Optional garnish: fresh cilantro or grated parmesan. Dipping sauces: ranch, ketchup, honey mustard, garlic aioli, jalapeno ranch, avocado ranch, BBQ sauce, or fry sauce.",
       "ingredients": [
         {
-          "ingredient": "Egg",
-          "qty": 4,
-          "unit": "large",
-          "prepNote": "beaten",
-          "originalText": "4 large eggs, beaten",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Butter",
+          "ingredient": "Sweet Potatoes",
           "qty": 1,
+          "unit": "lb",
+          "prepNote": "peeled and sliced into 1/4-inch-thick slices",
+          "originalText": "1 lb sweet potatoes, peeled and sliced into 1/4-inch-thick slices"
+        },
+        {
+          "ingredient": "Olive Oil",
+          "qty": 1.5,
           "unit": "tbsp",
+          "prepNote": "light olive oil",
+          "originalText": "1.5 tbsp olive oil, light olive oil"
+        },
+        {
+          "ingredient": "Fine Sea Salt",
+          "qty": 0.5,
+          "unit": "tsp",
           "prepNote": null,
-          "originalText": "1 Tbsp butter",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Bread",
-          "qty": 2,
-          "unit": "slice",
-          "prepNote": "toasted",
-          "originalText": "2 slices bread, toasted",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Salt",
-          "qty": null,
-          "unit": null,
-          "prepNote": "to taste",
-          "originalText": "Salt, to taste",
-          "optional": false,
+          "originalText": "0.5 tsp fine sea salt",
           "scalingExempt": true
         },
         {
           "ingredient": "Black Pepper",
-          "qty": null,
-          "unit": null,
-          "prepNote": "to taste",
-          "originalText": "Black pepper, to taste",
-          "optional": false,
-          "scalingExempt": true
-        }
-      ],
-      "steps": [
-        {
-          "text": "Toast the bread."
-        },
-        {
-          "text": "Beat the eggs with a pinch of salt and pepper."
-        },
-        {
-          "text": "Melt the butter in a non-stick skillet over medium-low heat. Add the eggs and stir gently until just set, about 3-4 minutes.",
-          "durationMinutes": 4
-        },
-        {
-          "text": "Pile the eggs onto the toast and season with more pepper if desired."
-        }
-      ]
-    },
-    {
-      "key": "pancakes",
-      "title": "Pancakes",
-      "description": "Fluffy everyday pancakes made from pantry ingredients.",
-      "sourceUrl": null,
-      "sourceName": null,
-      "author": null,
-      "imageUrl": null,
-      "servings": 2,
-      "yieldText": "About 8 pancakes",
-      "prepMinutes": 10,
-      "cookMinutes": 10,
-      "totalMinutes": 20,
-      "spiceLevel": "none",
-      "cuisine": "American",
-      "mealTypes": [
-        "breakfast"
-      ],
-      "tags": [
-        "breakfast",
-        "weekend",
-        "pantry"
-      ],
-      "equipment": [
-        "mixing bowls",
-        "whisk",
-        "griddle or skillet"
-      ],
-      "nutrition": null,
-      "storageNotes": "Refrigerate leftovers up to 2 days; reheat in the toaster or a dry skillet.",
-      "leftoverDays": 2,
-      "status": "want_to_try",
-      "rating": null,
-      "notes": "Optional Saturday breakfast; the plan keeps eggs & toast as the default. Serve with butter and syrup or honey.",
-      "ingredients": [
-        {
-          "ingredient": "All-Purpose Flour",
-          "qty": 1,
-          "unit": "cup",
-          "prepNote": null,
-          "originalText": "1 cup all-purpose flour",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Baking Powder",
-          "qty": 1,
-          "unit": "tsp",
-          "prepNote": null,
-          "originalText": "1 tsp baking powder",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Granulated Sugar",
-          "qty": 1,
-          "unit": "tbsp",
-          "prepNote": null,
-          "originalText": "1 Tbsp granulated sugar",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Salt",
           "qty": 0.25,
           "unit": "tsp",
           "prepNote": null,
-          "originalText": "1/4 tsp salt",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "0.25 tsp black pepper",
+          "scalingExempt": true
         },
         {
-          "ingredient": "Milk",
-          "qty": 0.75,
-          "unit": "cup",
-          "prepNote": null,
-          "originalText": "3/4 cup milk",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Egg",
-          "qty": 1,
-          "unit": "large",
-          "prepNote": null,
-          "originalText": "1 large egg",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Butter",
-          "qty": 2,
-          "unit": "tbsp",
-          "prepNote": "melted",
-          "originalText": "2 Tbsp butter, melted",
-          "optional": false,
-          "scalingExempt": false
-        },
-        {
-          "ingredient": "Vanilla Extract",
-          "qty": 0.5,
+          "ingredient": "Garlic Powder",
+          "qty": 0.25,
           "unit": "tsp",
           "prepNote": null,
-          "originalText": "1/2 tsp vanilla extract",
-          "optional": false,
-          "scalingExempt": false
+          "originalText": "0.25 tsp garlic powder",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Paprika",
+          "qty": 0.25,
+          "unit": "tsp",
+          "prepNote": null,
+          "originalText": "0.25 tsp paprika",
+          "scalingExempt": true
+        },
+        {
+          "ingredient": "Cilantro",
+          "qty": null,
+          "unit": null,
+          "prepNote": "for garnish",
+          "originalText": "cilantro, for garnish",
+          "optional": true
+        },
+        {
+          "ingredient": "Parmesan Cheese",
+          "qty": null,
+          "unit": null,
+          "prepNote": "grated, for garnish",
+          "originalText": "parmesan cheese, grated, for garnish",
+          "optional": true
         }
       ],
       "steps": [
         {
-          "text": "Whisk the flour, baking powder, sugar, and salt in a bowl."
+          "text": "Cut the sweet potatoes into 1/4-inch-thick slices, making sure they are all uniform in size for even cooking."
         },
         {
-          "text": "Whisk the milk, egg, melted butter, and vanilla in a second bowl, then pour into the dry ingredients and stir until just combined (lumps are fine)."
+          "text": "Add the fries to a large mixing bowl, drizzle with olive oil, and toss to combine."
         },
         {
-          "text": "Heat a lightly greased griddle or skillet over medium heat. Pour about 1/4 cup batter per pancake and cook until bubbles form and the edges look set, about 2 minutes; flip and cook 1-2 minutes more.",
-          "durationMinutes": 4
+          "text": "In a separate dish, combine the salt, pepper, garlic powder, and paprika. Sprinkle the seasoning mix over the potatoes and toss to combine."
         },
         {
-          "text": "Serve warm with butter and syrup or honey."
+          "text": "Transfer the fries to an air fryer basket and cook in a basket-style air fryer at 375°F for about 12-14 minutes or a toaster-style air fryer at 350°F for 8-10 minutes, shaking the basket halfway. Air fry until golden brown and crisp on the outside."
+        },
+        {
+          "text": "Garnish with cilantro or grated parmesan if desired and serve immediately with your favorite dipping sauce."
         }
       ]
     }
   ],
   "plans": [
     {
-      "weekStart": "2026-02-02",
-      "title": "Week of Mon Feb 2 - Sun Feb 8, 2026",
+      "weekStart": "2026-11-16",
+      "title": "This week's menu",
       "status": "active",
-      "notes": "Lunch batch A (chili) is cooked Sun Feb 1 and feeds Mon-Wed; batch B (chicken soup) is cooked Wed Feb 4 and feeds Thu-Sat. Dinners cook once for 4 servings and are eaten as leftovers the next day. Overnight oats are prepped the night before; eggs & toast are cooked same-day. All recipes are new this week: review against the never-use list before cooking and move liked recipes to rotation.",
+      "notes": "Lunch: two batch recipes, 6 servings each (chili Mon-Wed, tortilla soup Thu-Sat). Dinner: each cook feeds two nights. Breakfast alternates oats, eggs & toast, and weekend pancakes. Kept mild; red pepper flakes on the side.",
       "cookEvents": [
         {
-          "key": "chili-batch-a",
-          "recipe": "slow-cooker-chili",
-          "cookDate": "2026-02-01",
-          "plannedServings": 6,
-          "label": "Batch A - lunch (Mon-Wed)",
-          "status": "planned"
-        },
-        {
-          "key": "soup-batch-b",
-          "recipe": "lazy-chicken-soup",
-          "cookDate": "2026-02-04",
-          "plannedServings": 6,
-          "label": "Batch B - lunch (Thu-Sat)",
-          "status": "planned"
-        },
-        {
-          "key": "marry-me-mon",
-          "recipe": "marry-me-chicken-pasta",
-          "cookDate": "2026-02-02",
-          "plannedServings": 4,
-          "label": "Dinner - cook once, leftovers Tue",
-          "status": "planned"
-        },
-        {
-          "key": "salmon-wed",
-          "recipe": "mediterranean-salmon-sheet-pan",
-          "cookDate": "2026-02-04",
-          "plannedServings": 4,
-          "label": "Dinner - cook once, leftovers Thu",
-          "status": "planned"
-        },
-        {
-          "key": "beef-broccoli-fri",
-          "recipe": "ground-beef-and-broccoli",
-          "cookDate": "2026-02-06",
-          "plannedServings": 4,
-          "label": "Dinner - cook once, leftovers Sat",
-          "status": "planned"
-        },
-        {
-          "key": "oats-sun",
+          "key": "oats-mon",
           "recipe": "overnight-oats",
-          "cookDate": "2026-02-01",
+          "cookDate": "2026-11-15",
           "plannedServings": 2,
-          "label": "Prep Sun night for Mon breakfast",
-          "status": "planned"
-        },
-        {
-          "key": "oats-tue",
-          "recipe": "overnight-oats",
-          "cookDate": "2026-02-03",
-          "plannedServings": 2,
-          "label": "Prep Tue night for Wed breakfast",
-          "status": "planned"
-        },
-        {
-          "key": "oats-thu",
-          "recipe": "overnight-oats",
-          "cookDate": "2026-02-05",
-          "plannedServings": 2,
-          "label": "Prep Thu night for Fri breakfast",
+          "label": "Breakfast - prepped Sunday night",
           "status": "planned"
         },
         {
           "key": "eggs-tue",
           "recipe": "eggs-and-toast",
-          "cookDate": "2026-02-03",
+          "cookDate": "2026-11-17",
           "plannedServings": 2,
-          "label": "Breakfast",
+          "status": "planned"
+        },
+        {
+          "key": "oats-wed",
+          "recipe": "overnight-oats",
+          "cookDate": "2026-11-17",
+          "plannedServings": 2,
+          "label": "Breakfast - prepped Tuesday night",
           "status": "planned"
         },
         {
           "key": "eggs-thu",
           "recipe": "eggs-and-toast",
-          "cookDate": "2026-02-05",
+          "cookDate": "2026-11-19",
           "plannedServings": 2,
-          "label": "Breakfast",
           "status": "planned"
         },
         {
-          "key": "eggs-sat",
-          "recipe": "eggs-and-toast",
-          "cookDate": "2026-02-07",
+          "key": "oats-fri",
+          "recipe": "overnight-oats",
+          "cookDate": "2026-11-19",
           "plannedServings": 2,
-          "label": "Breakfast - pancakes optional",
+          "label": "Breakfast - prepped Thursday night",
+          "status": "planned"
+        },
+        {
+          "key": "pancakes-sat",
+          "recipe": "pancakes",
+          "cookDate": "2026-11-21",
+          "plannedServings": 2,
+          "label": "Weekend pancakes",
           "status": "planned"
         },
         {
           "key": "eggs-sun",
           "recipe": "eggs-and-toast",
-          "cookDate": "2026-02-08",
+          "cookDate": "2026-11-22",
           "plannedServings": 2,
-          "label": "Breakfast",
+          "status": "planned"
+        },
+        {
+          "key": "chili",
+          "recipe": "slow-cooker-chili",
+          "cookDate": "2026-11-15",
+          "plannedServings": 6,
+          "label": "Lunch batch A (Mon-Wed)",
+          "status": "planned"
+        },
+        {
+          "key": "tortilla-soup",
+          "recipe": "healthy-chicken-tortilla-soup",
+          "cookDate": "2026-11-18",
+          "plannedServings": 6,
+          "label": "Lunch batch B (Thu-Sat)",
+          "status": "planned"
+        },
+        {
+          "key": "taco-skillet",
+          "recipe": "turkey-taco-skillet",
+          "cookDate": "2026-11-22",
+          "plannedServings": 2,
+          "label": "Sunday lunch",
+          "status": "planned"
+        },
+        {
+          "key": "marry-me",
+          "recipe": "marry-me-chicken-pasta",
+          "cookDate": "2026-11-16",
+          "plannedServings": 4,
+          "label": "Dinner Mon + Tue",
+          "status": "planned"
+        },
+        {
+          "key": "beef-broccoli",
+          "recipe": "ground-beef-and-broccoli",
+          "cookDate": "2026-11-18",
+          "plannedServings": 4,
+          "label": "Dinner Wed + Thu",
+          "status": "planned"
+        },
+        {
+          "key": "salmon",
+          "recipe": "brown-sugar-garlic-air-fryer-salmon",
+          "cookDate": "2026-11-20",
+          "plannedServings": 4,
+          "label": "Dinner Fri + Sat",
+          "status": "planned"
+        },
+        {
+          "key": "fajitas",
+          "recipe": "ground-beef-fajitas",
+          "cookDate": "2026-11-22",
+          "plannedServings": 2,
+          "label": "Sunday dinner",
+          "status": "planned"
+        },
+        {
+          "key": "fries",
+          "recipe": "air-fryer-sweet-potato-fries",
+          "cookDate": "2026-11-18",
+          "plannedServings": 2,
+          "label": "Wednesday snack",
+          "status": "planned"
+        },
+        {
+          "key": "banana-bread",
+          "recipe": "butter-pecan-banana-bread",
+          "cookDate": "2026-11-21",
+          "plannedServings": 4,
+          "label": "Weekend baking",
           "status": "planned"
         }
       ],
       "slots": [
         {
-          "date": "2026-02-02",
+          "date": "2026-11-16",
           "mealType": "breakfast",
           "kind": "meal",
-          "cookEvent": "oats-sun",
+          "cookEvent": "oats-mon",
           "servings": 2
         },
         {
-          "date": "2026-02-02",
+          "date": "2026-11-16",
           "mealType": "lunch",
           "kind": "meal",
-          "cookEvent": "chili-batch-a",
+          "cookEvent": "chili",
           "servings": 2
         },
         {
-          "date": "2026-02-02",
+          "date": "2026-11-16",
           "mealType": "dinner",
           "kind": "meal",
-          "cookEvent": "marry-me-mon",
+          "cookEvent": "marry-me",
           "servings": 2
         },
         {
-          "date": "2026-02-03",
+          "date": "2026-11-17",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "eggs-tue",
           "servings": 2
         },
         {
-          "date": "2026-02-03",
+          "date": "2026-11-17",
           "mealType": "lunch",
           "kind": "meal",
-          "cookEvent": "chili-batch-a",
-          "servings": 2,
-          "notes": "Leftover batch A."
+          "cookEvent": "chili",
+          "servings": 2
         },
         {
-          "date": "2026-02-03",
+          "date": "2026-11-17",
           "mealType": "dinner",
           "kind": "meal",
-          "cookEvent": "marry-me-mon",
-          "servings": 2,
-          "notes": "Leftovers from Monday."
+          "cookEvent": "marry-me",
+          "servings": 2
         },
         {
-          "date": "2026-02-04",
+          "date": "2026-11-18",
           "mealType": "breakfast",
           "kind": "meal",
-          "cookEvent": "oats-tue",
+          "cookEvent": "oats-wed",
           "servings": 2
         },
         {
-          "date": "2026-02-04",
+          "date": "2026-11-18",
           "mealType": "lunch",
           "kind": "meal",
-          "cookEvent": "chili-batch-a",
-          "servings": 2,
-          "notes": "Last of batch A."
-        },
-        {
-          "date": "2026-02-04",
-          "mealType": "dinner",
-          "kind": "meal",
-          "cookEvent": "salmon-wed",
+          "cookEvent": "chili",
           "servings": 2
         },
         {
-          "date": "2026-02-05",
+          "date": "2026-11-18",
+          "mealType": "snack",
+          "kind": "meal",
+          "cookEvent": "fries",
+          "servings": 2
+        },
+        {
+          "date": "2026-11-18",
+          "mealType": "dinner",
+          "kind": "meal",
+          "cookEvent": "beef-broccoli",
+          "servings": 2
+        },
+        {
+          "date": "2026-11-19",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "eggs-thu",
           "servings": 2
         },
         {
-          "date": "2026-02-05",
+          "date": "2026-11-19",
           "mealType": "lunch",
           "kind": "meal",
-          "cookEvent": "soup-batch-b",
+          "cookEvent": "tortilla-soup",
           "servings": 2
         },
         {
-          "date": "2026-02-05",
+          "date": "2026-11-19",
           "mealType": "dinner",
           "kind": "meal",
-          "cookEvent": "salmon-wed",
-          "servings": 2,
-          "notes": "Leftovers from Wednesday."
+          "cookEvent": "beef-broccoli",
+          "servings": 2
         },
         {
-          "date": "2026-02-06",
+          "date": "2026-11-20",
           "mealType": "breakfast",
           "kind": "meal",
-          "cookEvent": "oats-thu",
+          "cookEvent": "oats-fri",
           "servings": 2
         },
         {
-          "date": "2026-02-06",
+          "date": "2026-11-20",
           "mealType": "lunch",
           "kind": "meal",
-          "cookEvent": "soup-batch-b",
-          "servings": 2,
-          "notes": "Leftover batch B."
-        },
-        {
-          "date": "2026-02-06",
-          "mealType": "dinner",
-          "kind": "meal",
-          "cookEvent": "beef-broccoli-fri",
+          "cookEvent": "tortilla-soup",
           "servings": 2
         },
         {
-          "date": "2026-02-07",
+          "date": "2026-11-20",
+          "mealType": "dinner",
+          "kind": "meal",
+          "cookEvent": "salmon",
+          "servings": 2
+        },
+        {
+          "date": "2026-11-21",
           "mealType": "breakfast",
           "kind": "meal",
-          "cookEvent": "eggs-sat",
-          "servings": 2,
-          "notes": "Pancakes optional instead of or alongside eggs & toast."
+          "cookEvent": "pancakes-sat",
+          "servings": 2
         },
         {
-          "date": "2026-02-07",
+          "date": "2026-11-21",
           "mealType": "lunch",
           "kind": "meal",
-          "cookEvent": "soup-batch-b",
-          "servings": 2,
-          "notes": "Last of batch B."
+          "cookEvent": "tortilla-soup",
+          "servings": 2
         },
         {
-          "date": "2026-02-07",
+          "date": "2026-11-21",
+          "mealType": "snack",
+          "kind": "meal",
+          "cookEvent": "banana-bread",
+          "servings": 2
+        },
+        {
+          "date": "2026-11-21",
           "mealType": "dinner",
           "kind": "meal",
-          "cookEvent": "beef-broccoli-fri",
-          "servings": 2,
-          "notes": "Leftovers from Friday."
+          "cookEvent": "salmon",
+          "servings": 2
         },
         {
-          "date": "2026-02-08",
+          "date": "2026-11-22",
           "mealType": "breakfast",
           "kind": "meal",
           "cookEvent": "eggs-sun",
-          "servings": 2,
-          "notes": "Eggs & toast or oats."
+          "servings": 2
         },
         {
-          "date": "2026-02-08",
+          "date": "2026-11-22",
           "mealType": "lunch",
-          "kind": "freeform",
-          "label": "Leftovers / fridge clean-out"
+          "kind": "meal",
+          "cookEvent": "taco-skillet",
+          "servings": 2
         },
         {
-          "date": "2026-02-08",
+          "date": "2026-11-22",
+          "mealType": "snack",
+          "kind": "meal",
+          "cookEvent": "banana-bread",
+          "servings": 2
+        },
+        {
+          "date": "2026-11-22",
           "mealType": "dinner",
-          "kind": "freeform",
-          "label": "Leftovers / simple"
+          "kind": "meal",
+          "cookEvent": "fajitas",
+          "servings": 2
         }
       ],
       "prepTasks": [
         {
-          "dueDate": "2026-02-01",
-          "description": "Cook Batch A chili in the slow cooker (5-6 hours on low).",
-          "cookEvent": "chili-batch-a"
+          "dueDate": "2026-11-15",
+          "description": "Make 2 jars of overnight oats for Monday breakfast",
+          "cookEvent": "oats-mon"
         },
         {
-          "dueDate": "2026-02-01",
-          "description": "Prep Monday's overnight oats.",
-          "cookEvent": "oats-sun"
+          "dueDate": "2026-11-15",
+          "description": "Start the slow cooker chili (6 servings, Mon-Wed lunch)",
+          "cookEvent": "chili"
         },
         {
-          "dueDate": "2026-02-03",
-          "description": "Prep Wednesday's overnight oats.",
-          "cookEvent": "oats-tue"
+          "dueDate": "2026-11-16",
+          "description": "Cook Marry Me Chicken Pasta for Mon + Tue dinner (4 servings)",
+          "cookEvent": "marry-me"
         },
         {
-          "dueDate": "2026-02-04",
-          "description": "Cook Batch B chicken soup in the slow cooker (6-8 hours on low or 4 on high).",
-          "cookEvent": "soup-batch-b"
+          "dueDate": "2026-11-18",
+          "description": "Cook the tortilla soup for lunch batch B (6 servings, Thu-Sat)",
+          "cookEvent": "tortilla-soup"
         },
         {
-          "dueDate": "2026-02-04",
-          "description": "Prep Thursday's overnight oats."
+          "dueDate": "2026-11-18",
+          "description": "Cook Ground Beef and Broccoli for Wed + Thu dinner (4 servings)",
+          "cookEvent": "beef-broccoli"
         },
         {
-          "dueDate": "2026-02-05",
-          "description": "Prep Friday's overnight oats.",
-          "cookEvent": "oats-thu"
+          "dueDate": "2026-11-20",
+          "description": "Air fry the salmon for Fri + Sat dinner (4 servings)",
+          "cookEvent": "salmon"
         },
         {
-          "dueDate": "2026-02-06",
-          "description": "Cook Ground Beef & Broccoli (quick, about 30 minutes).",
-          "cookEvent": "beef-broccoli-fri"
+          "dueDate": "2026-11-21",
+          "description": "Bake the banana bread; cool fully before slicing",
+          "cookEvent": "banana-bread"
         }
       ]
     }
   ],
   "shoppingLists": [
     {
-      "title": "Week of Mon Feb 2 - Sun Feb 8, 2026",
-      "plan": "2026-02-02",
-      "status": "done",
-      "completedAt": "2026-02-01T16:00:00.000Z",
-      "notes": "Purchased 2026-02-01; pantry updated and all items are on hand. The pantry snapshot in this file already includes these purchases, so the loader must not create purchase movements. The 'Already on hand' section and the 'Salt, black pepper - on hand' line were skipped.",
+      "title": "Shopping - week of 2026-11-16",
+      "plan": "2026-11-16",
+      "status": "shopping",
+      "completedAt": null,
+      "notes": "Weekly grocery run; aisle order follows the categories.",
       "items": [
         {
-          "ingredient": "Ground Beef",
-          "category": "protein",
-          "qty": 3,
-          "unit": "lb",
-          "purposeNote": "chili 2 lb + beef & broccoli 1 lb",
-          "checked": true
+          "ingredient": "Bread",
+          "category": "bakery",
+          "qty": 2,
+          "unit": "slice",
+          "purposeNote": "Eggs & Toast",
+          "checked": false
         },
         {
-          "ingredient": "Chicken Breast",
-          "category": "protein",
-          "qty": 2.5,
-          "unit": "lb",
-          "purposeNote": "soup 2 pieces + marry me 1.5 lb",
-          "checked": true,
-          "note": "Approximate weight."
-        },
-        {
-          "ingredient": "Salmon Fillets",
-          "category": "protein",
+          "ingredient": "Corn Tortillas",
+          "category": "bakery",
           "qty": 4,
           "unit": "count",
-          "purposeNote": "salmon sheet pan (4 x 6 oz = 1.5 lb)",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
           "checked": true
         },
         {
-          "ingredient": "Yellow Onion",
-          "category": "produce",
-          "qty": 3,
+          "ingredient": "Flour Tortillas",
+          "category": "bakery",
+          "qty": 8,
           "unit": "count",
-          "purposeNote": "chili 1 large, soup 1 small, beef & broccoli 1",
+          "purposeNote": "Ground Beef Fajitas",
           "checked": true
         },
         {
-          "ingredient": "Garlic",
+          "ingredient": "Baking Powder",
+          "category": "baking",
+          "qty": 2,
+          "unit": "tsp",
+          "purposeNote": "Pancakes, Butter Pecan Banana Bread",
+          "checked": false
+        },
+        {
+          "ingredient": "Baking Soda",
+          "category": "baking",
+          "qty": 0.5,
+          "unit": "tsp",
+          "purposeNote": "Butter Pecan Banana Bread",
+          "checked": true
+        },
+        {
+          "ingredient": "Powdered Sugar",
+          "category": "baking",
+          "qty": 1,
+          "unit": "cup",
+          "purposeNote": "Butter Pecan Banana Bread",
+          "checked": false
+        },
+        {
+          "ingredient": "Vanilla Extract",
+          "category": "baking",
+          "qty": 4,
+          "unit": "tsp",
+          "purposeNote": "Overnight Oats, Pancakes",
+          "checked": false
+        },
+        {
+          "ingredient": "Black Beans",
+          "category": "canned",
+          "qty": 2,
+          "unit": "can",
+          "purposeNote": "Healthy Chicken Tortilla Soup, Turkey Taco Skillet",
+          "checked": false
+        },
+        {
+          "ingredient": "Coconut Milk",
+          "category": "canned",
+          "qty": 1,
+          "unit": "cup",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
+          "checked": true
+        },
+        {
+          "ingredient": "Fire Roasted Crushed Tomatoes",
+          "category": "canned",
+          "qty": 28,
+          "unit": "oz",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
+          "checked": false
+        },
+        {
+          "ingredient": "Green Chilies",
+          "category": "canned",
+          "qty": 4,
+          "unit": "oz",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
+          "checked": false
+        },
+        {
+          "ingredient": "Sweet Corn",
+          "category": "canned",
+          "qty": 1.5,
+          "unit": "cup",
+          "purposeNote": "Turkey Taco Skillet",
+          "checked": false
+        },
+        {
+          "ingredient": "Salsa",
+          "category": "condiment",
+          "qty": 1.5,
+          "unit": "cup",
+          "purposeNote": "Turkey Taco Skillet",
+          "checked": true
+        },
+        {
+          "ingredient": "Cream Cheese",
+          "category": "dairy",
+          "qty": 3,
+          "unit": "oz",
+          "purposeNote": "Butter Pecan Banana Bread",
+          "checked": true
+        },
+        {
+          "ingredient": "Water",
+          "category": "other",
+          "qty": 5,
+          "unit": "tbsp",
+          "purposeNote": "Ground Beef and Broccoli, Ground Beef Fajitas",
+          "checked": false
+        },
+        {
+          "ingredient": "Chia Seeds",
+          "category": "pantry",
+          "qty": 1,
+          "unit": "tbsp",
+          "purposeNote": "Overnight Oats",
+          "checked": false
+        },
+        {
+          "ingredient": "Honey",
+          "category": "pantry",
+          "qty": 2,
+          "unit": "tbsp",
+          "purposeNote": "Overnight Oats, Ground Beef and Broccoli",
+          "checked": true
+        },
+        {
+          "ingredient": "Peanut Oil",
+          "category": "pantry",
+          "qty": 1,
+          "unit": "tbsp",
+          "purposeNote": "Ground Beef and Broccoli",
+          "checked": false
+        },
+        {
+          "ingredient": "Pecans",
+          "category": "pantry",
+          "qty": 0.75,
+          "unit": "cup",
+          "purposeNote": "Butter Pecan Banana Bread",
+          "checked": false
+        },
+        {
+          "ingredient": "Rolled Oats",
+          "category": "pantry",
+          "qty": 1,
+          "unit": "cup",
+          "purposeNote": "Overnight Oats",
+          "checked": false
+        },
+        {
+          "ingredient": "Avocado",
           "category": "produce",
           "qty": 1,
-          "unit": "head",
-          "purposeNote": "soup, chili, beef & broccoli, marry me",
-          "checked": true,
-          "note": "1-2 heads (~10 cloves)."
-        },
-        {
-          "ingredient": "Carrots",
-          "category": "produce",
-          "qty": 2,
           "unit": "count",
-          "purposeNote": "chicken soup",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
           "checked": true
         },
         {
-          "ingredient": "Celery",
+          "ingredient": "Bananas",
           "category": "produce",
-          "qty": 2,
-          "unit": "stalk",
-          "purposeNote": "chicken soup",
-          "checked": true
-        },
-        {
-          "ingredient": "Turnips",
-          "category": "produce",
-          "qty": 2,
-          "unit": "count",
-          "purposeNote": "chicken soup",
-          "checked": true
-        },
-        {
-          "ingredient": "Parsnips",
-          "category": "produce",
-          "qty": 2,
-          "unit": "count",
-          "purposeNote": "chicken soup",
-          "checked": true
-        },
-        {
-          "ingredient": "Red Bell Pepper",
-          "category": "produce",
-          "qty": 2,
-          "unit": "count",
-          "purposeNote": "beef & broccoli 1, salmon 1",
-          "checked": true
+          "qty": 1.5,
+          "unit": "cup",
+          "purposeNote": "Butter Pecan Banana Bread",
+          "checked": false
         },
         {
           "ingredient": "Broccoli Florets",
           "category": "produce",
-          "qty": 1,
-          "unit": "head",
-          "purposeNote": "ground beef & broccoli (3 cups florets)",
-          "checked": true,
-          "note": "Large head."
-        },
-        {
-          "ingredient": "Zucchini",
-          "category": "produce",
-          "qty": 1,
-          "unit": "count",
-          "purposeNote": "salmon sheet pan",
-          "checked": true
-        },
-        {
-          "ingredient": "White Potato",
-          "category": "produce",
-          "qty": 1,
-          "unit": "count",
-          "purposeNote": "salmon sheet pan (8 oz)",
-          "checked": true,
-          "note": "Large, about 8 oz."
-        },
-        {
-          "ingredient": "Lemon",
-          "category": "produce",
-          "qty": 1,
-          "unit": "count",
-          "purposeNote": "salmon sheet pan",
-          "checked": true
-        },
-        {
-          "ingredient": "Fresh Basil",
-          "category": "produce",
-          "qty": 1,
-          "unit": "bunch",
-          "purposeNote": "marry me chicken pasta garnish",
-          "checked": true,
-          "note": "Small bunch."
-        },
-        {
-          "ingredient": "Fresh Dill",
-          "category": "produce",
-          "qty": 1,
-          "unit": "bunch",
-          "purposeNote": "chicken soup",
-          "checked": true,
-          "note": "1 sprig/bunch."
-        },
-        {
-          "ingredient": "Fresh Rosemary",
-          "category": "produce",
-          "qty": 1,
-          "unit": "sprig",
-          "purposeNote": "chicken soup",
-          "checked": true
-        },
-        {
-          "ingredient": "Heavy Cream",
-          "category": "dairy",
-          "qty": 1,
-          "unit": "cup",
-          "purposeNote": "marry me chicken pasta sauce",
-          "checked": true,
-          "note": "Half pint."
-        },
-        {
-          "ingredient": "Parmesan Cheese",
-          "category": "dairy",
-          "qty": 1,
-          "unit": "cup",
-          "purposeNote": "marry me chicken pasta sauce",
-          "checked": true
-        },
-        {
-          "ingredient": "Shredded Cheddar",
-          "category": "dairy",
-          "qty": 1,
-          "unit": "bag",
-          "purposeNote": "optional chili topping",
-          "checked": true
-        },
-        {
-          "ingredient": "Diced Tomatoes with Green Chilies",
-          "category": "canned",
-          "qty": 2,
-          "unit": "can",
-          "purposeNote": "chili (14.5 oz cans, MILD)",
-          "checked": true,
-          "note": "Buy MILD green chilies."
-        },
-        {
-          "ingredient": "Tomato Sauce",
-          "category": "canned",
           "qty": 3,
-          "unit": "can",
-          "purposeNote": "chili (8 oz cans, or 1 x 24 oz)",
-          "checked": true
-        },
-        {
-          "ingredient": "Sun-Dried Tomatoes",
-          "category": "canned",
-          "qty": 1,
-          "unit": "jar",
-          "purposeNote": "marry me chicken pasta (1 cup drained)",
-          "checked": true
-        },
-        {
-          "ingredient": "Dark Red Kidney Beans",
-          "category": "canned",
-          "qty": 1,
-          "unit": "can",
-          "purposeNote": "chili",
-          "checked": true
-        },
-        {
-          "ingredient": "Light Red Kidney Beans",
-          "category": "canned",
-          "qty": 1,
-          "unit": "can",
-          "purposeNote": "chili",
-          "checked": true
-        },
-        {
-          "ingredient": "Mixed Pitted Olives",
-          "category": "canned",
-          "qty": 1,
-          "unit": "jar",
-          "purposeNote": "salmon sheet pan (1/2 cup)",
-          "checked": true,
-          "note": "Small jar."
-        },
-        {
-          "ingredient": "Beef Broth",
-          "category": "canned",
-          "qty": 2.5,
           "unit": "cup",
-          "purposeNote": "chili 1/2 cup + marry me 2 cups",
+          "purposeNote": "Ground Beef and Broccoli",
           "checked": true
         },
         {
-          "ingredient": "Chicken Stock",
-          "category": "pantry",
-          "qty": 12,
+          "ingredient": "Cilantro",
+          "category": "produce",
+          "qty": 0.5,
           "unit": "cup",
-          "purposeNote": "chicken soup; topped up the pantry",
-          "checked": true,
-          "note": "Topped up to ~12 cups total."
-        },
-        {
-          "ingredient": "Penne Pasta",
-          "category": "pantry",
-          "qty": 10,
-          "unit": "oz",
-          "purposeNote": "marry me chicken pasta",
+          "purposeNote": "Healthy Chicken Tortilla Soup, Ground Beef Fajitas",
           "checked": true
         },
         {
-          "ingredient": "Toasted Sesame Oil",
-          "category": "pantry",
+          "ingredient": "Green Bell Pepper",
+          "category": "produce",
           "qty": 1,
-          "unit": "tsp",
-          "purposeNote": "ground beef & broccoli sauce (small bottle)",
+          "unit": "count",
+          "purposeNote": "Ground Beef Fajitas",
+          "checked": false
+        },
+        {
+          "ingredient": "Jalapeno",
+          "category": "produce",
+          "qty": 1,
+          "unit": "count",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
           "checked": true
         },
         {
-          "ingredient": "Brown Sugar",
-          "category": "baking",
-          "qty": 3,
-          "unit": "tbsp",
-          "purposeNote": "ground beef & broccoli sauce",
+          "ingredient": "Lime Juice",
+          "category": "produce",
+          "qty": 0.25,
+          "unit": "cup",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
           "checked": true
         },
         {
-          "ingredient": "Dried Oregano",
+          "ingredient": "Sweet Potatoes",
+          "category": "produce",
+          "qty": 1,
+          "unit": "lb",
+          "purposeNote": "Air Fryer Sweet Potato Fries",
+          "checked": false
+        },
+        {
+          "ingredient": "Yellow Bell Pepper",
+          "category": "produce",
+          "qty": 1,
+          "unit": "count",
+          "purposeNote": "Ground Beef Fajitas",
+          "checked": true
+        },
+        {
+          "ingredient": "Boneless Skinless Chicken Thighs",
+          "category": "protein",
+          "qty": 1,
+          "unit": "lb",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
+          "checked": true
+        },
+        {
+          "ingredient": "Ground Beef Chuck",
+          "category": "protein",
+          "qty": 1,
+          "unit": "lb",
+          "purposeNote": "Ground Beef Fajitas",
+          "checked": false
+        },
+        {
+          "ingredient": "Lean Ground Turkey",
+          "category": "protein",
+          "qty": 1.5,
+          "unit": "lb",
+          "purposeNote": "Turkey Taco Skillet",
+          "checked": true
+        },
+        {
+          "ingredient": "Salmon Fillets",
+          "category": "protein",
+          "qty": 1,
+          "unit": "lb",
+          "purposeNote": "Brown Sugar Garlic Air Fryer Salmon",
+          "checked": true
+        },
+        {
+          "ingredient": "Chili Powder",
           "category": "spice",
-          "qty": 1,
+          "qty": 2,
+          "unit": "tbsp",
+          "purposeNote": "Easy Slow Cooker Chili, Brown Sugar Garlic Air Fryer Salmon",
+          "checked": false
+        },
+        {
+          "ingredient": "Chipotle Powder",
+          "category": "spice",
+          "qty": 0.5,
           "unit": "tsp",
-          "purposeNote": "salmon sheet pan vegetables",
+          "purposeNote": "Healthy Chicken Tortilla Soup",
+          "checked": false
+        },
+        {
+          "ingredient": "Fine Sea Salt",
+          "category": "spice",
+          "qty": 0.5,
+          "unit": "tsp",
+          "purposeNote": "Air Fryer Sweet Potato Fries",
+          "checked": false
+        },
+        {
+          "ingredient": "Ground Coriander",
+          "category": "spice",
+          "qty": 0.5,
+          "unit": "tsp",
+          "purposeNote": "Easy Slow Cooker Chili",
           "checked": true
+        },
+        {
+          "ingredient": "Ground Cumin",
+          "category": "spice",
+          "qty": 4.5,
+          "unit": "tsp",
+          "purposeNote": "Easy Slow Cooker Chili, Healthy Chicken Tortilla Soup",
+          "checked": false
         },
         {
           "ingredient": "Ground Ginger",
           "category": "spice",
           "qty": 0.5,
           "unit": "tsp",
-          "purposeNote": "ground beef & broccoli sauce",
+          "purposeNote": "Ground Beef and Broccoli",
+          "checked": false
+        },
+        {
+          "ingredient": "Italian Seasoning",
+          "category": "spice",
+          "qty": 3,
+          "unit": "tsp",
+          "purposeNote": "Marry Me Chicken Pasta, Brown Sugar Garlic Air Fryer Salmon",
+          "checked": false
+        },
+        {
+          "ingredient": "Smoked Paprika",
+          "category": "spice",
+          "qty": 1,
+          "unit": "tsp",
+          "purposeNote": "Ground Beef Fajitas",
           "checked": true
+        },
+        {
+          "ingredient": "Taco Seasoning",
+          "category": "spice",
+          "qty": 1.5,
+          "unit": "tbsp",
+          "purposeNote": "Turkey Taco Skillet",
+          "checked": false
+        },
+        {
+          "ingredient": "White Pepper",
+          "category": "spice",
+          "qty": null,
+          "unit": null,
+          "purposeNote": "Ground Beef and Broccoli",
+          "checked": false
+        },
+        {
+          "name": "Paper towels",
+          "category": "other",
+          "qty": null,
+          "unit": null,
+          "purposeNote": null,
+          "checked": false
         }
       ]
     }

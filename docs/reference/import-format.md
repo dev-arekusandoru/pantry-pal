@@ -1,6 +1,6 @@
 # Import format
 
-This format holds a household snapshot. The example plan starts on **2026-02-02**.
+This format holds a household snapshot. The example plan starts on **2026-11-16**.
 Household names, stock, and dates are sample data. After import, the database
 holds the current state. This file is not a sync or backup format.
 
@@ -205,9 +205,9 @@ The unit of a link is always the unit of its ingredient line. Written to
 |---|---|---|
 | `key` | string | Unique **within the plan**; referenced by `slots[].cookEvent` and `prepTasks[].cookEvent`. |
 | `recipe` | string | Recipe `key`. |
-| `cookDate` | date | May fall outside the plan week (Sun Feb 1 for the Feb 2 week; overnight oats are dated the evening before the breakfast). |
+| `cookDate` | date | May fall outside the plan week (Sun Nov 15 for the Nov 16 week; overnight oats are dated the evening before the breakfast). |
 | `plannedServings` | number | May differ from `recipe.servings`; services scale. |
-| `label` | string \| null | "Batch A - lunch (Mon-Wed)". |
+| `label` | string \| null | "Lunch batch A (Mon-Wed)". |
 | `status` | enum `cookStatus` | All `planned`; nothing has been cooked yet. |
 
 `slots[]`:
@@ -280,18 +280,15 @@ fabricate purchase movements.
 
 ### Shopping lists
 
-The single list is historical (`status: "done"`, `completedAt` set) and was bought on 2026-02-01
-*after* the pantry was counted. The pantry snapshot in `pantry[]` **already includes these
-purchases**, so the loader:
+The example list is in progress (`status: "shopping"`, `completedAt: null`) with a mix of checked
+and unchecked items. A `done` list needs `completedAt`, and its purchases are assumed to be in the
+pantry snapshot already. In both cases the loader:
 
 - creates the list and items with `source: "manual"`;
-- sets `checkedAt = completedAt`, `actualQty = qty`, `actualUnit = unit` for `checked: true`;
+- checks the items with `checked: true`; on a `done` list it also sets `checkedAt = completedAt`,
+  `actualQty = qty`, `actualUnit = unit`;
 - **does not** create purchase movements and does not adjust stock. Re-running purchase math would
   double-count everything.
-
-The "Already on hand" section and the "Salt, black pepper — on hand" line are intentionally absent
-from the items (nothing was bought), and the two summary pantry lines ("Common spices", "Tomatoes")
-are absent from `pantry[]`.
 
 ### Timestamps and ids
 
@@ -302,17 +299,16 @@ not encode timestamps for individual rows.
 
 ## Notes on this example seed
 
-- Identity fields are synthetic: household `Example Household`, members `Robin` and `Sam`, timezone
-  `UTC`, and the week starting 2026-02-02. Stock levels and pantry notes are randomized; they are
-  plausible but not derived from any real household.
-- `rawText` is regenerated as `<ingredient> | <qty> <unit> | <category> | 2026-02-01`, or
-  `<ingredient> | on hand | …` for unknown amounts. It is provenance text, not parsed by the loader.
-- `on hand` → `qty: null, unit: null, status: "on_hand"`; every pantry row is `on_hand` because no
-  row sets `parQty`.
-- Ingredient names follow the [name rules](rest-api.md#ingredient-names). `Italian seasoning` is `custom`. Egg uses `defaultPortion: "large"`, and its recipe lines use unit `large`.
-- Recipes: the lunch/dinner recipes are public blog recipes transcribed with their ingredients,
-  steps, times, servings, image and nutrition. Breakfasts are authored (no source URL). Plan-level
-  adaptations live in each recipe's `notes`, not in the ingredient quantities.
+- Identity fields are synthetic: household `Demo Kitchen`, members `Robin` and `Sam`, timezone
+  `America/New_York`, and the week starting 2026-11-16. Names, notes, and authors are synthetic or
+  left empty.
+- `rawText` is regenerated as `<ingredient> | <qty> <unit>`, or `<ingredient> | on hand` for unknown
+  amounts. It is provenance text, not parsed by the loader.
+- `on hand` → `qty: null, unit: null, status: "on_hand"`. A few rows are `out` (no stock left).
+- Ingredient names follow the [name rules](rest-api.md#ingredient-names). `Chipotle Powder` is `custom`. Eggs use `defaultPortion: "large"`, and its recipe lines use unit `large`.
+- Recipes: the sourced recipes are public blog recipes transcribed with their ingredients,
+  steps, times, servings, image and nutrition (`author` is left empty). Three breakfasts are authored
+  (no source URL). Plan-level adaptations live in each recipe's `notes`, not in the ingredient quantities.
 - Rules encode the household preferences (mushrooms; pork/bacon/sausage/ham/prosciutto/pancetta;
   seafood except tuna/salmon; mayonnaise only in a minor role; beef only as ground beef). "Keep it
   mild" is a household setting (`spiceLevel: "mild"`), not a rule.
@@ -325,13 +321,13 @@ not encode timestamps for individual rows.
 | Section | Count |
 |---|---|
 | household members | 2 |
-| ingredients | 65 |
+| ingredients | 100 |
 | measures | 17 |
-| pantry rows | 46 |
+| pantry rows | 51 |
 | rules | 11 |
-| recipes | 8 (5 sourced + 3 authored breakfasts) |
-| plans | 1 (week 2026-02-02, 12 cook events, 21 slots, 7 prep tasks) |
-| shopping lists | 1 (33 done items) |
+| recipes | 15 (12 sourced + 3 authored breakfasts) |
+| plans | 1 (week 2026-11-16, 16 cook events, 24 slots, 7 prep tasks) |
+| shopping lists | 1 (44 items, 18 checked) |
 
 ## Enumerations
 

@@ -22,7 +22,7 @@ const SEED_JSON = JSON.parse(
   readFileSync(new URL("../seed/example.json", import.meta.url), "utf8"),
 ) as unknown;
 
-const COMPLETED_AT = "2026-02-01T16:00:00.000Z";
+const WEEK_START = "2026-11-16";
 
 function errorFrom(fn: () => unknown): unknown {
   try {
@@ -50,18 +50,18 @@ describe("loadSeed(seed/example.json)", () => {
   it("imports every section with the counts declared by the seed", () => {
     expect(result.summary).toMatchObject({
       householdMembers: 2,
-      ingredients: 65,
+      ingredients: 100,
       measures: 17,
-      pantryItems: 46,
-      stockMovements: 46,
+      pantryItems: 51,
+      stockMovements: 51,
       dietaryRules: 11,
-      recipes: 8,
+      recipes: 15,
       mealPlans: 1,
-      cookEvents: 12,
-      mealSlots: 21,
+      cookEvents: 16,
+      mealSlots: 24,
       prepTasks: 7,
       shoppingLists: 1,
-      shoppingListItems: 33,
+      shoppingListItems: 44,
     });
 
     const seed = parseSeed(SEED_JSON);
@@ -74,7 +74,7 @@ describe("loadSeed(seed/example.json)", () => {
     expect(result.summary.recipeSteps).toBe(
       seed.recipes.reduce((sum, recipe) => sum + recipe.steps.length, 0),
     );
-    expect(listIngredients(test.ctx)).toHaveLength(65);
+    expect(listIngredients(test.ctx)).toHaveLength(100);
   });
 
   it("links every seeded ingredient to a USDA food or declares it custom, with no review flags", () => {
@@ -90,11 +90,11 @@ describe("loadSeed(seed/example.json)", () => {
       expect(input!.fdcId !== undefined || input!.custom === true, row.name).toBe(true);
     }
 
-    const egg = rows.find((row) => row.name === "Egg");
+    const egg = rows.find((row) => row.name === "Eggs");
     expect(egg).toMatchObject({ defaultPortion: "large", nutrition: { fdcId: 171287 } });
     expect(rows.some((row) => row.name === "Sun-Dried Tomatoes")).toBe(true);
     const eggLines = getRecipe(test.ctx, "eggs-and-toast").ingredients.filter(
-      (line) => line.ingredient.name === "Egg",
+      (line) => line.ingredient.name === "Eggs",
     );
     expect(eggLines.map((line) => line.unit)).toEqual(["large"]);
   });
@@ -105,8 +105,8 @@ describe("loadSeed(seed/example.json)", () => {
 
   it("applies the household and its members", () => {
     const household = getHousehold(test.db, test.ctx.householdId);
-    expect(household.name).toBe("Example Household");
-    expect(household.timezone).toBe("UTC");
+    expect(household.name).toBe("Demo Kitchen");
+    expect(household.timezone).toBe("America/New_York");
     expect(household.settings).toMatchObject({
       defaultServings: 2,
       spiceLevel: "mild",
@@ -121,15 +121,15 @@ describe("loadSeed(seed/example.json)", () => {
     expect(members).toEqual(["Robin", "Sam"]);
   });
 
-  it("links the chili cook on Nov 1 to the Mon-Wed lunch slots, all leftovers", () => {
-    const plan = getPlan(test.ctx, "2026-02-02");
+  it("links the chili cook on Nov 15 to the Mon-Wed lunch slots, all leftovers", () => {
+    const plan = getPlan(test.ctx, WEEK_START);
     expect(plan.status).toBe("active");
-    expect(plan.cookEvents).toHaveLength(12);
+    expect(plan.cookEvents).toHaveLength(16);
 
-    const chili = plan.cookEvents.find((event) => event.label === "Batch A - lunch (Mon-Wed)");
+    const chili = plan.cookEvents.find((event) => event.label === "Lunch batch A (Mon-Wed)");
     expect(chili).toBeDefined();
     expect(chili?.recipeTitle).toBe("Easy Slow Cooker Chili");
-    expect(chili?.cookDate).toBe("2026-02-01");
+    expect(chili?.cookDate).toBe("2026-11-15");
     expect(chili?.status).toBe("planned");
     expect(chili?.plannedServings).toBe(6);
 
@@ -138,23 +138,34 @@ describe("loadSeed(seed/example.json)", () => {
       .filter(({ slot }) => slot.cookEventId === chili?.id);
 
     expect(lunchSlots.map(({ date }) => date)).toEqual([
-      "2026-02-02",
-      "2026-02-03",
-      "2026-02-04",
+      "2026-11-16",
+      "2026-11-17",
+      "2026-11-18",
     ]);
-    // The chili is cooked on 2026-02-01, so every later lunch is a leftover
+    // The chili is cooked on 2026-11-15, so every later lunch is a leftover
     // (isLeftover = slot.date > cookDate).
     expect(lunchSlots.map(({ slot }) => slot.isLeftover)).toEqual([true, true, true]);
     expect(lunchSlots.map(({ slot }) => slot.servings)).toEqual([2, 2, 2]);
 
-    const freeform = plan.days
-      .flatMap((day) => day.meals.lunch.map((slot) => ({ date: day.date, slot })))
-      .find(({ date }) => date === "2026-02-08");
-    expect(freeform?.slot).toMatchObject({
-      kind: "freeform",
-      label: "Leftovers / fridge clean-out",
-      cookEventId: null,
-    });
+    // Sunday's lunch is cooked the same day, so it is not a leftover.
+    const sundayLunch = plan.days.find((day) => day.date === "2026-11-22")?.meals.lunch[0];
+    expect(sundayLunch).toMatchObject({ kind: "meal", isLeftover: false });
+
+    // A full Monday-Sunday week: every day has breakfast, lunch and dinner planned.
+    expect(plan.days.map((day) => day.date)).toEqual([
+      "2026-11-16",
+      "2026-11-17",
+      "2026-11-18",
+      "2026-11-19",
+      "2026-11-20",
+      "2026-11-21",
+      "2026-11-22",
+    ]);
+    for (const day of plan.days) {
+      expect(day.meals.breakfast.length, day.date).toBeGreaterThan(0);
+      expect(day.meals.lunch.length, day.date).toBeGreaterThan(0);
+      expect(day.meals.dinner.length, day.date).toBeGreaterThan(0);
+    }
 
     const allSlots = plan.days.reduce(
       (sum, day) =>
@@ -162,7 +173,7 @@ describe("loadSeed(seed/example.json)", () => {
         Object.values(day.meals).reduce((count, slots) => count + slots.length, 0),
       0,
     );
-    expect(allSlots).toBe(21);
+    expect(allSlots).toBe(24);
   });
 
   it("imports the pantry snapshot without fabricating purchases", () => {
@@ -171,11 +182,11 @@ describe("loadSeed(seed/example.json)", () => {
     const stock = getStockForIngredient(test.ctx, beef!.id);
     expect(stock).toHaveLength(1);
     expect(stock[0]).toMatchObject({
-      qty: 3,
+      qty: 2,
       unit: "lb",
       status: "on_hand",
       qtyApprox: false,
-      rawText: "Ground beef | 3 lb | protein | 2026-02-01",
+      rawText: "Ground Beef | 2 lb",
       note: null,
     });
 
@@ -186,9 +197,9 @@ describe("loadSeed(seed/example.json)", () => {
       reason: "import",
       refType: "seed",
       refId: null,
-      qty: 3,
+      qty: 2,
       unit: "lb",
-      qtyAfter: 3,
+      qtyAfter: 2,
       statusAfter: "on_hand",
     });
 
@@ -199,11 +210,11 @@ describe("loadSeed(seed/example.json)", () => {
       qty: null,
       unit: null,
       status: "on_hand",
-      rawText: "Salt | on hand | spice | 2026-02-01",
+      rawText: "Salt | on hand",
     });
 
     const movements = listMovements(test.ctx, { limit: 200 });
-    expect(movements).toHaveLength(46);
+    expect(movements).toHaveLength(51);
     expect(movements.every((movement) => movement.reason === "import")).toBe(true);
     expect(
       movements.every((movement) => movement.refType === "seed" && movement.refId === null),
@@ -217,35 +228,32 @@ describe("loadSeed(seed/example.json)", () => {
     expect(convert(test.ctx, 1, "head", "clove", garlic!.id)).toBeCloseTo(10, 9);
   });
 
-  it("imports the historical shopping list as done, fully checked, with no stock changes", () => {
+  it("imports the in-progress shopping list with a mix of checked items and no stock changes", () => {
     const lists = listShoppingLists(test.ctx).items;
     expect(lists).toHaveLength(1);
 
     const detail = getShoppingList(test.ctx, lists[0]!.id);
     expect(detail.list).toMatchObject({
-      status: "done",
-      completedAt: COMPLETED_AT,
-      title: "Week of Mon Feb 2 - Sun Feb 8, 2026",
+      status: "shopping",
+      completedAt: null,
+      title: `Shopping - week of ${WEEK_START}`,
     });
-    expect(detail.list.mealPlanId).toBe(getPlan(test.ctx, "2026-02-02").id);
-    expect(detail.items).toHaveLength(33);
-    expect(detail.counts).toMatchObject({ total: 33, checked: 33, remaining: 0 });
+    expect(detail.list.mealPlanId).toBe(getPlan(test.ctx, WEEK_START).id);
+    expect(detail.items).toHaveLength(44);
+    expect(detail.counts).toMatchObject({ total: 44, checked: 18, remaining: 26 });
 
     for (const item of detail.items) {
       expect(item.source).toBe("manual");
-      expect(item.checkedAt).toBe(COMPLETED_AT);
-      expect(item.actualQty).toBe(item.qty);
-      expect(item.actualUnit).toBe(item.unit);
     }
 
-    // The pantry snapshot already includes the trip: no purchase movements.
+    // The pantry snapshot is independent of the list: no purchase movements.
     const movements = listMovements(test.ctx, { limit: 200 });
     expect(movements.filter((movement) => movement.reason === "purchase")).toHaveLength(0);
   });
 
   it("checks every seeded recipe against the household rules", () => {
     const recipes = searchRecipes(test.ctx, {}).items;
-    expect(recipes).toHaveLength(8);
+    expect(recipes).toHaveLength(15);
 
     // Keyword rules match whole words only, so "ham" does not fire on the
     // "hamburger meat" alias of Ground beef; no seeded recipe violates a rule.
@@ -261,11 +269,12 @@ describe("loadSeed(seed/example.json)", () => {
   });
 
   it("records the seed provenance on each recipe's status event", () => {
+    const declared = new Map(parseSeed(SEED_JSON).recipes.map((recipe) => [recipe.key, recipe.status]));
     for (const recipe of searchRecipes(test.ctx, {}).items) {
       const history = listStatusHistory(test.ctx, recipe.id).items;
       expect(history).toHaveLength(1);
       expect(history[0]).toMatchObject({
-        status: "want_to_try",
+        status: declared.get(recipe.slug),
         rating: null,
         note: "Seeded from example.json",
       });
@@ -273,7 +282,7 @@ describe("loadSeed(seed/example.json)", () => {
   });
 
   it("computes plan demand from the planned servings", () => {
-    const plan = getPlan(test.ctx, "2026-02-02");
+    const plan = getPlan(test.ctx, WEEK_START);
     const beef = findIngredientByName(test.ctx, "Ground beef");
     const demand = computeDemand(test.ctx, { mealPlanId: plan.id });
     const line = demand.find((entry) => entry.ingredientId === beef!.id);
@@ -291,10 +300,10 @@ describe("loadSeed(seed/example.json)", () => {
   it("refuses a second load into the populated household", () => {
     const error = asAppError(errorFrom(() => loadSeed(test.ctx, structuredClone(SEED_JSON))));
     expect(error.code).toBe("conflict");
-    expect(error.details).toMatchObject({ ingredients: 65, recipes: 8 });
+    expect(error.details).toMatchObject({ ingredients: 100, recipes: 15 });
 
-    expect(listIngredients(test.ctx)).toHaveLength(65);
-    expect(listPantry(test.ctx)).toHaveLength(46);
+    expect(listIngredients(test.ctx)).toHaveLength(100);
+    expect(listPantry(test.ctx)).toHaveLength(51);
   });
 });
 
