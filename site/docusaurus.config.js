@@ -2,6 +2,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
+  favicon: 'img/logo.svg',
   title: 'Rakumi',
   tagline: 'Plan meals. Track food. Shop for what you need.',
   url: 'https://dev-arekusandoru.github.io',
@@ -36,6 +37,7 @@ const config = {
     colorMode: { respectPrefersColorScheme: true },
     navbar: {
       title: 'Rakumi docs',
+      logo: { src: 'img/logo.svg', alt: 'Rakumi logo' },
       items: [
         { type: 'doc', docId: 'start/install', label: 'Install', position: 'left' },
         { href: 'https://github.com/dev-arekusandoru/pantry-pal', label: 'GitHub', position: 'right' },

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/logo-placeholder.svg" alt="Rakumi logo placeholder" width="128" height="128">
+  <img src="docs/images/logo.svg" alt="Rakumi logo: Raku the jar" width="128" height="128">
 </p>
 
 <h1 align="center">Rakumi</h1>

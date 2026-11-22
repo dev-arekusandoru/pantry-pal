@@ -85,11 +85,11 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch work lives
 
 ### Milestone 1: share the landing page and build the waitlist
 1. [x] Housekeeping: email verification and password reset are built and sandbox tested (removed from Accounts)
-2. [ ] Check trademark collisions for "Rakumi"
+2. [x] Check trademark collisions for "Rakumi": low risk. Only US "RAKUMI" mark is jewelry (class 14); a Japan-only restaurant-ordering app "Rakumi (ラクミー)" exists. Not checked (JS/captcha): USPTO tmsearch, WIPO, EUIPO, TMview
 3. [ ] Product contact address, not personal (for example `hello@rakumi.app` through Cloudflare Email Routing)
 4. [ ] Privacy policy page (the waitlist collects emails)
 5. [ ] Set the `privacy` and `contact` URLs in `landing/src/config.ts` (the footer hides links until they are set)
-6. [ ] Replace the placeholder logo
+6. [x] Logo: Raku the jar (`docs/images/logo.svg`), used for the README, docs site, and both favicons
 7. [ ] Seed realistic demo data (recipes with photos)
 8. [ ] Shoot the hero shots: Week, Pantry, Recipes, Cook mode, Shop
 9. [ ] Decide: ask for a card at trial start, or not (changes the trial, FAQ, and pricing copy)
