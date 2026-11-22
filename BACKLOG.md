@@ -1,17 +1,13 @@
 # Backlog (post-v1)
 
-Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live in Launch readiness below.
+Priority: **P0** needed for launch, **P1** next, **P2** later. Launch work lives in the two milestones under Launch readiness; do them in order.
 
 ## Platform
 ### Accounts
-- [ ] P0 Email verification on signup (open signup accepts any address)
-- [ ] P0 Password reset over email (needs SMTP; admin resets with the CLI today)
 - [ ] P2 Share one household between several logins (1 account = 1 household today)
 - [ ] P2 OAuth 2.1 for remote MCP clients
 
 ### Data and hosting
-- [ ] P0 Scheduled backups for the hosted service (landing page promises "backups handled")
-- [ ] P1 Manual data-copy runbook (JSON dump or markdown week export only if needed)
 - [ ] P1 Per-tenant backup and restore
 - [ ] P2 Postgres support (all tenants share one SQLite file; one busy tenant slows the rest)
 - [ ] P2 `recipe_step_ingredient` join table, per-step refs in recipe create/update and MCP
@@ -19,21 +15,18 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live
 - [ ] P2 Hand-checked backfill of seed recipes for the join table
 
 ### Tooling
-- [ ] P0 Verify the Docker image build (never run: build host had no Docker socket access)
 - [ ] P1 CI for typecheck, tests, docker build (only the docs workflow exists)
 - [ ] P1 Linter and formatter config
 - [ ] P2 Playwright smoke flows: shop check-off, pantry adjust, cook mode
 
 ## Features
 ### Recipes
-- [ ] P0 Import recipe from a link (schema.org/Recipe). LAUNCH GATE: landing page shows it as available. Web app has none today (editor, API, MCP only)
 - [ ] P1 Cache recipe images under `/media` instead of hotlinking seed URLs
 - [ ] P2 Step to ingredient links in cook mode (needs the join table)
 - [ ] P2 Sticker book: check recipe details on tap
 - [ ] P2 Sticker book: per-recipe collection (cooked recipes as stickers)
 
 ### Dietary rules
-- [ ] P0 Dietary rules screen (landing page mentions rules). The ingredient page lists rules read-only; add and edit work only through API and MCP
 - [ ] P1 Warnings on recipe, week, and shop screens
 
 ### Pantry
@@ -90,61 +83,58 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live
 
 ## Launch readiness
 
-### Legal and contact
-- [ ] Privacy policy page
-- [ ] Terms page (include 30-day deletion after a lock)
-- [ ] Refund and cancellation wording (7-day refund on first charge)
-- [ ] Product contact address (not personal)
-- [ ] Set `privacy`, `terms`, `contact` URLs in `landing/src/config.ts` (footer hides links until set)
-- [ ] Check Polar's legal requirements are met
+### Milestone 1: share the landing page and build the waitlist
+1. [x] Housekeeping: email verification and password reset are built and sandbox tested (removed from Accounts)
+2. [ ] Check trademark collisions for "Rakumi"
+3. [ ] Product contact address, not personal (for example `hello@rakumi.app` through Cloudflare Email Routing)
+4. [ ] Privacy policy page (the waitlist collects emails)
+5. [ ] Set the `privacy` and `contact` URLs in `landing/src/config.ts` (the footer hides links until they are set)
+6. [ ] Replace the placeholder logo
+7. [ ] Seed realistic demo data (recipes with photos)
+8. [ ] Shoot the hero shots: Week, Pantry, Recipes, Cook mode, Shop
+9. [ ] Decide: ask for a card at trial start, or not (changes the trial, FAQ, and pricing copy)
+10. [ ] Review the FAQ by hand
+11. [ ] Fix the FAQ layout: two-column grid
+12. [ ] Review and tweak the landing page copy by hand (claims must match the app)
+13. [ ] Deploy the landing site; start sharing `rakumi.app`
 
-### Brand
+### Milestone 2: open to paying users
+1. [ ] Verify the Docker image build (never run: build host had no Docker socket access)
+2. [ ] Multi-tenant database decision (see Postgres under Platform)
+3. [ ] Scheduled backups for the hosted service, with a restore test (landing page promises "backups handled")
+4. [ ] Import recipe from a link (schema.org/Recipe). LAUNCH GATE: the landing page shows it as available. The web app has none today (editor, API, MCP only)
+5. [ ] Dietary rules screen (the landing page mentions rules). The ingredient page lists rules read-only; add and edit work only through the API and MCP
+6. [ ] Manual data-copy runbook for members (no export feature needed)
+7. [ ] Rename internals (user-facing text is done). Do it before paying users: the cookie rename signs everyone out
+   - [ ] Migration plan for the running instance (cookie and localStorage renames sign people out)
+   - [ ] Packages (`pantrypal`, `@pantrypal/*`), CLI, MCP server name
+   - [ ] `PANTRYPAL_*` env vars, `data/pantrypal.db`
+   - [ ] Docker service, image, network names; `scripts/deploy.sh`
+   - [ ] Session cookie and localStorage keys (`pantrypal.*`, `pantry-pal:*`)
+   - [ ] `Pal` component and file names
+   - [ ] Worker name `pantrypal-waitlist` (URL changes; update `waitlistEndpoint`)
+   - [ ] GitHub repo and Pages URL (`pantry-pal`); update links in `landing/src/config.ts`
+8. [ ] Move the landing page to `get.rakumi.app` or `rakumi.app/get` (decide which; decide the docs subdomain too). Signed-out visitors to `rakumi.app` redirect there; the landing page shows the sign-in and sign-up buttons. Links shared in Milestone 1 keep working through the redirect
+9. [ ] Terms page (include 30-day deletion after a lock)
+10. [ ] Refund and cancellation wording (policy decided, see Done), then set the `terms` URL in `landing/src/config.ts`
+11. [ ] Check that Polar's legal requirements are met
+12. [ ] Support channel
+13. [ ] Go-live setup: Polar production org, products, token (scopes: `checkouts:write`, `customer_sessions:write`, `subscriptions:read`, `products:read`, `customers:write`), webhook, trial-abuse setting; `app.rakumi.app` DNS and tunnel; production env; `billing exempt` for own household; Resend transactional on Pro for launch week (free plan caps app emails at 100/day)
+14. [ ] Launch day: set `signupUrl` in `landing/src/config.ts` (switches the call to action to the 14-day trial), deploy the landing site, send the waitlist invite broadcast (steps in `docs/host/waitlist.md`). Signup opens to everyone; no invite codes
+
+### Later (not a launch blocker)
+- [ ] Decide what hosted/Polar setup to document in the open-source docs (operator guide not written on purpose)
+
+### Done
 - [x] Name Rakumi, `rakumi.app` bought, user-facing text renamed
-- [ ] Check trademark collisions for "Rakumi"
-- [ ] Replace placeholder logo
-- [ ] Decide subdomains (app, docs)
-
-### Marketing assets
-- [ ] Seed realistic demo data (recipes with photos)
-- [ ] Shoot hero shots: Week, Pantry, Recipes, Cook mode, Shop
-
-### Waitlist and pre-launch
-- [x] Worker written and deployed; `waitlistEndpoint` set
-- [x] Resend sending domain verified
-- [x] Welcome email sent from the Worker (HTML, with Raku image from `rakumi.app/raku-email.png`; deploy landing for the image to load)
-- [x] Invite plan: when the product is ready, send one Resend broadcast to the whole waitlist (steps in `docs/host/waitlist.md`)
-
-### Launch day (last, after legal, go-live, and the rest of this backlog)
-- [ ] Set `signupUrl` in `landing/src/config.ts` (switches the call to action to the 14-day trial), then deploy the landing site
-- [ ] Send the waitlist invite broadcast (steps in `docs/host/waitlist.md`)
-
-### Hosted version (plan: `scratch/hosting-plan.md`)
-- [ ] Invite-code signup
+- [x] Waitlist Worker written and deployed; `waitlistEndpoint` set; Resend sending domain verified; welcome email with Raku image
+- [x] Invite plan: one Resend broadcast to the whole waitlist when the product is ready
 - [x] Polar billing: $3.99/mo or $39/yr, 14-day trial with card, no free tier (sandbox tested)
   - Won't do: the paywall cannot show "trial unavailable" before checkout. Polar decides trial eligibility at checkout (card check). The paywall and FAQ say "one free trial per person" instead.
 - [x] Lock on lapse or failed renewal
 - [x] Delete data 30 days after the lock (daily job, warning emails)
 - [x] Delete the Polar customer when a household is deleted (anonymized; retried daily on failure)
-- [x] 7-day refund on first charge: decided. First charge only, asked within 7 days of it. Manual: user emails, Alex refunds the order and cancels the subscription in the Polar dashboard; the household locks (normal 30-day deletion). No code. Goes in the refund policy page (Legal).
+- [x] 7-day refund on first charge: decided. First charge only, asked within 7 days of it. Manual: user emails, Alex refunds the order and cancels the subscription in the Polar dashboard; the household locks (normal 30-day deletion). No code. Goes in the refund policy page.
 - [x] Email sending: verification, password reset, deletion warnings
 - [x] Manual test pass of the hosted flows (sandbox): signup, verify, checkout, plan, cancel, lock, password reset, Polar customer delete
-- [ ] Decide what hosted/Polar setup to document in the open-source docs (operator guide not written on purpose)
-- [ ] Go-live setup (hold until ready): Polar production org, products, token (scopes: `checkouts:write`, `customer_sessions:write`, `subscriptions:read`, `products:read`, `customers:write`), webhook, trial-abuse setting; `app.rakumi.app` DNS and tunnel; production env; `billing exempt` for own household; Resend transactional on Pro for launch week (free plan caps app emails at 100/day)
-- [ ] Scheduled backups
-- [ ] Support channel
-- [ ] Multi-tenant database decision (see Platform)
-
-### Promises on the landing page
-- [ ] Recipe import from a link (LAUNCH GATE, see Features)
-- [ ] Manual data-copy process for members (no export feature needed)
-- [ ] Data deleted 30 days after the plan ends (same as the hosted-version item)
-
-### Rename internals (user-facing text is done)
-- [ ] Write a migration plan for the running instance (cookie and localStorage renames sign people out)
-- [ ] Packages (`pantrypal`, `@pantrypal/*`), CLI, MCP server name
-- [ ] `PANTRYPAL_*` env vars, `data/pantrypal.db`
-- [ ] Docker service, image, network names; `scripts/deploy.sh`
-- [ ] Session cookie and localStorage keys (`pantrypal.*`, `pantry-pal:*`)
-- [ ] `Pal` component and file names
-- [ ] Worker name `pantrypal-waitlist` (URL changes; update `waitlistEndpoint`)
-- [ ] GitHub repo and Pages URL (`pantry-pal`); update links in `landing/src/config.ts`
+- Dropped: invite-code signup. The waitlist only gets an invite email; signup opens to everyone on launch day
