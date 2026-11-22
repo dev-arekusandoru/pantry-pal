@@ -100,6 +100,9 @@ export function makeFakePolar(): FakePolar {
         );
         return json({ items, pagination: { total_count: items.length, max_page: items.length === 0 ? 0 : 1 } });
       }
+      if (method === "DELETE" && (/^\/customers\/[^/]+$/.test(path) || /^\/customers\/external\/[^/]+$/.test(path))) {
+        return new Response(null, { status: 204 });
+      }
       return json({ detail: "unexpected" }, 500);
     }) as typeof fetch,
   };

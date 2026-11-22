@@ -117,11 +117,15 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live
 
 ### Hosted version (plan: `scratch/hosting-plan.md`)
 - [ ] Invite-code signup
-- [ ] Polar billing: $3.99/mo or $39/yr, 14-day trial with card, no free tier
-- [ ] Lock on lapse or failed renewal
-- [ ] Delete data 30 days after the lock
+- [x] Polar billing: $3.99/mo or $39/yr, 14-day trial with card, no free tier (sandbox tested)
+- [x] Lock on lapse or failed renewal
+- [x] Delete data 30 days after the lock (hourly job, warning emails)
+- [x] Delete the Polar customer when a household is deleted (anonymized; retried hourly on failure)
 - [ ] 7-day refund on first charge
-- [ ] Email sending (also needed for Platform: verification, password reset)
+- [x] Email sending: verification, password reset, deletion warnings
+- [ ] Manual test pass of the hosted flows (sandbox)
+- [ ] Decide what hosted/Polar setup to document in the open-source docs (operator guide not written on purpose)
+- [ ] Go-live setup (hold until ready): Polar production org, products, token, webhook, trial-abuse setting; `app.rakumi.app` DNS and tunnel; production env; `billing exempt` for own household
 - [ ] Scheduled backups
 - [ ] Support channel
 - [ ] Multi-tenant database decision (see Platform)

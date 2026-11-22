@@ -35,6 +35,9 @@ export interface LifecycleResult {
  * A household is deleted only after the final warning went out and at least 24 hours
  * passed since. If mail was down on day 29, the warning goes out late and deletion
  * waits for it. A household without an account cannot be warned and is never deleted.
+ *
+ * Deletion removes the household's Polar customer first (this is the only place a
+ * household is deleted). If that fails, the household stays and the next run retries.
  */
 export async function runLifecycle(deps: LifecycleDeps): Promise<LifecycleResult> {
   const { db, mailer, publicUrl } = deps;
@@ -70,6 +73,15 @@ export async function runLifecycle(deps: LifecycleDeps): Promise<LifecycleResult
       row.warnedDay29At !== null &&
       now.getTime() >= Date.parse(row.warnedDay29At) + DAY_MS
     ) {
+      // Polar first: if it fails the household stays, so the next hourly run retries.
+      // Deleting the customer cancels its subscriptions. That is safe: only locked,
+      // non-exempt households reach this point, so they have no active plan.
+      try {
+        await deps.billing.deleteCustomer(db, row.householdId);
+      } catch (error) {
+        log(`deleting the Polar customer of household ${row.householdId} failed, will retry: ${error instanceof Error ? error.message : String(error)}`);
+        continue;
+      }
       deleteHousehold(db, row.householdId);
       result.deleted.push(row.householdId);
       log(`deleted household ${row.householdId} (locked since ${row.lockedAt})`);

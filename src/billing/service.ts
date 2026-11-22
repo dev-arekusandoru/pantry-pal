@@ -152,6 +152,17 @@ export class Billing {
   }
 
   /**
+   * Delete the household's Polar customer and anonymize its personal data. Uses the stored
+   * customer id; without one it falls back to the external id (the household id), which
+   * covers a checkout whose webhook never arrived. A customer Polar does not know counts
+   * as deleted. Throws `PolarApiError` on any other failure, so the caller can retry.
+   */
+  async deleteCustomer(db: Db, householdId: string): Promise<void> {
+    const customerId = getBillingRow(db, householdId)?.polarCustomerId ?? null;
+    await this.polar.deleteCustomer(customerId === null ? { externalId: householdId } : { customerId });
+  }
+
+  /**
    * Verify and apply a webhook. Throws `WebhookVerificationError` on a bad or stale
    * signature. Duplicate event ids and out-of-order updates change nothing.
    */

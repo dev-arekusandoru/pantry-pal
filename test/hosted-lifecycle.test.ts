@@ -191,6 +191,73 @@ describe("lock and deletion job", () => {
     expect((await job(app, 32)).deleted).toEqual([householdId]);
   });
 
+  describe("Polar customer", () => {
+    const deletes = (app: HostedTestApp) => app.polar.calls.filter((call) => call.method === "DELETE");
+
+    async function lapsedHousehold() {
+      const made = await lockedHousehold();
+      await made.app.webhook({
+        type: "subscription.revoked",
+        data: polarSubscription(made.householdId, { status: "canceled", modified_at: at(0).toISOString() }),
+      });
+      return made;
+    }
+
+    it("is deleted and anonymized with the household, by its stored customer id", async () => {
+      const { app, householdId } = await lapsedHousehold();
+      await job(app, 29);
+      expect(deletes(app)).toHaveLength(0);
+
+      expect((await job(app, 30)).deleted).toEqual([householdId]);
+      expect(householdExists(app, householdId)).toBe(false);
+      expect(deletes(app).map((call) => call.url)).toEqual([
+        "https://sandbox-api.polar.sh/v1/customers/cus_1?anonymize=true",
+      ]);
+    });
+
+    it("is deleted by external id when no customer id was stored", async () => {
+      const { app, householdId } = await lockedHousehold();
+      await job(app, 29);
+      expect((await job(app, 30)).deleted).toEqual([householdId]);
+      expect(deletes(app).map((call) => call.url)).toEqual([
+        `https://sandbox-api.polar.sh/v1/customers/external/${householdId}?anonymize=true`,
+      ]);
+    });
+
+    it("counts a customer Polar does not know (404) as deleted", async () => {
+      const { app, householdId } = await lapsedHousehold();
+      await job(app, 29);
+      app.polar.failWith = 404;
+      expect((await job(app, 30)).deleted).toEqual([householdId]);
+      expect(householdExists(app, householdId)).toBe(false);
+    });
+
+    it("keeps the household and retries on the next run when Polar fails", async () => {
+      const { app, householdId } = await lapsedHousehold();
+      await job(app, 29);
+      const logs: string[] = [];
+      app.polar.failWith = 500;
+      app.setNow(at(30));
+      const failed = await runLifecycle({
+        db: app.db,
+        billing: app.billing!,
+        mailer: app.mailer,
+        publicUrl: "https://app.rakumi.test",
+        now: app.now,
+        log: (message) => logs.push(message),
+      });
+      expect(failed.deleted).toEqual([]);
+      expect(householdExists(app, householdId)).toBe(true);
+      expect(app.db.select().from(accounts).all()).toHaveLength(1);
+      expect(logs.join("\n")).toContain("will retry");
+
+      app.polar.failWith = null;
+      expect((await job(app, 30 + 1 / 24)).deleted).toEqual([householdId]);
+      expect(householdExists(app, householdId)).toBe(false);
+      expect(deletes(app)).toHaveLength(2);
+    });
+  });
+
   it("never deletes a household without an account (it cannot be warned)", async () => {
     const { app, householdId } = await lockedHousehold();
     app.db.delete(accounts).where(eq(accounts.householdId, householdId)).run();

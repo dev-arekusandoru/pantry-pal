@@ -111,12 +111,18 @@ export interface PolarClient {
   listSubscriptions(externalCustomerId: string): Promise<PolarSubscription[]>;
   /** The product's current fixed price, or null when it has none. */
   getProductPrice(productId: string): Promise<PolarPrice | null>;
+  /**
+   * Delete the customer and anonymize its personal data (Polar `DELETE /customers/{id}` or
+   * `/customers/external/{external_id}`, `anonymize=true`). This also cancels active
+   * subscriptions. A customer that does not exist (404) counts as deleted.
+   */
+  deleteCustomer(ref: { customerId: string } | { externalId: string }): Promise<void>;
 }
 
 export function createPolarClient(config: PolarConfig, fetchImpl: typeof fetch = fetch): PolarClient {
   const base = BASE_URLS[config.server];
 
-  async function request(method: "GET" | "POST", path: string, body?: unknown): Promise<unknown> {
+  async function request(method: "GET" | "POST" | "DELETE", path: string, body?: unknown): Promise<unknown> {
     let response: Response;
     try {
       response = await fetchImpl(`${base}${path}`, {
@@ -140,7 +146,7 @@ export function createPolarClient(config: PolarConfig, fetchImpl: typeof fetch =
       const detail = (await response.text().catch(() => "")).slice(0, 300);
       throw new PolarApiError(`Polar returned ${response.status} for ${method} ${path}: ${detail}`, response.status);
     }
-    return response.json();
+    return response.status === 204 ? null : response.json();
   }
 
   const urlOf = (raw: unknown, field: string): string => {
@@ -203,6 +209,19 @@ export function createPolarClient(config: PolarConfig, fetchImpl: typeof fetch =
           p.price_currency !== undefined,
       );
       return price === undefined ? null : { amount: price.price_amount!, currency: price.price_currency! };
+    },
+
+    async deleteCustomer(ref) {
+      const path =
+        "customerId" in ref
+          ? `/customers/${encodeURIComponent(ref.customerId)}`
+          : `/customers/external/${encodeURIComponent(ref.externalId)}`;
+      try {
+        await request("DELETE", `${path}?anonymize=true`);
+      } catch (error) {
+        if (error instanceof PolarApiError && error.status === 404) return;
+        throw error;
+      }
     },
   };
 }
