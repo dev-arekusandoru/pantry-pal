@@ -2,7 +2,7 @@
 import { Image } from "astro:assets";
 import Pal from "./Pal.astro";
 import WaitlistForm from "./WaitlistForm.astro";
-import { money, site } from "../config";
+import { cta, money, site } from "../config";
 import week from "../assets/img/week.webp";
 import cook from "../assets/img/cook.webp";
 import egg from "../assets/icons/egg.webp";
@@ -22,9 +22,13 @@ import peppers from "../assets/icons/bell-peppers.webp";
       <p class="lead">Meals, pantry, recipes, and groceries in one cozy place. Open source, and yours to keep.</p>
 
       <div id="join">
-        <WaitlistForm id="email-hero" />
+        {cta.open ? <a class="btn primary" href={cta.href}>{cta.label}</a> : <WaitlistForm id="email-hero" />}
       </div>
-      <p class="note fine">Free for {site.trialDays} days when we open. One email, no spam.</p>
+      <p class="note fine">
+        {cta.open
+          ? `Free for ${site.trialDays} days. A card starts the trial. Cancel before day ${site.trialDays} and you won't be charged.`
+          : `Free for ${site.trialDays} days when we open. A card starts the trial. Cancel before day ${site.trialDays} and you won't be charged. One email, no spam.`}
+      </p>
 
       <div class="sub">
         <a class="btn" href={site.links.github}>

@@ -41,6 +41,8 @@ To limit abuse, add a Cloudflare rate limiting rule for the Worker.
    `landing/src/config.ts` to it, and build the landing page.
 
 Until you set `waitlistEndpoint`, the form shows "The waitlist isn't open yet."
+When the hosted app opens, set `signupUrl` in the same file. The page then hides
+the form. See [Landing page](landing-page.md).
 
 ## Manage the list
 

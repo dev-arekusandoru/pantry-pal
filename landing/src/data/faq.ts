@@ -15,7 +15,7 @@ export const faq = [
   },
   {
     q: "Do I need a card for the free trial?",
-    a: `No. Your ${site.trialDays} days are free and we won't ask for a card. If you don't subscribe, you're not charged.`,
+    a: `Yes. You add a card at checkout to start your ${site.trialDays}-day trial. Cancel before day ${site.trialDays} and you won't be charged. If you don't cancel, your plan starts and we charge the card. Each person gets one free trial. If you used one before, checkout shows the price you pay today.`,
   },
   {
     q: "Can I cancel, and what happens to my data?",

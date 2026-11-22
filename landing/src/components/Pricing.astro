@@ -1,5 +1,5 @@
 ---
-import { money, site } from "../config";
+import { cta, money, site } from "../config";
 
 const { monthly, yearly, yearlySaving } = site.price;
 
@@ -46,8 +46,10 @@ const whyNotes = [
         ))}
       </ul>
       <div class="cta">
-        <a class="btn primary block" href="#join">Join the waitlist</a>
-        <p class="note fine">{site.trialDays}-day free trial when we open. Cancel any time.</p>
+        <a class="btn primary block" href={cta.href}>{cta.label}</a>
+        <p class="note fine">
+          {site.trialDays}-day free trial{cta.open ? "" : " when we open"}. A card starts the trial. Cancel before day {site.trialDays} and you won't be charged.
+        </p>
       </div>
     </article>
 

@@ -1,6 +1,6 @@
 ---
 import Pal from "./Pal.astro";
-import { site } from "../config";
+import { cta, site } from "../config";
 
 const links = [
   { href: "#how", label: "Features" },
@@ -21,7 +21,7 @@ const links = [
     <a class="btn sm star" href={site.links.github}>
       <svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub
     </a>
-    <a class="btn sm primary" href="#join">Join the waitlist</a>
+    <a class="btn sm primary" href={cta.href}>{cta.label}</a>
   </div>
 </header>
 

@@ -8,12 +8,26 @@ Cloudflare Pages.
 
 | What | Where |
 | --- | --- |
-| Prices, trial length, links, waitlist URL | `landing/src/config.ts` |
+| Prices, trial length, links, waitlist URL, sign-up URL | `landing/src/config.ts` |
 | Comparison rows, FAQ, how-it-works steps | `landing/src/data/` |
 | Site URL, sitemap | `landing/astro.config.mjs` |
 
 Run `pnpm landing:dev` to preview. Run `pnpm landing:build` to build into
 `landing/dist/`.
+
+## Open sign-up
+
+The buttons start as "Join the waitlist". Set `signupUrl` in
+`landing/src/config.ts` when the hosted app opens, for example
+`https://app.rakumi.app/`. Then rebuild and deploy the page:
+
+- The buttons in the navigation bar, the hero, the pricing card, and the closing
+  section read "Start your free trial" and link to `signupUrl`.
+- The waitlist form is hidden.
+- The trial notes drop "when we open".
+
+Leave `signupUrl` empty to keep the waitlist. The trial needs a card. Every trial
+note says so.
 
 ## Publish to Cloudflare Pages
 

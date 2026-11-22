@@ -1,14 +1,16 @@
 ---
 import Pal from "./Pal.astro";
 import WaitlistForm from "./WaitlistForm.astro";
-import { site } from "../config";
+import { cta, site } from "../config";
 ---
 
 <div class="closing paper">
   <Pal class="pal" size={112} />
   <h2>{site.tagline}</h2>
-  <p>Join the waitlist and we'll send one email when Rakumi opens. Your first {site.trialDays} days are on us.</p>
-  <WaitlistForm id="email-end" />
+  {cta.open
+    ? <p>Try Rakumi free for {site.trialDays} days. A card starts the trial. Cancel before day {site.trialDays} and you won't be charged.</p>
+    : <p>Join the waitlist and we'll send one email when Rakumi opens. Your first {site.trialDays} days are on us. A card starts the trial. Cancel before day {site.trialDays} and you won't be charged.</p>}
+  {cta.open ? <a class="btn primary" href={cta.href}>{cta.label}</a> : <WaitlistForm id="email-end" />}
 </div>
 
 <style is:global>

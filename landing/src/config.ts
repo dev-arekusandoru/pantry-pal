@@ -32,4 +32,15 @@ export const site = {
   // `{ email, website }` as JSON; any 2xx is success. Empty means the waitlist is
   // not wired up, and the form says so.
   waitlistEndpoint: "https://pantrypal-waitlist.pantrypal-waitlist.workers.dev",
+  // Where the hosted app signs people up, for example "https://app.rakumi.app/".
+  // Empty (the default) means the hosted app is not open: every button reads
+  // "Join the waitlist" and goes to the waitlist form. Set it when sign-up opens:
+  // the buttons read "Start your free trial" and go to this URL, and the
+  // waitlist form is hidden.
+  signupUrl: "" as string,
 } as const;
+
+// The main call to action, chosen by `site.signupUrl`.
+export const cta = site.signupUrl
+  ? { open: true, href: site.signupUrl, label: "Start your free trial" }
+  : { open: false, href: "#join", label: "Join the waitlist" };

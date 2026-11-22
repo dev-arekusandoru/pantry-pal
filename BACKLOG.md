@@ -112,12 +112,12 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live
 - [x] Worker written and deployed; `waitlistEndpoint` set
 - [x] Resend sending domain verified
 - [x] Welcome email sent from the Worker (HTML, with Raku image from `rakumi.app/raku-email.png`; deploy landing for the image to load)
-- [ ] Decide how and when to invite people (Resend broadcasts)
-- [ ] Switch call to action to the 14-day trial once signup and billing work
+- [x] Invite plan: when the product is ready, send one Resend broadcast to the whole waitlist (steps in `docs/host/waitlist.md`)
 
 ### Hosted version (plan: `scratch/hosting-plan.md`)
 - [ ] Invite-code signup
 - [x] Polar billing: $3.99/mo or $39/yr, 14-day trial with card, no free tier (sandbox tested)
+  - [ ] Switch call to action to the 14-day trial once signup and billing work
 - [x] Lock on lapse or failed renewal
 - [x] Delete data 30 days after the lock (hourly job, warning emails)
 - [x] Delete the Polar customer when a household is deleted (anonymized; retried hourly on failure)

@@ -272,7 +272,7 @@ export function PaywallScreen({ session, onRefresh }: { session: AuthenticatedSe
         ? <p>Start a new plan to open your pantry again.</p>
         : <p>Pick a plan to open your pantry.</p>}
     {billing?.deleteAt && billing.status !== "none" && <p className={styles.hint}>
-      If you do not subscribe, we delete your household on {formatDate(billing.deleteAt)}.
+      If you choose not to subscribe, we'll remove your data on {formatDate(billing.deleteAt)}.
     </p>}
     {pastDue
       ? <Button variant="primary" loading={busy} disabled={busy} onClick={() => void go(openPortal)}>Manage billing</Button>
@@ -289,7 +289,9 @@ export function PaywallScreen({ session, onRefresh }: { session: AuthenticatedSe
         <Button variant="primary" loading={busy} disabled={busy} onClick={() => void go(checkout)}>
           {returning ? "Start again" : "Start my free trial"}
         </Button>
-        {!returning && <p className={styles.hint}>Card needed. No charge until day 14. Cancel any time.</p>}
+        {!returning && <p className={styles.hint}>
+          Card needed. No charge until day 14. Cancel any time. Each person gets one free trial: if you used one before, checkout shows the price you pay today.
+        </p>}
       </>}
     {error && <p className={styles.error} role="alert">{error}</p>}
     {!session.account.emailVerified && session.features.email && <div className={styles.hint}>
