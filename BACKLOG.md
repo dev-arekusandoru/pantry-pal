@@ -114,18 +114,22 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch items live
 - [x] Welcome email sent from the Worker (HTML, with Raku image from `rakumi.app/raku-email.png`; deploy landing for the image to load)
 - [x] Invite plan: when the product is ready, send one Resend broadcast to the whole waitlist (steps in `docs/host/waitlist.md`)
 
+### Launch day (last, after legal, go-live, and the rest of this backlog)
+- [ ] Set `signupUrl` in `landing/src/config.ts` (switches the call to action to the 14-day trial), then deploy the landing site
+- [ ] Send the waitlist invite broadcast (steps in `docs/host/waitlist.md`)
+
 ### Hosted version (plan: `scratch/hosting-plan.md`)
 - [ ] Invite-code signup
 - [x] Polar billing: $3.99/mo or $39/yr, 14-day trial with card, no free tier (sandbox tested)
-  - [ ] Switch call to action to the 14-day trial once signup and billing work
+  - Won't do: the paywall cannot show "trial unavailable" before checkout. Polar decides trial eligibility at checkout (card check). The paywall and FAQ say "one free trial per person" instead.
 - [x] Lock on lapse or failed renewal
 - [x] Delete data 30 days after the lock (daily job, warning emails)
 - [x] Delete the Polar customer when a household is deleted (anonymized; retried daily on failure)
-- [ ] 7-day refund on first charge
+- [x] 7-day refund on first charge: decided. First charge only, asked within 7 days of it. Manual: user emails, Alex refunds the order and cancels the subscription in the Polar dashboard; the household locks (normal 30-day deletion). No code. Goes in the refund policy page (Legal).
 - [x] Email sending: verification, password reset, deletion warnings
-- [ ] Manual test pass of the hosted flows (sandbox)
+- [x] Manual test pass of the hosted flows (sandbox): signup, verify, checkout, plan, cancel, lock, password reset, Polar customer delete
 - [ ] Decide what hosted/Polar setup to document in the open-source docs (operator guide not written on purpose)
-- [ ] Go-live setup (hold until ready): Polar production org, products, token, webhook, trial-abuse setting; `app.rakumi.app` DNS and tunnel; production env; `billing exempt` for own household
+- [ ] Go-live setup (hold until ready): Polar production org, products, token (scopes: `checkouts:write`, `customer_sessions:write`, `subscriptions:read`, `products:read`, `customers:write`), webhook, trial-abuse setting; `app.rakumi.app` DNS and tunnel; production env; `billing exempt` for own household; Resend transactional on Pro for launch week (free plan caps app emails at 100/day)
 - [ ] Scheduled backups
 - [ ] Support channel
 - [ ] Multi-tenant database decision (see Platform)
