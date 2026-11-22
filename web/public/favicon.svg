@@ -1,16 +1,29 @@
-<svg id="emoji" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
-  <g id="color">
-    <g>
-      <path fill="#fff" d="M26.3,33.1H45.6a1.6855,1.6855,0,0,1,1.7,1.7V48.9a1.6855,1.6855,0,0,1-1.7,1.7H26.3a1.6855,1.6855,0,0,1-1.7-1.7V34.8A1.8276,1.8276,0,0,1,26.3,33.1Z"/>
-      <path fill="#fff" d="M53,29.5V59.7A3.1349,3.1349,0,0,1,50.1,63H21.9A3.1349,3.1349,0,0,1,19,59.7V29.5a15.0381,15.0381,0,0,1,2.2-7.8l1.8-3V14.5h-.9a1.58,1.58,0,0,1-1.6-1.6V10.5a1.58,1.58,0,0,1,1.6-1.6H49.9a1.58,1.58,0,0,1,1.6,1.6v2.4a1.58,1.58,0,0,1-1.6,1.6H49v4.2l1.8,3A14.7745,14.7745,0,0,1,53,29.5Zm-3.4-15H23"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -6 124 124">
+  <title>Rakumi</title>
+  <defs>
+    <clipPath id="jar"><path d="M36 34 H84 C84 42 100 44 100 60 V92 C100 102 94 108 84 108 H36 C26 108 20 102 20 92 V60 C20 44 36 42 36 34 Z"/></clipPath>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <ellipse cx="42" cy="110" rx="11" ry="6" fill="#f2a65a" stroke="#6b2d0a" stroke-width="3.75"/>
+    <ellipse cx="78" cy="110" rx="11" ry="6" fill="#f2a65a" stroke="#6b2d0a" stroke-width="3.75"/>
+    <path d="M36 34 H84 C84 42 100 44 100 60 V92 C100 102 94 108 84 108 H36 C26 108 20 102 20 92 V60 C20 44 36 42 36 34 Z" fill="#fdf3dc"/>
+    <g clip-path="url(#jar)">
+      <path d="M10 62 Q25 55 40 62 T70 62 T110 62 V120 H10 Z" fill="#a9d68a"/>
+      <path d="M10 62 Q25 55 40 62 T70 62 T110 62" fill="none" stroke="#6b2d0a" stroke-width="1.6" opacity=".35"/>
     </g>
-    <polygon fill="#9b9b9a" points="49.6 14.7 22.4 14.7 20.9 13.4 20.2 11.1 21.2 9.1 50.3 9.1 51.8 10 51.5 13.7 49.6 14.7"/>
-    <path fill="#d0cfce" d="M53,28.1V61.3L50.5,63H47.3V36c0-11.3-11.9-17-24.9-17l.3-4.5H49v2.6l.6,2.5,2.2,3.9Z"/>
-    <polygon fill="#3f3f3f" points="51.8 10 51.8 13.4 50.7 14.3 50.7 14.5 46.2 14.5 46.2 9.1 50.8 9.1 50.8 9.2 51.8 10"/>
-  </g>
-  <g id="line">
-    <path fill="none" stroke="#000" stroke-miterlimit="10" stroke-width="2" d="M26.3,33.1H45.6a1.6855,1.6855,0,0,1,1.7,1.7V48.9a1.6855,1.6855,0,0,1-1.7,1.7H26.3a1.6855,1.6855,0,0,1-1.7-1.7V34.8A1.8276,1.8276,0,0,1,26.3,33.1Z"/>
-    <path fill="none" stroke="#000" stroke-linejoin="round" stroke-width="2" d="M53,29.5V59.7A3.1349,3.1349,0,0,1,50.1,63H21.9A3.1349,3.1349,0,0,1,19,59.7V29.5a15.0381,15.0381,0,0,1,2.2-7.8l1.8-3V14.5h-.9a1.58,1.58,0,0,1-1.6-1.6V10.5a1.58,1.58,0,0,1,1.6-1.6H49.9a1.58,1.58,0,0,1,1.6,1.6v2.4a1.58,1.58,0,0,1-1.6,1.6H49v4.2l1.8,3A14.7745,14.7745,0,0,1,53,29.5Z"/>
-    <line x1="49.6" x2="23" y1="14.5" y2="14.5" fill="none" stroke="#000" stroke-linejoin="round" stroke-width="2"/>
+    <path d="M36 34 H84 C84 42 100 44 100 60 V92 C100 102 94 108 84 108 H36 C26 108 20 102 20 92 V60 C20 44 36 42 36 34 Z" fill="none" stroke="#6b2d0a" stroke-width="3.75"/>
+    <path d="M95 66 V92 C95 98 91 103 84 103" fill="none" stroke="#6b2d0a" stroke-width="1.8" opacity=".35"/>
+    <path d="M27 66 C27 58 31 55 35 55 C38 55 38 60 34 64 C31 68 30 76 29 80 C27 80 27 72 27 66 Z" fill="#fff" opacity=".9"/>
+    <circle cx="29" cy="88" r="2.4" fill="#fff" opacity=".9"/>
+    <rect x="30" y="14" width="60" height="22" rx="8" fill="#f2a65a" stroke="#6b2d0a" stroke-width="3.75"/>
+    <path d="M38 25 H82" stroke="#6b2d0a" stroke-width="1.8" opacity=".4"/>
+    <path d="M38 20 q6 -2 16 -2" stroke="#fff" stroke-width="3" opacity=".8" fill="none"/>
+    <path d="M60 14 Q60 8 62 5" fill="none" stroke="#6b2d0a" stroke-width="3"/>
+    <path d="M62 6 C62 -2 74 -3 78 2 C76 10 66 11 62 6 Z" fill="#a9d68a" stroke="#6b2d0a" stroke-width="2.6"/>
+    <ellipse cx="34" cy="84" rx="6" ry="3.8" fill="#ffa59a" opacity=".75"/>
+    <ellipse cx="86" cy="84" rx="6" ry="3.8" fill="#ffa59a" opacity=".75"/>
+    <circle cx="46" cy="74" r="5" fill="#6b2d0a"/><circle cx="74" cy="74" r="5" fill="#6b2d0a"/>
+    <circle cx="47.8" cy="72" r="1.8" fill="#fff"/><circle cx="75.8" cy="72" r="1.8" fill="#fff"/>
+    <path d="M53 83 Q60 91 67 83" fill="none" stroke="#6b2d0a" stroke-width="3"/>
   </g>
 </svg>
