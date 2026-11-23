@@ -97,8 +97,8 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch work lives
 9. [x] Card at trial start: keep it (built and tested; Polar blocks repeat cards). Revisit if signups are low
 10. [x] FAQ reviewed: friendlier answers, card framed as one trial per person, MCP question, "Who makes this?" removed
 11. [x] FAQ layout: two columns on wide screens, one column under 860px
-12. [ ] Review and tweak the landing page copy by hand (claims must match the app)
-13. [ ] Deploy the landing site; start sharing `rakumi.app`
+12. [x] Landing page copy reviewed by Alex
+13. [x] Deployed the landing site (privacy, terms, contact live); start sharing `rakumi.app`
 
 ### Milestone 2: open to paying users
 1. [ ] Verify the Docker image build (never run: build host had no Docker socket access)
