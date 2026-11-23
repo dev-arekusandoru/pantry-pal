@@ -3,42 +3,38 @@ import { money, site } from "../config";
 export const faq = [
   {
     q: "What is Rakumi?",
-    a: "A kitchen companion for the whole house. Plan meals, keep track of your pantry, save recipes, cook step by step, and shop from one list. It's open source.",
+    a: "Rakumi is a kitchen companion for your whole household. Plan the week's meals, keep track of your pantry, save your recipes, cook step by step, and shop from one shared list. It's open source, so anyone can read the code.",
   },
   {
     q: "Hosted or self-hosted: what's the difference?",
-    a: `It's the same app with the same features. Hosted means we run it for you: nothing to set up, backups and updates handled, ${money(site.price.monthly)} a month. Self-hosted means you run it on your own server, for free.`,
+    a: `Same app, same features. With hosted, we run it for you. There's nothing to set up, and we take care of backups and updates for ${money(site.price.monthly)} a month. With self-hosted, you run it on your own server for free.`,
   },
-  {
-    q: "Why pay if it's open source?",
-    a: "You pay for the convenience, and to keep one independent developer going. You also get direct support and a louder voice in what gets built next. Nothing is locked behind the paywall.",
-  },
+  // {
+  //   q: "Why pay if it's open source?",
+  //   a: "You pay for the convenience, and to keep one independent developer going. You also get direct support and a louder voice in what gets built next. Nothing is locked behind the paywall.",
+  // },
   {
     q: "Do I need a card for the free trial?",
-    a: `Yes. You add a card at checkout to start your ${site.trialDays}-day trial. Cancel before day ${site.trialDays} and you won't be charged. If you don't cancel, your plan starts and we charge the card. Each person gets one free trial. If you used one before, checkout shows the price you pay today.`,
+    a: `Yes, but we won't charge it during your trial. The card helps us keep it to one free trial per person. Try everything free for ${site.trialDays} days, and cancel any time before day ${site.trialDays} to pay nothing. If you love it, your plan starts on its own when the trial ends.`,
   },
   {
     q: "Can I cancel, and what happens to my data?",
-    a: "Cancel any time. Ask us for a copy of your data and we'll send it. We delete everything 30 days after your plan ends.",
+    a: "Yes, any time. If you'd like a copy of your data, just ask and we'll send it to you. We delete everything 30 days after your plan ends.",
   },
   {
     q: "Who sees my data?",
-    a: "Your data is yours. We only use it to run the app. If you self-host, everything stays on your own hardware.",
+    a: "Your data belongs to you. We use it only to run Rakumi. If you self-host, it stays on your own hardware.",
   },
   {
     q: "Can everyone in the house use it?",
-    a: "Yes. Everyone signs in to the same account from their own phone or computer. Cook together lets two to four people split one recipe's steps.",
+    a: "Yes. Everyone signs in to your household's account from their own phone or computer. Cooking together? Cook mode can split a recipe's steps between two to four people.",
   },
   {
-    q: "Is there an app?",
-    a: "Not yet. Rakumi works great in your phone's browser. A native app is a maybe for later.",
+    q: "Is there a mobile app?",
+    a: "Not yet. Rakumi works great in your phone's browser, so you can plan and shop from anywhere. Make sure to let us know if you'd like a mobile app!",
   },
   {
-    q: "What's the AI assistant thing?",
-    a: "It's optional. If you use an AI assistant, it can connect to Rakumi to read and change your plans and lists. You can ignore it completely.",
-  },
-  {
-    q: "Who makes this?",
-    a: "One independent developer. You can reach us from the contact link in the footer.",
+    q: "Does Rakumi work with AI assistants?",
+    a: "Yes. Rakumi has a built-in MCP (Model Context Protocol) server, so any AI assistant or agent that supports MCP can connect to it. Ask your assistant to plan the week, add to the shopping list, or check what's in the pantry. It's optional, and the app works fully without it.",
   },
 ] as const;

@@ -94,9 +94,9 @@ Priority: **P0** needed for launch, **P1** next, **P2** later. Launch work lives
 6. [x] Logo: Raku the jar (`docs/images/logo.svg`), used for the README, docs site, and both favicons
 7. [x] Demo data: `seed/example.json` from a scrubbed copy of the prod household; free-license photos (`seed/PHOTO-CREDITS.md`). Plan week is fixed at 2026-11-16 to 11-22
 8. [x] Hero shots from the demo data (light theme, mid-week): landing `week`, `shop`, `cook`, `pantry`; docs `week`, `shop`, `pantry`, `cook`, `recipes`
-9. [ ] Decide: ask for a card at trial start, or not (changes the trial, FAQ, and pricing copy)
-10. [ ] Review the FAQ by hand
-11. [ ] Fix the FAQ layout: two-column grid
+9. [x] Card at trial start: keep it (built and tested; Polar blocks repeat cards). Revisit if signups are low
+10. [x] FAQ reviewed: friendlier answers, card framed as one trial per person, MCP question, "Who makes this?" removed
+11. [x] FAQ layout: two columns on wide screens, one column under 860px
 12. [ ] Review and tweak the landing page copy by hand (claims must match the app)
 13. [ ] Deploy the landing site; start sharing `rakumi.app`
 
