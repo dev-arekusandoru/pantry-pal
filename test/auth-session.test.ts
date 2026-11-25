@@ -112,6 +112,7 @@ describe("signup", () => {
       authenticated: false,
       signupOpen: false,
       features: { email: false, billing: false },
+      supportEmail: null,
     });
 
     const response = await signup(app);
@@ -215,6 +216,7 @@ describe("session lifecycle", () => {
       authenticated: false,
       signupOpen: true,
       features: { email: false, billing: false },
+      supportEmail: null,
     });
   });
 

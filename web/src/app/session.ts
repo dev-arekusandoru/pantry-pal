@@ -21,12 +21,14 @@ export type AuthenticatedSession = {
   account: { email: string; emailVerified: boolean; verifyBy: string | null };
   household: { id: string; name: string };
   features: Features;
+  /** Address for "Contact support"; null hides the link. */
+  supportEmail: string | null;
   access: Access;
   billing: Billing | null;
 };
 export type Session =
   | AuthenticatedSession
-  | { authenticated: false; signupOpen: boolean; features: Features };
+  | { authenticated: false; signupOpen: boolean; features: Features; supportEmail: string | null };
 
 export const UNREACHABLE = "Can't reach Rakumi. Try again.";
 

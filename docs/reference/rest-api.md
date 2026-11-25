@@ -44,7 +44,7 @@ require the app's own origin.
 | `POST /auth/signup` | JSON body `{"email", "password", "householdName"}`. `201`, sets the session cookie, and returns `{"account":{"email"},"household":{"id","name"}}`. `403 forbidden` when signup is closed or the request is cross-origin; `409 conflict` when the email already has an account; `400 validation` for a bad email, a password under 8 characters, or an empty household name; `429 rate_limited` when throttled. |
 | `POST /auth/login` | JSON body `{"email", "password"}`. `200` with the same body and a new cookie; `401 unauthorized` on bad credentials (the same answer for an unknown email); `429` when throttled. |
 | `POST /auth/logout` | `204`; deletes the session row and clears the cookie. |
-| `GET /auth/session` | `{"authenticated":true,"account":{"email"},"household":{"id","name"}}`, or `{"authenticated":false,"signupOpen":boolean}`. Cache-Control is `no-store`. |
+| `GET /auth/session` | Signed in: `{"authenticated":true,"account":{"email","emailVerified","verifyBy"},"household":{"id","name"},"features":{"email","billing"},"supportEmail","access","billing"}`. Signed out: `{"authenticated":false,"signupOpen":boolean,"features","supportEmail"}`. `supportEmail` is `PANTRYPAL_SUPPORT_EMAIL` or `null`. Cache-Control is `no-store`. |
 
 The cookie is `__Host-pantrypal_session`, valid for 30 days, `HttpOnly`,
 `Secure`, `SameSite=Lax`, and scoped to `/`. Logout or a password reset

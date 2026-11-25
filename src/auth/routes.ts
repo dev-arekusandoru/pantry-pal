@@ -84,13 +84,14 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
   );
 
   const features = { email: policy.emailOn, billing: policy.billingOn };
+  const { supportEmail } = hosted;
 
   app.get("/auth/session", async (c) => {
     noStore(c);
     const value = getCookie(c, SESSION_COOKIE_NAME);
     const session = value === undefined ? null : resolveSession(db, value, now());
     if (session === null) {
-      return c.json({ authenticated: false as const, signupOpen: options.signupOpen, features }, 200);
+      return c.json({ authenticated: false as const, signupOpen: options.signupOpen, features, supportEmail }, 200);
     }
 
     const account = getAccount(db, session.account.id);
@@ -106,6 +107,7 @@ export function registerAuthRoutes(app: OpenAPIHono<AppEnv>, options: AuthRouteO
         },
         household: session.household,
         features,
+        supportEmail,
         access: computeAccess(db, policy, session.household.id, now()),
         billing,
       },

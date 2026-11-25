@@ -12,6 +12,7 @@ function session(over: Partial<AuthenticatedSession>): AuthenticatedSession {
     account: { email: "a@home.test", emailVerified: true, verifyBy: null },
     household: { id: "h1", name: "Home" },
     features: { email: true, billing: true },
+    supportEmail: null,
     access: { status: "ok" },
     billing: {
       status: "active", interval: "month", trialEndsAt: null, currentPeriodEnd: "2026-12-05T10:00:00.000Z",

@@ -29,6 +29,8 @@ services:
       # Signup for new accounts. Set PANTRYPAL_SIGNUP=closed in .env after you
       # create your accounts.
       PANTRYPAL_SIGNUP: ${PANTRYPAL_SIGNUP:-open}
+      # Shows "Contact support" in Settings when set.
+      PANTRYPAL_SUPPORT_EMAIL: ${PANTRYPAL_SUPPORT_EMAIL:-}
     volumes:
       # Same host directory as the local stack, so existing data carries over.
       - ./data:/data

@@ -11,6 +11,7 @@ Rakumi reads its settings from environment variables. It has no configuration fi
 | `HOST` | `0.0.0.0` | HTTP bind address. `127.0.0.1` accepts only local connections. |
 | `PANTRYPAL_SIGNUP` | `open` | `open` lets anyone who can reach the app create an account and household at `/auth/signup`. `closed` turns signup off; create accounts with `pantrypal account create`. Login works in both modes. |
 | `PANTRYPAL_WEB_DIR` | `web/dist` under the app root | Built web app directory. If it has no `index.html`, the server serves the API only and writes a log line. |
+| `PANTRYPAL_SUPPORT_EMAIL` | Not set | Email address for help. When set, **Settings** shows a **Help** section with a **Contact support** button that opens a new email to this address. When not set, the section is hidden. |
 
 No other variables are required for normal use. The tunnel stack also reads `CLOUDFLARE_TUNNEL_TOKEN` from `.env`; the app does not read that variable.
 

@@ -28,6 +28,8 @@ export interface HostedConfig {
   smtp: SmtpConfig | null;
   /** Set when `PANTRYPAL_BILLING=polar`. */
   polar: PolarConfig | null;
+  /** Address the app shows as "Contact support"; null hides the link. */
+  supportEmail: string | null;
 }
 
 /** A bad combination of settings; the message tells the operator what to fix. */
@@ -123,7 +125,12 @@ export function loadHostedConfig(env: Env = process.env): HostedConfig {
     throw new ConfigError("PANTRYPAL_PUBLIC_URL is required when PANTRYPAL_SMTP_HOST is set (email links need it).");
   }
 
-  return { publicUrl, smtp, polar };
+  const supportEmail = read(env, "PANTRYPAL_SUPPORT_EMAIL");
+  if (supportEmail !== null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail)) {
+    throw new ConfigError(`PANTRYPAL_SUPPORT_EMAIL is not a valid email address: ${supportEmail}`);
+  }
+
+  return { publicUrl, smtp, polar, supportEmail };
 }
 
 /** Whether email is on, without validating the rest (CLI commands use this). */

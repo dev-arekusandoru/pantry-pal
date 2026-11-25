@@ -20,7 +20,7 @@ const POLAR = {
 
 describe("hosted config", () => {
   it("is all off by default", () => {
-    expect(loadHostedConfig({})).toEqual({ publicUrl: null, smtp: null, polar: null });
+    expect(loadHostedConfig({})).toEqual({ publicUrl: null, smtp: null, polar: null, supportEmail: null });
     expect(emailEnabled({})).toBe(false);
     expect(billingEnabled({})).toBe(false);
   });
@@ -60,6 +60,11 @@ describe("hosted config", () => {
     expect(() => loadHostedConfig({ ...SMTP, PANTRYPAL_BILLING: "stripe" })).toThrow(/PANTRYPAL_BILLING/);
     expect(() => loadHostedConfig({ ...SMTP, ...POLAR, POLAR_SERVER: "staging" })).toThrow(/POLAR_SERVER/);
     expect(() => loadHostedConfig({ ...SMTP, PANTRYPAL_PUBLIC_URL: "not a url" })).toThrow(ConfigError);
+    expect(() => loadHostedConfig({ PANTRYPAL_SUPPORT_EMAIL: "support" })).toThrow(/PANTRYPAL_SUPPORT_EMAIL/);
+  });
+
+  it("reads the support email on its own, without email or billing", () => {
+    expect(loadHostedConfig({ PANTRYPAL_SUPPORT_EMAIL: "support@rakumi.app" }).supportEmail).toBe("support@rakumi.app");
   });
 });
 

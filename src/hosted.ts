@@ -11,9 +11,11 @@ export interface Hosted {
   mailer: Mailer | null;
   /** Set when billing is on. */
   billing: Billing | null;
+  /** Address the app shows as "Contact support"; null hides the link. */
+  supportEmail: string | null;
 }
 
-export const SELF_HOST: Hosted = { publicUrl: null, mailer: null, billing: null };
+export const SELF_HOST: Hosted = { publicUrl: null, mailer: null, billing: null, supportEmail: null };
 
 export function accessPolicy(hosted: Hosted): AccessPolicy {
   return { emailOn: hosted.mailer !== null, billingOn: hosted.billing !== null };
@@ -26,5 +28,5 @@ export function createHosted(config: HostedConfig, now?: () => Date): Hosted {
     config.polar === null || config.publicUrl === null
       ? null
       : new Billing({ config: config.polar, publicUrl: config.publicUrl, ...(now ? { now } : {}) });
-  return { publicUrl: config.publicUrl, mailer, billing };
+  return { publicUrl: config.publicUrl, mailer, billing, supportEmail: config.supportEmail };
 }

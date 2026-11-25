@@ -176,7 +176,7 @@ let eventCounter = 0;
 
 /** Hosted app with an in-memory mailer and a fake Polar. */
 export function makeHostedApp(
-  options: { now?: Date; email?: boolean; billing?: boolean } = {},
+  options: { now?: Date; email?: boolean; billing?: boolean; supportEmail?: string | null } = {},
 ): HostedTestApp {
   let clock = options.now ?? new Date("2026-11-01T12:00:00.000Z");
   const now = () => clock;
@@ -187,7 +187,12 @@ export function makeHostedApp(
   const billing = billingOn
     ? new Billing({ config: POLAR_CONFIG, publicUrl: PUBLIC_URL, now, fetch: polar.fetch })
     : null;
-  const hosted: Hosted = { publicUrl: PUBLIC_URL, mailer: emailOn ? mailer : null, billing };
+  const hosted: Hosted = {
+    publicUrl: PUBLIC_URL,
+    mailer: emailOn ? mailer : null,
+    billing,
+    supportEmail: options.supportEmail ?? null,
+  };
   const app = makeAuthApp({ now, hosted });
 
   async function signup(email = "cook@example.com") {

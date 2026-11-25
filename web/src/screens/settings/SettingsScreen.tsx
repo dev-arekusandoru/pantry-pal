@@ -5,6 +5,7 @@ import { errorMessage } from "@/api";
 import { useTheme, type ThemePreference } from "@/app/theme";
 import { LogoutButton } from "@/app/LogoutButton";
 import { PlanSection } from "./PlanSection";
+import { SupportSection } from "./SupportSection";
 import {
   Button,
   Card,
@@ -190,6 +191,8 @@ export function SettingsScreen() {
             setIconIngredient({ id: ingredient.id, name: ingredient.name, imageUrl: ingredient.imageUrl })
           }
         />
+
+        <SupportSection />
 
         <LogoutButton />
 
