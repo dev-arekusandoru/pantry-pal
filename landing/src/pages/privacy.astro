@@ -73,8 +73,8 @@ const mail = `mailto:${site.contactEmail}`;
       </tr>
       <tr>
         <td><a href="https://www.cloudflare.com/privacypolicy/">Cloudflare</a></td>
-        <td>Hosts this website, connects the app to the internet, and protects it from attacks.</td>
-        <td>IP address and the traffic between your browser and {site.name}.</td>
+        <td>Hosts this website, connects the app to the internet, and protects it from attacks. Stores encrypted backup copies of the app database.</td>
+        <td>IP address and the traffic between your browser and {site.name}. The backups contain all household data.</td>
       </tr>
       <tr>
         <td>Analytics service</td>
@@ -84,8 +84,8 @@ const mail = `mailto:${site.contactEmail}`;
     </tbody>
   </table>
   <p>
-    The app server and its database run on hardware we own, in Maryland, USA. Your data is stored in the
-    United States.
+    The app server and its database run on hardware we own, in Maryland, USA. The main copy of your data is stored
+    in the United States. Backup copies are stored with Cloudflare, and we ask Cloudflare to keep them in North America.
   </p>
   <p>
     If you connect an AI assistant or another tool to {site.name}, that tool can read and change your household
@@ -100,6 +100,7 @@ const mail = `mailto:${site.contactEmail}`;
       household locks. 30 days after the lock, we delete the household, its accounts, and all its data. We send
       warning emails before we delete it.
     </li>
+    <li><strong>Backups:</strong> 14 days. Data that we delete can stay in backups for up to 14 days, then the backups that hold it are deleted.</li>
     <li><strong>Payment records:</strong> Polar keeps them as tax law requires. When we delete your household, we also ask Polar to delete your customer record.</li>
     <li><strong>Waitlist:</strong> until you unsubscribe (use the link in any waitlist email) or ask us to remove you.</li>
     <li><strong>Support emails:</strong> as long as we need them to help you.</li>

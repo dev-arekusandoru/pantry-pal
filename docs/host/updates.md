@@ -103,6 +103,14 @@ tar -xzf pantrypal-before-update-2026-11-05.tar.gz
 sudo chown -R 1000:1000 data
 ```
 
+If the `litestream` backup service is set up, stop it before you move `data`
+(`stop litestream pantrypal`). After you extract the archive, reset its local
+state. See [Backups and restore](backups.md#off-site-backups-with-litestream).
+
+```sh
+docker compose -f docker-compose.tunnel.yml run --rm --no-deps litestream reset /data/pantrypal.db
+```
+
 Use the archive you made before the update. Then check out the commit you recorded, and rebuild:
 
 ```sh

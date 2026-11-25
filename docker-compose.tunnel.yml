@@ -49,6 +49,30 @@ services:
     networks:
       - tunnel
 
+  # Off-site backups to Cloudflare R2 (see litestream.yml). Starts only when
+  # `.env` sets COMPOSE_PROFILES=backup, so a stack without R2 still runs.
+  # Runs as the same user as the app, so the files it writes in data/ keep
+  # the app's owner.
+  litestream:
+    image: litestream/litestream:0.5.17
+    profiles: [backup]
+    restart: unless-stopped
+    user: "1000:1000"
+    command: replicate
+    environment:
+      LITESTREAM_ACCESS_KEY_ID: ${LITESTREAM_ACCESS_KEY_ID:-}
+      LITESTREAM_SECRET_ACCESS_KEY: ${LITESTREAM_SECRET_ACCESS_KEY:-}
+      LITESTREAM_BUCKET: ${LITESTREAM_BUCKET:-}
+      LITESTREAM_ENDPOINT: ${LITESTREAM_ENDPOINT:-}
+    volumes:
+      - ./data:/data
+      - ./litestream.yml:/etc/litestream.yml:ro
+    depends_on:
+      pantrypal:
+        condition: service_healthy
+    networks:
+      - tunnel
+
 networks:
   # Private bridge network owned by this compose project. No `external: true`
   # and no ports: inbound traffic arrives only through the tunnel.

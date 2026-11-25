@@ -9,7 +9,8 @@
 #
 # Order matters:
 #   1. Build the new image first. A build error leaves the old container running.
-#   2. Stop the container, so SQLite closes the database and its -wal file.
+#   2. Stop the container (and the litestream backup service, if it runs), so
+#      SQLite closes the database and its -wal file.
 #   3. Archive data/ (the whole directory) to backups/ and check the archive.
 #   4. Start the new container. Migrations run at server start.
 #   5. Wait for the Docker health check. If it fails, print the rollback steps.
@@ -125,8 +126,16 @@ fi
 STAMP="$(date +%Y%m%d-%H%M%S)"
 ARCHIVE="$BACKUP_DIR/pantrypal-data-$STAMP-${PREVIOUS_COMMIT:0:9}.tar.gz"
 
-log "Stopping $SERVICE so SQLite closes the database cleanly"
-run dc stop "$SERVICE"
+# Litestream also reads and checkpoints the database. Stop it first, so the
+# archive is consistent. It syncs its last changes to R2 when it stops.
+STOP_SERVICES=("$SERVICE")
+if dc ps --services --status running 2>/dev/null | grep -qx litestream; then
+  STOP_SERVICES=(litestream "$SERVICE")
+fi
+restart_old() { dc start "${STOP_SERVICES[@]}" || true; }
+
+log "Stopping ${STOP_SERVICES[*]} so SQLite closes the database cleanly"
+run dc stop "${STOP_SERVICES[@]}"
 
 log "Backing up data/ to $ARCHIVE"
 run mkdir -p "$BACKUP_DIR"
@@ -136,17 +145,17 @@ else
   if ! tar -czf "$ARCHIVE" data/; then
     rm -f "$ARCHIVE"
     echo "The backup failed, so nothing was changed. Starting the old container again." >&2
-    dc start "$SERVICE" || true
+    restart_old
     die "tar failed. If it is a permission error, run the script with sudo or fix the owner of data/."
   fi
   # A backup you cannot read back is not a backup. List into a variable first:
   # `tar | grep -q` makes tar die of SIGPIPE, and pipefail then reports failure.
   listing="$(tar -tzf "$ARCHIVE")" || {
-    dc start "$SERVICE" || true
+    restart_old
     die "Cannot read the archive: $ARCHIVE"
   }
   grep -qx 'data/pantrypal\.db' <<<"$listing" || {
-    dc start "$SERVICE" || true
+    restart_old
     die "The archive has no data/pantrypal.db: $ARCHIVE"
   }
   echo "Backup OK: $ARCHIVE ($(du -h "$ARCHIVE" | cut -f1))"
@@ -163,10 +172,17 @@ The new version did not become healthy. Read the logs:
   docker compose -f $COMPOSE_FILE logs --tail 100 $SERVICE
 
 To roll back (restores the database from the backup and the previous code):
-  docker compose -f $COMPOSE_FILE stop $SERVICE
+  docker compose -f $COMPOSE_FILE stop ${STOP_SERVICES[*]}
   mv data data.failed-deploy-$STAMP
   tar -xzf $ARCHIVE
   git switch --detach $PREVIOUS_COMMIT
+EOF
+  if [ "${#STOP_SERVICES[@]}" -gt 1 ]; then
+    cat >&2 <<EOF
+  docker compose -f $COMPOSE_FILE run --rm --no-deps litestream reset /data/pantrypal.db
+EOF
+  fi
+  cat >&2 <<EOF
   docker compose -f $COMPOSE_FILE up -d --build --force-recreate
 
 Migrations are forward-only: do not start old code on the new database.

@@ -1,0 +1,26 @@
+# Off-site backups for the tunnel stack. Litestream copies every database
+# change to a Cloudflare R2 bucket. The `litestream` service in
+# docker-compose.tunnel.yml uses this file; it starts only when `.env` sets
+# COMPOSE_PROFILES=backup. Setup and restore: docs/host/backups.md.
+#
+# Litestream reads LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY
+# from the environment. It replaces ${VAR} below with values from `.env`.
+
+# A full copy every 12 hours. Snapshots, and the changes recorded between them,
+# are deleted after 14 days (336h). This also limits the bucket size.
+snapshot:
+  interval: 12h
+  retention: 336h
+
+dbs:
+  - path: /data/pantrypal.db
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_BUCKET}
+      path: pantrypal.db
+      endpoint: ${LITESTREAM_ENDPOINT}
+      region: auto
+      # Upload changes at most every 5 minutes. A crash of the host loses at
+      # most 5 minutes of edits. Nothing is uploaded while the database is
+      # unchanged, so an idle app makes no requests.
+      sync-interval: 5m
