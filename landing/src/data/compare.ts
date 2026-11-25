@@ -41,7 +41,7 @@ export const rows: Row[] = [
     cells: [yes, no, no, no],
   },
   {
-    label: "Pantry with expiry dates",
+    label: "Pantry with expiration dates",
     cells: [yes, text("Dropped on purpose"), yes, no],
   },
   { label: "Save recipes from a link", cells: [yes, yes, yes, yes] },

@@ -1,10 +1,10 @@
 ---
 import { cta, money, site } from "../config";
 
-const { monthly, yearly, yearlySaving } = site.price;
+const { monthly, yearly, yearlyPerMonth, freeMonths } = site.price;
 
 const hostedTicks = [
-  "Nothing to install, host, or set up",
+  "Sign up and start planning in seconds",
   "Backups and updates, handled",
   "Email the person who built it",
   "Your feature ideas count for more",
@@ -13,7 +13,7 @@ const hostedTicks = [
 
 const selfHostTicks = [
   "The whole app, no feature gates",
-  "Run it with Docker on your own box",
+  "Needs Docker and a server you manage",
   "Your data stays on your hardware",
   "Help from the community on GitHub",
 ];
@@ -37,9 +37,17 @@ const whyNotes = [
       <span class="tape"></span>
       <span class="stamp">Easiest</span>
       <h3>Hosted</h3>
-      <p class="tag note">We run it. You cook.</p>
-      <p class="price"><strong>{money(monthly)}</strong><span>/ month</span></p>
-      <p class="alt">or <b>{money(yearly)} a year</b>, which saves about {money(yearlySaving)}</p>
+      <p class="tag note">Start in seconds. We run it.</p>
+      <div class="billing" role="radiogroup" aria-label="Billing period">
+        <input type="radio" name="billing" id="bill-year" value="year" checked />
+        <label for="bill-year">Yearly <small>{freeMonths} months free</small></label>
+        <input type="radio" name="billing" id="bill-month" value="month" />
+        <label for="bill-month">Monthly</label>
+      </div>
+      <p class="price for-year"><strong>{money(yearly)}</strong><span>/ year</span></p>
+      <p class="alt for-year">That's <b>{money(yearlyPerMonth)} a month</b>.</p>
+      <p class="price for-month"><strong>{money(monthly)}</strong><span>/ month</span></p>
+      <p class="alt for-month">Billed monthly.</p>
       <ul class="ticks">
         {hostedTicks.map((tick) => (
           <li><svg aria-hidden="true"><use href="#i-tick"></use></svg>{tick}</li>
@@ -47,15 +55,14 @@ const whyNotes = [
       </ul>
       <div class="cta">
         <a class="btn primary block" href={cta.href}>{cta.label}</a>
-        <p class="note fine">
-          {site.trialDays}-day free trial{cta.open ? "" : " when we open"}. A card starts the trial. Cancel before day {site.trialDays} and you won't be charged.
-        </p>
+        <p class="note fine for-year">{site.trialDays} days free, then {money(yearly)}/yr. Cancel anytime.</p>
+        <p class="note fine for-month">{site.trialDays} days free, then {money(monthly)}/mo. Cancel anytime.</p>
       </div>
     </article>
 
     <article class="plan">
       <h3>Self-host</h3>
-      <p class="tag note">Your server, your rules.</p>
+      <p class="tag note">More setup, full control.</p>
       <p class="price"><strong>Free</strong></p>
       <p class="alt">MIT licensed, every feature, forever</p>
       <ul class="ticks">
@@ -74,7 +81,6 @@ const whyNotes = [
 
   <div class="why">
     <h3>Why pay when it's free?</h3>
-    <p class="note">Fair question. Here's what your {money(monthly)} does.</p>
     <div class="notes">
       {whyNotes.map((note) => (
         <div class={`nt ${note.tone}`}><span class="tape"></span><h4>{note.title}</h4><p>{note.body}</p></div>
@@ -97,6 +103,13 @@ const whyNotes = [
   .price span { font-size: 18px; color: var(--muted); }
   .alt { font-size: 17px; }
   .alt b { color: var(--accent-text); font-family: var(--font-note); font-weight: 600; }
+  .billing { position: relative; display: inline-flex; gap: 4px; align-self: flex-start; margin-top: 18px; padding: 4px; border-radius: 999px; background: var(--card); box-shadow: 0 0 0 1.5px var(--line); }
+  .billing input { position: absolute; opacity: 0; pointer-events: none; }
+  .billing label { cursor: pointer; padding: 6px 16px; border-radius: 999px; font-family: var(--font-note); font-weight: 600; font-size: 17px; }
+  .billing label small { font-size: 14px; font-weight: 600; opacity: .85; }
+  .billing input:checked + label { background: var(--ink); color: var(--on-accent); }
+  .billing input:focus-visible + label { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+  .plan.hosted:has(#bill-year:checked) .for-month, .plan.hosted:has(#bill-month:checked) .for-year { display: none; }
   .ticks { margin: 24px 0 28px; display: grid; gap: 11px; }
   .ticks li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font-size: 17px; }
   .ticks svg { width: 24px; height: 24px; margin-top: 1px; }
@@ -105,8 +118,7 @@ const whyNotes = [
   .plan .fine { font-size: 16px; text-align: center; }
 
   .why { margin-top: 56px; }
-  .why h3 { font-size: 30px; text-align: center; margin-bottom: 8px; }
-  .why > .note { text-align: center; font-size: 18px; margin-bottom: 30px; }
+  .why h3 { font-size: 30px; text-align: center; margin-bottom: 24px; }
   .notes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
   .nt { position: relative; padding: 22px 18px 20px; border-radius: 6px; color: var(--ink); transform: rotate(var(--r, -1deg)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--bd) 40%, transparent), 0 14px 16px -10px color-mix(in srgb, var(--bd) 60%, transparent); }
   .nt h4 { font-family: var(--font-note); font-weight: 600; font-size: 21px; line-height: 1.2; margin-bottom: 8px; }

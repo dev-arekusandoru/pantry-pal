@@ -57,8 +57,7 @@ button { background: none; border: 0; cursor: pointer; }
   box-shadow: 0 0 0 1px var(--bd);
 }
 .sticker { filter: drop-shadow(0 3px 0 rgba(255,255,255,.55)) drop-shadow(0 5px 6px rgba(80,30,0,.2)); pointer-events: none; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: var(--r-chip); font-size: 14px; font-weight: var(--fw-bold); box-shadow: 0 0 0 1px color-mix(in srgb, var(--bd) 45%, transparent); }
-.kicker { display: inline-block; padding: 5px 12px; border-radius: 6px; background: var(--ink); color: var(--on-accent); font-family: var(--font-note); font-weight: 600; font-size: 16px; transform: rotate(var(--tilt-a)); }
+.kicker { display: inline-block; padding: 4px 10px; border-radius: 6px; background: var(--ink); color: var(--on-accent); font-family: var(--font-note); font-weight: 600; font-size: 14px; transform: rotate(var(--tilt-a)); }
 .sticky {
   background: var(--butter-s); border-radius: 6px; padding: 12px 14px; transform: rotate(var(--nudge-tilt));
   box-shadow: var(--nudge-ring);

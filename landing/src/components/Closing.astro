@@ -8,16 +8,16 @@ import { cta, site } from "../config";
   <Pal class="pal" size={112} />
   <h2>{site.tagline}</h2>
   {cta.open
-    ? <p>Try Rakumi free for {site.trialDays} days. A card starts the trial. Cancel before day {site.trialDays} and you won't be charged.</p>
-    : <p>Join the waitlist and we'll send one email when Rakumi opens. Your first {site.trialDays} days are on us. A card starts the trial. Cancel before day {site.trialDays} and you won't be charged.</p>}
+    ? <p>Try Rakumi free for {site.trialDays} days.</p>
+    : <p>Be the first to know! We'll email you when Rakumi opens and share the occasional update.</p>}
   {cta.open ? <a class="btn primary" href={cta.href}>{cta.label}</a> : <WaitlistForm id="email-end" />}
 </div>
 
 <style is:global>
-  .closing { margin: 84px 0 0; padding: 48px 32px 40px; text-align: center; position: relative; }
+  .closing { margin: 84px 0 0; padding: 48px 48px 44px; text-align: center; position: relative; }
   .closing .pal { margin: -92px auto 8px; width: 112px; filter: drop-shadow(0 6px 6px rgba(80,30,0,.18)); }
   .closing h2 { font-size: clamp(32px, 4.6vw, 48px); }
-  .closing p { margin: 12px auto 24px; font-size: 19px; max-width: 40ch; }
-  .closing .wait { margin: 0 auto; justify-content: center; }
+  .closing p { margin: 12px auto 24px; font-size: 19px; max-width: 56ch; }
+  .closing .wait { margin: 0 auto; justify-content: center; max-width: 640px; }
   .closing .wait-status:not(:empty) { margin: 10px auto 0; }
 </style>

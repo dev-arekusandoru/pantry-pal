@@ -9,14 +9,15 @@ export const money = (amount: number) =>
 
 export const site = {
   name: "Rakumi",
-  tagline: "Dinner, figured out.",
+  tagline: "Dinner for the whole week, sorted in seconds.",
   description:
     "Rakumi is an open-source kitchen companion. Plan meals, track your pantry, keep your recipes, cook step by step, and shop from one list.",
   trialDays: 14,
   price: {
     monthly,
     yearly,
-    yearlySaving: Math.round(monthly * 12 - yearly),
+    yearlyPerMonth: yearly / 12,
+    freeMonths: Math.floor(12 - yearly / monthly),
   },
   links: {
     github: "https://github.com/dev-arekusandoru/pantry-pal",
@@ -31,7 +32,7 @@ export const site = {
   // Who runs the hosted service; named in the Privacy Policy and Terms.
   operator: "Alexandru Muresan",
   // Date the Privacy Policy and Terms last changed. Update it with every change.
-  legalUpdated: "2026-11-22",
+  legalUpdated: "2026-11-24",
   // URL of the waitlist Worker (see docs/host/waitlist.md). The form posts
   // `{ email, website }` as JSON; any 2xx is success. Empty means the waitlist is
   // not wired up, and the form says so.

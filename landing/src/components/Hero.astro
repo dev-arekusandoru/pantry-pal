@@ -19,29 +19,14 @@ import peppers from "../assets/icons/bell-peppers.webp";
         <span>Shop once.</span>
         <span class="wavy">Cook together.</span>
       </h1>
-      <p class="lead">Meals, pantry, recipes, and groceries in one cozy place. Open source, and yours to keep.</p>
+      <p class="lead">Meals, pantry, recipes, and groceries in one cozy place.</p>
 
       <div id="join">
         {cta.open ? <a class="btn primary" href={cta.href}>{cta.label}</a> : <WaitlistForm id="email-hero" />}
       </div>
       <p class="note fine">
-        {cta.open
-          ? `Free for ${site.trialDays} days. A card starts the trial. Cancel before day ${site.trialDays} and you won't be charged.`
-          : `Free for ${site.trialDays} days when we open. A card starts the trial. Cancel before day ${site.trialDays} and you won't be charged. One email, no spam.`}
+        {cta.open ? "" : "We'll email you when we open. "}{site.trialDays} days free, then {money(site.price.monthly)}/mo. Cancel anytime.
       </p>
-
-      <div class="sub">
-        <a class="btn" href={site.links.github}>
-          <svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub
-        </a>
-        <span class="note">The code is open for anyone to read.</span>
-      </div>
-
-      <div class="chips" aria-label="Highlights">
-        <span class="chip" style="background:var(--butter-s)">MIT licensed</span>
-        <span class="chip" style="background:var(--pistachio-s)">Self-host for free</span>
-        <span class="chip" style="background:var(--gum-s)">{money(site.price.monthly)}/mo hosted</span>
-      </div>
     </div>
 
     <div class="stage" aria-label={`${site.name} screenshots`}>
@@ -80,10 +65,8 @@ import peppers from "../assets/icons/bell-peppers.webp";
   .hero { display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: 40px; align-items: center; padding: 56px 0 40px; }
   .hero h1 { font-size: clamp(42px, 5.6vw, 70px); line-height: 1.1; margin: 22px 0 20px; }
   .hero h1 span { display: block; }
-  .hero .lead { font-size: 20px; max-width: 36ch; margin-bottom: 28px; }
-  .hero .sub { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 16px; }
-  .hero .fine { margin-top: 18px; font-size: 16px; }
-  .hero .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+  .hero .lead { font-size: 20px; max-width: 30ch; margin-bottom: 28px; }
+  .hero .fine { margin-top: 18px; font-size: 16px; max-width: 500px; }
 
   .stage { position: relative; min-height: 560px; }
   .frame { position: absolute; padding: 10px; border-radius: var(--r-lg); background: var(--card) var(--grain); box-shadow: 0 0 0 var(--btn-w) var(--bd), 0 4px 0 1.5px color-mix(in srgb, var(--bd) 55%, transparent), 0 24px 30px -18px color-mix(in srgb, var(--bd) 70%, transparent); }
@@ -105,6 +88,8 @@ import peppers from "../assets/icons/bell-peppers.webp";
   }
   @media (max-width: 560px) {
     .stage { min-height: 400px; }
+    .hero .kicker { display: none; }
+    .hero h1 { margin-top: 0; }
     .f-cook { left: -2%; width: 60%; }
     .stage .hey { display: none; }
     .stage .pal { width: 92px; height: 92px; bottom: -34px; }
