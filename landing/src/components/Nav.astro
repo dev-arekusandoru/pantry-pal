@@ -18,9 +18,11 @@ const links = [
     {links.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
   </ul>
   <div class="actions">
+    {/* Re-enable after launch:
     <a class="btn sm star" href={site.links.github}>
       <svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub
     </a>
+    */}
     <a class="btn sm primary" href={cta.href}>{cta.label}</a>
   </div>
 </header>

@@ -19,11 +19,15 @@ const mail = `mailto:${site.contactEmail}`;
   </ul>
   <p>For account questions, write from the email address on your account. We usually answer within two working days.</p>
 
+  <h2>Self-hosting</h2>
+  <p>Running {site.name} on your own server? Read the <a href={site.links.docs}>docs</a>.</p>
+  {/* Re-enable after launch, in place of the paragraph above:
   <h2>Bugs and self-hosting</h2>
   <p>
     Found a bug, or running {site.name} on your own server? Open an issue on{" "}
     <a href={`${site.links.github}/issues`}>GitHub</a>, or read the <a href={site.links.docs}>docs</a>.
   </p>
+  */}
 </LegalLayout>
 
 <style is:global>

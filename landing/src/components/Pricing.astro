@@ -15,7 +15,7 @@ const selfHostTicks = [
   "The whole app, no feature gates",
   "Needs Docker and a server you manage",
   "Your data stays on your hardware",
-  "Help from the community on GitHub",
+  // Re-enable after launch: "Help from the community on GitHub",
 ];
 
 const whyNotes = [
@@ -72,8 +72,10 @@ const whyNotes = [
       </ul>
       <div class="cta">
         <div class="row">
-          <a class="btn" href={site.links.github}><svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub</a>
           <a class="btn ghost" href={site.links.selfHost}><svg aria-hidden="true" style="color:var(--ink)"><use href="#i-book"></use></svg>Self-hosting guide</a>
+          {/* Re-enable after launch:
+          <a class="btn" href={site.links.github}><svg aria-hidden="true"><use href="#i-star"></use></svg>Star on GitHub</a>
+          */}
         </div>
       </div>
     </article>

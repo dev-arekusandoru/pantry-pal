@@ -20,7 +20,7 @@ export const site = {
     freeMonths: Math.floor(12 - yearly / monthly),
   },
   links: {
-    github: "https://github.com/dev-arekusandoru/pantry-pal",
+    // Re-enable after launch: github: "https://github.com/dev-arekusandoru/pantry-pal",
     docs: "https://dev-arekusandoru.github.io/pantry-pal/",
     selfHost: "https://dev-arekusandoru.github.io/pantry-pal/start/install",
     privacy: "/privacy",
