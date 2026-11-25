@@ -41,6 +41,26 @@
 - Use `pnpm docs:dev` to check changed pages, images, and navigation in a browser.
 - Do not push, deploy, or change GitHub Pages settings unless the user asks.
 
+## Track the work in itsaplan
+
+Issues for this repo are in the `RAKU` project of the `plan` MCP server. The
+columns are Backlog, Planning, Working, Reviewing, Done. Working and Reviewing
+have the same state type, so select a column by its name and get its id from
+`get_project`.
+
+- When the user names an issue (`RAKU-12`), read it with `get_issue_by_number`.
+  When the user starts from a new idea, create the issue when you both agree on
+  the goal.
+- Move the issue to Planning while you discuss the direction. When you agree,
+  write a short document with the agreed direction and link it to the issue.
+- Work in one `wt` worktree per issue. Name the branch after the key, such as
+  `raku-12-import-recipe`. Move the issue to Working when you start to build.
+- Move the issue to Reviewing when the work is ready for the user. Only the
+  user moves it to Done.
+- When you find new work, tell the user in one line and ask before you add it
+  to the Backlog.
+- BACKLOG.md and IDEAS.md are not updated for new work.
+
 <!-- hippo:start -->
 ## Project Memory (Hippo)
 
